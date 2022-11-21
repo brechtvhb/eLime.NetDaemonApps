@@ -3,11 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31919.166
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlexiLights", "FlexiLights.csproj", "{B03BCE5B-FD01-4DC8-B373-2EBD232E6AF4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FlexiLights", "FlexiLights\FlexiLights.csproj", "{B03BCE5B-FD01-4DC8-B373-2EBD232E6AF4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlexiLights.Data", "..\FlexiLights.Data\FlexiLights.Data.csproj", "{988F5C31-F155-4F4D-BFE3-657C06D9B0B6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlexiLights.Data", "FlexiLights.Data\FlexiLights.Data.csproj", "{988F5C31-F155-4F4D-BFE3-657C06D9B0B6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlexiLights.Config", "..\FlexiLights.Config\FlexiLights.Config.csproj", "{FB7489FD-545F-4494-BBA6-8B65C932B964}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlexiLights.Config", "FlexiLights.Config\FlexiLights.Config.csproj", "{FB7489FD-545F-4494-BBA6-8B65C932B964}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
