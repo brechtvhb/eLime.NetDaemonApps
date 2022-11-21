@@ -1,6 +1,6 @@
-obj
-bin
-appsettings.development.json
-.vs
-*.gen
-.idea
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/.vs
+/FlexiLights.Config/bin/Debug/net6.0
