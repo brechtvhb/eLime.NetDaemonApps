@@ -4,3 +4,4 @@ appsettings.development.json
 .vs
 *.gen
 .idea
+/eLime.NetDaemonApps/Properties/launchSettings.json
