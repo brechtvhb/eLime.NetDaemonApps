@@ -1,11 +1,12 @@
 ﻿using FlexiLights.Config;
 using FlexiLights.Data.Rooms;
+using FlexiLights.Data.Rooms.Evaluations;
 
 namespace FlexiLights.Data.Helper;
 
 internal static class EvaluationActionExtensions
 {
-    internal static List<IEvaluation> ConvertToDomainModel(this IList<EvaluationConfig>? evaluations)
+    internal static List<IEvaluation> ConvertToDomainModel(this IList<ConditionConfig>? evaluations)
     {
         var evaluationList = new List<IEvaluation>();
 
@@ -21,7 +22,7 @@ internal static class EvaluationActionExtensions
         return evaluationList;
     }
 
-    internal static IEvaluation ConvertToDomainModel(this EvaluationConfig config)
+    internal static IEvaluation ConvertToDomainModel(this ConditionConfig config)
     {
         return config switch
         {
@@ -32,7 +33,7 @@ internal static class EvaluationActionExtensions
         };
     }
 
-    internal static IEvaluation ConvertToBinaryEvaluationDomainModel(this EvaluationConfig config)
+    internal static IEvaluation ConvertToBinaryEvaluationDomainModel(this ConditionConfig config)
     {
         if (config.Binary == null)
             throw new ArgumentException("binary sensor not set");
@@ -45,7 +46,7 @@ internal static class EvaluationActionExtensions
         };
     }
 
-    internal static IEvaluation ConvertToAndEvaluationDomainModel(this EvaluationConfig config)
+    internal static IEvaluation ConvertToAndEvaluationDomainModel(this ConditionConfig config)
     {
         if (config.And == null || !config.And.Any())
             throw new ArgumentException("Define at least one evaluation in your AND evaluation. 2 or more would make more sense though.");
@@ -54,7 +55,7 @@ internal static class EvaluationActionExtensions
         return new AndEvaluation(evaluations);
     }
 
-    internal static IEvaluation ConvertToOrEvaluationDomainModel(this EvaluationConfig config)
+    internal static IEvaluation ConvertToOrEvaluationDomainModel(this ConditionConfig config)
     {
         if (config.Or == null || !config.Or.Any())
             throw new ArgumentException("Define at least one evaluation in your OR evaluation. 2 or more would make more sense though.");

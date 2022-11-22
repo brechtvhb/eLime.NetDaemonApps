@@ -3,6 +3,7 @@ using FlexiLights.Data.BinarySensors;
 using FlexiLights.Data.Helper;
 using FlexiLights.Data.Numeric;
 using FlexiLights.Data.Rooms.Actions;
+using FlexiLights.Data.Rooms.Evaluations;
 using Microsoft.Extensions.Logging;
 using NetDaemon.HassModel;
 using NetDaemon.HassModel.Entities;
@@ -21,13 +22,13 @@ public class Room
     public bool AutoTransition { get; private init; }
     private readonly DebounceDispatcher AutoTransitionDebounceDispatcher = new(TimeSpan.FromSeconds(1));
 
-    public ClickBehaviour ClickBehaviour { get; private init; }
+    public InitialClickAfterMotionBehaviour InitialClickAfterMotionBehaviour { get; private init; }
     public Int32? IlluminanceThreshold { get; private init; }
     public bool AutoSwitchOffAboveIlluminance { get; private init; }
     public TimeSpan IgnorePresenceAfterOffDuration { get; private init; }
     private DateTime? TurnOffAt { get; set; }
     private DateTime? IgnorePresenceUntil { get; set; }
-    private String CurrentGatedActions { get; set; } = NONE;
+    private String CurrentFlexiScene { get; set; } = NONE;
     private InitiatedBy InitiatedBy { get; set; } = InitiatedBy.NoOne;
 
     private readonly List<BinarySensor> _offSensors = new();
@@ -102,24 +103,23 @@ public class Room
     public void AddUberLongClickActions(List<Action> action) => _uberLongClickActions.AddRange(action);
 
 
-    private readonly List<Entity> _gatedActionSensors = new();
-    public IReadOnlyCollection<Entity> GatedActionSensors => _gatedActionSensors.AsReadOnly();
+    private readonly List<Entity> _flexiSceneSensors = new();
+    public IReadOnlyCollection<Entity> FlexiSceneSensors => _flexiSceneSensors.AsReadOnly();
 
-    public void AddGatedActionSensor(Entity sensor)
+    public void AddFlexiSceneSensor(Entity sensor)
     {
         if (sensor is BinarySensor binarySensor)
         {
-            binarySensor.TurnedOn += async (_, _) => await AutoTransitionDebounceDispatcher.DebounceAsync(AutoTransitionIfAllowed);
-            binarySensor.TurnedOff += async (_, _) => await AutoTransitionDebounceDispatcher.DebounceAsync(AutoTransitionIfAllowed);
-            _gatedActionSensors.Add(binarySensor);
+            binarySensor.TurnedOn += async (_, _) => await AutoTransitionDebounceDispatcher.DebounceAsync(ExecuteFlexiSceneOnAutoTransition);
+            binarySensor.TurnedOff += async (_, _) => await AutoTransitionDebounceDispatcher.DebounceAsync(ExecuteFlexiSceneOnAutoTransition);
+            _flexiSceneSensors.Add(binarySensor);
         }
     }
 
 
-    private readonly CircularReadOnlyList<GatedActions> _gatedActionsList = new();
-    public IReadOnlyList<GatedActions> GatedActionsList => _gatedActionsList.AsReadOnly();
-    public void AddGatedActions(GatedActions gatedActions) => _gatedActionsList.Add(gatedActions);
-
+    private readonly CircularReadOnlyList<FlexiScene> _flexiScenes = new();
+    public IReadOnlyList<FlexiScene> FlexiScenes => _flexiScenes.AsReadOnly();
+    public void AddFlexiScenes(FlexiScene flexiScene) => _flexiScenes.Add(flexiScene);
 
 
     private readonly IHaContext _haContext;
@@ -137,7 +137,7 @@ public class Room
         {
             Name = config.Name,
             AutoTransition = config.AutoTransition,
-            ClickBehaviour = config.ClickBehaviour == Config.ClickBehaviour.ChangeOffDurationOnly ? ClickBehaviour.ChangeOffDurationOnly : ClickBehaviour.ChangeOFfDurationAndGoToNextGatedActions,
+            InitialClickAfterMotionBehaviour = config.InitialClickAfterMotionBehaviour == Config.InitialClickAfterMotionBehaviour.ChangeOffDurationOnly ? InitialClickAfterMotionBehaviour.ChangeOffDurationOnly : InitialClickAfterMotionBehaviour.ChangeOFfDurationAndGoToNextAutomation,
             IlluminanceThreshold = config.IlluminanceThreshold,
             AutoSwitchOffAboveIlluminance = config.AutoSwitchOffAboveIlluminance,
             IgnorePresenceAfterOffDuration = config.IgnorePresenceAfterOffDuration ?? TimeSpan.Zero
@@ -229,25 +229,25 @@ public class Room
         var uberLongClickActions = config.UberLongClickActions.ConvertToDomainModel(context);
         room.AddUberLongClickActions(uberLongClickActions);
 
-        foreach (var gatedActionConfig in config.GatedActions)
+        foreach (var flexiSceneConfig in config.FlexiScenes)
         {
-            var gatedActions = GatedActions.Create(context, gatedActionConfig);
+            var flexiScene = FlexiScene.Create(context, flexiSceneConfig);
 
-            if (!gatedActions.Evaluations.Any())
+            if (!flexiScene.Evaluations.Any())
             {
-                logger.LogDebug($"No evaluations were found on gated actions '{gatedActions.Name}'. This will always resolve to true. Intended or configuration problem?");
+                logger.LogDebug($"No evaluations were found on flexi scene '{flexiScene.Name}'. This will always resolve to true. Intended or configuration problem?");
             }
-            room.AddGatedActions(gatedActions);
+            room.AddFlexiScenes(flexiScene);
 
-            foreach (var gatedActionSensorId in gatedActions.GetSensorsIds())
+            foreach (var flexiSceneSensorId in flexiScene.GetSensorsIds())
             {
-                if (room.GatedActionSensors.Any(x => x.EntityId == gatedActionSensorId.Item1))
+                if (room.FlexiSceneSensors.Any(x => x.EntityId == flexiSceneSensorId.Item1))
                     continue;
 
-                if (gatedActionSensorId.Item2 == EvaluationSensorType.Binary)
+                if (flexiSceneSensorId.Item2 == EvaluationSensorType.Binary)
                 {
-                    var binarySensor = BinarySensor.Create(context, gatedActionSensorId.Item1);
-                    room.AddGatedActionSensor(binarySensor);
+                    var binarySensor = BinarySensor.Create(context, flexiSceneSensorId.Item1);
+                    room.AddFlexiSceneSensor(binarySensor);
                 }
             }
 
@@ -257,17 +257,17 @@ public class Room
     }
 
 
-    private async Task ExecuteGatedActions(GatedActions gatedActions, InitiatedBy initiatedBy, Boolean autoTransition = false)
+    private async Task ExecuteFlexiScene(FlexiScene flexiScene, InitiatedBy initiatedBy, Boolean autoTransition = false)
     {
-        _logger.LogInformation($"Will execute gated actions {gatedActions.Name}. Triggered by {initiatedBy}.");
-        CurrentGatedActions = gatedActions.Name;
+        _logger.LogInformation($"Will execute flexi scene {flexiScene.Name}. Triggered by {initiatedBy}.");
+        CurrentFlexiScene = flexiScene.Name;
         InitiatedBy = initiatedBy;
 
-        await ExecuteActions(gatedActions.Actions, autoTransition);
+        await ExecuteActions(flexiScene.Actions, autoTransition);
     }
     private async Task ExecuteOffActions()
     {
-        CurrentGatedActions = NONE;
+        CurrentFlexiScene = NONE;
         InitiatedBy = InitiatedBy.NoOne;
         IgnorePresenceUntil = DateTime.Now.Add(IgnorePresenceAfterOffDuration);
         await ExecuteActions(OffActions);
@@ -297,7 +297,7 @@ public class Room
         await ExecuteActions(UberLongClickActions);
     }
 
-    private void SetTurnOffAt(GatedActions gatedActions)
+    private void SetTurnOffAt(FlexiScene gatedActions)
     {
         var timeSpan = InitiatedBy switch
         {
@@ -332,19 +332,19 @@ public class Room
 
     private async Task MotionSensor_TurnedOn(object? sender, BinarySensorEventArgs e)
     {
-        await ExecuteGatedActionsIfAllowed(InitiatedBy.Motion);
+        await ExecuteFlexiSceneOnMotion(InitiatedBy.Motion);
     }
 
     private async Task Switch_Clicked(object? sender, BinarySensorEventArgs e)
     {
         _logger.LogDebug($"Click triggered for switch {e.Sensor.EntityId}");
-        if (CurrentGatedActions == NONE)
+        if (CurrentFlexiScene == NONE)
         {
-            var gatedActionsThatShouldActivate = GatedActionsList.FirstOrDefault(x => x.CanActivate(GatedActionSensors));
+            var gatedActionsThatShouldActivate = FlexiScenes.FirstOrDefault(x => x.CanActivate(FlexiSceneSensors));
 
             if (gatedActionsThatShouldActivate != null)
             {
-                await ExecuteGatedActions(gatedActionsThatShouldActivate, InitiatedBy.Switch);
+                await ExecuteFlexiScene(gatedActionsThatShouldActivate, InitiatedBy.Switch);
                 SetTurnOffAt(gatedActionsThatShouldActivate);
             }
             else
@@ -355,19 +355,19 @@ public class Room
             return;
         }
 
-        if (InitiatedBy == InitiatedBy.Motion && ClickBehaviour == ClickBehaviour.ChangeOffDurationOnly)
+        if (InitiatedBy == InitiatedBy.Motion && InitialClickAfterMotionBehaviour == InitialClickAfterMotionBehaviour.ChangeOffDurationOnly)
         {
-            var currentGatedActions = GatedActionsList.Single(x => x.Name == CurrentGatedActions);
+            var currentGatedActions = FlexiScenes.Single(x => x.Name == CurrentFlexiScene);
             InitiatedBy = InitiatedBy.Switch;
             SetTurnOffAt(currentGatedActions);
         }
         else
         {
-            var currentGatedActionIndex = GatedActionsList.IndexOf(x => x.Name == CurrentGatedActions);
-            _gatedActionsList.CurrentIndex = currentGatedActionIndex;
+            var currentGatedActionIndex = FlexiScenes.IndexOf(x => x.Name == CurrentFlexiScene);
+            _flexiScenes.CurrentIndex = currentGatedActionIndex;
 
-            var nextGatedActions = _gatedActionsList.MoveNext;
-            await ExecuteGatedActions(nextGatedActions, InitiatedBy.Switch);
+            var nextGatedActions = _flexiScenes.MoveNext;
+            await ExecuteFlexiScene(nextGatedActions, InitiatedBy.Switch);
 
             SetTurnOffAt(nextGatedActions);
         }
@@ -419,9 +419,9 @@ public class Room
             await ExecuteLongClickActions();
         }
     }
-    private async Task ExecuteGatedActionsIfAllowed(InitiatedBy initiatedBy)
+    private async Task ExecuteFlexiSceneOnMotion(InitiatedBy initiatedBy)
     {
-        if (CurrentGatedActions != NONE)
+        if (CurrentFlexiScene != NONE)
         {
             RemoveTurnOffAt();
             return;
@@ -439,15 +439,15 @@ public class Room
             return;
         }
 
-        var gatedActionsThatShouldActivate = GatedActionsList.FirstOrDefault(x => x.CanActivate(GatedActionSensors));
+        var flexiScenesThatShouldActivate = FlexiScenes.FirstOrDefault(x => x.CanActivate(FlexiSceneSensors));
 
-        if (gatedActionsThatShouldActivate != null)
+        if (flexiScenesThatShouldActivate != null)
         {
-            await ExecuteGatedActions(gatedActionsThatShouldActivate, initiatedBy);
+            await ExecuteFlexiScene(flexiScenesThatShouldActivate, initiatedBy);
         }
         else
         {
-            _logger.LogWarning($"Motion was detected but found no gated actions that could be executed.");
+            _logger.LogWarning($"Motion was detected but found no flexi scenes that could be executed.");
         }
     }
 
@@ -455,46 +455,47 @@ public class Room
     {
         var allMotionSensorsOff = MotionSensors.All(x => x.State == OFF);
 
-        if (allMotionSensorsOff && CurrentGatedActions != NONE)
+        if (allMotionSensorsOff && CurrentFlexiScene != NONE)
         {
-            var currentGatedActions = GatedActionsList.Single(x => x.Name == CurrentGatedActions);
+            var currentGatedActions = FlexiScenes.Single(x => x.Name == CurrentFlexiScene);
             SetTurnOffAt(currentGatedActions);
         }
     }
 
     private async Task Sensor_WentAboveThreshold(object? sender, NumericSensorEventArgs e)
     {
-        if (AutoSwitchOffAboveIlluminance && CurrentGatedActions != NONE)
+        if (AutoSwitchOffAboveIlluminance && CurrentFlexiScene != NONE)
         {
             _logger.LogDebug($"Executed off actions. Because a motion sensor exceeded the illuminance threshold ({e.New.State} lux)");
             await ExecuteOffActions();
         }
     }
 
-    private async Task AutoTransitionIfAllowed()
+    private async Task ExecuteFlexiSceneOnAutoTransition()
     {
         if (!AutoTransition)
             return;
 
-        if (CurrentGatedActions == NONE)
+        if (CurrentFlexiScene == NONE)
             return;
 
-        var currentGatedActions = GatedActionsList.Single(x => x.Name == CurrentGatedActions);
+        var currentFlexiScene = FlexiScenes.Single(x => x.Name == CurrentFlexiScene);
 
-        //current gated actions still valid
-        if (currentGatedActions.CanActivate(GatedActionSensors))
+        //current flexi scene still valid
+        if (currentFlexiScene.CanActivate(FlexiSceneSensors))
             return;
 
-        var gatedActionsThatShouldActivate = GatedActionsList.FirstOrDefault(x => x.CanActivate(GatedActionSensors));
+        var flexiSceneThatShouldActivate = FlexiScenes.FirstOrDefault(x => x.CanActivate(FlexiSceneSensors));
 
-        if (gatedActionsThatShouldActivate != null)
+        if (flexiSceneThatShouldActivate != null)
         {
             _logger.LogInformation($"Auto transition was triggered.");
-            await ExecuteGatedActions(gatedActionsThatShouldActivate, InitiatedBy, true);
+            await ExecuteFlexiScene(flexiSceneThatShouldActivate, InitiatedBy, true);
         }
         else
         {
-            _logger.LogInformation($"Auto transition was triggered but no gated actions were found to transition to.");
+            //TODO: add setting to allow turning off
+            _logger.LogInformation($"Auto transition was triggered but no flexi scene was found to transition to.");
         }
     }
 
@@ -533,12 +534,12 @@ public class Room
         if (MotionSensors.All(x => x.IsOff()))
             return;
 
-        if (CurrentGatedActions != NONE)
+        if (CurrentFlexiScene != NONE)
             return;
 
         if (IgnorePresenceUntil != null && IgnorePresenceUntil > DateTime.Now)
             return;
 
-        await ExecuteGatedActionsIfAllowed(InitiatedBy.Motion);
+        await ExecuteFlexiSceneOnMotion(InitiatedBy.Motion);
     }
 }

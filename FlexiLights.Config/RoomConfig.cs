@@ -12,11 +12,11 @@ public class RoomConfig
     public TimeSpan? IgnorePresenceAfterOffDuration { get; set; }
     public IList<String>? Switches { get; set; }
     public TimeSpan? ClickInterval { get; set; }
-    public ClickBehaviour ClickBehaviour { get; set; }
+    public InitialClickAfterMotionBehaviour InitialClickAfterMotionBehaviour { get; set; }
     public TimeSpan? LongClickDuration { get; set; }
     public TimeSpan? UberLongClickDuration { get; set; }
     public IList<String>? OffSensors { get; set; }
-    public IList<GatedActionConfig> GatedActions { get; set; }
+    public IList<FlexiSceneConfig> FlexiScenes { get; set; }
     public IList<ActionConfig>? DoubleClickActions { get; set; }
     public IList<ActionConfig>? TripleClickActions { get; set; }
     public IList<ActionConfig>? LongClickActions { get; set; }
@@ -24,8 +24,8 @@ public class RoomConfig
     public IList<ActionConfig> OffActions { get; set; }
 }
 
-public enum ClickBehaviour
+public enum InitialClickAfterMotionBehaviour
 {
     ChangeOffDurationOnly,
-    ChangeOFfDurationAndGoToNextGatedActions,
+    ChangeOFfDurationAndGoToNextAutomation,
 }

@@ -9,7 +9,7 @@ FlexiLights.Config.FlexLightConfig:
     autoSwitchOffAboveIlluminance: true # usefull when using outdoor illuminance sensor
     ignorePresenceAfterOffDuration: "00:00:05"
     clickInterval: "00:00:00.350"
-    clickBehaviour: ChangeOffDurationOnly
+    initialClickAfterMotionBehaviour: ChangeOffDurationOnly
     longClickDuration: "00:00:01.000"
     uberLongClickDuration: "00:00:03.000"
     offSensors:
@@ -22,9 +22,9 @@ FlexiLights.Config.FlexLightConfig:
     - input_number.fake_illuminance_sensor
     switches:
     - input_boolean.fake_siwtch
-    gatedActions:
+    flexiScenes:
     - name : default
-      evaluations:
+      conditions:
       - or:
         - or:
           - and:
@@ -39,7 +39,7 @@ FlexiLights.Config.FlexLightConfig:
       turnOffAfterIfTriggeredBySwitch: "02:00:00"
       turnOffAfterIfTriggeredByMotionSensor: "00:02:00"
     - name : evening
-      evaluations:
+      conditions:
       - binary: binary_sensor.operating_mode_evening_to_midnight
         binaryMethod: False
       actions:
