@@ -15,21 +15,16 @@ namespace eLime.NetDaemonApps.Domain.Rooms;
 
 public class Room
 {
-    private const string NONE = "none";
-    private const string OFF = "off";
-    private const string ON = "on";
-
-    public string? Name { get; private init; }
-    public bool AutoTransition { get; private init; }
+    public string? Name { get; }
+    public bool AutoTransition { get; }
     private readonly DebounceDispatcher AutoTransitionDebounceDispatcher = new(TimeSpan.FromSeconds(1));
 
-    public InitialClickAfterMotionBehaviour InitialClickAfterMotionBehaviour { get; private init; }
-    public Int32? IlluminanceThreshold { get; private init; }
-    public bool AutoSwitchOffAboveIlluminance { get; private init; }
-    public TimeSpan IgnorePresenceAfterOffDuration { get; private init; }
+    public InitialClickAfterMotionBehaviour InitialClickAfterMotionBehaviour { get; }
+    public Int32? IlluminanceThreshold { get; }
+    public bool AutoSwitchOffAboveIlluminance { get; }
+    public TimeSpan IgnorePresenceAfterOffDuration { get; }
     private DateTime? TurnOffAt { get; set; }
     private DateTime? IgnorePresenceUntil { get; set; }
-    private String CurrentFlexiScene { get; set; } = NONE;
     private InitiatedBy InitiatedBy { get; set; } = InitiatedBy.NoOne;
 
     private readonly List<BinarySensor> _offSensors = new();
@@ -44,7 +39,6 @@ public class Room
     private readonly List<Light> _lights = new();
     public IReadOnlyCollection<Light> Lights => _lights.AsReadOnly();
     public void AddLight(Light light) => _lights.Add(light);
-
 
     private readonly List<IlluminanceSensor> _illuminanceSensors = new();
     public IReadOnlyCollection<IlluminanceSensor> IlluminanceSensors => _illuminanceSensors.AsReadOnly();
@@ -117,43 +111,36 @@ public class Room
         }
     }
 
-
-    private readonly CircularReadOnlyList<FlexiScene> _flexiScenes = new();
-    public IReadOnlyList<FlexiScene> FlexiScenes => _flexiScenes.AsReadOnly();
-    public void AddFlexiScenes(FlexiScene flexiScene) => _flexiScenes.Add(flexiScene);
+    public FlexiScenes FlexiScenes { get; }
+    public FlexiScene? FlexiSceneThatShouldActivate => FlexiScenes.GetSceneThatShouldActivate(FlexiSceneSensors);
 
 
     private readonly IHaContext _haContext;
     private readonly ILogger _logger;
 
-    public Room(IHaContext haContext, ILogger logger)
+    public Room(IHaContext haContext, ILogger logger, RoomConfig config)
     {
         _haContext = haContext;
         _logger = logger;
-    }
 
-    public static Room Create(IHaContext context, ILogger logger, RoomConfig config)
-    {
-        var room = new Room(context, logger)
-        {
-            Name = config.Name,
-            AutoTransition = config.AutoTransition,
-            InitialClickAfterMotionBehaviour = config.InitialClickAfterMotionBehaviour == eLime.netDaemonApps.Config.FlexiLights.InitialClickAfterMotionBehaviour.ChangeOffDurationOnly ? InitialClickAfterMotionBehaviour.ChangeOffDurationOnly : InitialClickAfterMotionBehaviour.ChangeOFfDurationAndGoToNextAutomation,
-            IlluminanceThreshold = config.IlluminanceThreshold,
-            AutoSwitchOffAboveIlluminance = config.AutoSwitchOffAboveIlluminance,
-            IgnorePresenceAfterOffDuration = config.IgnorePresenceAfterOffDuration ?? TimeSpan.Zero
-        };
+        Name = config.Name;
+        AutoTransition = config.AutoTransition;
+        InitialClickAfterMotionBehaviour = config.InitialClickAfterMotionBehaviour == eLime.netDaemonApps.Config.FlexiLights.InitialClickAfterMotionBehaviour.ChangeOffDurationOnly ? InitialClickAfterMotionBehaviour.ChangeOffDurationOnly : InitialClickAfterMotionBehaviour.ChangeOFfDurationAndGoToNextAutomation;
+        IlluminanceThreshold = config.IlluminanceThreshold;
+        AutoSwitchOffAboveIlluminance = config.AutoSwitchOffAboveIlluminance;
+        IgnorePresenceAfterOffDuration = config.IgnorePresenceAfterOffDuration ?? TimeSpan.Zero;
+
 
         if (config.Lights == null || !config.Lights.Any())
             throw new Exception("Define at least one light");
 
         foreach (var lightId in config.Lights)
         {
-            if (room.Lights.Any(x => x.EntityId == lightId))
+            if (Lights.Any(x => x.EntityId == lightId))
                 continue;
 
-            var light = Light.Create(context, lightId);
-            room.AddLight(light);
+            var light = Light.Create(_haContext, lightId);
+            AddLight(light);
         }
 
 
@@ -161,11 +148,11 @@ public class Room
         {
             foreach (var sensorId in config.OffSensors)
             {
-                if (room.OffSensors.Any(x => x.EntityId == sensorId))
+                if (OffSensors.Any(x => x.EntityId == sensorId))
                     continue;
 
-                var sensor = BinarySensor.Create(context, sensorId);
-                room.AddOffSensor(sensor);
+                var sensor = BinarySensor.Create(_haContext, sensorId);
+                AddOffSensor(sensor);
             }
         }
 
@@ -173,11 +160,11 @@ public class Room
         {
             foreach (var sensorId in config.IlluminanceSensors)
             {
-                if (room.IlluminanceSensors.Any(x => x.EntityId == sensorId))
+                if (IlluminanceSensors.Any(x => x.EntityId == sensorId))
                     continue;
 
-                var sensor = IlluminanceSensor.Create(context, sensorId, config.IlluminanceThreshold);
-                room.AddIlluminanceSensor(sensor);
+                var sensor = IlluminanceSensor.Create(_haContext, sensorId, config.IlluminanceThreshold);
+                AddIlluminanceSensor(sensor);
             }
         }
 
@@ -185,11 +172,11 @@ public class Room
         {
             foreach (var sensorId in config.MotionSensors)
             {
-                if (room.MotionSensors.Any(x => x.EntityId == sensorId))
+                if (MotionSensors.Any(x => x.EntityId == sensorId))
                     continue;
 
-                var sensor = MotionSensor.Create(context, sensorId);
-                room.AddMotionSensor(sensor);
+                var sensor = MotionSensor.Create(_haContext, sensorId);
+                AddMotionSensor(sensor);
             }
         }
 
@@ -197,15 +184,15 @@ public class Room
         {
             foreach (var switchId in config.Switches)
             {
-                if (room.Switches.Any(x => x.EntityId == switchId))
+                if (Switches.Any(x => x.EntityId == switchId))
                     continue;
 
-                var sensor = Switch.Create(context, switchId, config.ClickInterval, config.LongClickDuration, config.UberLongClickDuration);
-                room.AddSwitch(sensor);
+                var sensor = Switch.Create(_haContext, switchId, config.ClickInterval, config.LongClickDuration, config.UberLongClickDuration);
+                AddSwitch(sensor);
             }
         }
 
-        if (!room.Switches.Any() && !room.MotionSensors.Any())
+        if (!Switches.Any() && !MotionSensors.Any())
             throw new Exception("Define at least one switch or motion sensor");
 
         if (config.OffActions == null || !config.OffActions.Any())
@@ -215,64 +202,65 @@ public class Room
             throw new ArgumentException("fuckturd");
 
 
-        var offActions = config.OffActions.ConvertToDomainModel(context);
-        room.AddOffActions(offActions);
+        var offActions = config.OffActions.ConvertToDomainModel(_haContext);
+        AddOffActions(offActions);
 
-        var doubleClickActions = config.DoubleClickActions.ConvertToDomainModel(context);
-        room.AddDoubleClickActions(doubleClickActions);
+        var doubleClickActions = config.DoubleClickActions.ConvertToDomainModel(_haContext);
+        AddDoubleClickActions(doubleClickActions);
 
-        var tripleClickActions = config.TripleClickActions.ConvertToDomainModel(context);
-        room.AddTripleClickActions(tripleClickActions);
+        var tripleClickActions = config.TripleClickActions.ConvertToDomainModel(_haContext);
+        AddTripleClickActions(tripleClickActions);
 
-        var longClickActions = config.LongClickActions.ConvertToDomainModel(context);
-        room.AddLongClickActions(longClickActions);
+        var longClickActions = config.LongClickActions.ConvertToDomainModel(_haContext);
+        AddLongClickActions(longClickActions);
 
-        var uberLongClickActions = config.UberLongClickActions.ConvertToDomainModel(context);
-        room.AddUberLongClickActions(uberLongClickActions);
+        var uberLongClickActions = config.UberLongClickActions.ConvertToDomainModel(_haContext);
+        AddUberLongClickActions(uberLongClickActions);
 
+        var flexiScenes = new List<FlexiScene>();
         foreach (var flexiSceneConfig in config.FlexiScenes)
         {
-            var flexiScene = FlexiScene.Create(context, flexiSceneConfig);
+            var flexiScene = FlexiScene.Create(_haContext, flexiSceneConfig);
 
             if (!flexiScene.Evaluations.Any())
             {
                 logger.LogDebug($"No evaluations were found on flexi scene '{flexiScene.Name}'. This will always resolve to true. Intended or configuration problem?");
             }
-            room.AddFlexiScenes(flexiScene);
+
+            flexiScenes.Add(flexiScene);
 
             foreach (var flexiSceneSensorId in flexiScene.GetSensorsIds())
             {
-                if (room.FlexiSceneSensors.Any(x => x.EntityId == flexiSceneSensorId.Item1))
+                if (FlexiSceneSensors.Any(x => x.EntityId == flexiSceneSensorId.Item1))
                     continue;
 
                 if (flexiSceneSensorId.Item2 == EvaluationSensorType.Binary)
                 {
-                    var binarySensor = BinarySensor.Create(context, flexiSceneSensorId.Item1);
-                    room.AddFlexiSceneSensor(binarySensor);
+                    var binarySensor = BinarySensor.Create(_haContext, flexiSceneSensorId.Item1);
+                    AddFlexiSceneSensor(binarySensor);
                 }
             }
 
         }
 
-        return room;
+        FlexiScenes = new FlexiScenes(flexiScenes);
     }
-
 
     private async Task ExecuteFlexiScene(FlexiScene flexiScene, InitiatedBy initiatedBy, Boolean autoTransition = false)
     {
         _logger.LogInformation($"Will execute flexi scene {flexiScene.Name}. Triggered by {initiatedBy}.");
-        CurrentFlexiScene = flexiScene.Name;
+        FlexiScenes.SetCurrentScene(flexiScene);
         InitiatedBy = initiatedBy;
 
         await ExecuteActions(flexiScene.Actions, autoTransition);
     }
     private async Task ExecuteOffActions()
     {
-        CurrentFlexiScene = NONE;
+        FlexiScenes.DeactivateScene();
         InitiatedBy = InitiatedBy.NoOne;
         IgnorePresenceUntil = DateTime.Now.Add(IgnorePresenceAfterOffDuration);
         await ExecuteActions(OffActions);
-        RemoveTurnOffAt();
+        ClearAutoTurnOff();
     }
 
     private async Task ExecuteDoubleClickActions()
@@ -298,21 +286,21 @@ public class Room
         await ExecuteActions(UberLongClickActions);
     }
 
-    private void SetTurnOffAt(FlexiScene gatedActions)
+    private void SetTurnOffAt(FlexiScene flexiScene)
     {
         var timeSpan = InitiatedBy switch
         {
-            InitiatedBy.Motion => gatedActions.TurnOffAfterIfTriggeredByMotionSensor,
-            InitiatedBy.Switch => gatedActions.TurnOffAfterIfTriggeredBySwitch,
+            InitiatedBy.Motion => flexiScene.TurnOffAfterIfTriggeredByMotionSensor,
+            InitiatedBy.Switch => flexiScene.TurnOffAfterIfTriggeredBySwitch,
             _ => throw new ArgumentOutOfRangeException()
         };
 
         TurnOffAt = DateTime.Now.Add(timeSpan);
         _logger.LogDebug($"Off actions will be executed at {TurnOffAt:T}. Turn off at was set by {InitiatedBy}");
     }
-    private void RemoveTurnOffAt()
+    private void ClearAutoTurnOff()
     {
-        _logger.LogDebug($"Off actions will no longer be executed. Probably because they were just executed or a motion sensor is active.");
+        _logger.LogDebug($"Off actions will no longer be executed. Probably because the OFF actions were just executed or a motion sensor is active.");
         TurnOffAt = null;
     }
 
@@ -333,24 +321,29 @@ public class Room
 
     private async Task MotionSensor_TurnedOn(object? sender, BinarySensorEventArgs e)
     {
-        await ExecuteFlexiSceneOnMotion(InitiatedBy.Motion);
+        //If motion / presence is detected and there is an active scene do nothing but cancel auto turn off
+        if (FlexiScenes.Current != null)
+        {
+            ClearAutoTurnOff();
+            return;
+        }
+
+        await ExecuteFlexiSceneOnMotion();
     }
 
     private async Task Switch_Clicked(object? sender, BinarySensorEventArgs e)
     {
         _logger.LogDebug($"Click triggered for switch {e.Sensor.EntityId}");
-        if (CurrentFlexiScene == NONE)
+        if (FlexiScenes.Current == null)
         {
-            var gatedActionsThatShouldActivate = FlexiScenes.FirstOrDefault(x => x.CanActivate(FlexiSceneSensors));
-
-            if (gatedActionsThatShouldActivate != null)
+            if (FlexiSceneThatShouldActivate != null)
             {
-                await ExecuteFlexiScene(gatedActionsThatShouldActivate, InitiatedBy.Switch);
-                SetTurnOffAt(gatedActionsThatShouldActivate);
+                await ExecuteFlexiScene(FlexiSceneThatShouldActivate, InitiatedBy.Switch);
+                SetTurnOffAt(FlexiSceneThatShouldActivate);
             }
             else
             {
-                _logger.LogWarning($"Click was detected but found no gated actions that could be executed.");
+                _logger.LogWarning($"Click was detected but found no flexi scene that could be executed.");
             }
 
             return;
@@ -358,19 +351,15 @@ public class Room
 
         if (InitiatedBy == InitiatedBy.Motion && InitialClickAfterMotionBehaviour == InitialClickAfterMotionBehaviour.ChangeOffDurationOnly)
         {
-            var currentGatedActions = FlexiScenes.Single(x => x.Name == CurrentFlexiScene);
             InitiatedBy = InitiatedBy.Switch;
-            SetTurnOffAt(currentGatedActions);
+            SetTurnOffAt(FlexiScenes.Current);
         }
         else
         {
-            var currentGatedActionIndex = FlexiScenes.IndexOf(x => x.Name == CurrentFlexiScene);
-            _flexiScenes.CurrentIndex = currentGatedActionIndex;
+            var nextFlexiScene = FlexiScenes.Next;
+            await ExecuteFlexiScene(nextFlexiScene, InitiatedBy.Switch);
 
-            var nextGatedActions = _flexiScenes.MoveNext;
-            await ExecuteFlexiScene(nextGatedActions, InitiatedBy.Switch);
-
-            SetTurnOffAt(nextGatedActions);
+            SetTurnOffAt(nextFlexiScene);
         }
     }
 
@@ -420,14 +409,8 @@ public class Room
             await ExecuteLongClickActions();
         }
     }
-    private async Task ExecuteFlexiSceneOnMotion(InitiatedBy initiatedBy)
+    private async Task ExecuteFlexiSceneOnMotion()
     {
-        if (CurrentFlexiScene != NONE)
-        {
-            RemoveTurnOffAt();
-            return;
-        }
-
         if (IlluminanceThreshold != null && IlluminanceSensors.All(x => x.State > IlluminanceThreshold))
         {
             _logger.LogDebug($"Motion sensor saw something moving but did not turn on lights because all illuminance sensors are above threshold of {IlluminanceThreshold}");
@@ -440,11 +423,9 @@ public class Room
             return;
         }
 
-        var flexiScenesThatShouldActivate = FlexiScenes.FirstOrDefault(x => x.CanActivate(FlexiSceneSensors));
-
-        if (flexiScenesThatShouldActivate != null)
+        if (FlexiSceneThatShouldActivate != null)
         {
-            await ExecuteFlexiScene(flexiScenesThatShouldActivate, initiatedBy);
+            await ExecuteFlexiScene(FlexiSceneThatShouldActivate, InitiatedBy.Motion);
         }
         else
         {
@@ -454,18 +435,17 @@ public class Room
 
     private void MotionSensor_TurnedOff(object? sender, BinarySensorEventArgs e)
     {
-        var allMotionSensorsOff = MotionSensors.All(x => x.State == OFF);
+        var allMotionSensorsOff = MotionSensors.All(x => x.IsOff());
 
-        if (allMotionSensorsOff && CurrentFlexiScene != NONE)
+        if (allMotionSensorsOff && FlexiScenes.Current != null)
         {
-            var currentGatedActions = FlexiScenes.Single(x => x.Name == CurrentFlexiScene);
-            SetTurnOffAt(currentGatedActions);
+            SetTurnOffAt(FlexiScenes.Current);
         }
     }
 
     private async Task Sensor_WentAboveThreshold(object? sender, NumericSensorEventArgs e)
     {
-        if (AutoSwitchOffAboveIlluminance && CurrentFlexiScene != NONE)
+        if (AutoSwitchOffAboveIlluminance && FlexiScenes.Current != null)
         {
             _logger.LogDebug($"Executed off actions. Because a motion sensor exceeded the illuminance threshold ({e.New.State} lux)");
             await ExecuteOffActions();
@@ -477,21 +457,17 @@ public class Room
         if (!AutoTransition)
             return;
 
-        if (CurrentFlexiScene == NONE)
+        if (FlexiScenes.Current == null)
             return;
-
-        var currentFlexiScene = FlexiScenes.Single(x => x.Name == CurrentFlexiScene);
 
         //current flexi scene still valid
-        if (currentFlexiScene.CanActivate(FlexiSceneSensors))
+        if (FlexiScenes.Current.CanActivate(FlexiSceneSensors))
             return;
 
-        var flexiSceneThatShouldActivate = FlexiScenes.FirstOrDefault(x => x.CanActivate(FlexiSceneSensors));
-
-        if (flexiSceneThatShouldActivate != null)
+        if (FlexiSceneThatShouldActivate != null)
         {
             _logger.LogInformation($"Auto transition was triggered.");
-            await ExecuteFlexiScene(flexiSceneThatShouldActivate, InitiatedBy, true);
+            await ExecuteFlexiScene(FlexiSceneThatShouldActivate, InitiatedBy, true);
         }
         else
         {
@@ -509,6 +485,7 @@ public class Room
 
             await AutoTurnOffIfNeeded();
             RemoveIgnorePresenceIfNeeded();
+            //Can only happen executes on startup, otherwise we receive a motion detected event
             await CheckForMotion();
 
             var delayTask = Task.Delay(1000, token);
@@ -535,12 +512,12 @@ public class Room
         if (MotionSensors.All(x => x.IsOff()))
             return;
 
-        if (CurrentFlexiScene != NONE)
+        if (FlexiScenes.Current != null)
             return;
 
         if (IgnorePresenceUntil != null && IgnorePresenceUntil > DateTime.Now)
             return;
 
-        await ExecuteFlexiSceneOnMotion(InitiatedBy.Motion);
+        await ExecuteFlexiSceneOnMotion();
     }
 }
