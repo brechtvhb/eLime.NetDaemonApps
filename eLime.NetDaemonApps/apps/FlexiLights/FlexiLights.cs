@@ -31,7 +31,7 @@ public class FlexiLights : IAsyncInitializable, IAsyncDisposable
         {
             foreach (var roomConfig in _config.Rooms)
             {
-                var room = Room.Create(_ha, _logger, roomConfig);
+                var room = new Room(_ha, _logger, roomConfig);
                 Task.Run(() => room.Guard(cancellationToken));
                 Rooms.Add(room);
             }
