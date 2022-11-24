@@ -5,14 +5,11 @@
         <TargetFramework>net6.0</TargetFramework>
         <LangVersion>10.0</LangVersion>
         <Nullable>enable</Nullable>
-        <RootNamespace>FlexiLights</RootNamespace>
+        <RootNamespace>eLime.NetDaemonApps</RootNamespace>
     </PropertyGroup>
     
     <ItemGroup>
-        <None Update="$(MSBuildProjectDir)appsettings.Development.json">
-            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-            <CopyToPublishDirectory>Never</CopyToPublishDirectory>
-        </None>        
+     
         <None Update="$(MSBuildProjectDir)appsettings.json">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>        

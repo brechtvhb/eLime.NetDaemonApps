@@ -199,8 +199,7 @@ public class Room
             throw new Exception("Define at least one off action");
 
         if (config.OffActions.Any(x => x.ExecuteOffActions))
-            throw new ArgumentException("fuckturd");
-
+            throw new ArgumentException("Do not define ExecuteOFfActions within OFF actions. That would cause a circular depedency.");
 
         var offActions = config.OffActions.ConvertToDomainModel(_haContext);
         AddOffActions(offActions);
