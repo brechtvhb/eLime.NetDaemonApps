@@ -9,6 +9,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "eLime.NetDaemonApps.Domain"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "eLime.NetDaemonApps.Config", "eLime.NetDaemonApps.Config\eLime.NetDaemonApps.Config.csproj", "{FB7489FD-545F-4494-BBA6-8B65C932B964}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "devops", "devops", "{F5C98263-49EE-45F3-8804-DB634CE9D657}"
+	ProjectSection(SolutionItems) = preProject
+		.github\workflows\build-test-docker.yaml = .github\workflows\build-test-docker.yaml
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
