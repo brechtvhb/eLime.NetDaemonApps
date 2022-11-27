@@ -14,9 +14,9 @@ public class AppTestContext
     public IHaContext HaContext => HaContextMock.HaContext;
     public TestScheduler Scheduler { get; } = new();
 
-    public void AdvanceTimeBy(long absoluteTime)
+    public void AdvanceTimeBy(TimeSpan timeSpan)
     {
-        Scheduler.AdvanceBy(absoluteTime);
+        Scheduler.AdvanceBy(timeSpan.Ticks);
     }
 
     public void AdvanceTimeTo(long absoluteTime)
@@ -24,9 +24,7 @@ public class AppTestContext
         Scheduler.AdvanceTo(absoluteTime);
     }
 
-    public static AppTestContext New() => new();
-
-    public static AppTestContext New(DateTime startTime)
+    public static AppTestContext Create(DateTime startTime)
     {
         var ctx = new AppTestContext();
         ctx.SetCurrentTime(startTime);

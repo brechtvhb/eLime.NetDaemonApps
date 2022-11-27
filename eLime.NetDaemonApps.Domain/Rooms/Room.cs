@@ -1,12 +1,14 @@
-﻿using eLime.netDaemonApps.Config.FlexiLights;
+﻿using eLime.NetDaemonApps.Config.FlexiLights;
 using eLime.NetDaemonApps.Domain.BinarySensors;
 using eLime.NetDaemonApps.Domain.Conditions;
 using eLime.NetDaemonApps.Domain.Helper;
 using eLime.NetDaemonApps.Domain.NumericSensors;
 using eLime.NetDaemonApps.Domain.Rooms.Actions;
 using Microsoft.Extensions.Logging;
+using NetDaemon.Extensions.Scheduler;
 using NetDaemon.HassModel;
 using NetDaemon.HassModel.Entities;
+using System.Reactive.Concurrency;
 using Action = eLime.NetDaemonApps.Domain.Rooms.Actions.Action;
 using Switch = eLime.NetDaemonApps.Domain.BinarySensors.Switch;
 
@@ -23,7 +25,9 @@ public class Room
     public bool AutoSwitchOffAboveIlluminance { get; }
     public TimeSpan IgnorePresenceAfterOffDuration { get; }
     private DateTime? TurnOffAt { get; set; }
+    private IDisposable? TurnOffSchedule { get; set; }
     private DateTime? IgnorePresenceUntil { get; set; }
+    private IDisposable? ClearIgnorePresenceSchedule { get; set; }
     private InitiatedBy InitiatedBy { get; set; } = InitiatedBy.NoOne;
 
     private readonly List<BinarySensor> _offSensors = new();
@@ -116,15 +120,24 @@ public class Room
 
     private readonly IHaContext _haContext;
     private readonly ILogger _logger;
+    private readonly IScheduler _scheduler;
 
-    public Room(IHaContext haContext, ILogger logger, RoomConfig config)
+    public Room(IHaContext haContext, ILogger logger, IScheduler scheduler, RoomConfig config)
     {
         _haContext = haContext;
         _logger = logger;
+        _scheduler = scheduler;
 
         Name = config.Name;
+
+        if (!config.Enabled)
+        {
+            FlexiScenes = new FlexiScenes(new List<FlexiScene>());
+            return;
+        }
+
         AutoTransition = config.AutoTransition;
-        InitialClickAfterMotionBehaviour = config.InitialClickAfterMotionBehaviour == eLime.netDaemonApps.Config.FlexiLights.InitialClickAfterMotionBehaviour.ChangeOffDurationOnly ? InitialClickAfterMotionBehaviour.ChangeOffDurationOnly : InitialClickAfterMotionBehaviour.ChangeOFfDurationAndGoToNextAutomation;
+        InitialClickAfterMotionBehaviour = config.InitialClickAfterMotionBehaviour == Config.FlexiLights.InitialClickAfterMotionBehaviour.ChangeOffDurationOnly ? InitialClickAfterMotionBehaviour.ChangeOffDurationOnly : InitialClickAfterMotionBehaviour.ChangeOFfDurationAndGoToNextAutomation;
         IlluminanceThreshold = config.IlluminanceThreshold;
         AutoSwitchOffAboveIlluminance = config.AutoSwitchOffAboveIlluminance;
         IgnorePresenceAfterOffDuration = config.IgnorePresenceAfterOffDuration ?? TimeSpan.Zero;
@@ -198,7 +211,7 @@ public class Room
             throw new Exception("Define at least one off action");
 
         if (config.OffActions.Any(x => x.ExecuteOffActions))
-            throw new ArgumentException("Do not define ExecuteOFfActions within OFF actions. That would cause a circular depedency.");
+            throw new ArgumentException("Do not define ExecuteOFfActions within OFF actions. That would cause a circular dependency.");
 
         var offActions = config.OffActions.ConvertToDomainModel(_haContext);
         AddOffActions(offActions);
@@ -222,7 +235,7 @@ public class Room
 
             if (!flexiScene.Conditions.Any())
             {
-                logger.LogDebug($"No evaluations were found on flexi scene '{flexiScene.Name}'. This will always resolve to true. Intended or configuration problem?");
+                logger.LogDebug($"No conditions were found on flexi scene '{flexiScene.Name}'. This will always resolve to true. Intended or configuration problem?");
             }
 
             flexiScenes.Add(flexiScene);
@@ -254,9 +267,18 @@ public class Room
     }
     private async Task ExecuteOffActions()
     {
+        _logger.LogDebug($"Executed off actions.");
+
         FlexiScenes.DeactivateScene();
         InitiatedBy = InitiatedBy.NoOne;
-        IgnorePresenceUntil = DateTime.Now.Add(IgnorePresenceAfterOffDuration);
+
+        if (IgnorePresenceAfterOffDuration != TimeSpan.Zero)
+        {
+            IgnorePresenceUntil = DateTime.Now.Add(IgnorePresenceAfterOffDuration);
+            ClearIgnorePresenceSchedule?.Dispose();
+            ClearIgnorePresenceSchedule = _scheduler.Schedule(IgnorePresenceAfterOffDuration, _ => RemoveIgnorePresence());
+        }
+
         await ExecuteActions(OffActions);
         ClearAutoTurnOff();
     }
@@ -294,12 +316,17 @@ public class Room
         };
 
         TurnOffAt = DateTime.Now.Add(timeSpan);
+
+        TurnOffSchedule?.Dispose();
+        TurnOffSchedule = _scheduler.ScheduleAsync(timeSpan, async (_, _) => await ExecuteOffActions());
+
         _logger.LogDebug($"Off actions will be executed at {TurnOffAt:T}. Turn off at was set by {InitiatedBy}");
     }
     private void ClearAutoTurnOff()
     {
         _logger.LogDebug($"Off actions will no longer be executed. Probably because the OFF actions were just executed or a motion sensor is active.");
         TurnOffAt = null;
+        TurnOffSchedule?.Dispose();
     }
 
     private async Task ExecuteActions(IReadOnlyCollection<Action> actions, Boolean autoTransition = false)
@@ -474,37 +501,21 @@ public class Room
         }
     }
 
-    public async Task Guard(CancellationToken token)
+    public void Guard()
     {
-        while (true)
+        _scheduler.RunEvery(TimeSpan.FromSeconds(1), _scheduler.Now, async () =>
         {
-            if (token.IsCancellationRequested)
-                break;
-
-            await AutoTurnOffIfNeeded();
-            RemoveIgnorePresenceIfNeeded();
             //Can only happen executes on startup, otherwise we receive a motion detected event
             await CheckForMotion();
-
-            var delayTask = Task.Delay(1000, token);
-            await delayTask;
-        }
+        });
     }
 
-    private void RemoveIgnorePresenceIfNeeded()
+
+    private void RemoveIgnorePresence()
     {
-        if (IgnorePresenceUntil != null && IgnorePresenceUntil < DateTime.Now)
-            IgnorePresenceUntil = null;
+        IgnorePresenceUntil = null;
     }
 
-    private async Task AutoTurnOffIfNeeded()
-    {
-        if (TurnOffAt != null && TurnOffAt.Value < DateTime.Now)
-        {
-            await ExecuteOffActions();
-            _logger.LogDebug($"Executed off actions.");
-        }
-    }
     private async Task CheckForMotion()
     {
         if (MotionSensors.All(x => x.IsOff()))

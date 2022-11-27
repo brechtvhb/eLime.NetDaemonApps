@@ -43,9 +43,20 @@ public static class AppTestContextExtensions
         var domain = serviceCall[..serviceCall.IndexOf(".", StringComparison.InvariantCultureIgnoreCase)];
         var service = serviceCall[(serviceCall.IndexOf(".", StringComparison.InvariantCultureIgnoreCase) + 1)..];
 
-        ctx.HaContextMock.Verify(c => c.CallService(domain, service,
-                It.Is<ServiceTarget>(s => Match(entityId, s)),
-                data), times
+        ctx.HaContextMock.Verify(
+            c => c.CallService(domain, service, It.Is<ServiceTarget>(s => Match(entityId, s)), data),
+            times
+        );
+    }
+
+    public static void VerifyCallService(this AppTestContext ctx, string serviceCall, string entityId, Times times, object? data = null)
+    {
+        var domain = serviceCall[..serviceCall.IndexOf(".", StringComparison.InvariantCultureIgnoreCase)];
+        var service = serviceCall[(serviceCall.IndexOf(".", StringComparison.InvariantCultureIgnoreCase) + 1)..];
+
+        ctx.HaContextMock.Verify(
+            c => c.CallService(domain, service, It.Is<ServiceTarget>(s => Match(entityId, s)), data),
+            times
         );
     }
 
@@ -59,7 +70,17 @@ public static class AppTestContextExtensions
         ctx.VerifyCallService("light.turn_off", entity.EntityId, times, new LightTurnOffParameters());
     }
 
+    public static void VerifyLightTurnOff(this AppTestContext ctx, Light entity, Times times)
+    {
+        ctx.VerifyCallService("light.turn_off", entity.EntityId, times, new LightTurnOffParameters());
+    }
+
     public static void VerifyLightTurnOn(this AppTestContext ctx, Light entity, Func<Times> times)
+    {
+        ctx.VerifyCallService("light.turn_on", entity.EntityId, times, new LightTurnOnParameters());
+    }
+
+    public static void VerifyLightTurnOn(this AppTestContext ctx, Light entity, Times times)
     {
         ctx.VerifyCallService("light.turn_on", entity.EntityId, times, new LightTurnOnParameters());
     }

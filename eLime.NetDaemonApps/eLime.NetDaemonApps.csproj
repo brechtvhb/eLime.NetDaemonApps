@@ -27,6 +27,7 @@
         
     <ItemGroup>
         <PackageReference Include="JoySoftware.NetDaemon.AppModel" Version="22.44.0" />
+        <PackageReference Include="JoySoftware.NetDaemon.Extensions.Mqtt" Version="22.44.0" />
         <PackageReference Include="JoySoftware.NetDaemon.Runtime" Version="22.44.0" />
         <PackageReference Include="JoySoftware.NetDaemon.HassModel" Version="22.44.0" />
         <PackageReference Include="JoySoftware.NetDaemon.Client" Version="22.44.0" />

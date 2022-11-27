@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="JoySoftware.NetDaemon.Extensions.Scheduling" Version="22.44.0" />
     <PackageReference Include="JoySoftware.NetDaemon.HassModel" Version="22.44.0" />
   </ItemGroup>
 

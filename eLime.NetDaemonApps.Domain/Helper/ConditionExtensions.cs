@@ -1,4 +1,4 @@
-﻿using eLime.netDaemonApps.Config.FlexiLights;
+﻿using eLime.NetDaemonApps.Config.FlexiLights;
 using eLime.NetDaemonApps.Domain.Conditions;
 using eLime.NetDaemonApps.Domain.Conditions.Abstractions;
 
