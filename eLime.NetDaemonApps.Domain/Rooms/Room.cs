@@ -1,10 +1,9 @@
 ﻿using eLime.netDaemonApps.Config.FlexiLights;
 using eLime.NetDaemonApps.Domain.BinarySensors;
+using eLime.NetDaemonApps.Domain.Conditions;
 using eLime.NetDaemonApps.Domain.Helper;
-using eLime.NetDaemonApps.Domain.Lights;
 using eLime.NetDaemonApps.Domain.NumericSensors;
 using eLime.NetDaemonApps.Domain.Rooms.Actions;
-using eLime.NetDaemonApps.Domain.Rooms.Evaluations;
 using Microsoft.Extensions.Logging;
 using NetDaemon.HassModel;
 using NetDaemon.HassModel.Entities;
@@ -36,9 +35,9 @@ public class Room
         _offSensors.Add(sensor);
     }
 
-    private readonly List<Light> _lights = new();
-    public IReadOnlyCollection<Light> Lights => _lights.AsReadOnly();
-    public void AddLight(Light light) => _lights.Add(light);
+    //private readonly List<Light> _lights = new();
+    //public IReadOnlyCollection<Light> Lights => _lights.AsReadOnly();
+    //public void AddLight(Light light) => _lights.Add(light);
 
     private readonly List<IlluminanceSensor> _illuminanceSensors = new();
     public IReadOnlyCollection<IlluminanceSensor> IlluminanceSensors => _illuminanceSensors.AsReadOnly();
@@ -131,17 +130,17 @@ public class Room
         IgnorePresenceAfterOffDuration = config.IgnorePresenceAfterOffDuration ?? TimeSpan.Zero;
 
 
-        if (config.Lights == null || !config.Lights.Any())
-            throw new Exception("Define at least one light");
+        //if (config.Lights == null || !config.Lights.Any())
+        //    throw new Exception("Define at least one light");
 
-        foreach (var lightId in config.Lights)
-        {
-            if (Lights.Any(x => x.EntityId == lightId))
-                continue;
+        //foreach (var lightId in config.Lights)
+        //{
+        //    if (Lights.Any(x => x.EntityId == lightId))
+        //        continue;
 
-            var light = Light.Create(_haContext, lightId);
-            AddLight(light);
-        }
+        //    var light = Light.Create(_haContext, lightId);
+        //    AddLight(light);
+        //}
 
 
         if (config.OffSensors != null && config.OffSensors.Any())
@@ -221,7 +220,7 @@ public class Room
         {
             var flexiScene = FlexiScene.Create(_haContext, flexiSceneConfig);
 
-            if (!flexiScene.Evaluations.Any())
+            if (!flexiScene.Conditions.Any())
             {
                 logger.LogDebug($"No evaluations were found on flexi scene '{flexiScene.Name}'. This will always resolve to true. Intended or configuration problem?");
             }
@@ -233,7 +232,7 @@ public class Room
                 if (FlexiSceneSensors.Any(x => x.EntityId == flexiSceneSensorId.Item1))
                     continue;
 
-                if (flexiSceneSensorId.Item2 == EvaluationSensorType.Binary)
+                if (flexiSceneSensorId.Item2 == ConditionSensorType.Binary)
                 {
                     var binarySensor = BinarySensor.Create(_haContext, flexiSceneSensorId.Item1);
                     AddFlexiSceneSensor(binarySensor);

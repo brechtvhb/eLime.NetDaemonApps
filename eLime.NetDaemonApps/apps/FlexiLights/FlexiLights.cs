@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace FlexiLights.apps.FlexiLights;
+namespace eLime.NetDaemonApps.apps.FlexiLights;
 
 [NetDaemonApp(Id = "flexilights")]
 public class FlexiLights : IAsyncInitializable, IAsyncDisposable

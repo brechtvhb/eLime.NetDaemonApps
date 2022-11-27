@@ -14,6 +14,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "devops", "devops", "{F5C982
 		.github\workflows\build-test-docker.yaml = .github\workflows\build-test-docker.yaml
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "eLime.NetDaemonApps.Tests", "eLime.NetDaemonApps.Tests\eLime.NetDaemonApps.Tests.csproj", "{70ADEA2F-1101-4094-8D55-19F4572FDA64}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -32,6 +34,10 @@ Global
 		{FB7489FD-545F-4494-BBA6-8B65C932B964}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FB7489FD-545F-4494-BBA6-8B65C932B964}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FB7489FD-545F-4494-BBA6-8B65C932B964}.Release|Any CPU.Build.0 = Release|Any CPU
+		{70ADEA2F-1101-4094-8D55-19F4572FDA64}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{70ADEA2F-1101-4094-8D55-19F4572FDA64}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{70ADEA2F-1101-4094-8D55-19F4572FDA64}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{70ADEA2F-1101-4094-8D55-19F4572FDA64}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
