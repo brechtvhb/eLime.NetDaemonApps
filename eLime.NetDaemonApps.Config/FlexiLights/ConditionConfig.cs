@@ -1,4 +1,4 @@
-namespace eLime.netDaemonApps.Config.FlexiLights;
+namespace eLime.NetDaemonApps.Config.FlexiLights;
 
 public class ConditionConfig
 {

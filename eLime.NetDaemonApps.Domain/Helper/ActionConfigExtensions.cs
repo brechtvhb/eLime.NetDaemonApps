@@ -1,11 +1,11 @@
-﻿using eLime.netDaemonApps.Config.FlexiLights;
+﻿using eLime.NetDaemonApps.Config.FlexiLights;
+using eLime.NetDaemonApps.Domain.Actions;
 using eLime.NetDaemonApps.Domain.BinarySensors;
 using eLime.NetDaemonApps.Domain.Lights;
 using eLime.NetDaemonApps.Domain.Rooms.Actions;
 using eLime.NetDaemonApps.Domain.Scenes;
 using NetDaemon.HassModel;
 using Action = eLime.NetDaemonApps.Domain.Rooms.Actions.Action;
-using LightAction = eLime.netDaemonApps.Config.FlexiLights.LightAction;
 
 namespace eLime.NetDaemonApps.Domain.Helper;
 
@@ -32,8 +32,8 @@ internal static class ActionConfigExtensions
         return config switch
         {
             { ExecuteOffActions: true } => config.ConvertToExecuteOffActionsActionDomainModel(haContext),
-            { Light: not null, LightAction: not LightAction.Unknown } => config.ConvertToLightActionDomainModel(haContext),
-            { Lights: not null, LightAction: not LightAction.Unknown } => config.ConvertToLightActionDomainModel(haContext),
+            { Light: not null, LightAction: not Config.FlexiLights.LightAction.Unknown } => config.ConvertToLightActionDomainModel(haContext),
+            { Lights: not null, LightAction: not Config.FlexiLights.LightAction.Unknown } => config.ConvertToLightActionDomainModel(haContext),
             { Scene: not null } => config.ConvertToSceneActionDomainModel(haContext),
             { Switch: not null, SwitchAction: not SwitchAction.Unknown } => config.ConvertToSwitchActionDomainModel(haContext),
             _ => throw new ArgumentException("invalid action configuration")
@@ -43,7 +43,7 @@ internal static class ActionConfigExtensions
 
     internal static Action ConvertToLightActionDomainModel(this ActionConfig config, IHaContext haContext)
     {
-        if ((config.Light == null && config.Lights == null) || config.LightAction == LightAction.Unknown)
+        if ((config.Light == null && config.Lights == null) || config.LightAction == Config.FlexiLights.LightAction.Unknown)
             throw new ArgumentException("Light or light action not set");
 
         var lights = new List<Light>();
@@ -59,8 +59,8 @@ internal static class ActionConfigExtensions
 
         return config.LightAction switch
         {
-            LightAction.TurnOn => new LightTurnOnAction(lights, config.TransitionDuration, config.AutoTransitionDuration, config.Profile, config.Color, config.Brightness, config.Flash, config.Effect),
-            LightAction.TurnOff => new LightTurnOffAction(lights, config.TransitionDuration, config.AutoTransitionDuration),
+            Config.FlexiLights.LightAction.TurnOn => new LightTurnOnAction(lights, config.TransitionDuration, config.AutoTransitionDuration, config.Profile, config.Color, config.Brightness, config.Flash, config.Effect),
+            Config.FlexiLights.LightAction.TurnOff => new LightTurnOffAction(lights, config.TransitionDuration, config.AutoTransitionDuration),
         };
     }
 

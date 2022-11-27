@@ -1,14 +1,14 @@
 ﻿using eLime.NetDaemonApps.Domain.BinarySensors;
-using eLime.NetDaemonApps.Domain.Rooms.Evaluations.Abstractions;
+using eLime.NetDaemonApps.Domain.Conditions.Abstractions;
 using NetDaemon.HassModel.Entities;
 
-namespace eLime.NetDaemonApps.Domain.Rooms.Evaluations;
+namespace eLime.NetDaemonApps.Domain.Conditions;
 
-public class BinaryTrueEvaluation : IEvaluation
+public class BinaryTrueCondition : ICondition
 {
     public string SensorId { get; init; }
 
-    public BinaryTrueEvaluation(string sensorId)
+    public BinaryTrueCondition(string sensorId)
     {
         SensorId = sensorId;
     }
@@ -23,8 +23,8 @@ public class BinaryTrueEvaluation : IEvaluation
         return sensor.State == "on";
     }
 
-    public IReadOnlyCollection<(string, EvaluationSensorType)> GetSensorsIds()
+    public IReadOnlyCollection<(string, ConditionSensorType)> GetSensorsIds()
     {
-        return new List<(string, EvaluationSensorType)> { (SensorId, EvaluationSensorType.Binary) };
+        return new List<(string, ConditionSensorType)> { (SensorId, ConditionSensorType.Binary) };
     }
 }

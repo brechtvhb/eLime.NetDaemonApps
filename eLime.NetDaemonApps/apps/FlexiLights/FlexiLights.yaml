@@ -1,6 +1,7 @@
 ﻿eLime.netDaemonApps.Config.FlexLightConfig:
   rooms:
   - name: "Toilet +1"
+    enabled: true
     autoTransition: true
     #autoTransitionInput: input_boolean.auto_transition
     illuminanceThreshold: 15 #lux
@@ -36,7 +37,7 @@
         sceneAction: TurnOn
         transitionDuration: "00:00:02.5"
       turnOffAfterIfTriggeredBySwitch: "02:00:00"
-      turnOffAfterIfTriggeredByMotionSensor: "00:02:00"
+      turnOffAfterIfTriggeredByMotionSensor: "00:00:10"
     - name : evening
       conditions:
       - binary: binary_sensor.operating_mode_evening_to_midnight
@@ -54,7 +55,7 @@
       #- light: light.toilet_1
       #  lightAction: TurnOn
       turnOffAfterIfTriggeredBySwitch: "01:00:00"
-      turnOffAfterIfTriggeredByMotionSensor: "00:02:00"
+      turnOffAfterIfTriggeredByMotionSensor: "00:00:10"
     doubleClickActions:
     - executeOffActions: true
     longClickActions:

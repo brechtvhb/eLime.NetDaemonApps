@@ -1,7 +1,8 @@
-﻿using eLime.netDaemonApps.Config.FlexiLights;
+﻿using eLime.NetDaemonApps.Config.FlexiLights;
 using eLime.NetDaemonApps.Domain.Lights;
+using Action = eLime.NetDaemonApps.Domain.Rooms.Actions.Action;
 
-namespace eLime.NetDaemonApps.Domain.Rooms.Actions;
+namespace eLime.NetDaemonApps.Domain.Actions;
 
 public abstract class LightAction : Action
 {
