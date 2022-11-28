@@ -4,7 +4,7 @@ using System.Reactive.Subjects;
 
 namespace eLime.NetDaemonApps.Tests.Mocks;
 
-public class HaContextMockBase : IHaContext, IHaContextMock
+public class HaContextMockBase : IHaContext
 {
     public Dictionary<string, EntityState> _entityStates { get; } = new();
     public Subject<Event> EventsSubject { get; } = new();
@@ -28,9 +28,9 @@ public class HaContextMockBase : IHaContext, IHaContextMock
 
     public IObservable<StateChange> StateAllChanges() => StateAllChangeSubject;
 
-    public void TriggerStateChange(Entity entity, string newStatevalue, object? attributes = null)
+    public void TriggerStateChange(Entity entity, string newStateValue, object? attributes = null)
     {
-        var newState = new EntityState { State = newStatevalue };
+        var newState = new EntityState { State = newStateValue };
         if (attributes != null) newState = newState.WithAttributes(attributes);
 
         TriggerStateChange(entity.EntityId, newState);

@@ -26,4 +26,8 @@
     <ProjectReference Include="..\eLime.NetDaemonApps\eLime.NetDaemonApps.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Mocks\NSubstitute\" />
+  </ItemGroup>
+
 </Project>

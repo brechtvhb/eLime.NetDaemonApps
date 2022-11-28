@@ -5,7 +5,7 @@ using System.Reactive.Subjects;
 
 namespace eLime.NetDaemonApps.Tests.Mocks.Moq;
 
-public class HaContextMock : Mock<HaContextMockBase>, IHaContextMock
+public class HaContextMock : Mock<HaContextMockBase>
 {
     public HaContextMock()
     {

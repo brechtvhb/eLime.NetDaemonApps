@@ -3,6 +3,7 @@
 
 using eLime.netDaemonApps.Config;
 using eLime.NetDaemonApps.Domain.Rooms;
+using NetDaemon.Extensions.MqttEntityManager;
 using System.Collections.Generic;
 using System.Reactive.Concurrency;
 using System.Threading;
@@ -15,14 +16,16 @@ public class FlexiLights : IAsyncInitializable, IAsyncDisposable
 {
     private readonly IHaContext _ha;
     private readonly IScheduler _scheduler;
+    private readonly IMqttEntityManager _mqttEntityManager;
     private readonly ILogger<FlexiLights> _logger;
     private readonly FlexLightConfig _config;
     private CancellationToken _ct;
     public List<Room> Rooms { get; set; } = new();
-    public FlexiLights(IHaContext ha, IScheduler scheduler, IAppConfig<FlexLightConfig> config, ILogger<FlexiLights> logger)
+    public FlexiLights(IHaContext ha, IScheduler scheduler, IAppConfig<FlexLightConfig> config, IMqttEntityManager mqttEntityManager, ILogger<FlexiLights> logger)
     {
         _ha = ha;
         _scheduler = scheduler;
+        _mqttEntityManager = mqttEntityManager;
         _logger = logger;
         _config = config.Value;
     }
@@ -34,7 +37,7 @@ public class FlexiLights : IAsyncInitializable, IAsyncDisposable
         {
             foreach (var roomConfig in _config.Rooms)
             {
-                var room = new Room(_ha, _logger, _scheduler, roomConfig);
+                var room = new Room(_ha, _logger, _scheduler, _mqttEntityManager, roomConfig);
                 Rooms.Add(room);
                 room.Guard();
             }
