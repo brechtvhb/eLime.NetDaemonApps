@@ -1,6 +1,6 @@
 ﻿using eLime.NetDaemonApps.Domain.BinarySensors;
 using eLime.NetDaemonApps.Domain.Lights;
-using eLime.NetDaemonApps.Tests.Mocks.Moq;
+using eLime.NetDaemonApps.Domain.Scenes;
 using Moq;
 using NetDaemon.HassModel.Entities;
 
@@ -17,48 +17,6 @@ public static class AppTestContextExtensions
 
     public static IFromState ChangeStateFor(this AppTestContext ctx, string entityId) => new StateChangeContext(ctx, entityId);
 
-    public static T? GetEntity<T>(this AppTestContext ctx, string entityId) where T : Entity => Activator.CreateInstance(typeof(T), ctx.HaContext, entityId) as T;
-
-    public static T? GetEntity<T>(this HaContextMock ctx, string entityId) where T : Entity => Activator.CreateInstance(typeof(T), ctx.HaContext, entityId) as T;
-
-
-    public static T? GetEntity<T>(this AppTestContext ctx, string entityId, string state) where T : Entity
-
-    {
-        var instance = Activator.CreateInstance(typeof(T), ctx.HaContext, entityId) as T;
-        ctx.HaContextMock.TriggerStateChange(instance, state);
-        return instance;
-    }
-
-    public static T? GetEntity<T>(this HaContextMock ctx, string entityId, string state) where T : Entity
-
-    {
-        var instance = Activator.CreateInstance(typeof(T), ctx.HaContext, entityId) as T;
-        ctx.TriggerStateChange(instance, state);
-        return instance;
-    }
-
-    public static void VerifyCallService(this AppTestContext ctx, string serviceCall, string entityId, Func<Times> times, object? data = null)
-    {
-        var domain = serviceCall[..serviceCall.IndexOf(".", StringComparison.InvariantCultureIgnoreCase)];
-        var service = serviceCall[(serviceCall.IndexOf(".", StringComparison.InvariantCultureIgnoreCase) + 1)..];
-
-        ctx.HaContextMock.Verify(
-            c => c.CallService(domain, service, It.Is<ServiceTarget>(s => Match(entityId, s)), data),
-            times
-        );
-    }
-
-    public static void VerifyCallService(this AppTestContext ctx, string serviceCall, string entityId, Times times, object? data = null)
-    {
-        var domain = serviceCall[..serviceCall.IndexOf(".", StringComparison.InvariantCultureIgnoreCase)];
-        var service = serviceCall[(serviceCall.IndexOf(".", StringComparison.InvariantCultureIgnoreCase) + 1)..];
-
-        ctx.HaContextMock.Verify(
-            c => c.CallService(domain, service, It.Is<ServiceTarget>(s => Match(entityId, s)), data),
-            times
-        );
-    }
 
     public static void VerifyEventRaised(this AppTestContext ctx, string eventType, Func<Times> times, object? data = null)
     {
@@ -67,39 +25,47 @@ public static class AppTestContextExtensions
 
     public static void VerifyLightTurnOff(this AppTestContext ctx, Light entity, Func<Times> times)
     {
-        ctx.VerifyCallService("light.turn_off", entity.EntityId, times, new LightTurnOffParameters());
+        ctx.HaContextMock.Verify(c => c.CallService("light", "turn_off", It.Is<ServiceTarget>(s => Match(entity.EntityId, s)), It.IsAny<LightTurnOffParameters>()), times);
     }
 
     public static void VerifyLightTurnOff(this AppTestContext ctx, Light entity, Times times)
     {
-        ctx.VerifyCallService("light.turn_off", entity.EntityId, times, new LightTurnOffParameters());
+        ctx.HaContextMock.Verify(c => c.CallService("light", "light", It.Is<ServiceTarget>(s => Match(entity.EntityId, s)), It.IsAny<LightTurnOffParameters>()), times);
     }
 
     public static void VerifyLightTurnOn(this AppTestContext ctx, Light entity, Func<Times> times)
     {
-        ctx.VerifyCallService("light.turn_on", entity.EntityId, times, new LightTurnOnParameters());
+        ctx.HaContextMock.Verify(c => c.CallService("light", "turn_on", It.Is<ServiceTarget>(s => Match(entity.EntityId, s)), It.IsAny<LightTurnOnParameters>()), times);
     }
 
     public static void VerifyLightTurnOn(this AppTestContext ctx, Light entity, Times times)
     {
-        ctx.VerifyCallService("light.turn_on", entity.EntityId, times, new LightTurnOnParameters());
+        ctx.HaContextMock.Verify(c => c.CallService("light", "turn_on", It.Is<ServiceTarget>(s => Match(entity.EntityId, s)), It.IsAny<LightTurnOnParameters>()), times);
+    }
+
+    public static void VerifyLightTurnOn(this AppTestContext ctx, Light entity, LightTurnOnParameters parameters, Func<Times> times)
+    {
+        ctx.HaContextMock.Verify(c => c.CallService("light", "turn_on", It.Is<ServiceTarget>(s => Match(entity.EntityId, s)), parameters), times);
+    }
+
+    public static void VerifyLightTurnOn(this AppTestContext ctx, Light entity, LightTurnOnParameters parameters, Times times)
+    {
+        ctx.HaContextMock.Verify(c => c.CallService("light", "turn_on", It.Is<ServiceTarget>(s => Match(entity.EntityId, s)), parameters), times);
     }
 
     public static void VerifySwitchTurnOff(this AppTestContext ctx, Switch entity, Func<Times> times)
     {
-        ctx.VerifyCallService("switch.turn_off", entity.EntityId, times);
+        ctx.HaContextMock.Verify(c => c.CallService("switch", "turn_off", It.Is<ServiceTarget>(s => Match(entity.EntityId, s)), null), times);
     }
 
     public static void VerifySwitchTurnOn(this AppTestContext ctx, Switch entity, Func<Times> times)
     {
-        ctx.VerifyCallService("switch.turn_on", entity.EntityId, times);
+        ctx.HaContextMock.Verify(c => c.CallService("switch", "turn_on", It.Is<ServiceTarget>(s => Match(entity.EntityId, s)), null), times);
     }
 
-    public static IWithState WithEntityState<T>(this AppTestContext ctx, string entityId, T state)
+    public static void VerifySceneTurnOn(this AppTestContext ctx, Scene entity, SceneTurnOnParameters parameters, Func<Times> times)
     {
-        var stateChangeContext = new StateChangeContext(ctx, entityId);
-        stateChangeContext.WithEntityState(entityId, state);
-        return stateChangeContext;
+        ctx.HaContextMock.Verify(c => c.CallService("scene", "turn_on", It.Is<ServiceTarget>(s => Match(entity.SceneId, s)), parameters), times);
     }
 
     private static bool Match(string s, ServiceTarget x)

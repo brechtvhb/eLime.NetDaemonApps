@@ -3,7 +3,7 @@ namespace eLime.NetDaemonApps.Config.FlexiLights;
 public class RoomConfig
 {
     public string Name { get; set; } //OK
-    public bool Enabled { get; set; }
+    public bool? Enabled { get; set; }
     public IList<string> Lights { get; set; }
     public bool AutoTransition { get; set; }
     public IList<string>? IlluminanceSensors { get; set; }

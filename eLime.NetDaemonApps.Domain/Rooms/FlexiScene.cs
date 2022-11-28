@@ -32,7 +32,7 @@ public class FlexiScene
             _conditions = config.Conditions.ConvertToDomainModel(),
             _actions = config.Actions.ConvertToDomainModel(haContext),
             TurnOffAfterIfTriggeredByMotionSensor = config.TurnOffAfterIfTriggeredByMotionSensor ?? TimeSpan.FromMinutes(5),
-            TurnOffAfterIfTriggeredBySwitch = config.TurnOffAfterIfTriggeredBySwitch ?? TimeSpan.FromDays(1)
+            TurnOffAfterIfTriggeredBySwitch = config.TurnOffAfterIfTriggeredBySwitch ?? TimeSpan.FromHours(8)
         };
 
         return flexiScene;

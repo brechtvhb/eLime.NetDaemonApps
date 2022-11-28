@@ -14,9 +14,10 @@ public class FlexiScenes
         _flexiScenes.AddRange(flexiScenes);
     }
 
-    internal IReadOnlyList<FlexiScene> All => _flexiScenes.AsReadOnly();
+    public IReadOnlyList<FlexiScene> All => _flexiScenes.AsReadOnly();
     internal FlexiScene? GetSceneThatShouldActivate(IReadOnlyCollection<Entity> flexiSceneSensors) => All.FirstOrDefault(x => x.CanActivate(flexiSceneSensors));
-    internal FlexiScene? Current => All.SingleOrDefault(x => x.Name == CurrentFlexiScene);
+    public FlexiScene? Current => All.SingleOrDefault(x => x.Name == CurrentFlexiScene);
+    public FlexiScene? GetByName(String name) => _flexiScenes.SingleOrDefault(x => x.Name == name);
 
     internal FlexiScene Next
     {
@@ -30,13 +31,13 @@ public class FlexiScenes
     }
 
 
-    public FlexiScene SetCurrentScene(FlexiScene scene)
+    internal FlexiScene SetCurrentScene(FlexiScene scene)
     {
         CurrentFlexiScene = scene.Name;
         return Current;
     }
 
-    public void DeactivateScene()
+    internal void DeactivateScene()
     {
         CurrentFlexiScene = null;
     }
