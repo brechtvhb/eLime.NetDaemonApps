@@ -287,19 +287,19 @@ public class Room
 
         _mqttEntityManager.PrepareCommandSubscriptionAsync(switchName)
             .RunSync()
-            .Subscribe(state =>
+            .SubscribeAsync(async state =>
             {
                 _logger.LogDebug("Setting flexi lights state for room '{room}' to {state}.", Name, state);
                 if (state == "OFF")
                 {
                     _logger.LogDebug("Clearing flexi light state because it was disabled for room '{room}'.", Name);
                     ClearAutoTurnOff();
-                    RemoveIgnorePresence().RunSync();
+                    await RemoveIgnorePresence();
                     FlexiScenes.DeactivateScene();
                     InitiatedBy = InitiatedBy.NoOne;
-                    UpdateStateInHomeAssistant().RunSync();
+                    await UpdateStateInHomeAssistant();
                 }
-                _mqttEntityManager.SetStateAsync(switchName, state).RunSync();
+                await _mqttEntityManager.SetStateAsync(switchName, state);
             });
     }
 
