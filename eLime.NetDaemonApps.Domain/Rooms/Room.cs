@@ -290,6 +290,15 @@ public class Room
             .Subscribe(state =>
             {
                 _logger.LogDebug("Setting flexi lights state for room '{room}' to {state}.", Name, state);
+                if (state == "OFF")
+                {
+                    _logger.LogDebug("Clearing flexi light state because it was disabled for room '{room}'.", Name);
+                    ClearAutoTurnOff();
+                    RemoveIgnorePresence().RunSync();
+                    FlexiScenes.DeactivateScene();
+                    InitiatedBy = InitiatedBy.NoOne;
+                    UpdateStateInHomeAssistant().RunSync();
+                }
                 _mqttEntityManager.SetStateAsync(switchName, state).RunSync();
             });
     }
@@ -456,7 +465,7 @@ public class Room
 
     private void ClearAutoTurnOff()
     {
-        _logger.LogDebug($"Off actions will no longer be executed. Probably because the OFF actions were just executed or a motion sensor is active.");
+        _logger.LogTrace($"Off actions will no longer be executed. Probably because the OFF actions were just executed or a motion sensor is active.");
         TurnOffAt = null;
         TurnOffSchedule?.Dispose();
     }
