@@ -9,6 +9,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Mocks\NSubstitute\**" />
+    <EmbeddedResource Remove="Mocks\NSubstitute\**" />
+    <None Remove="Mocks\NSubstitute\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="FakeItEasy" Version="7.3.1" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.3.2" />
     <PackageReference Include="Microsoft.Reactive.Testing" Version="5.0.0" />
@@ -24,10 +30,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\eLime.NetDaemonApps\eLime.NetDaemonApps.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Mocks\NSubstitute\" />
   </ItemGroup>
 
 </Project>
