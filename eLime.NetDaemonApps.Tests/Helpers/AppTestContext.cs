@@ -2,6 +2,7 @@
 using Microsoft.Reactive.Testing;
 using NetDaemon.HassModel;
 using NetDaemon.HassModel.Entities;
+using Switch = eLime.NetDaemonApps.Domain.BinarySensors.Switch;
 
 namespace eLime.NetDaemonApps.Tests.Helpers;
 
@@ -44,6 +45,30 @@ public class AppTestContext
     public void TriggerStateChange(Entity entity, string newStateValue, object? attributes = null)
     {
         HaContextMock.TriggerStateChange(entity, newStateValue, attributes);
+    }
+
+    public void SimulateClick(Switch @switch)
+    {
+        TriggerStateChange(@switch, "on");
+        TriggerStateChange(@switch, "off");
+    }
+
+    public void SimulateDoubleClick(Switch @switch)
+    {
+        SimulateClick(@switch);
+        SimulateClick(@switch);
+    }
+    public void SimulateTripleClick(Switch @switch)
+    {
+        SimulateClick(@switch);
+        SimulateClick(@switch);
+        SimulateClick(@switch);
+    }
+    public async Task SimulateLongClick(Switch @switch, TimeSpan duration)
+    {
+        TriggerStateChange(@switch, "on");
+        await Task.Delay(duration);
+        TriggerStateChange(@switch, "off");
     }
 
     public void TriggerStateChange(Entity entity, EntityState newState)

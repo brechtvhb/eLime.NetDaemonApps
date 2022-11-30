@@ -6,6 +6,7 @@ public class RoomConfig
     public bool? Enabled { get; set; }
     public IList<string> Lights { get; set; }
     public bool AutoTransition { get; set; }
+    public bool AutoTransitionTurnOffIfNoValidSceneFound { get; set; }
     public IList<string>? IlluminanceSensors { get; set; }
     public int? IlluminanceThreshold { get; set; }
     public bool AutoSwitchOffAboveIlluminance { get; set; }

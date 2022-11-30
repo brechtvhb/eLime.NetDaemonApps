@@ -6,20 +6,20 @@ namespace eLime.NetDaemonApps.Domain.Helper;
 
 internal static class ConditionExtensions
 {
-    internal static List<ICondition> ConvertToDomainModel(this IList<ConditionConfig>? evaluations)
+    internal static List<ICondition> ConvertToDomainModel(this IList<ConditionConfig>? conditions)
     {
-        var evaluationList = new List<ICondition>();
+        var conditionList = new List<ICondition>();
 
-        if (evaluations == null || !evaluations.Any())
-            return evaluationList;
+        if (conditions == null || !conditions.Any())
+            return conditionList;
 
-        foreach (var evaluationConfig in evaluations)
+        foreach (var evaluationConfig in conditions)
         {
             var action = evaluationConfig.ConvertToDomainModel();
-            evaluationList.Add(action);
+            conditionList.Add(action);
         }
 
-        return evaluationList;
+        return conditionList;
     }
 
     internal static ICondition ConvertToDomainModel(this ConditionConfig config)

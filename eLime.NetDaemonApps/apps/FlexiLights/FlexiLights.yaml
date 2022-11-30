@@ -3,9 +3,7 @@
   - name: "Toilet +1"
     enabled: true
     autoTransition: true
-    #autoTransitionInput: input_boolean.auto_transition
     illuminanceThreshold: 15 #lux
-    #illuminanceThresholdInput: input_number.illuminance_threshold
     autoSwitchOffAboveIlluminance: true # usefull when using outdoor illuminance sensor
     ignorePresenceAfterOffDuration: "00:00:05"
     clickInterval: "00:00:00.350"
@@ -38,10 +36,31 @@
         transitionDuration: "00:00:02.5"
       turnOffAfterIfTriggeredBySwitch: "02:00:00"
       turnOffAfterIfTriggeredByMotionSensor: "00:00:10"
+      nextFlexiScenes: [ "evening" ]
     - name : evening
       conditions:
       - binary: binary_sensor.operating_mode_evening_to_midnight
         binaryMethod: False
+      actions:
+      - switch: switch.adaptive_lighting_toiilet_1
+        switchAction: TurnOff
+      - light: light.toilet_1_2 #hue_color_spot_1
+        lightAction: TurnOn
+        transitionDuration: "00:00:02"
+        autoTransitionDuration: "00:01:00"
+        brightness: 100%
+        color:
+          mireds: 500
+      #- light: light.toilet_1
+      #  lightAction: TurnOn
+      turnOffAfterIfTriggeredBySwitch: "01:00:00"
+      turnOffAfterIfTriggeredByMotionSensor: "00:00:10"
+      nextFlexiScenes: [ "default" ]
+    - name : evening_tv
+      conditions:
+      - binary: binary_sensor.operating_mode_evening_to_midnight
+        binaryMethod: False
+      - binary: binary_sensor.watching_tv
       actions:
       - switch: switch.adaptive_lighting_toiilet_1
         switchAction: TurnOff
