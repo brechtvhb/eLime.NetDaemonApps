@@ -1,6 +1,7 @@
 ﻿using eLime.NetDaemonApps.Domain.Scenes;
+using Action = eLime.NetDaemonApps.Domain.Rooms.Actions.Action;
 
-namespace eLime.NetDaemonApps.Domain.Rooms.Actions;
+namespace eLime.NetDaemonApps.Domain.Actions;
 
 public class SceneTurnOnAction : Action
 {

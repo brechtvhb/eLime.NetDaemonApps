@@ -63,6 +63,11 @@ public static class AppTestContextExtensions
         ctx.HaContextMock.Verify(c => c.CallService("switch", "turn_on", It.Is<ServiceTarget>(s => Match(entity.EntityId, s)), null), times);
     }
 
+    public static void VerifySceneTurnOn(this AppTestContext ctx, Scene entity, Func<Times> times)
+    {
+        ctx.HaContextMock.Verify(c => c.CallService("scene", "turn_on", It.Is<ServiceTarget>(s => Match(entity.SceneId, s)), It.IsAny<SceneTurnOnParameters>()), times);
+    }
+
     public static void VerifySceneTurnOn(this AppTestContext ctx, Scene entity, SceneTurnOnParameters parameters, Func<Times> times)
     {
         ctx.HaContextMock.Verify(c => c.CallService("scene", "turn_on", It.Is<ServiceTarget>(s => Match(entity.SceneId, s)), parameters), times);

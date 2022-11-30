@@ -22,17 +22,18 @@ public class Room
     private EnabledSwitch EnabledSwitch { get; set; }
 
     public bool AutoTransition { get; }
+    public bool AutoTransitionTurnOffIfNoValidSceneFound { get; }
     private readonly DebounceDispatcher AutoTransitionDebounceDispatcher = new(TimeSpan.FromSeconds(1));
 
     public InitialClickAfterMotionBehaviour InitialClickAfterMotionBehaviour { get; }
     public Int32? IlluminanceThreshold { get; }
     public bool AutoSwitchOffAboveIlluminance { get; }
     public TimeSpan IgnorePresenceAfterOffDuration { get; }
-    private DateTime? TurnOffAt { get; set; }
+    public DateTime? TurnOffAt { get; private set; }
     private IDisposable? TurnOffSchedule { get; set; }
     private DateTime? IgnorePresenceUntil { get; set; }
     private IDisposable? ClearIgnorePresenceSchedule { get; set; }
-    private InitiatedBy InitiatedBy { get; set; } = InitiatedBy.NoOne;
+    public InitiatedBy InitiatedBy { get; private set; } = InitiatedBy.NoOne;
 
     private readonly List<BinarySensor> _offSensors = new();
     public IReadOnlyCollection<BinarySensor> OffSensors => _offSensors.AsReadOnly();
@@ -145,6 +146,7 @@ public class Room
         }
 
         AutoTransition = config.AutoTransition;
+        AutoTransitionTurnOffIfNoValidSceneFound = config.AutoTransitionTurnOffIfNoValidSceneFound;
         InitialClickAfterMotionBehaviour = config.InitialClickAfterMotionBehaviour == Config.FlexiLights.InitialClickAfterMotionBehaviour.ChangeOffDurationOnly ? InitialClickAfterMotionBehaviour.ChangeOffDurationOnly : InitialClickAfterMotionBehaviour.ChangeOFfDurationAndGoToNextAutomation;
         IlluminanceThreshold = config.IlluminanceThreshold;
         AutoSwitchOffAboveIlluminance = config.AutoSwitchOffAboveIlluminance;
@@ -305,7 +307,14 @@ public class Room
                 FlexiScenes.SetCurrentScene(flexiScene);
         }
 
-        ScheduleTurnOffAt();
+        if (!String.IsNullOrWhiteSpace(EnabledSwitch.Attributes?.InitialFlexiScene))
+        {
+            var flexiScene = FlexiScenes.GetByName(EnabledSwitch.Attributes.InitialFlexiScene);
+            if (flexiScene != null)
+                FlexiScenes.SetCurrentScene(flexiScene);
+        }
+
+        await ScheduleTurnOffAt();
         await ScheduleClearIgnorePresence();
 
         _logger.LogDebug("Retrieved flexilight state from Home assistant for room '{room}'.", Name);
@@ -323,6 +332,7 @@ public class Room
             TurnOffAt = TurnOffAt?.ToString("O"),
             InitiatedBy = InitiatedBy.ToString(),
             CurrentFlexiScene = FlexiScenes.Current?.Name,
+            InitialFlexiScene = FlexiScenes.Initial?.Name,
             LastUpdated = DateTime.Now.ToString("O")
         };
         await _mqttEntityManager.SetAttributesAsync(EnabledSwitch.EntityId, attributes);
@@ -339,10 +349,10 @@ public class Room
         return false;
     }
 
-    private async Task ExecuteFlexiScene(FlexiScene flexiScene, InitiatedBy initiatedBy, Boolean autoTransition = false)
+    private async Task ExecuteFlexiScene(FlexiScene flexiScene, InitiatedBy initiatedBy, Boolean autoTransition = false, Boolean overwriteInitialScene = true)
     {
         _logger.LogInformation($"Will execute flexi scene {flexiScene.Name}. Triggered by {initiatedBy}.");
-        FlexiScenes.SetCurrentScene(flexiScene);
+        FlexiScenes.SetCurrentScene(flexiScene, overwriteInitialScene);
         InitiatedBy = initiatedBy;
 
         await ExecuteActions(flexiScene.Actions, autoTransition);
@@ -513,7 +523,7 @@ public class Room
         else
         {
             var nextFlexiScene = FlexiScenes.Next;
-            await ExecuteFlexiScene(nextFlexiScene, InitiatedBy.Switch);
+            await ExecuteFlexiScene(nextFlexiScene, InitiatedBy.Switch, false, false);
 
             await SetTurnOffAt(nextFlexiScene);
         }
@@ -624,7 +634,7 @@ public class Room
         if (!IsRoomEnabled())
             return;
 
-        if (AutoSwitchOffAboveIlluminance && FlexiScenes.Current != null)
+        if (AutoSwitchOffAboveIlluminance && IlluminanceSensors.All(x => x.State > IlluminanceThreshold) && FlexiScenes.Current != null)
         {
             _logger.LogDebug($"Executed off actions. Because a motion sensor exceeded the illuminance threshold ({e.New.State} lux)");
             await ExecuteOffActions();
@@ -653,8 +663,12 @@ public class Room
         }
         else
         {
-            //TODO: add setting to allow turning off
-            _logger.LogInformation($"Auto transition was triggered but no flexi scene was found to transition to.");
+            if (AutoTransitionTurnOffIfNoValidSceneFound)
+            {
+                await ExecuteOffActions();
+            }
+            else
+                _logger.LogInformation($"Auto transition was triggered but no flexi scene was found to transition to.");
         }
 
         await UpdateStateInHomeAssistant();

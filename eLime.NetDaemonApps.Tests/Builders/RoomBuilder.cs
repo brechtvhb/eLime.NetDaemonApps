@@ -3,6 +3,7 @@ using eLime.NetDaemonApps.Domain.Rooms;
 using eLime.NetDaemonApps.Tests.Helpers;
 using Microsoft.Extensions.Logging;
 using NetDaemon.Extensions.MqttEntityManager;
+using InitialClickAfterMotionBehaviour = eLime.NetDaemonApps.Config.FlexiLights.InitialClickAfterMotionBehaviour;
 
 namespace eLime.NetDaemonApps.Tests.Builders
 {
@@ -176,7 +177,7 @@ namespace eLime.NetDaemonApps.Tests.Builders
                     Name = "default",
                     Actions = new List<ActionConfig>
                     {
-                        new() {Scene = "SOHO", TransitionDuration = TimeSpan.FromSeconds(5)}
+                        new() {Scene = "scene.SOHO", TransitionDuration = TimeSpan.FromSeconds(5)}
                     },
                 },
             };
@@ -197,23 +198,144 @@ namespace eLime.NetDaemonApps.Tests.Builders
                 new()
                 {
                     Name = "morning",
-                    Conditions = new List<ConditionConfig> {new() {Binary = "operating_mode.morning"}},
+                    Conditions = new List<ConditionConfig> {new() {Binary = "binary_sensor.operating_mode_morning"}},
                     Actions = new List<ActionConfig> {new() {LightAction = LightAction.TurnOn, Light = "light.morning", TransitionDuration = TimeSpan.FromSeconds(2), AutoTransitionDuration = TimeSpan.FromSeconds(10)}},
-                    TurnOffAfterIfTriggeredByMotionSensor = TimeSpan.FromMinutes(15)
+                    TurnOffAfterIfTriggeredByMotionSensor = TimeSpan.FromMinutes(15),
+                    TurnOffAfterIfTriggeredBySwitch = TimeSpan.FromHours(2)
                 },
                 new()
                 {
                     Name = "day",
-                    Conditions = new List<ConditionConfig> {new() {Binary = "operating_mode.day"}},
+                    Conditions = new List<ConditionConfig> {new() {Binary = "binary_sensor.operating_mode_day"}},
                     Actions = new List<ActionConfig> {new() {LightAction = LightAction.TurnOn, Light = "light.day", TransitionDuration = TimeSpan.FromSeconds(2), AutoTransitionDuration = TimeSpan.FromSeconds(10) } },
-                    TurnOffAfterIfTriggeredByMotionSensor = TimeSpan.FromMinutes(5)
+                    TurnOffAfterIfTriggeredByMotionSensor = TimeSpan.FromMinutes(5),
+                    TurnOffAfterIfTriggeredBySwitch = TimeSpan.FromHours(4)
                 },
                 new()
                 {
                     Name = "evening",
-                    Conditions = new List<ConditionConfig> {new() {Binary = "operating_mode.evening"}},
+                    Conditions = new List<ConditionConfig> {new() {Binary = "binary_sensor.operating_mode_evening"}},
                     Actions = new List<ActionConfig> {new() {LightAction = LightAction.TurnOn, Light = "light.evening", TransitionDuration = TimeSpan.FromSeconds(2), AutoTransitionDuration = TimeSpan.FromSeconds(10) } },
-                    TurnOffAfterIfTriggeredByMotionSensor = TimeSpan.FromMinutes(60)
+                    TurnOffAfterIfTriggeredByMotionSensor = TimeSpan.FromMinutes(60),
+                    TurnOffAfterIfTriggeredBySwitch = TimeSpan.FromHours(1)
+                }
+            };
+
+            _config.OffActions = new List<ActionConfig>
+            {
+                new() {LightAction = LightAction.TurnOff, Light = "light.morning"},
+                new() {LightAction = LightAction.TurnOff, Light = "light.day"},
+                new() {LightAction = LightAction.TurnOff, Light = "light.evening"}
+            };
+
+            return this;
+        }
+
+        public RoomBuilder WithMultipleFlexiScenesLimitedNext()
+        {
+            _config.FlexiScenes = new List<FlexiSceneConfig>
+            {
+                new()
+                {
+                    Name = "morning",
+                    Conditions = new List<ConditionConfig> {new() {Binary = "binary_sensor.operating_mode_morning"}},
+                    Actions = new List<ActionConfig> {new() {LightAction = LightAction.TurnOn, Light = "light.morning", TransitionDuration = TimeSpan.FromSeconds(2), AutoTransitionDuration = TimeSpan.FromSeconds(10)}},
+                    TurnOffAfterIfTriggeredByMotionSensor = TimeSpan.FromMinutes(15),
+                    TurnOffAfterIfTriggeredBySwitch = TimeSpan.FromHours(2),
+                },
+                new()
+                {
+                    Name = "day",
+                    Conditions = new List<ConditionConfig> {new() {Binary = "binary_sensor.operating_mode_day"}},
+                    Actions = new List<ActionConfig> {new() {LightAction = LightAction.TurnOn, Light = "light.day", TransitionDuration = TimeSpan.FromSeconds(2), AutoTransitionDuration = TimeSpan.FromSeconds(10) } },
+                    TurnOffAfterIfTriggeredByMotionSensor = TimeSpan.FromMinutes(5),
+                    TurnOffAfterIfTriggeredBySwitch = TimeSpan.FromHours(4),
+                    NextFlexiScenes = new List<string> { "morning" }
+                },
+                new()
+                {
+                    Name = "evening",
+                    Conditions = new List<ConditionConfig> {new() {Binary = "binary_sensor.operating_mode_evening"}},
+                    Actions = new List<ActionConfig> {new() {LightAction = LightAction.TurnOn, Light = "light.evening", TransitionDuration = TimeSpan.FromSeconds(2), AutoTransitionDuration = TimeSpan.FromSeconds(10) } },
+                    TurnOffAfterIfTriggeredByMotionSensor = TimeSpan.FromMinutes(60),
+                    TurnOffAfterIfTriggeredBySwitch = TimeSpan.FromHours(1)
+                }
+            };
+
+            _config.OffActions = new List<ActionConfig>
+            {
+                new() {LightAction = LightAction.TurnOff, Light = "light.morning"},
+                new() {LightAction = LightAction.TurnOff, Light = "light.day"},
+                new() {LightAction = LightAction.TurnOff, Light = "light.evening"}
+            };
+
+            return this;
+        }
+
+        public RoomBuilder WithComplexConditions()
+        {
+            _config.FlexiScenes = new List<FlexiSceneConfig>
+            {
+                new()
+                {
+                    Name = "advent - on vacation",
+                    Conditions = new List<ConditionConfig> {new () {
+                        And =  new List<ConditionConfig>
+                    {
+                        new() { Or = new List<ConditionConfig>()
+                        {
+                            new() {Binary = "binary_sensor.operating_mode_morning"},
+                            new() {Binary = "binary_sensor.operating_mode_evening"}
+                        } },
+                        new() { Binary = "binary_sensor.operating_mode_advent" },
+                        new() { Binary = "binary_sensor.operating_mode_vacation" }
+                    } } },
+                    Actions = new List<ActionConfig>
+                    {
+
+                        new() {Scene = "scene.kevin_mccallister",  TransitionDuration = TimeSpan.FromSeconds(2)}
+                    },
+                },
+                new()
+                {
+                    Name = "morning - advent",
+                    Conditions = new List<ConditionConfig> {new () { And =  new List<ConditionConfig> {new() {Binary = "binary_sensor.operating_mode_morning"}, new() { Binary = "binary_sensor.operating_mode_advent" }} } },
+                    Actions = new List<ActionConfig>
+                    {
+
+                        new() {Scene = "scene.morning", TransitionDuration = TimeSpan.FromSeconds(2)},
+                        new() {LightAction = LightAction.TurnOn, Light = "light.christmas_tree",  TransitionDuration = TimeSpan.FromSeconds(2)}
+                    },
+                },
+                new()
+                {
+                    Name = "morning",
+                    Conditions = new List<ConditionConfig> {new() {Binary = "binary_sensor.operating_mode_morning"}},
+                    Actions = new List<ActionConfig> {new() { Scene = "scene.morning", TransitionDuration = TimeSpan.FromSeconds(2) }},
+                },
+                new()
+                {
+                    Name = "day",
+                    Conditions = new List<ConditionConfig> {new() {Binary = "binary_sensor.operating_mode_day"}},
+                    Actions = new List<ActionConfig> {new() {LightAction = LightAction.TurnOn, Light = "light.day", TransitionDuration = TimeSpan.FromSeconds(2) } },
+                },
+                new()
+                {
+                    Name = "evening - Party",
+                    Conditions = new List<ConditionConfig> {new () { And =  new List<ConditionConfig> {new() {Binary = "binary_sensor.operating_mode_evening"}, new() { Binary = "binary_sensor.operating_mode_party" }} } },
+                    Actions = new List<ActionConfig> {new() {Scene = "scene.party", TransitionDuration = TimeSpan.FromSeconds(2) } },
+                },
+                new()
+                {
+                    Name = "evening - TV",
+                    Conditions = new List<ConditionConfig> {new () { And =  new List<ConditionConfig> {new() {Binary = "binary_sensor.operating_mode_evening"}, new() { Binary = "binary_sensor.watching_tv" }} } },
+                    Actions = new List<ActionConfig> {new() {Scene = "scene.tv", TransitionDuration = TimeSpan.FromSeconds(10) } },
+                },
+                new()
+                {
+                    Name = "evening",
+                    Conditions = new List<ConditionConfig> {new() {Binary = "binary_sensor.operating_mode_evening"}},
+                    Actions = new List<ActionConfig> {new() { Scene = "scene.evening", TransitionDuration = TimeSpan.FromSeconds(2) } },
                 }
             };
 
@@ -233,6 +355,94 @@ namespace eLime.NetDaemonApps.Tests.Builders
 
             return this;
         }
+        public RoomBuilder WithAutoTransitionTurnOfIfNoValidSceneFound()
+        {
+            _config.AutoTransitionTurnOffIfNoValidSceneFound = true;
+            return this;
+        }
+        public RoomBuilder WithIlluminanceSensor()
+        {
+            _config.AutoSwitchOffAboveIlluminance = true;
+            _config.IlluminanceThreshold = 30;
+            _config.IlluminanceSensors = new List<string>
+            {
+                "sensor.illuminance"
+            };
+
+            return this;
+        }
+
+        public RoomBuilder WithIlluminanceSensors()
+        {
+            _config.AutoSwitchOffAboveIlluminance = true;
+            _config.IlluminanceThreshold = 30;
+            _config.IlluminanceSensors = new List<string>
+            {
+                "sensor.illuminance1",
+                "sensor.illuminance2",
+            };
+
+            return this;
+        }
+
+
+        public RoomBuilder WithSwitch()
+        {
+            _config.Switches = new List<string>
+            {
+                "binary_sensor.switch"
+            };
+
+            _config.ClickInterval = TimeSpan.FromMilliseconds(10);
+            _config.DoubleClickActions = new List<ActionConfig>
+            {
+                new() {Light = "light.day", LightAction = LightAction.TurnOff},
+            };
+
+            _config.TripleClickActions = new List<ActionConfig>
+            {
+                new() {Light = "light.evening", LightAction = LightAction.TurnOff},
+            };
+
+            _config.LongClickDuration = TimeSpan.FromMilliseconds(20);
+            _config.LongClickActions = new List<ActionConfig>
+            {
+                new() {Light = "light.morning", LightAction = LightAction.TurnOff},
+            };
+            return this;
+        }
+
+        public RoomBuilder WithUberLongClickActions()
+        {
+            _config.UberLongClickDuration = TimeSpan.FromMilliseconds(50);
+            _config.UberLongClickActions = new List<ActionConfig>
+            {
+                new() {ExecuteOffActions = true},
+            };
+
+            return this;
+        }
+
+        public RoomBuilder WithOffSensor()
+        {
+            _config.OffSensors = new List<string>
+            {
+                "binary_sensor.triple_click"
+            };
+
+            return this;
+        }
+
+
+        public RoomBuilder WithSwitchChangeOFfDurationAndGoToNextAutomationAtInitialOnClickAfterMotion()
+        {
+            _config.InitialClickAfterMotionBehaviour = InitialClickAfterMotionBehaviour.ChangeOFfDurationAndGoToNextAutomation;
+
+
+            return this;
+        }
+
+
 
         public Room Build()
         {

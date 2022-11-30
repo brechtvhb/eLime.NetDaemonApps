@@ -10,7 +10,7 @@ namespace eLime.NetDaemonApps.Domain.Rooms;
 
 public class FlexiScene
 {
-    public String Name { get; private init; }
+    public String? Name { get; private init; }
 
     private List<ICondition> _conditions = new();
     public IReadOnlyCollection<ICondition> Conditions => _conditions.AsReadOnly();
@@ -20,6 +20,9 @@ public class FlexiScene
 
     public TimeSpan TurnOffAfterIfTriggeredBySwitch { get; private init; }
     public TimeSpan TurnOffAfterIfTriggeredByMotionSensor { get; private init; }
+
+    private List<String> _nextFlexiScenes = new();
+    public IReadOnlyCollection<String> NextFlexiScenes => _nextFlexiScenes.AsReadOnly();
 
     public static FlexiScene Create(IHaContext haContext, FlexiSceneConfig config)
     {
@@ -32,7 +35,8 @@ public class FlexiScene
             _conditions = config.Conditions.ConvertToDomainModel(),
             _actions = config.Actions.ConvertToDomainModel(haContext),
             TurnOffAfterIfTriggeredByMotionSensor = config.TurnOffAfterIfTriggeredByMotionSensor ?? TimeSpan.FromMinutes(5),
-            TurnOffAfterIfTriggeredBySwitch = config.TurnOffAfterIfTriggeredBySwitch ?? TimeSpan.FromHours(8)
+            TurnOffAfterIfTriggeredBySwitch = config.TurnOffAfterIfTriggeredBySwitch ?? TimeSpan.FromHours(8),
+            _nextFlexiScenes = config.NextFlexiScenes?.ToList() ?? new List<string>()
         };
 
         return flexiScene;

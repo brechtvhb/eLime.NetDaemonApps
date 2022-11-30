@@ -23,6 +23,9 @@ public record EnabledSwitchAttributes
     [JsonPropertyName("initiated_by")]
     public string? InitiatedBy { get; init; }
 
+    [JsonPropertyName("initial_flexi_Scene")]
+    public string? InitialFlexiScene { get; init; }
+
     [JsonPropertyName("current_flexi_scene")]
     public string? CurrentFlexiScene { get; init; }
 

@@ -1,5 +1,6 @@
 using eLime.NetDaemonApps.Domain.BinarySensors;
 using eLime.NetDaemonApps.Domain.Lights;
+using eLime.NetDaemonApps.Domain.NumericSensors;
 using eLime.NetDaemonApps.Domain.Rooms;
 using eLime.NetDaemonApps.Domain.Scenes;
 using eLime.NetDaemonApps.Tests.Builders;
@@ -114,7 +115,7 @@ public class FlexiLightTests
     {
         // Arrange
         var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithMultipleFlexiScenes().Build();
-        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "operating_mode.day"), "on");
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
 
         //Act
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
@@ -129,7 +130,7 @@ public class FlexiLightTests
     {
         // Arrange
         var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithMultipleFlexiScenes().Build();
-        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "operating_mode.evening"), "on");
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_evening"), "on");
 
         //Act
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
@@ -158,7 +159,7 @@ public class FlexiLightTests
     {
         // Arrange
         var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithMultipleFlexiScenes().Build();
-        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "operating_mode.day"), "on");
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "off");
 
@@ -170,11 +171,11 @@ public class FlexiLightTests
     }
 
     [TestMethod]
-    public void AutoTurnOff_WithCorrectDuration_TooEarly()
+    public void DoNotAutoTurnOff_WhenTooEarly()
     {
         // Arrange
         var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithMultipleFlexiScenes().Build();
-        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "operating_mode.day"), "on");
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "off");
 
@@ -191,13 +192,13 @@ public class FlexiLightTests
     {
         // Arrange
         var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithMultipleFlexiScenes().WithAutoTransition().Build();
-        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "operating_mode.day"), "on");
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "off");
 
         //Act
-        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "operating_mode.day"), "off");
-        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "operating_mode.evening"), "on");
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "off");
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_evening"), "on");
 
         await Task.Delay(1100); //allow debounce to bounce
 
@@ -205,6 +206,46 @@ public class FlexiLightTests
         Assert.AreEqual("evening", room.FlexiScenes.Current.Name);
         _testCtx.VerifyLightTurnOn(new Light(_testCtx.HaContext, "light.evening"), new LightTurnOnParameters { Transition = 10 }, Moq.Times.Once);
     }
+
+    [TestMethod]
+    public async Task AutoTransition_TurnOffIfNoValidSceneFound()
+    {
+        // Arrange
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithMultipleFlexiScenes().WithAutoTransition().WithAutoTransitionTurnOfIfNoValidSceneFound().Build();
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "off");
+
+        //Act
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "off");
+
+        await Task.Delay(1100); //allow debounce to bounce
+
+        //Assert
+        Assert.IsNull(room.FlexiScenes.Current);
+        _testCtx.VerifyLightTurnOff(new Light(_testCtx.HaContext, "light.day"), Moq.Times.Once);
+    }
+
+
+    [TestMethod]
+    public async Task AutoTransition_DoNotTurnOffIfNoValidSceneFoundWhenNotConfigured()
+    {
+        // Arrange
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithMultipleFlexiScenes().WithAutoTransition().Build();
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "off");
+
+        //Act
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "off");
+
+        await Task.Delay(1100); //allow debounce to bounce
+
+        //Assert
+        Assert.AreEqual("day", room.FlexiScenes.Current.Name);
+        _testCtx.VerifyLightTurnOff(new Light(_testCtx.HaContext, "light.day"), Moq.Times.Never);
+    }
+
 
 
     [TestMethod]
@@ -283,7 +324,8 @@ public class FlexiLightTests
 
         //Act
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
-        await Task.Delay(10);
+
+        await Task.Delay(10); //Allow pulse to pulse
 
         //Assert
         _testCtx.VerifySwitchTurnOn(new Switch(_testCtx.HaContext, "switch.adaptive_lighting"), Moq.Times.Once);
@@ -294,16 +336,472 @@ public class FlexiLightTests
     }
 
     [TestMethod]
-    public async Task Service_Calls_CorrectScene()
+    public void Service_Calls_CorrectScene()
     {
         // Arrange
         var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithSceneActions().Build();
 
         //Act
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
-        await Task.Delay(10);
 
         //Assert
-        _testCtx.VerifySceneTurnOn(new Scene(_testCtx.HaContext, "SOHO"), new SceneTurnOnParameters { Transition = 5 }, Moq.Times.Once);
+        _testCtx.VerifySceneTurnOn(new Scene(_testCtx.HaContext, "scene.SOHO"), new SceneTurnOnParameters { Transition = 5 }, Moq.Times.Once);
+    }
+
+    [TestMethod]
+    public void Complex_Conditions_NotSoComplex()
+    {
+        // Arrange
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithComplexConditions().Build();
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_evening"), "on");
+
+        //Act
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
+
+        //Assert
+        _testCtx.VerifySceneTurnOn(new Scene(_testCtx.HaContext, "scene.evening"), Moq.Times.Once);
+    }
+
+    [TestMethod]
+    public void Complex_Conditions_And()
+    {
+        // Arrange
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithComplexConditions().Build();
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_evening"), "on");
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.watching_tv"), "on");
+
+        //Act
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
+
+        //Assert
+        _testCtx.VerifySceneTurnOn(new Scene(_testCtx.HaContext, "scene.tv"), Moq.Times.Once);
+    }
+
+    [TestMethod]
+    public void Complex_Conditions_And_FirstTakesPrecedence()
+    {
+        // Arrange
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithComplexConditions().Build();
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_evening"), "on");
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.watching_tv"), "on");
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_party"), "on");
+
+        //Act
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
+
+        //Assert
+        _testCtx.VerifySceneTurnOn(new Scene(_testCtx.HaContext, "scene.party"), Moq.Times.Once);
+    }
+
+    [TestMethod]
+    public void Complex_Conditions_NoAdvent_DoesNotTurnOnChristmasTree()
+    {
+        // Arrange
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithComplexConditions().Build();
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_morning"), "on");
+
+        //Act
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
+
+        //Assert
+        _testCtx.VerifySceneTurnOn(new Scene(_testCtx.HaContext, "scene.morning"), Moq.Times.Once);
+    }
+
+    [TestMethod]
+    public void Complex_Conditions_Advent_TurnsOnChristmasTree()
+    {
+        // Arrange
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithComplexConditions().Build();
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_morning"), "on");
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_advent"), "on");
+
+        //Act
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
+
+        //Assert
+        _testCtx.VerifySceneTurnOn(new Scene(_testCtx.HaContext, "scene.morning"), Moq.Times.Once);
+        _testCtx.VerifyLightTurnOn(new Light(_testCtx.HaContext, "light.christmas_tree"), Moq.Times.Once);
+    }
+
+    [TestMethod]
+    public void Complex_Conditions_Advent_Morning_Vacation_MccallisterizesHouse()
+    {
+        // Arrange
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithComplexConditions().Build();
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_morning"), "on");
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_advent"), "on");
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_vacation"), "on");
+
+        //Act
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
+
+        //Assert
+        _testCtx.VerifySceneTurnOn(new Scene(_testCtx.HaContext, "scene.kevin_mccallister"), Moq.Times.Once);
+    }
+
+    [TestMethod]
+    public void Complex_Conditions_Advent_Evening_Vacation_MccallisterizesHouse()
+    {
+        // Arrange
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithComplexConditions().Build();
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_evening"), "on");
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_advent"), "on");
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_vacation"), "on");
+
+        //Act
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
+
+        //Assert
+        _testCtx.VerifySceneTurnOn(new Scene(_testCtx.HaContext, "scene.kevin_mccallister"), Moq.Times.Once);
+    }
+
+
+    [TestMethod]
+    public void Complex_Conditions_Advent_Day_Vacation_DoesNotMccallisterizesHouse()
+    {
+        // Arrange
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithComplexConditions().Build();
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_advent"), "on");
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_vacation"), "on");
+
+        //Act
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
+
+        //Assert
+        _testCtx.VerifySceneTurnOn(new Scene(_testCtx.HaContext, "scene.kevin_mccallister"), Moq.Times.Never);
+        _testCtx.VerifyLightTurnOn(new Light(_testCtx.HaContext, "light.day"), Moq.Times.Once);
+    }
+
+    [TestMethod]
+    public void DoesNotActivateLight_If_IlluminanceToHigh()
+    {
+        // Arrange
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithIlluminanceSensor().Build();
+        _testCtx.TriggerStateChange(new IlluminanceSensor(_testCtx.HaContext, "sensor.illuminance"), "50");
+
+        //Act
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
+
+        //Assert
+        _testCtx.VerifyLightTurnOn(new Light(_testCtx.HaContext, "light.test"), Moq.Times.Never);
+    }
+
+    [TestMethod]
+    public void DoesActivateLight_If_IlluminanceOk()
+    {
+        // Arrange
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithIlluminanceSensor().Build();
+        _testCtx.TriggerStateChange(new IlluminanceSensor(_testCtx.HaContext, "sensor.illuminance"), "5");
+
+        //Act
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
+
+        //Assert
+        _testCtx.VerifyLightTurnOn(new Light(_testCtx.HaContext, "light.test"), Moq.Times.Once);
+    }
+
+    [TestMethod]
+    public void DoesActivateLight_If_OneOfIlluminanceOk()
+    {
+        // Arrange
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithIlluminanceSensors().Build();
+        _testCtx.TriggerStateChange(new IlluminanceSensor(_testCtx.HaContext, "sensor.illuminance1"), "50");
+        _testCtx.TriggerStateChange(new IlluminanceSensor(_testCtx.HaContext, "sensor.illuminance2"), "5");
+
+        //Act
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
+
+        //Assert
+        _testCtx.VerifyLightTurnOn(new Light(_testCtx.HaContext, "light.test"), Moq.Times.Once);
+    }
+
+    [TestMethod]
+    public void DoesAutoSwitchOff_If_BothAboveIlluminance()
+    {
+        // Arrange
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithIlluminanceSensors().Build();
+        _testCtx.TriggerStateChange(new IlluminanceSensor(_testCtx.HaContext, "sensor.illuminance1"), "50");
+        _testCtx.TriggerStateChange(new IlluminanceSensor(_testCtx.HaContext, "sensor.illuminance2"), "5");
+
+        //Act
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
+        _testCtx.TriggerStateChange(new IlluminanceSensor(_testCtx.HaContext, "sensor.illuminance2"), "50");
+
+        //Assert
+        _testCtx.VerifyLightTurnOff(new Light(_testCtx.HaContext, "light.test"), Moq.Times.Once);
+    }
+
+    [TestMethod]
+    public void DoesNotAutoSwitchOff_If_NotBothAboveIlluminance()
+    {
+        // Arrange
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithIlluminanceSensors().Build();
+        _testCtx.TriggerStateChange(new IlluminanceSensor(_testCtx.HaContext, "sensor.illuminance1"), "50");
+        _testCtx.TriggerStateChange(new IlluminanceSensor(_testCtx.HaContext, "sensor.illuminance2"), "5");
+
+        //Act
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
+        _testCtx.TriggerStateChange(new IlluminanceSensor(_testCtx.HaContext, "sensor.illuminance1"), "10");
+        _testCtx.TriggerStateChange(new IlluminanceSensor(_testCtx.HaContext, "sensor.illuminance2"), "100");
+
+        //Assert
+        _testCtx.VerifyLightTurnOff(new Light(_testCtx.HaContext, "light.test"), Moq.Times.Never);
+    }
+
+    [TestMethod]
+    public async Task Click_Triggers_FlexiScene()
+    {
+        // Arrange
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithSwitch().WithMultipleFlexiScenes().Build();
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
+
+        //Act
+        _testCtx.SimulateClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
+        await Task.Delay(30); //allow debounce to ... debounce
+
+        //Assert
+        _testCtx.VerifyLightTurnOn(new Light(_testCtx.HaContext, "light.day"), Moq.Times.Once);
+    }
+
+
+    [TestMethod]
+    public async Task Click_Extends_AutoTurnOff_Duration()
+    {
+        // Arrange
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithSwitch().WithMultipleFlexiScenes().Build();
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
+
+        //Act
+        _testCtx.SimulateClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
+        await Task.Delay(30); //allow debounce to ... debounce
+
+        //Assert
+        Assert.IsTrue(room.TurnOffAt.Value > DateTime.Now.AddHours(3));
+    }
+
+
+    [TestMethod]
+    public async Task Click_DoesNotTrigger_NextScene()
+    {
+        // Arrange
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithSwitch().WithMultipleFlexiScenes().Build();
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
+
+        //Act
+        _testCtx.SimulateClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
+        await Task.Delay(30); //allow debounce to ... debounce
+
+        //Assert
+        Assert.AreEqual("day", room.FlexiScenes.Current.Name);
+        Assert.AreEqual(InitiatedBy.Switch, room.InitiatedBy);
+    }
+
+    [TestMethod]
+    public async Task Click_DoesTrigger_NextScene_After_Two_Clicks()
+    {
+        // Arrange
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithSwitch().WithMultipleFlexiScenes().Build();
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
+
+        //Act
+        _testCtx.SimulateClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
+        await Task.Delay(30); //allow debounce to ... debounce
+        _testCtx.SimulateClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
+        await Task.Delay(30); //allow debounce to ... debounce
+
+        //Assert
+        Assert.AreEqual("evening", room.FlexiScenes.Current.Name);
+        Assert.AreEqual(InitiatedBy.Switch, room.InitiatedBy);
+    }
+
+
+    [TestMethod]
+    public async Task Click_DoesTrigger_NextScene_IfBehaviourSet()
+    {
+        // Arrange
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithSwitch().WithSwitchChangeOFfDurationAndGoToNextAutomationAtInitialOnClickAfterMotion().WithMultipleFlexiScenes().Build();
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
+
+        //Act
+        _testCtx.SimulateClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
+        await Task.Delay(30); //allow debounce to ... debounce
+
+        //Assert
+        Assert.AreEqual("evening", room.FlexiScenes.Current.Name);
+        Assert.AreEqual(InitiatedBy.Switch, room.InitiatedBy);
+    }
+
+    [TestMethod]
+    public async Task Click_DoesTrigger_NextScene_WithLimitedOptions()
+    {
+        // Arrange
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithSwitch().WithSwitchChangeOFfDurationAndGoToNextAutomationAtInitialOnClickAfterMotion().WithMultipleFlexiScenesLimitedNext().Build();
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
+
+        //Act
+        _testCtx.SimulateClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
+        await Task.Delay(30); //allow debounce to ... debounce
+
+        //Assert
+        Assert.AreEqual("morning", room.FlexiScenes.Current.Name);
+        Assert.AreEqual("day", room.FlexiScenes.Initial.Name);
+        Assert.AreEqual(InitiatedBy.Switch, room.InitiatedBy);
+    }
+
+    [TestMethod]
+    public async Task Click_DoesTrigger_NextScene_WithLimitedOptions_KeepsWorkingAfterMultipleCliks()
+    {
+        // Arrange
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithSwitch().WithSwitchChangeOFfDurationAndGoToNextAutomationAtInitialOnClickAfterMotion().WithMultipleFlexiScenesLimitedNext().Build();
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
+
+        //Act
+        _testCtx.SimulateClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
+        await Task.Delay(30); //allow debounce to ... debounce
+        _testCtx.SimulateClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
+        await Task.Delay(30); //allow debounce to ... debounce
+
+        //Assert
+        Assert.AreEqual("day", room.FlexiScenes.Current.Name);
+        Assert.AreEqual("day", room.FlexiScenes.Initial.Name);
+        Assert.AreEqual(InitiatedBy.Switch, room.InitiatedBy);
+    }
+
+    [TestMethod]
+    public async Task Click_DoesTrigger_NextScene_WithLimitedOptions_KeepsWorkingAfterManyClicks()
+    {
+        // Arrange
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithSwitch().WithSwitchChangeOFfDurationAndGoToNextAutomationAtInitialOnClickAfterMotion().WithMultipleFlexiScenesLimitedNext().Build();
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
+
+        //Act
+        _testCtx.SimulateClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
+        await Task.Delay(30); //allow debounce to ... debounce
+        _testCtx.SimulateClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
+        await Task.Delay(30); //allow debounce to ... debounce
+        _testCtx.SimulateClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
+        await Task.Delay(30); //allow debounce to ... debounce
+
+        //Assert
+        Assert.AreEqual("morning", room.FlexiScenes.Current.Name);
+        Assert.AreEqual("day", room.FlexiScenes.Initial.Name);
+        Assert.AreEqual(InitiatedBy.Switch, room.InitiatedBy);
+    }
+
+
+    [TestMethod]
+    public async Task Click_DoesTrigger_CyclesTo_FirstScene_IfLast()
+    {
+        // Arrange
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithSwitch().WithSwitchChangeOFfDurationAndGoToNextAutomationAtInitialOnClickAfterMotion().WithMultipleFlexiScenes().Build();
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_evening"), "on");
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
+
+        //Act
+        _testCtx.SimulateClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
+        await Task.Delay(30); //allow debounce to ... debounce
+
+        //Assert
+        Assert.AreEqual("morning", room.FlexiScenes.Current.Name);
+        Assert.AreEqual(InitiatedBy.Switch, room.InitiatedBy);
+    }
+
+    [TestMethod]
+    public async Task DoubleClick_Triggers_DoubleClickActions()
+    {
+        // Arrange
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithSwitch().WithMultipleFlexiScenes().Build();
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
+
+        //Act
+        _testCtx.SimulateDoubleClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
+        await Task.Delay(30); //allow debounce to ... debounce
+
+        //Assert
+        _testCtx.VerifyLightTurnOff(new Light(_testCtx.HaContext, "light.day"), Moq.Times.Once);
+    }
+
+    [TestMethod]
+    public async Task TripleClick_Triggers_TripleClickActions()
+    {
+        // Arrange
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithSwitch().WithMultipleFlexiScenes().Build();
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
+
+        //Act
+        _testCtx.SimulateTripleClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
+        await Task.Delay(30); //allow debounce to ... debounce
+
+        //Assert
+        _testCtx.VerifyLightTurnOff(new Light(_testCtx.HaContext, "light.evening"), Moq.Times.Once);
+    }
+
+    [TestMethod]
+    public async Task LongClick_Triggers_LongClickActions()
+    {
+        // Arrange
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithSwitch().WithMultipleFlexiScenes().Build();
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
+
+        //Act
+        await _testCtx.SimulateLongClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"), TimeSpan.FromMilliseconds(30));
+
+        //Assert
+        _testCtx.VerifyLightTurnOff(new Light(_testCtx.HaContext, "light.morning"), Moq.Times.Once);
+    }
+
+    [TestMethod]
+    public async Task UberLongClick_Triggers_LongClickActions_IfNoUberLongClickActionsDefined()
+    {
+        // Arrange
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithSwitch().WithMultipleFlexiScenes().Build();
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
+
+        //Act
+        await _testCtx.SimulateLongClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"), TimeSpan.FromMilliseconds(100));
+
+        //Assert
+        _testCtx.VerifyLightTurnOff(new Light(_testCtx.HaContext, "light.morning"), Moq.Times.Once);
+    }
+
+    [TestMethod]
+    public async Task UberLongClick_Triggers_UberLongClickActions()
+    {
+        // Arrange
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithSwitch().WithUberLongClickActions().WithMultipleFlexiScenes().Build();
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
+
+        //Act
+        await _testCtx.SimulateLongClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"), TimeSpan.FromMilliseconds(100));
+
+        //Assert
+        _testCtx.VerifyLightTurnOff(new Light(_testCtx.HaContext, "light.morning"), Moq.Times.Once);
+        _testCtx.VerifyLightTurnOff(new Light(_testCtx.HaContext, "light.day"), Moq.Times.Once);
+        _testCtx.VerifyLightTurnOff(new Light(_testCtx.HaContext, "light.evening"), Moq.Times.Once);
+    }
+
+    [TestMethod]
+    public void OffInput_Triggers_OffActions()
+    {
+        // Arrange
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithMultipleFlexiScenes().WithOffSensor().Build();
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
+
+        //Act
+        _testCtx.TriggerStateChange(new BinarySensor(_testCtx.HaContext, "binary_sensor.triple_click"), "on");
+
+        //Assert
+        _testCtx.VerifyLightTurnOff(new Light(_testCtx.HaContext, "light.morning"), Moq.Times.Once);
+        _testCtx.VerifyLightTurnOff(new Light(_testCtx.HaContext, "light.day"), Moq.Times.Once);
+        _testCtx.VerifyLightTurnOff(new Light(_testCtx.HaContext, "light.evening"), Moq.Times.Once);
     }
 }
