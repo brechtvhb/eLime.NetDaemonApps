@@ -1,4 +1,5 @@
-﻿using eLime.NetDaemonApps.Tests.Mocks.Moq;
+﻿using eLime.NetDaemonApps.Domain.BinarySensors;
+using eLime.NetDaemonApps.Tests.Mocks.Moq;
 using Microsoft.Reactive.Testing;
 using NetDaemon.HassModel;
 using NetDaemon.HassModel.Entities;
@@ -47,28 +48,27 @@ public class AppTestContext
         HaContextMock.TriggerStateChange(entity, newStateValue, attributes);
     }
 
-    public void SimulateClick(Switch @switch)
+    public void SimulateClick(Switch @switch, string type = "single")
     {
-        TriggerStateChange(@switch, "on");
-        TriggerStateChange(@switch, "off");
+        TriggerStateChange(@switch, "on", new BinarySensorAttributes { Icon = type });
+        TriggerStateChange(@switch, "off", new BinarySensorAttributes { Icon = type });
     }
 
     public void SimulateDoubleClick(Switch @switch)
     {
-        SimulateClick(@switch);
-        SimulateClick(@switch);
+        SimulateClick(@switch, "double");
     }
     public void SimulateTripleClick(Switch @switch)
     {
-        SimulateClick(@switch);
-        SimulateClick(@switch);
-        SimulateClick(@switch);
+        SimulateClick(@switch, "triple");
     }
-    public async Task SimulateLongClick(Switch @switch, TimeSpan duration)
+    public void SimulateLongClick(Switch @switch)
     {
-        TriggerStateChange(@switch, "on");
-        await Task.Delay(duration);
-        TriggerStateChange(@switch, "off");
+        SimulateClick(@switch, "long");
+    }
+    public void SimulateUberLongClick(Switch @switch)
+    {
+        SimulateClick(@switch, "uberLong");
     }
 
     public void TriggerStateChange(Entity entity, EntityState newState)

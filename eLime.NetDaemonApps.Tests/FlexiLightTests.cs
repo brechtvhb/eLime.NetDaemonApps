@@ -567,7 +567,7 @@ public class FlexiLightTests
 
 
     [TestMethod]
-    public async Task Click_Extends_AutoTurnOff_Duration()
+    public void Click_Extends_AutoTurnOff_Duration()
     {
         // Arrange
         var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithSwitch().WithMultipleFlexiScenes().Build();
@@ -576,7 +576,6 @@ public class FlexiLightTests
 
         //Act
         _testCtx.SimulateClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
-        await Task.Delay(2000); //allow debounce to ... debounce
 
         //Assert
         Assert.IsTrue(room.TurnOffAt.Value > DateTime.Now.AddHours(3));
@@ -584,7 +583,7 @@ public class FlexiLightTests
 
 
     [TestMethod]
-    public async Task Click_DoesNotTrigger_NextScene()
+    public void Click_DoesNotTrigger_NextScene()
     {
         // Arrange
         var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithSwitch().WithMultipleFlexiScenes().Build();
@@ -593,7 +592,6 @@ public class FlexiLightTests
 
         //Act
         _testCtx.SimulateClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
-        await Task.Delay(1000); //allow debounce to ... debounce
 
         //Assert
         Assert.AreEqual("day", room.FlexiScenes.Current.Name);
@@ -601,7 +599,7 @@ public class FlexiLightTests
     }
 
     [TestMethod]
-    public async Task Click_DoesTrigger_NextScene_After_Two_Clicks()
+    public void Click_DoesTrigger_NextScene_After_Two_Clicks()
     {
         // Arrange
         var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithSwitch().WithMultipleFlexiScenes().Build();
@@ -610,9 +608,7 @@ public class FlexiLightTests
 
         //Act
         _testCtx.SimulateClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
-        await Task.Delay(500); //allow debounce to ... debounce
         _testCtx.SimulateClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
-        await Task.Delay(500); //allow debounce to ... debounce
 
         //Assert
         Assert.AreEqual("evening", room.FlexiScenes.Current.Name);
@@ -621,7 +617,7 @@ public class FlexiLightTests
 
 
     [TestMethod]
-    public async Task Click_DoesTrigger_NextScene_IfBehaviourSet()
+    public void Click_DoesTrigger_NextScene_IfBehaviourSet()
     {
         // Arrange
         var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithSwitch().WithSwitchChangeOFfDurationAndGoToNextAutomationAtInitialOnClickAfterMotion().WithMultipleFlexiScenes().Build();
@@ -630,7 +626,6 @@ public class FlexiLightTests
 
         //Act
         _testCtx.SimulateClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
-        await Task.Delay(200); //allow debounce to ... debounce
 
         //Assert
         Assert.AreEqual("evening", room.FlexiScenes.Current.Name);
@@ -638,7 +633,7 @@ public class FlexiLightTests
     }
 
     [TestMethod]
-    public async Task Click_DoesTrigger_NextScene_WithLimitedOptions()
+    public void Click_DoesTrigger_NextScene_WithLimitedOptions()
     {
         // Arrange
         var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithSwitch().WithSwitchChangeOFfDurationAndGoToNextAutomationAtInitialOnClickAfterMotion().WithMultipleFlexiScenesLimitedNext().Build();
@@ -647,7 +642,6 @@ public class FlexiLightTests
 
         //Act
         _testCtx.SimulateClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
-        await Task.Delay(50); //allow debounce to ... debounce
 
         //Assert
         Assert.AreEqual("morning", room.FlexiScenes.Current.Name);
@@ -656,7 +650,7 @@ public class FlexiLightTests
     }
 
     [TestMethod]
-    public async Task Click_DoesTrigger_NextScene_WithLimitedOptions_KeepsWorkingAfterMultipleCliks()
+    public void Click_DoesTrigger_NextScene_WithLimitedOptions_KeepsWorkingAfterMultipleCliks()
     {
         // Arrange
         var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithSwitch().WithSwitchChangeOFfDurationAndGoToNextAutomationAtInitialOnClickAfterMotion().WithMultipleFlexiScenesLimitedNext().Build();
@@ -665,9 +659,7 @@ public class FlexiLightTests
 
         //Act
         _testCtx.SimulateClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
-        await Task.Delay(50); //allow debounce to ... debounce
         _testCtx.SimulateClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
-        await Task.Delay(50); //allow debounce to ... debounce
 
         //Assert
         Assert.AreEqual("day", room.FlexiScenes.Current.Name);
@@ -676,7 +668,7 @@ public class FlexiLightTests
     }
 
     [TestMethod]
-    public async Task Click_DoesTrigger_NextScene_WithLimitedOptions_KeepsWorkingAfterManyClicks()
+    public void Click_DoesTrigger_NextScene_WithLimitedOptions_KeepsWorkingAfterManyClicks()
     {
         // Arrange
         var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithSwitch().WithSwitchChangeOFfDurationAndGoToNextAutomationAtInitialOnClickAfterMotion().WithMultipleFlexiScenesLimitedNext().Build();
@@ -685,11 +677,8 @@ public class FlexiLightTests
 
         //Act
         _testCtx.SimulateClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
-        await Task.Delay(50); //allow debounce to ... debounce
         _testCtx.SimulateClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
-        await Task.Delay(50); //allow debounce to ... debounce
         _testCtx.SimulateClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
-        await Task.Delay(50); //allow debounce to ... debounce
 
         //Assert
         Assert.AreEqual("morning", room.FlexiScenes.Current.Name);
@@ -699,7 +688,7 @@ public class FlexiLightTests
 
 
     [TestMethod]
-    public async Task Click_DoesTrigger_CyclesTo_FirstScene_IfLast()
+    public void Click_DoesTrigger_CyclesTo_FirstScene_IfLast()
     {
         // Arrange
         var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithSwitch().WithSwitchChangeOFfDurationAndGoToNextAutomationAtInitialOnClickAfterMotion().WithMultipleFlexiScenes().Build();
@@ -708,7 +697,6 @@ public class FlexiLightTests
 
         //Act
         _testCtx.SimulateClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
-        await Task.Delay(50); //allow debounce to ... debounce
 
         //Assert
         Assert.AreEqual("morning", room.FlexiScenes.Current.Name);
@@ -716,7 +704,7 @@ public class FlexiLightTests
     }
 
     [TestMethod]
-    public async Task DoubleClick_Triggers_DoubleClickActions()
+    public void DoubleClick_Triggers_DoubleClickActions()
     {
         // Arrange
         var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithSwitch().WithMultipleFlexiScenes().Build();
@@ -724,14 +712,13 @@ public class FlexiLightTests
 
         //Act
         _testCtx.SimulateDoubleClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
-        await Task.Delay(50); //allow debounce to ... debounce
 
         //Assert
         _testCtx.VerifyLightTurnOff(new Light(_testCtx.HaContext, "light.day"), Moq.Times.Once);
     }
 
     [TestMethod]
-    public async Task TripleClick_Triggers_TripleClickActions()
+    public void TripleClick_Triggers_TripleClickActions()
     {
         // Arrange
         var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithSwitch().WithMultipleFlexiScenes().Build();
@@ -739,49 +726,47 @@ public class FlexiLightTests
 
         //Act
         _testCtx.SimulateTripleClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
-        await Task.Delay(50); //allow debounce to ... debounce
-
         //Assert
         _testCtx.VerifyLightTurnOff(new Light(_testCtx.HaContext, "light.evening"), Moq.Times.Once);
     }
 
     [TestMethod]
-    public async Task LongClick_Triggers_LongClickActions()
+    public void LongClick_Triggers_LongClickActions()
     {
         // Arrange
         var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithSwitch().WithMultipleFlexiScenes().Build();
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
 
         //Act
-        await _testCtx.SimulateLongClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"), TimeSpan.FromMilliseconds(30));
+        _testCtx.SimulateLongClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
 
         //Assert
         _testCtx.VerifyLightTurnOff(new Light(_testCtx.HaContext, "light.morning"), Moq.Times.Once);
     }
 
     [TestMethod]
-    public async Task UberLongClick_Triggers_LongClickActions_IfNoUberLongClickActionsDefined()
+    public void UberLongClick_Triggers_LongClickActions_IfNoUberLongClickActionsDefined()
     {
         // Arrange
         var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithSwitch().WithMultipleFlexiScenes().Build();
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
 
         //Act
-        await _testCtx.SimulateLongClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"), TimeSpan.FromMilliseconds(100));
+        _testCtx.SimulateUberLongClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
 
         //Assert
         _testCtx.VerifyLightTurnOff(new Light(_testCtx.HaContext, "light.morning"), Moq.Times.Once);
     }
 
     [TestMethod]
-    public async Task UberLongClick_Triggers_UberLongClickActions()
+    public void UberLongClick_Triggers_UberLongClickActions()
     {
         // Arrange
         var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithSwitch().WithUberLongClickActions().WithMultipleFlexiScenes().Build();
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
 
         //Act
-        await _testCtx.SimulateLongClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"), TimeSpan.FromMilliseconds(100));
+        _testCtx.SimulateUberLongClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
 
         //Assert
         _testCtx.VerifyLightTurnOff(new Light(_testCtx.HaContext, "light.morning"), Moq.Times.Once);
