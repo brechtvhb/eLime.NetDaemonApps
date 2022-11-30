@@ -314,10 +314,10 @@ public class Room
                 FlexiScenes.SetCurrentScene(flexiScene);
         }
 
+        _logger.LogDebug("Retrieved flexilight state from Home assistant for room '{room}'.", Name);
+
         await ScheduleTurnOffAt();
         await ScheduleClearIgnorePresence();
-
-        _logger.LogDebug("Retrieved flexilight state from Home assistant for room '{room}'.", Name);
     }
 
 
