@@ -245,7 +245,7 @@ public class Room
 
             if (!flexiScene.Conditions.Any())
             {
-                logger.LogDebug($"No conditions were found on flexi scene '{flexiScene.Name}'. This will always resolve to true. Intended or configuration problem?");
+                logger.LogTrace($"No conditions were found on flexi scene '{flexiScene.Name}'. This will always resolve to true. Intended or configuration problem?");
             }
 
             flexiScenes.Add(flexiScene);
@@ -395,11 +395,11 @@ public class Room
             ClearIgnorePresenceSchedule?.Dispose();
             ClearIgnorePresenceSchedule = _scheduler.ScheduleAsync(remainingTime, async (_, _) => await RemoveIgnorePresence());
 
-            _logger.LogDebug($"Ignore presence will be cleared ar {IgnorePresenceUntil:T}.");
+            _logger.LogDebug("Presence will be ignored until {IgnorePresenceUntil}.", IgnorePresenceUntil?.ToString("T"));
         }
         else
         {
-            _logger.LogDebug($"Ignore presence should already have been cleared at {IgnorePresenceUntil:T} will clear it now.");
+            _logger.LogDebug("Ignore presence should already have been cleared at {IgnorePresenceUntil} will clear it now.", IgnorePresenceUntil?.ToString("T"));
             await RemoveIgnorePresence();
         }
     }
@@ -454,11 +454,11 @@ public class Room
             TurnOffSchedule?.Dispose();
             TurnOffSchedule = _scheduler.ScheduleAsync(remainingTime, async (_, _) => await ExecuteOffActions());
 
-            _logger.LogDebug($"Off actions will be executed at {TurnOffAt:T}. Turn off at was set by {InitiatedBy}");
+            _logger.LogDebug("Off actions will be executed at {TurnOffAt} (Set by {InitiatedBy}).", TurnOffAt?.ToString("T"), InitiatedBy);
         }
         else
         {
-            _logger.LogDebug($"Off actions should have been executed at {TurnOffAt:T} will execute them now. Turn off at was set by {InitiatedBy}");
+            _logger.LogDebug("Off actions should have been executed at {TurnOffAt} will execute them now (Set by {InitiatedBy}).", TurnOffAt?.ToString("T"), InitiatedBy);
             await ExecuteOffActions();
         }
     }
