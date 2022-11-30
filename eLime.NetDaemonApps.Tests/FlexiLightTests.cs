@@ -576,7 +576,7 @@ public class FlexiLightTests
 
         //Act
         _testCtx.SimulateClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
-        await Task.Delay(30); //allow debounce to ... debounce
+        await Task.Delay(50); //allow debounce to ... debounce
 
         //Assert
         Assert.IsTrue(room.TurnOffAt.Value > DateTime.Now.AddHours(3));
@@ -593,7 +593,7 @@ public class FlexiLightTests
 
         //Act
         _testCtx.SimulateClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
-        await Task.Delay(30); //allow debounce to ... debounce
+        await Task.Delay(50); //allow debounce to ... debounce
 
         //Assert
         Assert.AreEqual("day", room.FlexiScenes.Current.Name);
@@ -610,9 +610,9 @@ public class FlexiLightTests
 
         //Act
         _testCtx.SimulateClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
-        await Task.Delay(30); //allow debounce to ... debounce
+        await Task.Delay(50); //allow debounce to ... debounce
         _testCtx.SimulateClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
-        await Task.Delay(30); //allow debounce to ... debounce
+        await Task.Delay(50); //allow debounce to ... debounce
 
         //Assert
         Assert.AreEqual("evening", room.FlexiScenes.Current.Name);
@@ -630,7 +630,7 @@ public class FlexiLightTests
 
         //Act
         _testCtx.SimulateClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
-        await Task.Delay(30); //allow debounce to ... debounce
+        await Task.Delay(50); //allow debounce to ... debounce
 
         //Assert
         Assert.AreEqual("evening", room.FlexiScenes.Current.Name);
@@ -647,7 +647,7 @@ public class FlexiLightTests
 
         //Act
         _testCtx.SimulateClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
-        await Task.Delay(30); //allow debounce to ... debounce
+        await Task.Delay(50); //allow debounce to ... debounce
 
         //Assert
         Assert.AreEqual("morning", room.FlexiScenes.Current.Name);
@@ -665,9 +665,9 @@ public class FlexiLightTests
 
         //Act
         _testCtx.SimulateClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
-        await Task.Delay(30); //allow debounce to ... debounce
+        await Task.Delay(50); //allow debounce to ... debounce
         _testCtx.SimulateClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
-        await Task.Delay(30); //allow debounce to ... debounce
+        await Task.Delay(50); //allow debounce to ... debounce
 
         //Assert
         Assert.AreEqual("day", room.FlexiScenes.Current.Name);
@@ -685,11 +685,11 @@ public class FlexiLightTests
 
         //Act
         _testCtx.SimulateClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
-        await Task.Delay(30); //allow debounce to ... debounce
+        await Task.Delay(50); //allow debounce to ... debounce
         _testCtx.SimulateClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
-        await Task.Delay(30); //allow debounce to ... debounce
+        await Task.Delay(50); //allow debounce to ... debounce
         _testCtx.SimulateClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
-        await Task.Delay(30); //allow debounce to ... debounce
+        await Task.Delay(50); //allow debounce to ... debounce
 
         //Assert
         Assert.AreEqual("morning", room.FlexiScenes.Current.Name);
@@ -708,7 +708,7 @@ public class FlexiLightTests
 
         //Act
         _testCtx.SimulateClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
-        await Task.Delay(30); //allow debounce to ... debounce
+        await Task.Delay(50); //allow debounce to ... debounce
 
         //Assert
         Assert.AreEqual("morning", room.FlexiScenes.Current.Name);
@@ -724,7 +724,7 @@ public class FlexiLightTests
 
         //Act
         _testCtx.SimulateDoubleClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
-        await Task.Delay(30); //allow debounce to ... debounce
+        await Task.Delay(50); //allow debounce to ... debounce
 
         //Assert
         _testCtx.VerifyLightTurnOff(new Light(_testCtx.HaContext, "light.day"), Moq.Times.Once);
@@ -739,7 +739,7 @@ public class FlexiLightTests
 
         //Act
         _testCtx.SimulateTripleClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
-        await Task.Delay(30); //allow debounce to ... debounce
+        await Task.Delay(50); //allow debounce to ... debounce
 
         //Assert
         _testCtx.VerifyLightTurnOff(new Light(_testCtx.HaContext, "light.evening"), Moq.Times.Once);
