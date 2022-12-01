@@ -35,8 +35,11 @@ public class FlexiLights : IAsyncInitializable, IAsyncDisposable
         _ct = cancellationToken;
         try
         {
-            foreach (var roomConfig in _config.Rooms)
+            foreach (var (roomName, roomConfig) in _config.Rooms)
             {
+                if (String.IsNullOrWhiteSpace(roomConfig.Name))
+                    roomConfig.Name = roomName;
+
                 var room = new Room(_ha, _logger, _scheduler, _mqttEntityManager, roomConfig);
                 Rooms.Add(room);
                 room.Guard();

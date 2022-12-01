@@ -345,7 +345,7 @@ public class Room
             LastUpdated = DateTime.Now.ToString("O")
         };
         await _mqttEntityManager.SetAttributesAsync(EnabledSwitch.EntityId, attributes);
-        _logger.LogDebug("Updated flexilight state for room '{room}' in Home assistant to {attr}", Name, attributes);
+        _logger.LogTrace("Updated flexilight state for room '{room}' in Home assistant to {attr}", Name, attributes);
     }
 
 
@@ -602,7 +602,7 @@ public class Room
     {
         if (IlluminanceThreshold != null && IlluminanceSensors.All(x => x.State > IlluminanceThreshold))
         {
-            _logger.LogDebug($"Motion sensor saw something moving but did not turn on lights because all illuminance sensors are above threshold of {IlluminanceThreshold}");
+            _logger.LogTrace("Motion sensor saw something moving but did not turn on lights because all illuminance sensors [{IlluminanceSensorValues}] are above threshold of {IlluminanceThreshold}", String.Join(", ", IlluminanceSensors.Select(x => $"{x.EntityId} - {x.State} lux")), IlluminanceThreshold);
             return;
         }
 

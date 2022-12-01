@@ -4,5 +4,5 @@ namespace eLime.netDaemonApps.Config;
 
 public class FlexLightConfig
 {
-    public IEnumerable<RoomConfig> Rooms { get; set; }
+    public IDictionary<String, RoomConfig> Rooms { get; set; }
 }
