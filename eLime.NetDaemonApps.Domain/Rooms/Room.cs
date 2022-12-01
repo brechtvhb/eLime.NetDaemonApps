@@ -360,7 +360,7 @@ public class Room
 
     private async Task ExecuteFlexiScene(FlexiScene flexiScene, InitiatedBy initiatedBy, Boolean autoTransition = false, Boolean overwriteInitialScene = true)
     {
-        _logger.LogInformation($"Will execute flexi scene {flexiScene.Name}. Triggered by {initiatedBy}.");
+        _logger.LogInformation("{Room}: Will execute flexi scene {flexiScene}. Triggered by {InitiatedBy}.", Name, flexiScene.Name, initiatedBy);
         FlexiScenes.SetCurrentScene(flexiScene, overwriteInitialScene);
         InitiatedBy = initiatedBy;
 
@@ -368,7 +368,7 @@ public class Room
     }
     private async Task ExecuteOffActions()
     {
-        _logger.LogDebug($"Executed off actions.");
+        _logger.LogDebug("{Room}: Executed off actions.", Name);
 
         FlexiScenes.DeactivateScene();
         InitiatedBy = InitiatedBy.NoOne;
@@ -395,11 +395,11 @@ public class Room
             ClearIgnorePresenceSchedule?.Dispose();
             ClearIgnorePresenceSchedule = _scheduler.ScheduleAsync(remainingTime, async (_, _) => await RemoveIgnorePresence());
 
-            _logger.LogDebug("Presence will be ignored until {IgnorePresenceUntil}.", IgnorePresenceUntil?.ToString("T"));
+            _logger.LogDebug("{Room}: Presence will be ignored until {IgnorePresenceUntil}.", Name, IgnorePresenceUntil?.ToString("T"));
         }
         else
         {
-            _logger.LogDebug("Ignore presence should already have been cleared at {IgnorePresenceUntil} will clear it now.", IgnorePresenceUntil?.ToString("T"));
+            _logger.LogDebug("{Room}: Ignore presence should already have been cleared at {IgnorePresenceUntil} will clear it now.", Name, IgnorePresenceUntil?.ToString("T"));
             await RemoveIgnorePresence();
         }
     }
@@ -454,7 +454,7 @@ public class Room
             TurnOffSchedule?.Dispose();
             TurnOffSchedule = _scheduler.ScheduleAsync(remainingTime, async (_, _) => await ExecuteOffActions());
 
-            _logger.LogDebug("Off actions will be executed at {TurnOffAt} (Set by {InitiatedBy}).", TurnOffAt?.ToString("T"), InitiatedBy);
+            _logger.LogDebug("{Room}: Off actions will be executed at {TurnOffAt} (Set by {InitiatedBy}).", Name, TurnOffAt?.ToString("T"), InitiatedBy);
         }
         else
         {
@@ -465,7 +465,7 @@ public class Room
 
     private void ClearAutoTurnOff()
     {
-        _logger.LogTrace($"Off actions will no longer be executed. Probably because the OFF actions were just executed or a motion sensor is active.");
+        _logger.LogTrace("{Room}: Off actions will no longer be executed. Probably because the OFF actions were just executed or a motion sensor is active.", Name);
         TurnOffAt = null;
         TurnOffSchedule?.Dispose();
     }
