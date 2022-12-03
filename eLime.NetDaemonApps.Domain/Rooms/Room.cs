@@ -12,7 +12,6 @@ using NetDaemon.HassModel.Entities;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using Action = eLime.NetDaemonApps.Domain.Rooms.Actions.Action;
-using Switch = eLime.NetDaemonApps.Domain.BinarySensors.Switch;
 
 namespace eLime.NetDaemonApps.Domain.Rooms;
 
@@ -44,10 +43,6 @@ public class Room
         _offSensors.Add(sensor);
     }
 
-    //private readonly List<Light> _lights = new();
-    //public IReadOnlyCollection<Light> Lights => _lights.AsReadOnly();
-    //public void AddLight(Light light) => _lights.Add(light);
-
     private readonly List<IlluminanceSensor> _illuminanceSensors = new();
     public IReadOnlyCollection<IlluminanceSensor> IlluminanceSensors => _illuminanceSensors.AsReadOnly();
 
@@ -67,17 +62,20 @@ public class Room
         _motionSensors.Add(sensor);
     }
 
-    private readonly List<Switch> _switches = new();
-    public IReadOnlyCollection<Switch> Switches => _switches.AsReadOnly();
+    private readonly List<ISwitch> _switches = new();
+    public IReadOnlyCollection<ISwitch> Switches => _switches.AsReadOnly();
 
-    public void AddSwitch(Switch sensor)
+    public void AddSwitches(List<ISwitch> switches)
     {
-        sensor.Clicked += async (s, e) => await Switch_Clicked(s, e);
-        sensor.DoubleClicked += async (s, e) => await Switch_DoubleClicked(s, e);
-        sensor.TripleClicked += async (s, e) => await Switch_TripleClicked(s, e);
-        sensor.LongClicked += async (s, e) => await Switch_LongClicked(s, e);
-        sensor.UberLongClicked += async (s, e) => await Switch_UberLongClicked(s, e);
-        _switches.Add(sensor);
+        foreach (var sensor in switches)
+        {
+            sensor.Clicked += async (s, e) => await Switch_Clicked(s, e);
+            sensor.DoubleClicked += async (s, e) => await Switch_DoubleClicked(s, e);
+            sensor.TripleClicked += async (s, e) => await Switch_TripleClicked(s, e);
+            sensor.LongClicked += async (s, e) => await Switch_LongClicked(s, e);
+            sensor.UberLongClicked += async (s, e) => await Switch_UberLongClicked(s, e);
+            _switches.Add(sensor);
+        }
     }
 
 
@@ -152,20 +150,6 @@ public class Room
         AutoSwitchOffAboveIlluminance = config.AutoSwitchOffAboveIlluminance;
         IgnorePresenceAfterOffDuration = config.IgnorePresenceAfterOffDuration ?? TimeSpan.Zero;
 
-
-        //if (config.Lights == null || !config.Lights.Any())
-        //    throw new Exception("Define at least one light");
-
-        //foreach (var lightId in config.Lights)
-        //{
-        //    if (Lights.Any(x => x.EntityId == lightId))
-        //        continue;
-
-        //    var light = Light.Create(_haContext, lightId);
-        //    AddLight(light);
-        //}
-
-
         if (config.OffSensors != null && config.OffSensors.Any())
         {
             foreach (var sensorId in config.OffSensors)
@@ -202,17 +186,10 @@ public class Room
             }
         }
 
-        if (config.Switches != null && config.Switches.Any())
-        {
-            foreach (var switchId in config.Switches)
-            {
-                if (Switches.Any(x => x.EntityId == switchId))
-                    continue;
+        var switches = config.Switches.ConvertToDomainModel(config.ClickInterval, config.LongClickDuration, config.UberLongClickDuration,
+            config.SinglePressState, config.DoublePressState, config.TriplePressState, config.LongPressState, config.UberLongPressState, _haContext);
 
-                var sensor = Switch.Create(_haContext, switchId, config.ClickInterval, config.LongClickDuration, config.UberLongClickDuration);
-                AddSwitch(sensor);
-            }
-        }
+        AddSwitches(switches);
 
         if (!Switches.Any() && !MotionSensors.Any())
             throw new Exception("Define at least one switch or motion sensor");
@@ -503,7 +480,7 @@ public class Room
         await ExecuteFlexiSceneOnMotion();
     }
 
-    private async Task Switch_Clicked(object? sender, BinarySensorEventArgs e)
+    private async Task Switch_Clicked(object? sender, SwitchEventArgs e)
     {
         if (!IsRoomEnabled())
             return;
@@ -540,7 +517,7 @@ public class Room
         await UpdateStateInHomeAssistant();
     }
 
-    private async Task Switch_DoubleClicked(object? sender, BinarySensorEventArgs e)
+    private async Task Switch_DoubleClicked(object? sender, SwitchEventArgs e)
     {
         if (!IsRoomEnabled())
             return;
@@ -553,7 +530,7 @@ public class Room
         await ExecuteDoubleClickActions();
     }
 
-    private async Task Switch_TripleClicked(object? sender, BinarySensorEventArgs e)
+    private async Task Switch_TripleClicked(object? sender, SwitchEventArgs e)
     {
         if (!IsRoomEnabled())
             return;
@@ -565,7 +542,7 @@ public class Room
 
         await ExecuteTripleClickActions();
     }
-    private async Task Switch_LongClicked(object? sender, BinarySensorEventArgs e)
+    private async Task Switch_LongClicked(object? sender, SwitchEventArgs e)
     {
         if (!IsRoomEnabled())
             return;
@@ -577,7 +554,7 @@ public class Room
 
         await ExecuteLongClickActions();
     }
-    private async Task Switch_UberLongClicked(object? sender, BinarySensorEventArgs e)
+    private async Task Switch_UberLongClicked(object? sender, SwitchEventArgs e)
     {
         if (!IsRoomEnabled())
             return;

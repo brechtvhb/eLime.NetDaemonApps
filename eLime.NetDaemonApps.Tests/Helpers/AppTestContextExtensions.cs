@@ -53,12 +53,12 @@ public static class AppTestContextExtensions
         ctx.HaContextMock.Verify(c => c.CallService("light", "turn_on", It.Is<ServiceTarget>(s => Match(entity.EntityId, s)), parameters), times);
     }
 
-    public static void VerifySwitchTurnOff(this AppTestContext ctx, Switch entity, Func<Times> times)
+    public static void VerifySwitchTurnOff(this AppTestContext ctx, BinarySwitch entity, Func<Times> times)
     {
         ctx.HaContextMock.Verify(c => c.CallService("switch", "turn_off", It.Is<ServiceTarget>(s => Match(entity.EntityId, s)), null), times);
     }
 
-    public static void VerifySwitchTurnOn(this AppTestContext ctx, Switch entity, Func<Times> times)
+    public static void VerifySwitchTurnOn(this AppTestContext ctx, BinarySwitch entity, Func<Times> times)
     {
         ctx.HaContextMock.Verify(c => c.CallService("switch", "turn_on", It.Is<ServiceTarget>(s => Match(entity.EntityId, s)), null), times);
     }

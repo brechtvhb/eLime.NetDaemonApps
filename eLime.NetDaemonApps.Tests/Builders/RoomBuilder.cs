@@ -388,9 +388,9 @@ namespace eLime.NetDaemonApps.Tests.Builders
 
         public RoomBuilder WithSwitch()
         {
-            _config.Switches = new List<string>
+            _config.Switches = new List<SwitchConfig>
             {
-                "binary_sensor.switch"
+                new() { State = "sensor.switch" }
             };
 
             _config.ClickInterval = TimeSpan.FromMilliseconds(10);

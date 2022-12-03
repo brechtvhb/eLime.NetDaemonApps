@@ -4,7 +4,7 @@ using NetDaemon.HassModel.Entities;
 
 namespace eLime.NetDaemonApps.Domain.BinarySensors;
 
-public record Switch : BinarySensor
+public record BinarySwitch : BinarySensor, ISwitch
 {
     private DateTime? _clickStartDateTime;
     private Int32 _clickCount;
@@ -13,17 +13,17 @@ public record Switch : BinarySensor
     public TimeSpan ClickInterval { get; private set; }
     public TimeSpan LongClickDuration { get; private set; }
     public TimeSpan UberLongClickDuration { get; private set; }
-    public Switch(IHaContext haContext, string entityId) : base(haContext, entityId)
+    public BinarySwitch(IHaContext haContext, string entityId) : base(haContext, entityId)
     {
     }
 
-    public Switch(Entity entity) : base(entity)
+    public BinarySwitch(Entity entity) : base(entity)
     {
     }
 
     public void Initialize(TimeSpan? clickInterval, TimeSpan? longClickDuration, TimeSpan? uberLongClickDuration)
     {
-        ClickInterval = clickInterval ?? TimeSpan.FromMilliseconds(400);
+        ClickInterval = clickInterval ?? TimeSpan.FromMilliseconds(350);
         LongClickDuration = longClickDuration ?? TimeSpan.FromSeconds(1);
         UberLongClickDuration = uberLongClickDuration ?? TimeSpan.FromSeconds(3);
         ClickDebounceDispatcher = new DebounceDispatcher(ClickInterval);
@@ -42,18 +42,18 @@ public record Switch : BinarySensor
             });
     }
 
-    public static Switch Create(IHaContext haContext, string entityId, TimeSpan? clickInterval, TimeSpan? longClickDuration, TimeSpan? uberLongClickDuration)
+    public static BinarySwitch Create(IHaContext haContext, string entityId, TimeSpan? clickInterval, TimeSpan? longClickDuration, TimeSpan? uberLongClickDuration)
     {
-        var @switch = new Switch(haContext, entityId);
+        var @switch = new BinarySwitch(haContext, entityId);
         @switch.Initialize(clickInterval, longClickDuration, uberLongClickDuration);
         return @switch;
     }
 
-    public event EventHandler<BinarySensorEventArgs>? Clicked;
-    public event EventHandler<BinarySensorEventArgs>? DoubleClicked;
-    public event EventHandler<BinarySensorEventArgs>? TripleClicked;
-    public event EventHandler<BinarySensorEventArgs>? LongClicked;
-    public event EventHandler<BinarySensorEventArgs>? UberLongClicked;
+    public event EventHandler<SwitchEventArgs>? Clicked;
+    public event EventHandler<SwitchEventArgs>? DoubleClicked;
+    public event EventHandler<SwitchEventArgs>? TripleClicked;
+    public event EventHandler<SwitchEventArgs>? LongClicked;
+    public event EventHandler<SwitchEventArgs>? UberLongClicked;
 
     private new void OnTurnedOn(BinarySensorEventArgs e)
     {
@@ -61,11 +61,6 @@ public record Switch : BinarySensor
     }
     private new void OnTurnedOff(BinarySensorEventArgs e)
     {
-
-        var testEventFired = FireNonBinaryClickEvent(e);
-        if (testEventFired)
-            return;
-
         if (_clickStartDateTime == null)
             throw new Exception("Technically not possible afaik?");
 
@@ -73,14 +68,14 @@ public record Switch : BinarySensor
 
         if (clickDuration > UberLongClickDuration)
         {
-            UberLongClicked?.Invoke(this, e);
+            UberLongClicked?.Invoke(this, new SwitchEventArgs(e.Sensor));
             _clickCount = 0;
             return;
         }
 
         if (clickDuration > LongClickDuration)
         {
-            LongClicked?.Invoke(this, e);
+            LongClicked?.Invoke(this, new SwitchEventArgs(e.Sensor));
             _clickCount = 0;
             return;
         }
@@ -90,44 +85,19 @@ public record Switch : BinarySensor
 
     }
 
-    //hacky way to pass by debounce which cause tests to fail
-    private bool FireNonBinaryClickEvent(BinarySensorEventArgs e)
-    {
-        switch (e.New.Attributes.Icon)
-        {
-            case "single":
-                Clicked?.Invoke(this, e);
-                return true;
-            case "double":
-                DoubleClicked?.Invoke(this, e);
-                return true;
-            case "triple":
-                TripleClicked?.Invoke(this, e);
-                return true;
-            case "long":
-                LongClicked?.Invoke(this, e);
-                return true;
-            case "uberLong":
-                UberLongClicked?.Invoke(this, e);
-                return true;
-            default:
-                return false;
-        }
-    }
-
     private void FireAppropriateClickEvent(BinarySensorEventArgs e)
     {
         switch (_clickCount)
         {
             case 1:
-                Clicked?.Invoke(this, e);
+                Clicked?.Invoke(this, new SwitchEventArgs(e.Sensor));
                 break;
             case 2:
-                DoubleClicked?.Invoke(this, e);
+                DoubleClicked?.Invoke(this, new SwitchEventArgs(e.Sensor));
                 _clickCount = 0;
                 break;
             default:
-                TripleClicked?.Invoke(this, e);
+                TripleClicked?.Invoke(this, new SwitchEventArgs(e.Sensor));
                 _clickCount = 0;
                 break;
         }

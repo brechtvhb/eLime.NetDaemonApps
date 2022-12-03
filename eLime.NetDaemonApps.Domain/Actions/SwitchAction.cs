@@ -4,9 +4,9 @@ namespace eLime.NetDaemonApps.Domain.Rooms.Actions;
 
 public class SwitchTurnOnAction : Action
 {
-    public Switch Switch { get; init; }
+    public BinarySwitch Switch { get; init; }
 
-    public SwitchTurnOnAction(Switch @switch)
+    public SwitchTurnOnAction(BinarySwitch @switch)
     {
         Switch = @switch;
     }
@@ -19,9 +19,9 @@ public class SwitchTurnOnAction : Action
 
 public class SwitchTurnOffAction : Action
 {
-    public Switch Switch { get; init; }
+    public BinarySwitch Switch { get; init; }
 
-    public SwitchTurnOffAction(Switch @switch)
+    public SwitchTurnOffAction(BinarySwitch @switch)
     {
         Switch = @switch;
     }
@@ -34,10 +34,10 @@ public class SwitchTurnOffAction : Action
 
 public class SwitchPulseAction : Action
 {
-    public Switch Switch { get; init; }
+    public BinarySwitch Switch { get; init; }
     public TimeSpan Duration { get; init; }
 
-    public SwitchPulseAction(Switch @switch, TimeSpan? duration)
+    public SwitchPulseAction(BinarySwitch @switch, TimeSpan? duration)
     {
         Switch = @switch;
         Duration = duration ?? TimeSpan.FromMilliseconds(200);

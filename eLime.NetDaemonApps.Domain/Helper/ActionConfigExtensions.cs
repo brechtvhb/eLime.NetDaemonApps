@@ -4,10 +4,40 @@ using eLime.NetDaemonApps.Domain.BinarySensors;
 using eLime.NetDaemonApps.Domain.Lights;
 using eLime.NetDaemonApps.Domain.Rooms.Actions;
 using eLime.NetDaemonApps.Domain.Scenes;
+using eLime.NetDaemonApps.Domain.TextSensors;
 using NetDaemon.HassModel;
 using Action = eLime.NetDaemonApps.Domain.Rooms.Actions.Action;
 
 namespace eLime.NetDaemonApps.Domain.Helper;
+
+internal static class SwitchConfigExtensions
+{
+    internal static List<ISwitch> ConvertToDomainModel(this IList<SwitchConfig>? switches, TimeSpan? clickInterval, TimeSpan? longClickDuration, TimeSpan? uberLongClickDuration,
+        String? singlePressState, String? doublePressState, String? triplePressState, String? longPressState, String? uberLongPressState, IHaContext context)
+    {
+        var switchList = new List<ISwitch>();
+
+        if (switches == null || !switches.Any())
+            return switchList;
+
+        foreach (var switchConfig in switches)
+        {
+            ISwitch sensor = switchConfig switch
+            {
+                { Binary: not null } => BinarySwitch.Create(context, switchConfig.Binary, clickInterval, longClickDuration, uberLongClickDuration),
+                { State: not null } => StateSwitch.Create(context, switchConfig.State, singlePressState, doublePressState, triplePressState, longPressState, uberLongPressState),
+                _ => throw new ArgumentException("invalid switch configuration")
+            };
+
+            if (switchList.Any(x => x.EntityId == sensor.EntityId))
+                continue;
+
+            switchList.Add(sensor);
+        }
+
+        return switchList;
+    }
+}
 
 internal static class ActionConfigExtensions
 {
@@ -69,7 +99,7 @@ internal static class ActionConfigExtensions
         if (config.Switch == null || config.SwitchAction == SwitchAction.Unknown)
             throw new ArgumentException("Switch or switch action not set");
 
-        var @switch = new Switch(haContext, config.Switch);
+        var @switch = new BinarySwitch(haContext, config.Switch);
 
         return config.SwitchAction switch
         {

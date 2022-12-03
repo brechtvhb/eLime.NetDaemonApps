@@ -3,6 +3,7 @@ using eLime.NetDaemonApps.Domain.Lights;
 using eLime.NetDaemonApps.Domain.NumericSensors;
 using eLime.NetDaemonApps.Domain.Rooms;
 using eLime.NetDaemonApps.Domain.Scenes;
+using eLime.NetDaemonApps.Domain.TextSensors;
 using eLime.NetDaemonApps.Tests.Builders;
 using eLime.NetDaemonApps.Tests.Helpers;
 using FakeItEasy;
@@ -328,11 +329,11 @@ public class FlexiLightTests
         await Task.Delay(10); //Allow pulse to pulse
 
         //Assert
-        _testCtx.VerifySwitchTurnOn(new Switch(_testCtx.HaContext, "switch.adaptive_lighting"), Moq.Times.Once);
-        _testCtx.VerifySwitchTurnOff(new Switch(_testCtx.HaContext, "switch.inspiration"), Moq.Times.Once);
+        _testCtx.VerifySwitchTurnOn(new BinarySwitch(_testCtx.HaContext, "switch.adaptive_lighting"), Moq.Times.Once);
+        _testCtx.VerifySwitchTurnOff(new BinarySwitch(_testCtx.HaContext, "switch.inspiration"), Moq.Times.Once);
 
-        _testCtx.VerifySwitchTurnOn(new Switch(_testCtx.HaContext, "switch.triple_click"), Moq.Times.Once);
-        _testCtx.VerifySwitchTurnOff(new Switch(_testCtx.HaContext, "switch.triple_click"), Moq.Times.Once);
+        _testCtx.VerifySwitchTurnOn(new BinarySwitch(_testCtx.HaContext, "switch.triple_click"), Moq.Times.Once);
+        _testCtx.VerifySwitchTurnOff(new BinarySwitch(_testCtx.HaContext, "switch.triple_click"), Moq.Times.Once);
     }
 
     [TestMethod]
@@ -558,7 +559,7 @@ public class FlexiLightTests
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
 
         //Act
-        _testCtx.SimulateClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
+        _testCtx.SimulateClick(new StateSwitch(_testCtx.HaContext, "binary_sensor.switch"));
         await Task.Delay(30); //allow debounce to ... debounce
 
         //Assert
@@ -575,7 +576,7 @@ public class FlexiLightTests
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
 
         //Act
-        _testCtx.SimulateClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
+        _testCtx.SimulateClick(new StateSwitch(_testCtx.HaContext, "sensor.switch"));
 
         //Assert
         Assert.IsTrue(room.TurnOffAt.Value > DateTime.Now.AddHours(3));
@@ -591,7 +592,7 @@ public class FlexiLightTests
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
 
         //Act
-        _testCtx.SimulateClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
+        _testCtx.SimulateClick(new StateSwitch(_testCtx.HaContext, "sensor.switch"));
 
         //Assert
         Assert.AreEqual("day", room.FlexiScenes.Current.Name);
@@ -607,8 +608,9 @@ public class FlexiLightTests
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
 
         //Act
-        _testCtx.SimulateClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
-        _testCtx.SimulateClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
+        _testCtx.SimulateClick(new StateSwitch(_testCtx.HaContext, "sensor.switch"));
+        _testCtx.SimulateClickEnd(new StateSwitch(_testCtx.HaContext, "sensor.switch"));
+        _testCtx.SimulateClick(new StateSwitch(_testCtx.HaContext, "sensor.switch"));
 
         //Assert
         Assert.AreEqual("evening", room.FlexiScenes.Current.Name);
@@ -625,7 +627,7 @@ public class FlexiLightTests
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
 
         //Act
-        _testCtx.SimulateClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
+        _testCtx.SimulateClick(new StateSwitch(_testCtx.HaContext, "sensor.switch"));
 
         //Assert
         Assert.AreEqual("evening", room.FlexiScenes.Current.Name);
@@ -641,7 +643,7 @@ public class FlexiLightTests
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
 
         //Act
-        _testCtx.SimulateClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
+        _testCtx.SimulateClick(new StateSwitch(_testCtx.HaContext, "sensor.switch"));
 
         //Assert
         Assert.AreEqual("morning", room.FlexiScenes.Current.Name);
@@ -650,7 +652,7 @@ public class FlexiLightTests
     }
 
     [TestMethod]
-    public void Click_DoesTrigger_NextScene_WithLimitedOptions_KeepsWorkingAfterMultipleCliks()
+    public void Click_DoesTrigger_NextScene_WithLimitedOptions_KeepsWorkingAfterMultipleClicks()
     {
         // Arrange
         var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithSwitch().WithSwitchChangeOFfDurationAndGoToNextAutomationAtInitialOnClickAfterMotion().WithMultipleFlexiScenesLimitedNext().Build();
@@ -658,8 +660,11 @@ public class FlexiLightTests
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
 
         //Act
-        _testCtx.SimulateClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
-        _testCtx.SimulateClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
+        _testCtx.SimulateClick(new StateSwitch(_testCtx.HaContext, "sensor.switch"));
+        _testCtx.SimulateClickEnd(new StateSwitch(_testCtx.HaContext, "sensor.switch"));
+        _testCtx.SimulateClickEnd(new StateSwitch(_testCtx.HaContext, "sensor.switch"));
+        _testCtx.SimulateClickEnd(new StateSwitch(_testCtx.HaContext, "sensor.switch"));
+        _testCtx.SimulateClick(new StateSwitch(_testCtx.HaContext, "sensor.switch"));
 
         //Assert
         Assert.AreEqual("day", room.FlexiScenes.Current.Name);
@@ -676,9 +681,11 @@ public class FlexiLightTests
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
 
         //Act
-        _testCtx.SimulateClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
-        _testCtx.SimulateClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
-        _testCtx.SimulateClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
+        _testCtx.SimulateClick(new StateSwitch(_testCtx.HaContext, "sensor.switch"));
+        _testCtx.SimulateClickEnd(new StateSwitch(_testCtx.HaContext, "sensor.switch"));
+        _testCtx.SimulateClick(new StateSwitch(_testCtx.HaContext, "sensor.switch"));
+        _testCtx.SimulateClickEnd(new StateSwitch(_testCtx.HaContext, "sensor.switch"));
+        _testCtx.SimulateClick(new StateSwitch(_testCtx.HaContext, "sensor.switch"));
 
         //Assert
         Assert.AreEqual("morning", room.FlexiScenes.Current.Name);
@@ -696,7 +703,7 @@ public class FlexiLightTests
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
 
         //Act
-        _testCtx.SimulateClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
+        _testCtx.SimulateClick(new StateSwitch(_testCtx.HaContext, "sensor.switch"));
 
         //Assert
         Assert.AreEqual("morning", room.FlexiScenes.Current.Name);
@@ -711,7 +718,7 @@ public class FlexiLightTests
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
 
         //Act
-        _testCtx.SimulateDoubleClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
+        _testCtx.SimulateDoubleClick(new StateSwitch(_testCtx.HaContext, "sensor.switch"));
 
         //Assert
         _testCtx.VerifyLightTurnOff(new Light(_testCtx.HaContext, "light.day"), Moq.Times.Once);
@@ -725,7 +732,7 @@ public class FlexiLightTests
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
 
         //Act
-        _testCtx.SimulateTripleClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
+        _testCtx.SimulateTripleClick(new StateSwitch(_testCtx.HaContext, "sensor.switch"));
         //Assert
         _testCtx.VerifyLightTurnOff(new Light(_testCtx.HaContext, "light.evening"), Moq.Times.Once);
     }
@@ -738,7 +745,7 @@ public class FlexiLightTests
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
 
         //Act
-        _testCtx.SimulateLongClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
+        _testCtx.SimulateLongClick(new StateSwitch(_testCtx.HaContext, "sensor.switch"));
 
         //Assert
         _testCtx.VerifyLightTurnOff(new Light(_testCtx.HaContext, "light.morning"), Moq.Times.Once);
@@ -752,7 +759,7 @@ public class FlexiLightTests
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
 
         //Act
-        _testCtx.SimulateUberLongClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
+        _testCtx.SimulateUberLongClick(new StateSwitch(_testCtx.HaContext, "sensor.switch"));
 
         //Assert
         _testCtx.VerifyLightTurnOff(new Light(_testCtx.HaContext, "light.morning"), Moq.Times.Once);
@@ -766,7 +773,7 @@ public class FlexiLightTests
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
 
         //Act
-        _testCtx.SimulateUberLongClick(new Switch(_testCtx.HaContext, "binary_sensor.switch"));
+        _testCtx.SimulateUberLongClick(new StateSwitch(_testCtx.HaContext, "sensor.switch"));
 
         //Assert
         _testCtx.VerifyLightTurnOff(new Light(_testCtx.HaContext, "light.morning"), Moq.Times.Once);
