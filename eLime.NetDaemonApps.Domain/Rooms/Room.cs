@@ -492,6 +492,7 @@ public class Room
             {
                 await ExecuteFlexiScene(FlexiSceneThatShouldActivate, InitiatedBy.Switch);
                 await SetTurnOffAt(FlexiSceneThatShouldActivate);
+                await UpdateStateInHomeAssistant();
             }
             else
             {

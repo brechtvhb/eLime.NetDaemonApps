@@ -45,7 +45,7 @@
         actions:
         - switch: switch.adaptive_lighting_toiilet_1
           switchAction: TurnOff
-        - light: light.toilet_1_2 #hue_color_spot_1
+        - light: light.toilet_1_spot #hue_color_spot_1
           lightAction: TurnOn
           transitionDuration: "00:00:02"
           autoTransitionDuration: "00:01:00"
@@ -65,7 +65,7 @@
         actions:
         - switch: switch.adaptive_lighting_toiilet_1
           switchAction: TurnOff
-        - light: light.toilet_1_2 #hue_color_spot_1
+        - light: light.toilet_1_spot #hue_color_spot_1
           lightAction: TurnOn
           transitionDuration: "00:00:02"
           autoTransitionDuration: "00:01:00"
