@@ -331,7 +331,7 @@ public class Room
         if (EnabledSwitch.IsOn())
             return true;
 
-        _logger.LogDebug("Will not execute off actions as flexilights is disabled for this room.");
+        _logger.LogDebug("{Room}: Will not execute off actions as flexilights is disabled for this room.", Name);
         return false;
     }
 
@@ -435,7 +435,7 @@ public class Room
         }
         else
         {
-            _logger.LogDebug("Off actions should have been executed at {TurnOffAt} will execute them now (Set by {InitiatedBy}).", TurnOffAt?.ToString("T"), InitiatedBy);
+            _logger.LogDebug("{Room}: Off actions should have been executed at {TurnOffAt} will execute them now (Set by {InitiatedBy}).", Name, TurnOffAt?.ToString("T"), InitiatedBy);
             await ExecuteOffActions();
         }
     }
@@ -485,7 +485,7 @@ public class Room
         if (!IsRoomEnabled())
             return;
 
-        _logger.LogDebug($"Click triggered for switch {e.Sensor.EntityId}");
+        _logger.LogDebug("{Room}: Click triggered for switch {EntityId}", Name, e.Sensor.EntityId);
         if (FlexiScenes.Current == null)
         {
             if (FlexiSceneThatShouldActivate != null)
@@ -496,7 +496,7 @@ public class Room
             }
             else
             {
-                _logger.LogWarning($"Click was detected but found no flexi scene that could be executed.");
+                _logger.LogWarning("{Room}: Click was detected but found no flexi scene that could be executed.", Name);
             }
 
             return;
@@ -523,7 +523,7 @@ public class Room
         if (!IsRoomEnabled())
             return;
 
-        _logger.LogDebug($"Double click triggered for switch {e.Sensor.EntityId}");
+        _logger.LogDebug("{Room}: Double click triggered for switch {EntityId}", Name, e.Sensor.EntityId);
 
         if (!DoubleClickActions.Any())
             return;
@@ -536,7 +536,7 @@ public class Room
         if (!IsRoomEnabled())
             return;
 
-        _logger.LogDebug($"Triple click triggered for switch {e.Sensor.EntityId}");
+        _logger.LogDebug("{Room}: Triple click triggered for switch {EntityId}", Name, e.Sensor.EntityId);
 
         if (!TripleClickActions.Any())
             return;
@@ -548,7 +548,7 @@ public class Room
         if (!IsRoomEnabled())
             return;
 
-        _logger.LogDebug($"Long click triggered for switch {e.Sensor.EntityId}");
+        _logger.LogDebug("{Room}: Long click triggered for switch {EntityId}", Name, e.Sensor.EntityId);
 
         if (!LongClickActions.Any())
             return;
@@ -560,7 +560,7 @@ public class Room
         if (!IsRoomEnabled())
             return;
 
-        _logger.LogDebug($"Uber long click triggered for switch {e.Sensor.EntityId}");
+        _logger.LogDebug("{Room}: Uber long click triggered for switch {EntityId}", Name, e.Sensor.EntityId);
         if (!LongClickActions.Any() && !UberLongClickActions.Any())
             return;
 
@@ -580,13 +580,14 @@ public class Room
     {
         if (IlluminanceThreshold != null && IlluminanceSensors.All(x => x.State > IlluminanceThreshold))
         {
-            _logger.LogTrace("Motion sensor saw something moving but did not turn on lights because all illuminance sensors [{IlluminanceSensorValues}] are above threshold of {IlluminanceThreshold}", String.Join(", ", IlluminanceSensors.Select(x => $"{x.EntityId} - {x.State} lux")), IlluminanceThreshold);
+            _logger.LogTrace(
+                "{Room}: Motion sensor saw something moving but did not turn on lights because all illuminance sensors [{IlluminanceSensorValues}] are above threshold of {IlluminanceThreshold}", Name, String.Join(", ", IlluminanceSensors.Select(x => $"{x.EntityId} - {x.State} lux")), IlluminanceThreshold);
             return;
         }
 
         if (IgnorePresenceUntil != null && IgnorePresenceUntil > DateTime.Now)
         {
-            _logger.LogDebug($"Motion sensor saw something moving but did not turn on lights because presence is ignored until {IgnorePresenceUntil:T}");
+            _logger.LogDebug("{Room}: Motion sensor saw something moving but did not turn on lights because presence is ignored until {IgnorePresenceUntil}", Name, IgnorePresenceUntil?.ToString("T"));
             return;
         }
 
@@ -596,7 +597,7 @@ public class Room
         }
         else
         {
-            _logger.LogWarning($"Motion was detected but found no flexi scenes that could be executed.");
+            _logger.LogWarning("{Room}: Motion was detected but found no flexi scenes that could be executed.", Name);
         }
 
         await UpdateStateInHomeAssistant();
@@ -623,7 +624,7 @@ public class Room
 
         if (AutoSwitchOffAboveIlluminance && IlluminanceSensors.All(x => x.State > IlluminanceThreshold) && FlexiScenes.Current != null)
         {
-            _logger.LogDebug($"Executed off actions. Because a motion sensor exceeded the illuminance threshold ({e.New.State} lux)");
+            _logger.LogDebug("{Room}: Executed off actions. Because a motion sensor exceeded the illuminance threshold ({e.New.State} lux)", Name);
             await ExecuteOffActions();
         }
     }
@@ -641,11 +642,14 @@ public class Room
 
         //current flexi scene still valid
         if (FlexiScenes.Current.CanActivate(FlexiSceneSensors))
+        {
+            _logger.LogInformation("{Room}: Operating mode of a scene changed but current scene is still valid. Will not auto transition", Name);
             return;
+        }
 
         if (FlexiSceneThatShouldActivate != null)
         {
-            _logger.LogInformation($"Auto transition was triggered.");
+            _logger.LogInformation("{Room}: Auto transition was triggered.", Name);
             await ExecuteFlexiScene(FlexiSceneThatShouldActivate, InitiatedBy, true);
         }
         else
@@ -655,7 +659,7 @@ public class Room
                 await ExecuteOffActions();
             }
             else
-                _logger.LogInformation($"Auto transition was triggered but no flexi scene was found to transition to.");
+                _logger.LogInformation("{Room}: Auto transition was triggered but no flexi scene was found to transition to.", Name);
         }
 
         await UpdateStateInHomeAssistant();
