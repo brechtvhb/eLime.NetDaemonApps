@@ -253,7 +253,7 @@ public class Room
         if (_haContext.Entity(switchName).State == null || string.Equals(_haContext.Entity(switchName).State, "unavailable", StringComparison.InvariantCultureIgnoreCase))
         {
             _logger.LogDebug("Creating Enabled switch for room '{room}' in home assistant.", Name);
-            _mqttEntityManager.CreateAsync(switchName, new EntityCreationOptions(Name: $"Flexi lights - {Name}", DeviceClass: "switch", Persist: true)).RunSync();
+            _mqttEntityManager.CreateAsync(switchName, new EntityCreationOptions(Name: $"Flexi lights - {Name}", DeviceClass: "switch", Persist: true), new EnabledSwitchAttributes { Icon = "mdi:palette" }).RunSync();
             created = true;
         }
 
@@ -319,7 +319,7 @@ public class Room
             InitiatedBy = InitiatedBy.ToString(),
             CurrentFlexiScene = FlexiScenes.Current?.Name,
             InitialFlexiScene = FlexiScenes.Initial?.Name,
-            LastUpdated = DateTime.Now.ToString("O")
+            LastUpdated = DateTime.Now.ToString("O"),
         };
         await _mqttEntityManager.SetAttributesAsync(EnabledSwitch.EntityId, attributes);
         _logger.LogTrace("Updated flexilight state for room '{room}' in Home assistant to {attr}", Name, attributes);
