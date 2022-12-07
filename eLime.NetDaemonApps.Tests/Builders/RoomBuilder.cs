@@ -231,6 +231,36 @@ namespace eLime.NetDaemonApps.Tests.Builders
             return this;
         }
 
+        public RoomBuilder WithNegativeCondition()
+        {
+            _config.FlexiScenes = new List<FlexiSceneConfig>
+            {
+                new()
+                {
+                    Name = "day",
+                    Conditions = new List<ConditionConfig> {new() {Binary = "!binary_sensor.operating_mode_morning" } },
+                    Actions = new List<ActionConfig> {new() {LightAction = LightAction.TurnOn, Light = "light.day", TransitionDuration = TimeSpan.FromSeconds(2), AutoTransitionDuration = TimeSpan.FromSeconds(10) } },
+                    TurnOffAfterIfTriggeredByMotionSensor = TimeSpan.FromMinutes(5),
+                    TurnOffAfterIfTriggeredBySwitch = TimeSpan.FromHours(4)
+                },
+                new()
+                {
+                    Name = "morning",
+                    Actions = new List<ActionConfig> {new() {LightAction = LightAction.TurnOn, Light = "light.morning", TransitionDuration = TimeSpan.FromSeconds(2), AutoTransitionDuration = TimeSpan.FromSeconds(10)}},
+                    TurnOffAfterIfTriggeredByMotionSensor = TimeSpan.FromMinutes(15),
+                    TurnOffAfterIfTriggeredBySwitch = TimeSpan.FromHours(2)
+                },
+            };
+
+            _config.OffActions = new List<ActionConfig>
+            {
+                new() {LightAction = LightAction.TurnOff, Light = "light.morning"},
+                new() {LightAction = LightAction.TurnOff, Light = "light.day"}
+            };
+
+            return this;
+        }
+
         public RoomBuilder WithMultipleFlexiScenesLimitedNext()
         {
             _config.FlexiScenes = new List<FlexiSceneConfig>

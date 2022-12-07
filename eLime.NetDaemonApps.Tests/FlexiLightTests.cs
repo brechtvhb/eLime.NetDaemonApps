@@ -475,6 +475,21 @@ public class FlexiLightTests
     }
 
     [TestMethod]
+    public void Complex_Conditions_Negative()
+    {
+        // Arrange
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithNegativeCondition().Build();
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_morning"), "off");
+
+        //Act
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
+
+        //Assert
+        _testCtx.VerifyLightTurnOn(new Light(_testCtx.HaContext, "light.day"), Moq.Times.Once);
+    }
+
+
+    [TestMethod]
     public void DoesNotActivateLight_If_IlluminanceToHigh()
     {
         // Arrange

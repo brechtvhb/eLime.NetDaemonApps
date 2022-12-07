@@ -35,14 +35,11 @@ internal static class ConditionExtensions
 
     internal static ICondition ConvertToBinaryConditionDomainModel(this ConditionConfig config)
     {
-        if (config.Binary == null)
-            throw new ArgumentException("binary sensor not set");
-
-
-        return config.BinaryMethod switch
+        return config.Binary switch
         {
-            BinaryMethod.True => new BinaryTrueCondition(config.Binary),
-            BinaryMethod.False => new BinaryFalseCondition(config.Binary),
+            null => throw new ArgumentException("binary sensor not set"),
+            { } when config.Binary.StartsWith("!") => new BinaryFalseCondition(config.Binary[1..]),
+            _ => new BinaryTrueCondition(config.Binary),
         };
     }
 
