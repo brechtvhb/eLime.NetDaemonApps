@@ -3,5 +3,5 @@
 public enum InitialClickAfterMotionBehaviour
 {
     ChangeOffDurationOnly,
-    ChangeOFfDurationAndGoToNextAutomation,
+    ChangeOFfDurationAndGoToNextFlexiScene,
 }

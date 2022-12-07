@@ -436,7 +436,7 @@ namespace eLime.NetDaemonApps.Tests.Builders
 
         public RoomBuilder WithSwitchChangeOFfDurationAndGoToNextAutomationAtInitialOnClickAfterMotion()
         {
-            _config.InitialClickAfterMotionBehaviour = InitialClickAfterMotionBehaviour.ChangeOFfDurationAndGoToNextAutomation;
+            _config.InitialClickAfterMotionBehaviour = InitialClickAfterMotionBehaviour.ChangeOFfDurationAndGoToNextFlexiScene;
 
 
             return this;
