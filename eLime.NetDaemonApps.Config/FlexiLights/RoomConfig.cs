@@ -33,6 +33,6 @@ public class RoomConfig
 
 public enum InitialClickAfterMotionBehaviour
 {
-    ChangeOffDurationOnly,
     ChangeOFfDurationAndGoToNextAutomation,
+    ChangeOffDurationOnly,
 }
