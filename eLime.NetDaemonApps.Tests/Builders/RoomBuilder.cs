@@ -66,6 +66,38 @@ namespace eLime.NetDaemonApps.Tests.Builders
             return this;
         }
 
+        public RoomBuilder WithOffActionInFlexiScene()
+        {
+            _config.FlexiScenes = new List<FlexiSceneConfig>
+            {
+                new()
+                {
+                    Name = "default",
+                    Actions = new List<ActionConfig>
+                    {
+                        new() {LightAction = LightAction.TurnOn, Light = "light.light1"},
+                    },
+                },
+                new()
+                {
+                    Name = "off",
+                    Actions = new List<ActionConfig>
+                    {
+                        new() {ExecuteOffActions = true},
+                    },
+                },
+            };
+
+            _config.OffActions = new List<ActionConfig>
+            {
+                new() {LightAction = LightAction.TurnOff, Light = "light.light1"},
+            };
+
+            return this;
+        }
+
+
+
         public RoomBuilder WithLightColors()
         {
             _config.FlexiScenes = new List<FlexiSceneConfig>

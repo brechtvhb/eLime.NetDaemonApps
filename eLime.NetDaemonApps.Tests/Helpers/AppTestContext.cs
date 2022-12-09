@@ -50,6 +50,7 @@ public class AppTestContext
     public void SimulateClick(StateSwitch @switch, string state = "single-press")
     {
         TriggerStateChange(@switch, state);
+        TriggerStateChange(@switch, "none");
     }
 
     public void SimulateDoubleClick(StateSwitch @switch)
@@ -67,10 +68,6 @@ public class AppTestContext
     public void SimulateUberLongClick(StateSwitch @switch)
     {
         SimulateClick(@switch, "uber-long-press");
-    }
-    public void SimulateClickEnd(StateSwitch @switch)
-    {
-        SimulateClick(@switch, "none");
     }
 
     public void TriggerStateChange(Entity entity, EntityState newState)

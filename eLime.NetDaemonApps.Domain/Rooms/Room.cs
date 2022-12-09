@@ -336,13 +336,13 @@ public class Room
         return false;
     }
 
-    private async Task ExecuteFlexiScene(FlexiScene flexiScene, InitiatedBy initiatedBy, Boolean autoTransition = false, Boolean overwriteInitialScene = true)
+    private async Task<bool> ExecuteFlexiScene(FlexiScene flexiScene, InitiatedBy initiatedBy, Boolean autoTransition = false, Boolean overwriteInitialScene = true)
     {
         _logger.LogInformation("{Room}: Will execute flexi scene {flexiScene}. Triggered by {InitiatedBy}.", Name, flexiScene.Name, initiatedBy);
         FlexiScenes.SetCurrentScene(flexiScene, overwriteInitialScene);
         InitiatedBy = initiatedBy;
 
-        await ExecuteActions(flexiScene.Actions, autoTransition);
+        return await ExecuteActions(flexiScene.Actions, autoTransition);
     }
     private async Task ExecuteOffActions()
     {
@@ -448,15 +448,21 @@ public class Room
         TurnOffSchedule?.Dispose();
     }
 
-    private async Task ExecuteActions(IReadOnlyCollection<Action> actions, Boolean autoTransition = false)
+    private async Task<Boolean> ExecuteActions(IReadOnlyCollection<Action> actions, Boolean autoTransition = false)
     {
+        var offActionsExecuted = false;
         foreach (var action in actions)
         {
             if (action is ExecuteOffActionsAction)
+            {
                 await ExecuteOffActions();
+                offActionsExecuted = true;
+            }
             else
                 await action.Execute(autoTransition);
         }
+
+        return offActionsExecuted;
     }
     private async Task OffSensor_TurnedOn(object? sender, BinarySensorEventArgs e)
     {
@@ -491,7 +497,11 @@ public class Room
         {
             if (FlexiSceneThatShouldActivate != null)
             {
-                await ExecuteFlexiScene(FlexiSceneThatShouldActivate, InitiatedBy.Switch);
+                var offActionsExecuted = await ExecuteFlexiScene(FlexiSceneThatShouldActivate, InitiatedBy.Switch);
+
+                if (offActionsExecuted)
+                    return;
+
                 await SetTurnOffAt(FlexiSceneThatShouldActivate);
                 await UpdateStateInHomeAssistant();
             }

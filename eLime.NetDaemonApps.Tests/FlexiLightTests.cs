@@ -624,7 +624,6 @@ public class FlexiLightTests
 
         //Act
         _testCtx.SimulateClick(new StateSwitch(_testCtx.HaContext, "sensor.switch"));
-        _testCtx.SimulateClickEnd(new StateSwitch(_testCtx.HaContext, "sensor.switch"));
         _testCtx.SimulateClick(new StateSwitch(_testCtx.HaContext, "sensor.switch"));
 
         //Assert
@@ -676,9 +675,6 @@ public class FlexiLightTests
 
         //Act
         _testCtx.SimulateClick(new StateSwitch(_testCtx.HaContext, "sensor.switch"));
-        _testCtx.SimulateClickEnd(new StateSwitch(_testCtx.HaContext, "sensor.switch"));
-        _testCtx.SimulateClickEnd(new StateSwitch(_testCtx.HaContext, "sensor.switch"));
-        _testCtx.SimulateClickEnd(new StateSwitch(_testCtx.HaContext, "sensor.switch"));
         _testCtx.SimulateClick(new StateSwitch(_testCtx.HaContext, "sensor.switch"));
 
         //Assert
@@ -697,9 +693,7 @@ public class FlexiLightTests
 
         //Act
         _testCtx.SimulateClick(new StateSwitch(_testCtx.HaContext, "sensor.switch"));
-        _testCtx.SimulateClickEnd(new StateSwitch(_testCtx.HaContext, "sensor.switch"));
         _testCtx.SimulateClick(new StateSwitch(_testCtx.HaContext, "sensor.switch"));
-        _testCtx.SimulateClickEnd(new StateSwitch(_testCtx.HaContext, "sensor.switch"));
         _testCtx.SimulateClick(new StateSwitch(_testCtx.HaContext, "sensor.switch"));
 
         //Assert
@@ -810,5 +804,20 @@ public class FlexiLightTests
         _testCtx.VerifyLightTurnOff(new Light(_testCtx.HaContext, "light.morning"), Moq.Times.Once);
         _testCtx.VerifyLightTurnOff(new Light(_testCtx.HaContext, "light.day"), Moq.Times.Once);
         _testCtx.VerifyLightTurnOff(new Light(_testCtx.HaContext, "light.evening"), Moq.Times.Once);
+    }
+
+    [TestMethod]
+    public void OffAction_InFlexiScene_Triggers_OffActions()
+    {
+        // Arrange
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithOffActionInFlexiScene().WithSwitch().Build();
+        _testCtx.SimulateClick(new StateSwitch(_testCtx.HaContext, "sensor.switch"));
+
+        //Act
+        _testCtx.SimulateClick(new StateSwitch(_testCtx.HaContext, "sensor.switch"));
+        //Assert
+        _testCtx.VerifyLightTurnOff(new Light(_testCtx.HaContext, "light.light1"), Moq.Times.Once);
+        Assert.IsNull(room.FlexiScenes.Current);
+        Assert.AreEqual(InitiatedBy.NoOne, room.InitiatedBy);
     }
 }
