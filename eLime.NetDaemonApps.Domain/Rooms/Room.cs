@@ -521,7 +521,10 @@ public class Room
         else
         {
             var nextFlexiScene = FlexiScenes.Next;
-            await ExecuteFlexiScene(nextFlexiScene, InitiatedBy.Switch, false, false);
+            var offActionsExecuted = await ExecuteFlexiScene(nextFlexiScene, InitiatedBy.Switch, false, false);
+
+            if (offActionsExecuted)
+                return;
 
             await SetTurnOffAt(nextFlexiScene);
         }
