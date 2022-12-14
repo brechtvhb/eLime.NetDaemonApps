@@ -488,6 +488,22 @@ public class FlexiLightTests
         _testCtx.VerifyLightTurnOn(new Light(_testCtx.HaContext, "light.day"), Moq.Times.Once);
     }
 
+    [TestMethod]
+    public void Complex_And_Or_Binary()
+    {
+        // Arrange
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithAllKindsOfConditions().Build();
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_night"), "off");
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_evening"), "on");
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_peak_hour_morning"), "off");
+
+        //Act
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
+
+        //Assert
+        _testCtx.VerifyLightTurnOn(new Light(_testCtx.HaContext, "light.night"), Moq.Times.Once);
+    }
+
 
     [TestMethod]
     public void DoesNotActivateLight_If_IlluminanceToHigh()

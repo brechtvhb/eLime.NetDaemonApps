@@ -293,6 +293,49 @@ namespace eLime.NetDaemonApps.Tests.Builders
             return this;
         }
 
+        public RoomBuilder WithAllKindsOfConditions()
+        {
+            _config.FlexiScenes = new List<FlexiSceneConfig>
+            {
+                new()
+                {
+                    Name = "night",
+                    Conditions = new List<ConditionConfig>
+                    {
+                        new() { And =
+                            new List<ConditionConfig> {
+                                new() { Or =
+                                    new List<ConditionConfig> {
+                                        new () {Binary = "binary_sensor.operating_mode_night" },
+                                        new () {Binary = "binary_sensor.operating_mode_evening" }
+                                    }
+                                },
+                                new() { Binary = "!binary_sensor.operating_mode_peak_hour_morning"}
+                            }
+                        }
+                    },
+                    Actions = new List<ActionConfig> {new() {LightAction = LightAction.TurnOn, Light = "light.night", TransitionDuration = TimeSpan.FromSeconds(2), AutoTransitionDuration = TimeSpan.FromSeconds(10) } },
+                    TurnOffAfterIfTriggeredByMotionSensor = TimeSpan.FromMinutes(5),
+                    TurnOffAfterIfTriggeredBySwitch = TimeSpan.FromHours(4)
+                },
+                new()
+                {
+                    Name = "default",
+                    Actions = new List<ActionConfig> {new() {LightAction = LightAction.TurnOn, Light = "light.day", TransitionDuration = TimeSpan.FromSeconds(2), AutoTransitionDuration = TimeSpan.FromSeconds(10)}},
+                    TurnOffAfterIfTriggeredByMotionSensor = TimeSpan.FromMinutes(15),
+                    TurnOffAfterIfTriggeredBySwitch = TimeSpan.FromHours(2)
+                },
+            };
+
+            _config.OffActions = new List<ActionConfig>
+            {
+                new() {LightAction = LightAction.TurnOff, Light = "light.night"},
+                new() {LightAction = LightAction.TurnOff, Light = "light.day"}
+            };
+
+            return this;
+        }
+
         public RoomBuilder WithMultipleFlexiScenesLimitedNext()
         {
             _config.FlexiScenes = new List<FlexiSceneConfig>

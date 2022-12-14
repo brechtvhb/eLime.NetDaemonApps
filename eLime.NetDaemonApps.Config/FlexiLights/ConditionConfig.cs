@@ -7,9 +7,3 @@ public class ConditionConfig
     public List<ConditionConfig> And { get; set; }
 
 }
-
-public enum BinaryMethod
-{
-    True,
-    False
-}

@@ -62,7 +62,7 @@ public record BinarySwitch : BinarySensor, ISwitch
     private new void OnTurnedOff(BinarySensorEventArgs e)
     {
         if (_clickStartDateTime == null)
-            throw new Exception("Technically not possible afaik?");
+            return; //can happen if you create a virtual switch which transitions from state unknown to off when it is created
 
         var clickDuration = DateTime.Now - _clickStartDateTime;
 
