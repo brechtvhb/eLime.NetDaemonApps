@@ -57,8 +57,11 @@ public class DebounceDispatcher<T>
             {
                 do
                 {
+
                     var delay = interval - (DateTime.UtcNow - lastInvokeTime);
-                    Task.Delay(delay).Wait();
+                    if (delay > TimeSpan.Zero)
+                        Task.Delay(delay).Wait();
+
                 } while ((DateTime.UtcNow - lastInvokeTime) < interval);
 
                 T res;
