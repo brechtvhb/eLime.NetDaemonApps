@@ -40,7 +40,7 @@ public class FlexiLights : IAsyncInitializable, IAsyncDisposable
                 if (String.IsNullOrWhiteSpace(roomConfig.Name))
                     roomConfig.Name = roomName;
 
-                var room = new Room(_ha, _logger, _scheduler, _mqttEntityManager, roomConfig);
+                var room = new Room(_ha, _logger, _scheduler, _mqttEntityManager, roomConfig, TimeSpan.FromSeconds(1));
                 Rooms.Add(room);
                 room.Guard();
             }

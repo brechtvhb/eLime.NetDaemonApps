@@ -22,7 +22,8 @@ public class Room
 
     public bool AutoTransition { get; }
     public bool AutoTransitionTurnOffIfNoValidSceneFound { get; }
-    private readonly DebounceDispatcher AutoTransitionDebounceDispatcher = new(TimeSpan.FromSeconds(1));
+    private bool FullyAutomated { get; }
+    private readonly DebounceDispatcher AutoTransitionDebounceDispatcher;
 
     public InitialClickAfterMotionBehaviour InitialClickAfterMotionBehaviour { get; }
     public Int32? IlluminanceThreshold { get; }
@@ -127,7 +128,7 @@ public class Room
     private readonly IMqttEntityManager _mqttEntityManager;
 
 
-    public Room(IHaContext haContext, ILogger logger, IScheduler scheduler, IMqttEntityManager mqttEntityManager, RoomConfig config)
+    public Room(IHaContext haContext, ILogger logger, IScheduler scheduler, IMqttEntityManager mqttEntityManager, RoomConfig config, TimeSpan autoTransitionDebounce)
     {
         _haContext = haContext;
         _logger = logger;
@@ -137,6 +138,7 @@ public class Room
         Name = config.Name;
         EnsureEnabledSwitchExists();
 
+        AutoTransitionDebounceDispatcher = new(autoTransitionDebounce);
         if (!(config.Enabled ?? true))
         {
             FlexiScenes = new FlexiScenes(new List<FlexiScene>());
@@ -191,9 +193,6 @@ public class Room
 
         AddSwitches(switches);
 
-        if (!Switches.Any() && !MotionSensors.Any())
-            throw new Exception("Define at least one switch or motion sensor");
-
         if (config.OffActions == null || !config.OffActions.Any())
             throw new Exception("Define at least one off action");
 
@@ -242,6 +241,16 @@ public class Room
         }
 
         FlexiScenes = new FlexiScenes(flexiScenes);
+
+        if (!Switches.Any() && !MotionSensors.Any() && AutoTransition == false)
+            throw new Exception("Define at least one switch or motion sensor or run in full automation mode (auto transition true and at least one flexiscene with conditions)");
+
+        if (!Switches.Any() && !MotionSensors.Any() && AutoTransition)
+            FullyAutomated = true;
+
+        if (FullyAutomated && FlexiScenes.All.All(x => !x.Conditions.Any()))
+            throw new Exception("Define at least one flexi scene with conditions when running in full automation mode (no switches & motion sensors defined & auto transition: true)");
+
         RetrieveSateFromHomeAssistant().RunSync();
     }
 
@@ -651,11 +660,11 @@ public class Room
         if (!AutoTransition)
             return;
 
-        if (FlexiScenes.Current == null)
+        if (FlexiScenes.Current == null && !FullyAutomated)
             return;
 
         //current flexi scene still valid
-        if (FlexiScenes.Current.CanActivate(FlexiSceneSensors))
+        if (FlexiScenes.Current != null && FlexiScenes.Current.CanActivate(FlexiSceneSensors))
         {
             _logger.LogInformation("{Room}: Operating mode of a scene changed but current scene is still valid. Will not auto transition", Name);
             return;
@@ -664,16 +673,21 @@ public class Room
         if (FlexiSceneThatShouldActivate != null)
         {
             _logger.LogInformation("{Room}: Auto transition was triggered.", Name);
-            await ExecuteFlexiScene(FlexiSceneThatShouldActivate, InitiatedBy, true);
+            await ExecuteFlexiScene(FlexiSceneThatShouldActivate, FullyAutomated ? InitiatedBy.FullyAutomated : InitiatedBy, true);
         }
         else
         {
-            if (AutoTransitionTurnOffIfNoValidSceneFound)
+            switch (AutoTransitionTurnOffIfNoValidSceneFound)
             {
-                await ExecuteOffActions();
+                case true when FlexiScenes.Current != null:
+                    await ExecuteOffActions();
+                    break;
+                case true when FlexiScenes.Current == null:
+                    break;
+                default:
+                    _logger.LogInformation("{Room}: Auto transition was triggered but no flexi scene was found to transition to.", Name);
+                    break;
             }
-            else
-                _logger.LogInformation("{Room}: Auto transition was triggered but no flexi scene was found to transition to.", Name);
         }
 
         await UpdateStateInHomeAssistant();

@@ -196,12 +196,12 @@ public class FlexiLightTests
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "off");
+        await Task.Delay(50); //allow debounce to bounce
 
         //Act
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "off");
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_evening"), "on");
-
-        await Task.Delay(1100); //allow debounce to bounce
+        await Task.Delay(50); //allow debounce to bounce
 
         //Assert
         Assert.AreEqual("evening", room.FlexiScenes.Current.Name);
@@ -216,11 +216,11 @@ public class FlexiLightTests
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "off");
+        await Task.Delay(50); //allow debounce to bounce
 
         //Act
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "off");
-
-        await Task.Delay(1100); //allow debounce to bounce
+        await Task.Delay(50); //allow debounce to bounce
 
         //Assert
         Assert.IsNull(room.FlexiScenes.Current);
@@ -236,18 +236,104 @@ public class FlexiLightTests
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "off");
+        await Task.Delay(50); //allow debounce to bounce
 
         //Act
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "off");
-
-        await Task.Delay(1100); //allow debounce to bounce
+        await Task.Delay(50); //allow debounce to bounce
 
         //Assert
         Assert.AreEqual("day", room.FlexiScenes.Current.Name);
         _testCtx.VerifyLightTurnOff(new Light(_testCtx.HaContext, "light.day"), Moq.Times.Never);
     }
 
+    [TestMethod]
+    public async Task FullyAutomated_Turns_on()
+    {
+        //Arrange
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).FullyAutomated().WithMultipleFlexiScenes().Build();
 
+        //Act
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
+        await Task.Delay(50); //allow debounce to bounce
+
+        //Assert
+        Assert.IsNotNull(room.FlexiScenes.Current);
+        Assert.AreEqual("day", room.FlexiScenes.Current.Name);
+        _testCtx.VerifyLightTurnOn(new Light(_testCtx.HaContext, "light.day"), Moq.Times.Once);
+    }
+
+    [TestMethod]
+    public async Task FullyAutomated_Transitions()
+    {
+        //Arrange
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).FullyAutomated().WithMultipleFlexiScenes().Build();
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
+        await Task.Delay(50); //allow debounce to bounce
+
+        //Act
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_evening"), "on");
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "off");
+        await Task.Delay(50); //allow debounce to bounce
+
+        //Assert
+        Assert.IsNotNull(room.FlexiScenes.Current);
+        Assert.AreEqual("evening", room.FlexiScenes.Current.Name);
+        _testCtx.VerifyLightTurnOn(new Light(_testCtx.HaContext, "light.evening"), Moq.Times.Once);
+    }
+
+    [TestMethod]
+    public async Task FullyAutomated_Turns_Off_IfConfigured()
+    {
+        //Arrange
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).FullyAutomated().WithAutoTransitionTurnOfIfNoValidSceneFound().WithMultipleFlexiScenes().Build();
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
+        await Task.Delay(50); //allow debounce to bounce
+
+        //Act
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "off");
+        await Task.Delay(50); //allow debounce to bounce
+
+        //Assert
+        Assert.IsNull(room.FlexiScenes.Current);
+        _testCtx.VerifyLightTurnOff(new Light(_testCtx.HaContext, "light.day"), Moq.Times.Once);
+    }
+
+    [TestMethod]
+    public async Task FullyAutomated_Does_Not_Turn_Off_If_Not_Configured()
+    {
+        //Arrange
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).FullyAutomated().WithMultipleFlexiScenes().Build();
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
+        await Task.Delay(50); //allow debounce to bounce
+
+        //Act
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "off");
+        await Task.Delay(50); //allow debounce to bounce
+
+        //Assert
+        Assert.IsNotNull(room.FlexiScenes.Current);
+        Assert.AreEqual("day", room.FlexiScenes.Current.Name);
+        _testCtx.VerifyLightTurnOff(new Light(_testCtx.HaContext, "light.day"), Moq.Times.Never);
+    }
+
+    [TestMethod]
+    public void FullyAutomated_Throws_Exception_If_No_Scene_With_Conditions()
+    {
+        //Arrange
+        Exception exception = null;
+
+        // Act
+        try
+        {
+            var _ = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).FullyAutomated().Build();
+        }
+        catch (Exception ex) { exception = ex; }
+
+        //Assert
+        Assert.IsNotNull(exception);
+        Assert.IsTrue(exception.Message.Contains("Define at least one flexi scene with conditions"));
+    }
 
     [TestMethod]
     public void Motion_RunsAllActions()

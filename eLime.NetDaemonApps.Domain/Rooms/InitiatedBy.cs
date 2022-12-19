@@ -4,5 +4,6 @@ public enum InitiatedBy
 {
     NoOne,
     Switch,
-    Motion
+    Motion,
+    FullyAutomated
 }

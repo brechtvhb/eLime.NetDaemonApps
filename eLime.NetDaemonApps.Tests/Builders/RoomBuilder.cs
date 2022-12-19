@@ -490,7 +490,6 @@ namespace eLime.NetDaemonApps.Tests.Builders
             return this;
         }
 
-
         public RoomBuilder WithSwitch()
         {
             _config.Switches = new List<SwitchConfig>
@@ -516,6 +515,15 @@ namespace eLime.NetDaemonApps.Tests.Builders
             };
             return this;
         }
+
+        public RoomBuilder FullyAutomated()
+        {
+            _config.AutoTransition = true;
+            _config.MotionSensors = new List<string>();
+
+            return this;
+        }
+
 
         public RoomBuilder WithUberLongClickActions()
         {
@@ -551,7 +559,7 @@ namespace eLime.NetDaemonApps.Tests.Builders
 
         public Room Build()
         {
-            return new Room(_testCtx.HaContext, _logger, _testCtx.Scheduler, _mqttEntityManager, _config);
+            return new Room(_testCtx.HaContext, _logger, _testCtx.Scheduler, _mqttEntityManager, _config, TimeSpan.FromMilliseconds(5));
         }
     }
 
