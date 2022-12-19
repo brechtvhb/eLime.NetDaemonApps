@@ -259,6 +259,7 @@ public class FlexiLightTests
 
         //Assert
         Assert.IsNotNull(room.FlexiScenes.Current);
+        Assert.IsNull(room.TurnOffAt);
         Assert.AreEqual("day", room.FlexiScenes.Current.Name);
         _testCtx.VerifyLightTurnOn(new Light(_testCtx.HaContext, "light.day"), Moq.Times.Once);
     }
