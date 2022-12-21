@@ -252,6 +252,8 @@ public class Room
             throw new Exception("Define at least one flexi scene with conditions when running in full automation mode (no switches & motion sensors defined & auto transition: true)");
 
         RetrieveSateFromHomeAssistant().RunSync();
+
+        _logger.LogInformation("{Room}: Initialized with scenes: {Scenes}.", Name, String.Join(", ", FlexiScenes.All.Select(x => x.Name)));
     }
 
     private void EnsureEnabledSwitchExists()
@@ -338,11 +340,7 @@ public class Room
 
     private bool IsRoomEnabled()
     {
-        if (EnabledSwitch.IsOn())
-            return true;
-
-        _logger.LogDebug("{Room}: Will not execute off actions as flexilights is disabled for this room.", Name);
-        return false;
+        return EnabledSwitch.IsOn();
     }
 
     private async Task<bool> ExecuteFlexiScene(FlexiScene flexiScene, InitiatedBy initiatedBy, Boolean autoTransition = false, Boolean overwriteInitialScene = true)
