@@ -266,6 +266,24 @@ public class FlexiLightTests
     }
 
     [TestMethod]
+    public void FullyAutomated_Turns_On_At_Boot()
+    {
+        //Arrange
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
+
+        //Act
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).FullyAutomated().WithMultipleFlexiScenes().Build();
+
+        //Assert
+        Assert.IsNotNull(room.FlexiScenes.Current);
+        Assert.IsNull(room.TurnOffAt);
+        Assert.AreEqual(InitiatedBy.FullyAutomated, room.InitiatedBy);
+        Assert.AreEqual("day", room.FlexiScenes.Current.Name);
+        _testCtx.VerifyLightTurnOn(new Light(_testCtx.HaContext, "light.day"), Moq.Times.Once);
+    }
+
+
+    [TestMethod]
     public async Task FullyAutomated_Transitions()
     {
         //Arrange

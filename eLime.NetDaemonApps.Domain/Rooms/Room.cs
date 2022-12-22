@@ -254,6 +254,9 @@ public class Room
         RetrieveSateFromHomeAssistant().RunSync();
 
         _logger.LogInformation("{Room}: Initialized with scenes: {Scenes}.", Name, String.Join(", ", FlexiScenes.All.Select(x => x.Name)));
+
+        if (FullyAutomated)
+            ExecuteFlexiSceneOnAutoTransition().RunSync();
     }
 
     private void EnsureEnabledSwitchExists()
