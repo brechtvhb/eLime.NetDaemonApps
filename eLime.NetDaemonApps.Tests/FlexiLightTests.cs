@@ -381,11 +381,11 @@ public class FlexiLightTests
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
 
         //Assert
-        _testCtx.VerifyLightTurnOn(new Light(_testCtx.HaContext, "light.light1"), new LightTurnOnParameters { Transition = 2, ColorName = "red" }, Moq.Times.Once);
+        _testCtx.VerifyLightTurnOn(new Light(_testCtx.HaContext, "light.light1"), new LightTurnOnParameters { ColorName = "red" }, Moq.Times.Once);
         _testCtx.HaContextMock.Verify(c => c.CallService("light", "turn_on", It.Is<ServiceTarget>(x => x.EntityIds != null && x.EntityIds.Any(id => id == "light.light2")), It.Is<LightTurnOnParameters>(x => (x.XyColor as List<int>).First() == 100 && (x.XyColor as List<int>).Last() == 120)), Moq.Times.Once);
         _testCtx.HaContextMock.Verify(c => c.CallService("light", "turn_on", It.Is<ServiceTarget>(x => x.EntityIds != null && x.EntityIds.Any(id => id == "light.light3")), It.Is<LightTurnOnParameters>(x => (x.HsColor as List<int>).First() == 100 && (x.HsColor as List<int>).Last() == 120)), Moq.Times.Once);
-        _testCtx.VerifyLightTurnOn(new Light(_testCtx.HaContext, "light.light4"), new LightTurnOnParameters { Transition = 2, Kelvin = 2500 }, Moq.Times.Once);
-        _testCtx.VerifyLightTurnOn(new Light(_testCtx.HaContext, "light.light5"), new LightTurnOnParameters { Transition = 2, ColorTemp = 300 }, Moq.Times.Once);
+        _testCtx.VerifyLightTurnOn(new Light(_testCtx.HaContext, "light.light4"), new LightTurnOnParameters { Kelvin = 2500 }, Moq.Times.Once);
+        _testCtx.VerifyLightTurnOn(new Light(_testCtx.HaContext, "light.light5"), new LightTurnOnParameters { ColorTemp = 300 }, Moq.Times.Once);
         _testCtx.HaContextMock.Verify(c => c.CallService("light", "turn_on", It.Is<ServiceTarget>(x => x.EntityIds != null && x.EntityIds.Any(id => id == "light.light6")), It.Is<LightTurnOnParameters>(x => (x.RgbColor as List<int>).First() == 10 && (x.RgbColor as List<int>).Skip(1).First() == 100 && (x.RgbColor as List<int>).Last() == 50)), Moq.Times.Once);
         _testCtx.HaContextMock.Verify(c => c.CallService("light", "turn_on", It.Is<ServiceTarget>(x => x.EntityIds != null && x.EntityIds.Any(id => id == "light.light7")), It.Is<LightTurnOnParameters>(x => (x.RgbwColor as List<int>).First() == 100 && (x.RgbwColor as List<int>).Skip(1).First() == 200 && (x.RgbwColor as List<int>).Skip(2).First() == 60 && (x.RgbwColor as List<int>).Last() == 255)), Moq.Times.Once);
         _testCtx.HaContextMock.Verify(c => c.CallService("light", "turn_on", It.Is<ServiceTarget>(x => x.EntityIds != null && x.EntityIds.Any(id => id == "light.light8")), It.Is<LightTurnOnParameters>(x => (x.RgbwwColor as List<int>).First() == 120 && (x.RgbwwColor as List<int>).Skip(1).First() == 210 && (x.RgbwwColor as List<int>).Skip(2).First() == 75 && (x.RgbwwColor as List<int>).Skip(3).First() == 50 && (x.RgbwwColor as List<int>).Last() == 200)), Moq.Times.Once);
@@ -401,12 +401,12 @@ public class FlexiLightTests
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
 
         //Assert
-        _testCtx.VerifyLightTurnOn(new Light(_testCtx.HaContext, "light.light1"), new LightTurnOnParameters { Transition = 2, Brightness = 100 }, Moq.Times.Once);
-        _testCtx.VerifyLightTurnOn(new Light(_testCtx.HaContext, "light.light2"), new LightTurnOnParameters { Transition = 2, BrightnessPct = 80 }, Moq.Times.Once);
-        _testCtx.VerifyLightTurnOn(new Light(_testCtx.HaContext, "light.light3"), new LightTurnOnParameters { Transition = 2, BrightnessStepPct = 10 }, Moq.Times.Once);
-        _testCtx.VerifyLightTurnOn(new Light(_testCtx.HaContext, "light.light4"), new LightTurnOnParameters { Transition = 2, BrightnessStepPct = -10 }, Moq.Times.Once);
-        _testCtx.VerifyLightTurnOn(new Light(_testCtx.HaContext, "light.light5"), new LightTurnOnParameters { Transition = 2, BrightnessStep = 20 }, Moq.Times.Once);
-        _testCtx.VerifyLightTurnOn(new Light(_testCtx.HaContext, "light.light6"), new LightTurnOnParameters { Transition = 2, BrightnessStep = -20 }, Moq.Times.Once);
+        _testCtx.VerifyLightTurnOn(new Light(_testCtx.HaContext, "light.light1"), new LightTurnOnParameters { Brightness = 100 }, Moq.Times.Once);
+        _testCtx.VerifyLightTurnOn(new Light(_testCtx.HaContext, "light.light2"), new LightTurnOnParameters { BrightnessPct = 80 }, Moq.Times.Once);
+        _testCtx.VerifyLightTurnOn(new Light(_testCtx.HaContext, "light.light3"), new LightTurnOnParameters { BrightnessStepPct = 10 }, Moq.Times.Once);
+        _testCtx.VerifyLightTurnOn(new Light(_testCtx.HaContext, "light.light4"), new LightTurnOnParameters { BrightnessStepPct = -10 }, Moq.Times.Once);
+        _testCtx.VerifyLightTurnOn(new Light(_testCtx.HaContext, "light.light5"), new LightTurnOnParameters { BrightnessStep = 20 }, Moq.Times.Once);
+        _testCtx.VerifyLightTurnOn(new Light(_testCtx.HaContext, "light.light6"), new LightTurnOnParameters { BrightnessStep = -20 }, Moq.Times.Once);
     }
 
     [TestMethod]
@@ -419,8 +419,8 @@ public class FlexiLightTests
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
 
         //Assert
-        _testCtx.VerifyLightTurnOn(new Light(_testCtx.HaContext, "light.light1"), new LightTurnOnParameters { Transition = 2, Effect = "SOHO" }, Moq.Times.Once);
-        _testCtx.VerifyLightTurnOn(new Light(_testCtx.HaContext, "light.light2"), new LightTurnOnParameters { Transition = 2, Flash = "short" }, Moq.Times.Once);
+        _testCtx.VerifyLightTurnOn(new Light(_testCtx.HaContext, "light.light1"), new LightTurnOnParameters { Effect = "SOHO" }, Moq.Times.Once);
+        _testCtx.VerifyLightTurnOn(new Light(_testCtx.HaContext, "light.light2"), new LightTurnOnParameters { Flash = "short" }, Moq.Times.Once);
     }
 
     [TestMethod]
