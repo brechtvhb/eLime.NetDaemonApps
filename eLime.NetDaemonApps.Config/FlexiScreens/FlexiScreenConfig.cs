@@ -1,4 +1,4 @@
-namespace eLime.NetDaemonApps.Config.FlexiScreens;
+namespace eLime.NetDaemonApps.Config;
 
 public class FlexiScreenConfig
 {
