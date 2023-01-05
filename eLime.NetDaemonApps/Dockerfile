@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:6.0-alpine3.16 AS build
+FROM mcr.microsoft.com/dotnet/sdk:7.0-alpine AS build
 WORKDIR /src
 
 # Copy csproj and restore as distinct layers
@@ -13,7 +13,7 @@ COPY . ./
 RUN dotnet publish -c Release -o /out /src/eLime.NetDaemonApps/eLime.NetDaemonApps.csproj
 
 # Build runtime image
-FROM mcr.microsoft.com/dotnet/aspnet:6.0-alpine3.16 AS run
+FROM mcr.microsoft.com/dotnet/aspnet:7.0-alpine AS run
 WORKDIR /app
 COPY --from=build /out .
 ENTRYPOINT ["dotnet", "eLime.NetDaemonApps.dll"]
