@@ -1,7 +1,7 @@
 ﻿using eLime.NetDaemonApps.Domain.Scenes;
-using Action = eLime.NetDaemonApps.Domain.Rooms.Actions.Action;
+using Action = eLime.NetDaemonApps.Domain.FlexiScenes.Actions.Action;
 
-namespace eLime.NetDaemonApps.Domain.Actions;
+namespace eLime.NetDaemonApps.Domain.FlexiScenes.Actions;
 
 public class SceneTurnOnAction : Action
 {
@@ -16,7 +16,7 @@ public class SceneTurnOnAction : Action
         AutoTransitionDuration = autoTransitionDuration;
     }
 
-    public override Task Execute(Boolean isAutoTransition = false)
+    public override Task Execute(bool isAutoTransition = false)
     {
         var transitionDuration = (long?)(isAutoTransition ? AutoTransitionDuration ?? TransitionDuration : TransitionDuration)?.TotalSeconds;
 

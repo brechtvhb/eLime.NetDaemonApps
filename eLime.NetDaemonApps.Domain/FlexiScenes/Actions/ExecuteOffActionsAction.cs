@@ -1,4 +1,4 @@
-﻿namespace eLime.NetDaemonApps.Domain.Rooms.Actions;
+﻿namespace eLime.NetDaemonApps.Domain.FlexiScenes.Actions;
 
 public class ExecuteOffActionsAction : Action
 {
@@ -9,7 +9,7 @@ public class ExecuteOffActionsAction : Action
 
 
     //ExecuteOffActions Domain event?
-    public override Task Execute(Boolean isAutoTransition = false)
+    public override Task Execute(bool isAutoTransition = false)
     {
         return Task.CompletedTask;
     }

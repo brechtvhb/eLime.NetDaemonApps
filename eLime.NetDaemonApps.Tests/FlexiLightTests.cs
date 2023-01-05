@@ -1,7 +1,7 @@
 using eLime.NetDaemonApps.Domain.BinarySensors;
+using eLime.NetDaemonApps.Domain.FlexiScenes.Rooms;
 using eLime.NetDaemonApps.Domain.Lights;
 using eLime.NetDaemonApps.Domain.NumericSensors;
-using eLime.NetDaemonApps.Domain.Rooms;
 using eLime.NetDaemonApps.Domain.Scenes;
 using eLime.NetDaemonApps.Domain.TextSensors;
 using eLime.NetDaemonApps.Tests.Builders;

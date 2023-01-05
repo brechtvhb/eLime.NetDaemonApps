@@ -1,6 +1,6 @@
 ﻿using eLime.NetDaemonApps.Domain.BinarySensors;
 
-namespace eLime.NetDaemonApps.Domain.Rooms.Actions;
+namespace eLime.NetDaemonApps.Domain.FlexiScenes.Actions;
 
 public class SwitchTurnOnAction : Action
 {
@@ -10,7 +10,7 @@ public class SwitchTurnOnAction : Action
     {
         Switch = @switch;
     }
-    public override Task Execute(Boolean isAutoTransition = false)
+    public override Task Execute(bool isAutoTransition = false)
     {
         Switch.TurnOn();
         return Task.CompletedTask;
@@ -25,7 +25,7 @@ public class SwitchTurnOffAction : Action
     {
         Switch = @switch;
     }
-    public override Task Execute(Boolean isAutoTransition = false)
+    public override Task Execute(bool isAutoTransition = false)
     {
         Switch.TurnOff();
         return Task.CompletedTask;
@@ -42,7 +42,7 @@ public class SwitchPulseAction : Action
         Switch = @switch;
         Duration = duration ?? TimeSpan.FromMilliseconds(200);
     }
-    public override async Task Execute(Boolean isAutoTransition = false)
+    public override async Task Execute(bool isAutoTransition = false)
     {
         await Switch.Pulse(Duration);
     }

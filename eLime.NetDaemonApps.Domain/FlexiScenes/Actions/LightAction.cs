@@ -1,8 +1,8 @@
 ﻿using eLime.NetDaemonApps.Config.FlexiLights;
 using eLime.NetDaemonApps.Domain.Lights;
-using Action = eLime.NetDaemonApps.Domain.Rooms.Actions.Action;
+using Action = eLime.NetDaemonApps.Domain.FlexiScenes.Actions.Action;
 
-namespace eLime.NetDaemonApps.Domain.Actions;
+namespace eLime.NetDaemonApps.Domain.FlexiScenes.Actions;
 
 public abstract class LightAction : Action
 {
@@ -39,8 +39,8 @@ public class LightTurnOnAction : LightAction
     public string? Flash { get; init; }
     public string? Effect { get; init; }
 
-    public LightTurnOnAction(List<Light> lights, TimeSpan? transitionDuration, TimeSpan? autoTransitionDuration, String? profile,
-        Color? color, String? brightness, string? flash, string? effect)
+    public LightTurnOnAction(List<Light> lights, TimeSpan? transitionDuration, TimeSpan? autoTransitionDuration, string? profile,
+        Color? color, string? brightness, string? flash, string? effect)
         : base(lights, transitionDuration, autoTransitionDuration)
     {
         Profile = profile;
@@ -49,7 +49,7 @@ public class LightTurnOnAction : LightAction
         {
             case null:
                 break;
-            case var _ when !String.IsNullOrWhiteSpace(color.Name):
+            case var _ when !string.IsNullOrWhiteSpace(color.Name):
                 ColorName = color.Name;
                 break;
             case var _ when color.Hue != null && color.Saturation != null:
@@ -78,7 +78,7 @@ public class LightTurnOnAction : LightAction
         switch (brightness)
         {
             case null:
-            case var _ when String.IsNullOrWhiteSpace(brightness):
+            case var _ when string.IsNullOrWhiteSpace(brightness):
                 break;
             case var _ when brightness.StartsWith("+") && brightness.EndsWith("%"):
                 BrightnessStepPct = Convert.ToInt32(brightness[1..^1]);
@@ -103,7 +103,7 @@ public class LightTurnOnAction : LightAction
         Flash = flash;
         Effect = effect;
     }
-    public override Task Execute(Boolean isAutoTransition = false)
+    public override Task Execute(bool isAutoTransition = false)
     {
         var transitionDuration = (long?)(isAutoTransition ? AutoTransitionDuration ?? TransitionDuration : TransitionDuration)?.TotalSeconds;
         Lights.TurnOn(new LightTurnOnParameters
@@ -138,7 +138,7 @@ public class LightTurnOffAction : LightAction
     {
 
     }
-    public override Task Execute(Boolean isAutoTransition = false)
+    public override Task Execute(bool isAutoTransition = false)
     {
         var transitionDuration = (isAutoTransition ? AutoTransitionDuration ?? TransitionDuration : TransitionDuration)?.TotalSeconds;
         Lights.TurnOff(new LightTurnOffParameters

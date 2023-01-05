@@ -6,7 +6,7 @@ using eLime.NetDaemonApps.Domain.Rooms.Actions;
 using eLime.NetDaemonApps.Domain.Scenes;
 using eLime.NetDaemonApps.Domain.TextSensors;
 using NetDaemon.HassModel;
-using Action = eLime.NetDaemonApps.Domain.Rooms.Actions.Action;
+using Action = eLime.NetDaemonApps.Domain.FlexiScenes.Actions.Action;
 
 namespace eLime.NetDaemonApps.Domain.Helper;
 

@@ -1,4 +1,5 @@
 using eLime.NetDaemonApps.Config.FlexiLights;
+using eLime.NetDaemonApps.Config.FlexiScreens;
 
 namespace eLime.NetDaemonApps.Config;
 

@@ -1,9 +1,9 @@
 ﻿using eLime.NetDaemonApps.Config.FlexiLights;
 using eLime.NetDaemonApps.Domain.BinarySensors;
 using eLime.NetDaemonApps.Domain.Conditions;
+using eLime.NetDaemonApps.Domain.FlexiScenes.Actions;
 using eLime.NetDaemonApps.Domain.Helper;
 using eLime.NetDaemonApps.Domain.NumericSensors;
-using eLime.NetDaemonApps.Domain.Rooms.Actions;
 using Microsoft.Extensions.Logging;
 using NetDaemon.Extensions.MqttEntityManager;
 using NetDaemon.Extensions.Scheduler;
@@ -11,9 +11,9 @@ using NetDaemon.HassModel;
 using NetDaemon.HassModel.Entities;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
-using Action = eLime.NetDaemonApps.Domain.Rooms.Actions.Action;
+using Action = eLime.NetDaemonApps.Domain.FlexiScenes.Actions.Action;
 
-namespace eLime.NetDaemonApps.Domain.Rooms;
+namespace eLime.NetDaemonApps.Domain.FlexiScenes.Rooms;
 
 public class Room
 {
@@ -26,7 +26,7 @@ public class Room
     private readonly DebounceDispatcher AutoTransitionDebounceDispatcher;
 
     public InitialClickAfterMotionBehaviour InitialClickAfterMotionBehaviour { get; }
-    public Int32? IlluminanceThreshold { get; }
+    public int? IlluminanceThreshold { get; }
     public bool AutoSwitchOffAboveIlluminance { get; }
     public TimeSpan IgnorePresenceAfterOffDuration { get; }
     public DateTime? TurnOffAt { get; private set; }
@@ -253,7 +253,7 @@ public class Room
 
         RetrieveSateFromHomeAssistant().RunSync();
 
-        _logger.LogInformation("{Room}: Initialized with scenes: {Scenes}.", Name, String.Join(", ", FlexiScenes.All.Select(x => x.Name)));
+        _logger.LogInformation("{Room}: Initialized with scenes: {Scenes}.", Name, string.Join(", ", FlexiScenes.All.Select(x => x.Name)));
 
         if (FullyAutomated)
             ExecuteFlexiSceneOnAutoTransition().RunSync();
@@ -296,18 +296,18 @@ public class Room
 
     private async Task RetrieveSateFromHomeAssistant()
     {
-        IgnorePresenceUntil = !String.IsNullOrWhiteSpace(EnabledSwitch.Attributes?.IgnorePresenceUntil) ? DateTime.Parse(EnabledSwitch.Attributes.IgnorePresenceUntil) : null;
-        TurnOffAt = !String.IsNullOrWhiteSpace(EnabledSwitch.Attributes?.TurnOffAt) ? DateTime.Parse(EnabledSwitch.Attributes.TurnOffAt) : null;
-        InitiatedBy = !String.IsNullOrWhiteSpace(EnabledSwitch.Attributes?.InitiatedBy) ? Enum.Parse<InitiatedBy>(EnabledSwitch.Attributes.InitiatedBy) : InitiatedBy.NoOne;
+        IgnorePresenceUntil = !string.IsNullOrWhiteSpace(EnabledSwitch.Attributes?.IgnorePresenceUntil) ? DateTime.Parse(EnabledSwitch.Attributes.IgnorePresenceUntil) : null;
+        TurnOffAt = !string.IsNullOrWhiteSpace(EnabledSwitch.Attributes?.TurnOffAt) ? DateTime.Parse(EnabledSwitch.Attributes.TurnOffAt) : null;
+        InitiatedBy = !string.IsNullOrWhiteSpace(EnabledSwitch.Attributes?.InitiatedBy) ? Enum.Parse<InitiatedBy>(EnabledSwitch.Attributes.InitiatedBy) : InitiatedBy.NoOne;
 
-        if (!String.IsNullOrWhiteSpace(EnabledSwitch.Attributes?.CurrentFlexiScene))
+        if (!string.IsNullOrWhiteSpace(EnabledSwitch.Attributes?.CurrentFlexiScene))
         {
             var flexiScene = FlexiScenes.GetByName(EnabledSwitch.Attributes.CurrentFlexiScene);
             if (flexiScene != null)
                 FlexiScenes.SetCurrentScene(flexiScene);
         }
 
-        if (!String.IsNullOrWhiteSpace(EnabledSwitch.Attributes?.InitialFlexiScene))
+        if (!string.IsNullOrWhiteSpace(EnabledSwitch.Attributes?.InitialFlexiScene))
         {
             var flexiScene = FlexiScenes.GetByName(EnabledSwitch.Attributes.InitialFlexiScene);
             if (flexiScene != null)
@@ -346,7 +346,7 @@ public class Room
         return EnabledSwitch.IsOn();
     }
 
-    private async Task<bool> ExecuteFlexiScene(FlexiScene flexiScene, InitiatedBy initiatedBy, Boolean autoTransition = false, Boolean overwriteInitialScene = true)
+    private async Task<bool> ExecuteFlexiScene(FlexiScene flexiScene, InitiatedBy initiatedBy, bool autoTransition = false, bool overwriteInitialScene = true)
     {
         _logger.LogInformation("{Room}: Will execute flexi scene {flexiScene}. Triggered by {InitiatedBy}.", Name, flexiScene.Name, initiatedBy);
         FlexiScenes.SetCurrentScene(flexiScene, overwriteInitialScene);
@@ -458,7 +458,7 @@ public class Room
         TurnOffSchedule?.Dispose();
     }
 
-    private async Task<Boolean> ExecuteActions(IReadOnlyCollection<Action> actions, Boolean autoTransition = false)
+    private async Task<bool> ExecuteActions(IReadOnlyCollection<Action> actions, bool autoTransition = false)
     {
         var offActionsExecuted = false;
         foreach (var action in actions)
@@ -605,7 +605,7 @@ public class Room
         if (IlluminanceThreshold != null && IlluminanceSensors.All(x => x.State > IlluminanceThreshold))
         {
             _logger.LogTrace(
-                "{Room}: Motion sensor saw something moving but did not turn on lights because all illuminance sensors [{IlluminanceSensorValues}] are above threshold of {IlluminanceThreshold}", Name, String.Join(", ", IlluminanceSensors.Select(x => $"{x.EntityId} - {x.State} lux")), IlluminanceThreshold);
+                "{Room}: Motion sensor saw something moving but did not turn on lights because all illuminance sensors [{IlluminanceSensorValues}] are above threshold of {IlluminanceThreshold}", Name, string.Join(", ", IlluminanceSensors.Select(x => $"{x.EntityId} - {x.State} lux")), IlluminanceThreshold);
             return;
         }
 

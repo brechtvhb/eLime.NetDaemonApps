@@ -1,4 +1,4 @@
-namespace eLime.NetDaemonApps.Config;
+namespace eLime.NetDaemonApps.Config.FlexiScreens;
 
 public class FlexiScreenConfig
 {
@@ -7,9 +7,12 @@ public class FlexiScreenConfig
     public int Orientation { get; set; }
 
     public string SunEntity { get; set; }
-    public int OrientationThreshold { get; set; }
+    public int OrientationStartThreshold { get; set; } // Prevent screens going up in sleeping rooms (on east side) to early.
+    public int OrientationEndThreshold { get; set; }
     public decimal? ElevationThreshold { get; set; }
-    public ScreenAction ActionToExecuteOnBelowElevation { get; set; } //For Living etc: Screen should go up
+    public ScreenAction ActionToExecuteOnBelowElevation { get; set; } //For Living etc: Screen should go up, For sleeping rooms screen should go down
+
+    //TODO: how to make screen go down at around 19:30 for sleeping rooms? binary sensor?
 
     public string SolarLuxEntity { get; set; }
     public int SolarLuxAboveThreshold { get; set; }

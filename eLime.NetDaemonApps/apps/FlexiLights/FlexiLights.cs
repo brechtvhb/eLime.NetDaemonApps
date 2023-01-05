@@ -2,7 +2,7 @@
 // conflicting names
 
 using eLime.netDaemonApps.Config;
-using eLime.NetDaemonApps.Domain.Rooms;
+using eLime.NetDaemonApps.Domain.FlexiScenes.Rooms;
 using NetDaemon.Extensions.MqttEntityManager;
 using System.Collections.Generic;
 using System.Reactive.Concurrency;
