@@ -12,7 +12,7 @@ public class FlexiScreenConfig
     public decimal? ElevationThreshold { get; set; }
     public ScreenAction ActionToExecuteOnBelowElevation { get; set; } //For Living etc: Screen should go up, For sleeping rooms screen should go down
 
-    //TODO: how to make screen go down at around 19:30 for sleeping rooms? binary sensor?
+    public String SleepEntity { get; set; } //Eg: if ((workday && (time>19:15 or time<7:15)) or (!workday && (time>19:15 or time<8:45))) ?? Kids sleeping?
 
     public string SolarLuxEntity { get; set; }
     public int SolarLuxAboveThreshold { get; set; }
