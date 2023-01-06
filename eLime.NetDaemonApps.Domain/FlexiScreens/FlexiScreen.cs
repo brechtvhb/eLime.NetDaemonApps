@@ -57,7 +57,7 @@ public class FlexiScreen
 
         EnsureEnabledSwitchExists();
 
-        _scheduler.ScheduleCron("*/10 * * * *", () => GuardScreen().RunSync());
+        _scheduler.ScheduleCron("*/10 * * * * *", () => GuardScreen().RunSync());
 
         RetrieveSateFromHomeAssistant().RunSync();
     }
