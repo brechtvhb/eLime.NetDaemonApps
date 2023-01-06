@@ -1,15 +1,15 @@
 // Use unique namespaces for your apps if you going to share with others to avoid
 // conflicting names
 
-using eLime.netDaemonApps.Config;
-using eLime.NetDaemonApps.Domain.Rooms;
+using eLime.NetDaemonApps.Config;
+using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
+using eLime.NetDaemonApps.Domain.Entities.Covers;
+using eLime.NetDaemonApps.Domain.FlexiScreens;
 using NetDaemon.Extensions.MqttEntityManager;
 using System.Collections.Generic;
 using System.Reactive.Concurrency;
 using System.Threading;
 using System.Threading.Tasks;
-using eLime.NetDaemonApps.Config;
-using eLime.NetDaemonApps.Domain.FlexiScreens;
 
 namespace eLime.NetDaemonApps.apps.FlexiScreens;
 
@@ -38,13 +38,23 @@ public class FlexiScreens : IAsyncInitializable, IAsyncDisposable
         _ct = cancellationToken;
         try
         {
-            foreach (var (roomName, screenConfig) in _config.Screens)
+            foreach (var (screenName, screenConfig) in _config.Screens)
             {
-                if (String.IsNullOrWhiteSpace(screenConfig.Name))
-                    screenConfig.Name = roomName;
+                var name = String.IsNullOrWhiteSpace(screenConfig.Name) ? screenName : screenConfig.Name;
 
-                var screen = new FlexiScreen(_ha, _logger, _scheduler, _mqttEntityManager, screenConfig);
-                Screen.Add(screen);
+                if (String.IsNullOrWhiteSpace(screenConfig.ScreenEntity))
+                    throw new ArgumentNullException(nameof(screenConfig.ScreenEntity), "required");
+
+                var screen = new Cover(_ha, screenConfig.ScreenEntity);
+
+                var sunProtector = screenConfig.SunProtection.ToEntities(screenConfig.Orientation, _ha);
+                var stormProtector = screenConfig.StormProtection.ToEntities(_ha);
+                var temperatureProtector = screenConfig.TemperatureProtection.ToEntities(_ha);
+                var manIsAngryProtector = screenConfig.MinimumIntervalSinceLastAutomatedAction != null ? new ManIsAngryProtector(screenConfig.MinimumIntervalSinceLastAutomatedAction) : null;
+                var womanIsAngryProtector = screenConfig.MinimumIntervalSinceLastManualAction != null ? new WomanIsAngryProtector(screenConfig.MinimumIntervalSinceLastManualAction) : null;
+                var childrenAreAngryProtector = screenConfig.SleepSensor != null ? new ChildrenAreAngryProtector(new BinarySensor(_ha, screenConfig.SleepSensor)) : null;
+                var flexiScreen = new FlexiScreen(_ha, _logger, _scheduler, _mqttEntityManager, screenConfig.Enabled ?? true, name, screen, sunProtector, stormProtector, temperatureProtector, manIsAngryProtector, womanIsAngryProtector, childrenAreAngryProtector);
+                Screen.Add(flexiScreen);
             }
         }
         catch (Exception ex)
@@ -54,6 +64,7 @@ public class FlexiScreens : IAsyncInitializable, IAsyncDisposable
 
         return Task.CompletedTask;
     }
+
 
     public ValueTask DisposeAsync()
     {

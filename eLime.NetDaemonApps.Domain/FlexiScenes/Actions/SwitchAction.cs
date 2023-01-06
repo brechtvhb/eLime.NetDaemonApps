@@ -1,4 +1,4 @@
-﻿using eLime.NetDaemonApps.Domain.BinarySensors;
+﻿using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 
 namespace eLime.NetDaemonApps.Domain.FlexiScenes.Actions;
 

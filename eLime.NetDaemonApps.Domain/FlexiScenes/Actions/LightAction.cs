@@ -1,6 +1,5 @@
 ﻿using eLime.NetDaemonApps.Config.FlexiLights;
-using eLime.NetDaemonApps.Domain.Lights;
-using Action = eLime.NetDaemonApps.Domain.FlexiScenes.Actions.Action;
+using eLime.NetDaemonApps.Domain.Entities.Lights;
 
 namespace eLime.NetDaemonApps.Domain.FlexiScenes.Actions;
 

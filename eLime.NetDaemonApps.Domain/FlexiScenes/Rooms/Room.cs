@@ -1,9 +1,9 @@
 ﻿using eLime.NetDaemonApps.Config.FlexiLights;
-using eLime.NetDaemonApps.Domain.BinarySensors;
 using eLime.NetDaemonApps.Domain.Conditions;
+using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
+using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
 using eLime.NetDaemonApps.Domain.FlexiScenes.Actions;
 using eLime.NetDaemonApps.Domain.Helper;
-using eLime.NetDaemonApps.Domain.NumericSensors;
 using Microsoft.Extensions.Logging;
 using NetDaemon.Extensions.MqttEntityManager;
 using NetDaemon.Extensions.Scheduler;
@@ -18,7 +18,7 @@ namespace eLime.NetDaemonApps.Domain.FlexiScenes.Rooms;
 public class Room
 {
     public string? Name { get; }
-    private EnabledSwitch EnabledSwitch { get; set; }
+    private FlexiScenesEnabledSwitch EnabledSwitch { get; set; }
 
     public bool AutoTransition { get; }
     public bool AutoTransitionTurnOffIfNoValidSceneFound { get; }
@@ -271,7 +271,7 @@ public class Room
             created = true;
         }
 
-        EnabledSwitch = new EnabledSwitch(_haContext, switchName);
+        EnabledSwitch = new FlexiScenesEnabledSwitch(_haContext, switchName);
 
         if (created)
             _mqttEntityManager.SetStateAsync(switchName, "ON").RunSync();
@@ -326,7 +326,7 @@ public class Room
         if (!IsRoomEnabled())
             return;
 
-        var attributes = new EnabledSwitchAttributes
+        var attributes = new FlexiScenesEnabledSwitchAttributes
         {
             IgnorePresenceUntil = IgnorePresenceUntil?.ToString("O"),
             TurnOffAt = TurnOffAt?.ToString("O"),
@@ -648,7 +648,7 @@ public class Room
 
         if (AutoSwitchOffAboveIlluminance && IlluminanceSensors.All(x => x.State > IlluminanceThreshold) && FlexiScenes.Current != null)
         {
-            _logger.LogDebug("{Room}: Executed off actions. Because a motion sensor exceeded the illuminance threshold ({e.New.State} lux)", Name);
+            _logger.LogDebug("{Room}: Executed off actions. Because a illuminance sensor exceeded the illuminance threshold ({e.New.State} lux)", Name);
             await ExecuteOffActions();
         }
     }

@@ -1,5 +1,5 @@
-﻿using eLime.NetDaemonApps.Domain.BinarySensors;
-using eLime.NetDaemonApps.Domain.Conditions.Abstractions;
+﻿using eLime.NetDaemonApps.Domain.Conditions.Abstractions;
+using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 using NetDaemon.HassModel.Entities;
 
 namespace eLime.NetDaemonApps.Domain.Conditions;
