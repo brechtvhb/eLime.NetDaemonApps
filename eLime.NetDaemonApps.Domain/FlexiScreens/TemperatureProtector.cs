@@ -39,30 +39,18 @@ public class TemperatureProtector
         //TODO
         int? averagePredictedTemperature = null; //Weather.Attributes.Forecast;
 
-        switch (currentScreenState)
-        {
-            case ScreenState.Up:
-                {
-                    var solarLuxIndicatingSunIsShining = SolarLuxSensor != null && SolarLuxAboveThreshold != null && SolarLuxSensor.State > SolarLuxAboveThreshold;
-                    var tooHotInside = IndoorTemperatureSensor != null && MaxIndoorTemperature != null && IndoorTemperatureSensor.State > MaxIndoorTemperature;
-                    var hotDaysAhead = IndoorTemperatureSensor != null && ConditionalMaxIndoorTemperature != null && averagePredictedTemperature != null && ConditionalMaxOutdoorTemperaturePrediction != null && IndoorTemperatureSensor.State > ConditionalMaxIndoorTemperature && averagePredictedTemperature > ConditionalMaxOutdoorTemperaturePrediction;
+        var solarLuxIndicatingSunIsShining = SolarLuxSensor != null && SolarLuxAboveThreshold != null && SolarLuxSensor.State > SolarLuxAboveThreshold;
+        var solarLuxIndicatingSunIsNotShining = SolarLuxSensor != null && SolarLuxBelowThreshold != null && SolarLuxSensor.State <= SolarLuxBelowThreshold;
 
-                    return solarLuxIndicatingSunIsShining switch
-                    {
-                        true when tooHotInside || hotDaysAhead => (ScreenState.Down, false),
-                        _ => (ScreenState.Up, false)
-                    };
-                }
-            case ScreenState.Down:
-                {
-                    var solarLuxIndicatingSunIsNotShining = SolarLuxSensor != null && SolarLuxBelowThreshold != null && SolarLuxSensor.State <= SolarLuxBelowThreshold;
+        var tooHotInside = IndoorTemperatureSensor != null && MaxIndoorTemperature != null && IndoorTemperatureSensor.State > MaxIndoorTemperature;
+        var hotDaysAhead = IndoorTemperatureSensor != null && ConditionalMaxIndoorTemperature != null && averagePredictedTemperature != null && ConditionalMaxOutdoorTemperaturePrediction != null && IndoorTemperatureSensor.State > ConditionalMaxIndoorTemperature && averagePredictedTemperature > ConditionalMaxOutdoorTemperaturePrediction;
 
-                    return solarLuxIndicatingSunIsNotShining
-                        ? (ScreenState.Up, false)
-                        : (ScreenState.Down, false);
-                }
-            default:
-                throw new ArgumentOutOfRangeException(nameof(currentScreenState), currentScreenState, null);
-        }
+        if (solarLuxIndicatingSunIsShining && (tooHotInside || hotDaysAhead))
+            return (ScreenState.Down, false);
+
+        if (solarLuxIndicatingSunIsNotShining)
+            return (ScreenState.Up, false);
+
+        return (null, false);
     }
 }
