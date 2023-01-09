@@ -9,13 +9,12 @@ namespace eLime.NetDaemonApps.apps.FlexiScreens;
 public static class ConfigExtensions
 {
 
-    public static SunProtector? ToEntities(this SunProtectionConfig sunProtectionConfig, int screenOrientation, IHaContext haContext)
+    public static SunProtector? ToEntities(this SunProtectionConfig sunProtectionConfig, Sun sun, int screenOrientation)
     {
         if (String.IsNullOrWhiteSpace(sunProtectionConfig?.SunEntity))
             throw new ArgumentNullException(nameof(sunProtectionConfig.SunEntity), "required");
 
 
-        var sun = new Sun(haContext, sunProtectionConfig.SunEntity);
         ScreenState? desiredStateBelowElevation = sunProtectionConfig.DesiredStateBelowElevationThreshold switch
         {
             ScreenAction.None => null,

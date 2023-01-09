@@ -9,12 +9,12 @@ public class WomanIsAngryProtector
         MinimumIntervalSinceLastManualAction = minimumIntervalSinceLastManualAction ?? TimeSpan.FromHours(2);
     }
 
-    public (ScreenState? State, Boolean Enforce) GetDesiredState(ScreenState currentScreenState)
+    public (ScreenState? State, Boolean Enforce) GetDesiredState(DateTime? lastUpdate, ScreenState currentScreenState)
     {
         return currentScreenState switch
         {
-            ScreenState.Up when DateTime.Now.Add(MinimumIntervalSinceLastManualAction) > DateTime.Now => (ScreenState.Up, true),
-            ScreenState.Down when DateTime.Now.Add(MinimumIntervalSinceLastManualAction) > DateTime.Now => (ScreenState.Down, true),
+            ScreenState.Up when lastUpdate?.Add(MinimumIntervalSinceLastManualAction) > DateTime.Now => (ScreenState.Up, true),
+            ScreenState.Down when lastUpdate?.Add(MinimumIntervalSinceLastManualAction) > DateTime.Now => (ScreenState.Down, true),
             _ => (null, false)
         };
     }

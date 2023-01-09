@@ -66,7 +66,7 @@ public record Cover : Entity<Cover, EntityState<CoverAttributes>, CoverAttribute
         StateChanged?.Invoke(this, e);
     }
 
-    public bool IsOpen() => State == "Open";
-    public bool IsClosed() => State == "Closed";
+    public bool IsOpen() => State == "open";
+    public bool IsClosed() => State == "closed";
 
 }

@@ -10,16 +10,37 @@ public class SunProtector
     private double? ElevationThreshold { get; }
     private ScreenState? DesiredStateBelowElevationThreshold { get; }
 
+    public (ScreenState? State, Boolean Enforce) DesiredState { get; private set; }
+
     public SunProtector(double screenOrientation, Sun sun, double? orientationThreshold, double? elevationThreshold, ScreenState? desiredStateBelowElevationThreshold)
     {
         ScreenOrientation = screenOrientation;
         Sun = sun;
+        Sun.StateChanged += Sun_StateChanged;
         OrientationThreshold = orientationThreshold;
         ElevationThreshold = elevationThreshold;
         DesiredStateBelowElevationThreshold = desiredStateBelowElevationThreshold;
     }
 
-    public (ScreenState? State, Boolean Enforce) GetDesiredState(ScreenState currentScreenState)
+    private void Sun_StateChanged(object? sender, SunEventArgs e)
+    {
+        var desiredState = GetDesiredState();
+
+        if (DesiredState == desiredState)
+            return;
+
+        DesiredState = desiredState;
+        OnDesiredStateChanged(new DesiredStateEventArgs(desiredState.State, desiredState.Enforce));
+    }
+
+    public event EventHandler<DesiredStateEventArgs>? DesiredStateChanged;
+
+    protected void OnDesiredStateChanged(DesiredStateEventArgs e)
+    {
+        DesiredStateChanged?.Invoke(this, e);
+    }
+
+    private (ScreenState? State, Boolean Enforce) GetDesiredState()
     {
         var elevationAboveThreshold = false;
 

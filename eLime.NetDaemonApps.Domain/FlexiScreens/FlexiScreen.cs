@@ -2,7 +2,6 @@
 using eLime.NetDaemonApps.Domain.Helper;
 using Microsoft.Extensions.Logging;
 using NetDaemon.Extensions.MqttEntityManager;
-using NetDaemon.Extensions.Scheduler;
 using NetDaemon.HassModel;
 using System.Reactive.Concurrency;
 
@@ -13,6 +12,7 @@ public class FlexiScreen
     public string? Name { get; }
     private FlexiScreenEnabledSwitch EnabledSwitch { get; set; }
     private Cover Screen { get; }
+    private string NetDaemonUserId { get; }
 
     private SunProtector SunProtector { get; }
     private StormProtector? StormProtector { get; }
@@ -35,7 +35,7 @@ public class FlexiScreen
             ? ScreenState.Up
             : null;
 
-    public FlexiScreen(IHaContext haContext, ILogger logger, IScheduler scheduler, IMqttEntityManager mqttEntityManager, Boolean enabled, String name, Cover screen,
+    public FlexiScreen(IHaContext haContext, ILogger logger, IScheduler scheduler, IMqttEntityManager mqttEntityManager, Boolean enabled, String name, Cover screen, String ndUserId,
         SunProtector sunProtector, StormProtector? stormProtector, TemperatureProtector? temperatureProtector, ManIsAngryProtector? manIsAngryProtector, WomanIsAngryProtector? womanIsAngryProtector, ChildrenAreAngryProtector? childrenAreAngryProtector)
     {
         _haContext = haContext;
@@ -48,7 +48,11 @@ public class FlexiScreen
 
         Name = name;
         Screen = screen;
+        NetDaemonUserId = ndUserId;
+        Screen.Initialize();
+        Screen.StateChanged += async (o, e) => await Screen_StateChanged(o, e);
         SunProtector = sunProtector;
+        SunProtector.DesiredStateChanged += async (_, _) => await GuardScreen();
         StormProtector = stormProtector;
         TemperatureProtector = temperatureProtector;
         ManIsAngryProtector = manIsAngryProtector;
@@ -57,9 +61,18 @@ public class FlexiScreen
 
         EnsureEnabledSwitchExists();
 
-        _scheduler.ScheduleCron("*/10 * * * * *", () => GuardScreen().RunSync());
+        //_scheduler.RunEvery(TimeSpan.FromSeconds(10), DateTimeOffset.Now, () => GuardScreen().RunSync());
 
         RetrieveSateFromHomeAssistant().RunSync();
+    }
+
+    private async Task Screen_StateChanged(object? sender, CoverEventArgs e)
+    {
+        if (e.New?.Context?.UserId != NetDaemonUserId)
+            LastManualStateChange = DateTime.Now;
+
+        if (e.Sensor.IsOpen() || e.Sensor.IsClosed())
+            await UpdateStateInHomeAssistant();
     }
 
     private async Task GuardScreen()
@@ -67,6 +80,13 @@ public class FlexiScreen
         //State is transitioning
         if (CurrentState == null)
             return;
+
+        var desiredManIsAngryProtectorState = ManIsAngryProtector?.GetDesiredState(LastAutomatedStateChange, CurrentState.Value);
+        if (desiredManIsAngryProtectorState is { Enforce: true, State: { } })
+        {
+            await ChangeScreenState(desiredManIsAngryProtectorState.Value.State.Value);
+            return;
+        }
 
         var desiredStormProtectorState = StormProtector?.GetDesiredState(CurrentState.Value);
 
@@ -76,23 +96,13 @@ public class FlexiScreen
             return;
         }
 
-        var desiredSunProtectorState = SunProtector.GetDesiredState(CurrentState.Value);
-        if (desiredSunProtectorState is { Enforce: true, State: { } })
+        if (SunProtector.DesiredState is { Enforce: true, State: { } })
         {
-            await ChangeScreenState(desiredSunProtectorState.State.Value);
+            await ChangeScreenState(SunProtector.DesiredState.State.Value);
             return;
         }
 
-        var stateForSunProtector = desiredStormProtectorState?.State;
-
-        var desiredManIsAngryProtectorState = ManIsAngryProtector?.GetDesiredState(CurrentState.Value);
-        if (desiredManIsAngryProtectorState is { Enforce: true, State: { } })
-        {
-            await ChangeScreenState(desiredManIsAngryProtectorState.Value.State.Value);
-            return;
-        }
-
-        var desiredWomanIsAngryProtectorState = WomanIsAngryProtector?.GetDesiredState(CurrentState.Value);
+        var desiredWomanIsAngryProtectorState = WomanIsAngryProtector?.GetDesiredState(LastManualStateChange, CurrentState.Value);
         if (desiredWomanIsAngryProtectorState is { Enforce: true, State: { } })
         {
             await ChangeScreenState(desiredWomanIsAngryProtectorState.Value.State.Value);
@@ -109,52 +119,53 @@ public class FlexiScreen
         var desiredTemperatureProtectorState = TemperatureProtector?.GetDesiredState(CurrentState.Value);
         var stateForTemperatureProtector = desiredTemperatureProtectorState?.State;
 
-        if (stateForSunProtector == ScreenState.Up)
+        switch (SunProtector.DesiredState.State)
         {
-            await ChangeScreenState(ScreenState.Up);
-            return;
-        }
-
-        if (stateForSunProtector == ScreenState.Down && stateForTemperatureProtector == ScreenState.Down)
-        {
-            await ChangeScreenState(ScreenState.Down);
-            return;
-        }
-
-        if (stateForSunProtector == ScreenState.Down && stateForTemperatureProtector == ScreenState.Up)
-        {
-            await ChangeScreenState(ScreenState.Up);
-            return;
+            case ScreenState.Up:
+                await ChangeScreenState(ScreenState.Up);
+                break;
+            case ScreenState.Down when stateForTemperatureProtector == ScreenState.Down:
+                await ChangeScreenState(ScreenState.Down);
+                break;
+            case ScreenState.Down when stateForTemperatureProtector == ScreenState.Up:
+                await ChangeScreenState(ScreenState.Up);
+                break;
+            case { } when stateForTemperatureProtector is null:
+                await ChangeScreenState(SunProtector.DesiredState.State);
+                break;
         }
     }
 
-    private async Task ChangeScreenState(ScreenState desiredState)
+    private async Task ChangeScreenState(ScreenState? desiredState)
     {
-        if (desiredState == ScreenState.Up && Screen.IsClosed())
+        switch (desiredState)
         {
-            Screen.OpenCover();
-            LastAutomatedStateChange = DateTime.Now;
-            await UpdateStateInHomeAssistant();
+            case null:
+                break;
+            case ScreenState.Up when Screen.IsClosed():
+                _logger.LogInformation("Changing screen state for screen {screen} to {desiredState}", Name, desiredState);
+                Screen.OpenCover();
+                LastAutomatedStateChange = DateTime.Now;
+                await UpdateStateInHomeAssistant();
+                break;
+            case ScreenState.Down when Screen.IsOpen():
+                _logger.LogInformation("Changing screen state for screen {screen} to {desiredState}", Name, desiredState);
+                Screen.CloseCover();
+                LastAutomatedStateChange = DateTime.Now;
+                await UpdateStateInHomeAssistant();
+                break;
         }
-
-        if (desiredState == ScreenState.Down && Screen.IsClosed())
-        {
-            Screen.CloseCover();
-            LastAutomatedStateChange = DateTime.Now;
-            await UpdateStateInHomeAssistant();
-        }
-
     }
 
     private void EnsureEnabledSwitchExists()
     {
-        var switchName = $"switch.flexilights_{Name.MakeHaFriendly()}";
+        var switchName = $"switch.flexiscreens_{Name.MakeHaFriendly()}";
 
         var created = false;
         if (_haContext.Entity(switchName).State == null || string.Equals(_haContext.Entity(switchName).State, "unavailable", StringComparison.InvariantCultureIgnoreCase))
         {
-            _logger.LogDebug("Creating Enabled switch for room '{room}' in home assistant.", Name);
-            _mqttEntityManager.CreateAsync(switchName, new EntityCreationOptions(Name: $"Flexi lights - {Name}", DeviceClass: "switch", Persist: true)).RunSync();
+            _logger.LogDebug("Creating Enabled switch for screen '{screen}' in home assistant.", Name);
+            _mqttEntityManager.CreateAsync(switchName, new EntityCreationOptions(Name: $"Flexi screen - {Name}", DeviceClass: "switch", Persist: true)).RunSync();
             created = true;
         }
 
@@ -175,6 +186,8 @@ public class FlexiScreen
                 }
                 await _mqttEntityManager.SetStateAsync(switchName, state);
             });
+
+        UpdateStateInHomeAssistant().RunSync();
     }
 
     private Task RetrieveSateFromHomeAssistant()
@@ -189,7 +202,7 @@ public class FlexiScreen
 
     private async Task UpdateStateInHomeAssistant()
     {
-        if (!IsRoomEnabled())
+        if (!IsScreenEnabled())
             return;
 
         var attributes = new FlexiScreenEnabledSwitchAttributes
@@ -203,7 +216,7 @@ public class FlexiScreen
         _logger.LogTrace("Updated flexiscreen state for screen '{screen}' in Home assistant to {attr}", Name, attributes);
     }
 
-    private bool IsRoomEnabled()
+    private bool IsScreenEnabled()
     {
         return EnabledSwitch.IsOn();
     }

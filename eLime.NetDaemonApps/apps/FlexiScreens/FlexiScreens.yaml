@@ -1,90 +1,13 @@
-﻿eLime.netDaemonApps.Config.FlexLightConfig:
-  rooms:
-    toilet_1:
-      name: "Toilet +1"
+﻿eLime.NetDaemonApps.Config.FlexiScreensConfig:
+  netDaemonUserId: "17e75fc5e676439783970c2536a6c3d9"
+  screens:
+    office:
+      name: "Office"
       enabled: true
-      autoTransition: true
-      illuminanceThreshold: 15 #lux
-      autoSwitchOffAboveIlluminance: true # usefull when using outdoor illuminance sensor
-      ignorePresenceAfterOffDuration: "00:00:05"
-      clickInterval: "00:00:00.400"
-      initialClickAfterMotionBehaviour: ChangeOffDurationOnly
-      longClickDuration: "00:00:01.000"
-      uberLongClickDuration: "00:00:03.000"
-      offSensors:
-      - input_boolean.triple_click
-      lights:
-      - light.toilet_1
-      motionSensors:
-      - input_boolean.fake_binary_sensor
-      illuminanceSensors:
-      - input_number.fake_illuminance_sensor
-      switches:
-      - binary: input_boolean.fake_siwtch
-      flexiScenes:
-      - name : default
-        conditions:
-        - or:
-          - or:
-            - and:
-              - binary: binary_sensor.operating_mode_day
-                binaryMethod: False
-        actions:
-        - switch: switch.adaptive_lighting_toiilet_1
-          switchAction: TurnOff
-        - scene: scene.toilet_1_soho
-          sceneAction: TurnOn
-          transitionDuration: "00:00:02.5"
-        turnOffAfterIfTriggeredBySwitch: "02:00:00"
-        turnOffAfterIfTriggeredByMotionSensor: "00:00:10" 
-        nextFlexiScenes: [ "evening" ]
-      - name : evening
-        conditions:
-        - binary: binary_sensor.operating_mode_evening_to_midnight
-          binaryMethod: False
-        actions:
-        - switch: switch.adaptive_lighting_toiilet_1
-          switchAction: TurnOff
-        - light: light.toilet_1_spot #hue_color_spot_1
-          lightAction: TurnOn
-          transitionDuration: "00:00:02"
-          autoTransitionDuration: "00:01:00"
-          brightness: 100%
-          color:
-            mireds: 500
-        #- light: light.toilet_1
-        #  lightAction: TurnOn
-        turnOffAfterIfTriggeredBySwitch: "01:00:00"
-        turnOffAfterIfTriggeredByMotionSensor: "00:00:10"
-        nextFlexiScenes: [ "default" ]
-      - name : evening_tv
-        conditions:
-        - binary: binary_sensor.operating_mode_evening_to_midnight
-          binaryMethod: False
-        - binary: binary_sensor.watching_tv
-        actions:
-        - switch: switch.adaptive_lighting_toiilet_1
-          switchAction: TurnOff
-        - light: light.toilet_1_spot #hue_color_spot_1
-          lightAction: TurnOn
-          transitionDuration: "00:00:02"
-          autoTransitionDuration: "00:01:00"
-          brightness: 100%
-          color:
-            mireds: 500
-        #- light: light.toilet_1
-        #  lightAction: TurnOn
-        turnOffAfterIfTriggeredBySwitch: "01:00:00"
-        turnOffAfterIfTriggeredByMotionSensor: "00:00:10"
-      doubleClickActions:
-      - executeOffActions: true
-      longClickActions:
-      - switch: input_boolean.triple_click
-        switchAction: Pulse
-      tripleClickActions:
-      - switch: input_boolean.triple_click
-        switchAction: Pulse
-      offActions:
-      - light: light.toilet_1
-        lightAction: TurnOff
-        transitionDuration: "00:00:02"
+      screenEntity: "cover.fake_screen"
+      orientation: 265
+      sunProtection:
+        sunEntity: "sun.sun"
+        orientationThreshold: 88
+        elevationThreshold: 10
+        desiredStateBelowElevationThreshold: "Up"

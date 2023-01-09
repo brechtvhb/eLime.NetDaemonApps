@@ -1,6 +1,7 @@
 ﻿using NetDaemon.HassModel;
 using NetDaemon.HassModel.Entities;
 using System.Reactive.Subjects;
+using System.Text.Json;
 
 namespace eLime.NetDaemonApps.Tests.Mocks;
 
@@ -28,11 +29,15 @@ public class HaContextMockBase : IHaContext
 
     public IObservable<StateChange> StateAllChanges() => StateAllChangeSubject;
 
+    public static JsonElement AsJsonElement(object value)
+    {
+        var jsonString = JsonSerializer.Serialize(value);
+        return JsonSerializer.Deserialize<JsonElement>(jsonString);
+    }
+
     public void TriggerStateChange(Entity entity, string newStateValue, object? attributes = null)
     {
-        var newState = new EntityState { State = newStateValue };
-        if (attributes != null) newState = newState.WithAttributes(attributes);
-
+        var newState = new EntityState { State = newStateValue, AttributesJson = attributes != null ? AsJsonElement(attributes) : null };
         TriggerStateChange(entity.EntityId, newState);
     }
 

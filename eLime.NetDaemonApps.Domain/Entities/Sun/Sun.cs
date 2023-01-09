@@ -7,9 +7,30 @@ public record Sun : Entity<Sun, EntityState<SunAttributes>, SunAttributes>
 {
     public Sun(IHaContext haContext, string entityId) : base(haContext, entityId)
     {
+        Initialize();
     }
 
     public Sun(Entity entity) : base(entity)
     {
+        Initialize();
+    }
+
+    public void Initialize()
+    {
+        StateAllChanges()
+            .Subscribe(x =>
+            {
+                if (x.New == null)
+                    return;
+
+                OnStateChanged(new SunEventArgs(x));
+            });
+    }
+
+    public event EventHandler<SunEventArgs>? StateChanged;
+
+    protected void OnStateChanged(SunEventArgs e)
+    {
+        StateChanged?.Invoke(this, e);
     }
 }
