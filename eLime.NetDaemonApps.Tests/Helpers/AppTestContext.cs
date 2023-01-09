@@ -42,7 +42,11 @@ public class AppTestContext
         HaContextMock.TriggerEvent(@event);
     }
 
-    public void TriggerStateChange(Entity entity, string newStateValue, object? attributes = null)
+    public void TriggerStateChange(Entity entity, string newStateValue)
+    {
+        HaContextMock.TriggerStateChange(entity, newStateValue);
+    }
+    public void TriggerStateChangeWithAttributes(Entity entity, string newStateValue, object attributes)
     {
         HaContextMock.TriggerStateChange(entity, newStateValue, attributes);
     }

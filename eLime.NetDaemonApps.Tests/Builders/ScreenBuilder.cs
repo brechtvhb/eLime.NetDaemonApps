@@ -2,6 +2,7 @@
 using eLime.NetDaemonApps.Config.FlexiScreens;
 using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 using eLime.NetDaemonApps.Domain.Entities.Covers;
+using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
 using eLime.NetDaemonApps.Domain.Entities.Sun;
 using eLime.NetDaemonApps.Domain.FlexiScreens;
 using eLime.NetDaemonApps.Tests.Helpers;
@@ -19,6 +20,9 @@ public class ScreenBuilder
     private FlexiScreenConfig _config;
     private Cover? _cover;
     private Sun? _sun;
+    private NumericThresholdSensor? _windSpeedSensor;
+    private NumericThresholdSensor? _rainRateSensor;
+    private NumericThresholdSensor? _shortTermRainForecastSensor;
 
     public ScreenBuilder(AppTestContext testCtx, ILogger logger, IMqttEntityManager mqttEntityManager)
     {
@@ -52,13 +56,38 @@ public class ScreenBuilder
         _sun = sun;
         return this;
     }
+    public ScreenBuilder WithWindSpeedSensor(NumericThresholdSensor windSpeedSensor)
+    {
+        _windSpeedSensor = windSpeedSensor;
+        _config.StormProtection ??= new StormProtectionConfig();
+        _config.StormProtection.WindSpeedStormStartThreshold = windSpeedSensor.Threshold;
+        _config.StormProtection.WindSpeedStormEndThreshold = windSpeedSensor.BelowThreshold;
+
+        return this;
+    }
+    public ScreenBuilder WithRainRateSensor(NumericThresholdSensor rainRateSensor)
+    {
+        _rainRateSensor = rainRateSensor;
+        _config.StormProtection ??= new StormProtectionConfig();
+        _config.StormProtection.RainRateStormStartThreshold = rainRateSensor.Threshold;
+        _config.StormProtection.RainRateStormEndThreshold = rainRateSensor.BelowThreshold;
+        return this;
+    }
+    public ScreenBuilder WithShortTermRainRateSensor(NumericThresholdSensor shortTermRainForecastSensor)
+    {
+        _shortTermRainForecastSensor = shortTermRainForecastSensor;
+        _config.StormProtection ??= new StormProtectionConfig();
+        _config.StormProtection.ShortTermRainStormStartThreshold = shortTermRainForecastSensor.Threshold;
+        _config.StormProtection.ShortTermRainStormEndThreshold = shortTermRainForecastSensor.BelowThreshold;
+        return this;
+    }
 
     public FlexiScreen Build()
     {
         var screen = _cover ?? new Cover(_testCtx.HaContext, _config.ScreenEntity);
         var sun = _sun ?? new Sun(_testCtx.HaContext, _config.SunProtection.SunEntity);
         var sunProtector = _config.SunProtection.ToEntities(sun, _config.Orientation);
-        var stormProtector = _config.StormProtection.ToEntities(_testCtx.HaContext);
+        var stormProtector = _config.StormProtection.ToEntities(_windSpeedSensor, _rainRateSensor, _shortTermRainForecastSensor);
         var temperatureProtector = _config.TemperatureProtection.ToEntities(_testCtx.HaContext);
         var manIsAngryProtector = _config.MinimumIntervalSinceLastAutomatedAction != null ? new ManIsAngryProtector(_config.MinimumIntervalSinceLastAutomatedAction) : new ManIsAngryProtector(TimeSpan.FromMinutes(15));
         var womanIsAngryProtector = _config.MinimumIntervalSinceLastManualAction != null ? new WomanIsAngryProtector(_config.MinimumIntervalSinceLastManualAction) : new WomanIsAngryProtector(TimeSpan.FromHours(1));

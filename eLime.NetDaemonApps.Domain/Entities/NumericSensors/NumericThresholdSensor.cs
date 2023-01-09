@@ -5,8 +5,8 @@ namespace eLime.NetDaemonApps.Domain.Entities.NumericSensors;
 
 public record NumericThresholdSensor : NumericEntity
 {
-    public Int32? Threshold { get; private set; }
-    public Int32? BelowThreshold { get; private set; }
+    public Double? Threshold { get; private set; }
+    public Double? BelowThreshold { get; private set; }
     public NumericThresholdSensor(IHaContext haContext, string entityId) : base(haContext, entityId)
     {
     }
@@ -15,7 +15,7 @@ public record NumericThresholdSensor : NumericEntity
     {
     }
 
-    public void Initialize(Int32? threshold, Int32? belowThreshold = null)
+    public void Initialize(Double? threshold, Double? belowThreshold = null)
     {
         Threshold = threshold;
         BelowThreshold = belowThreshold ?? threshold;
@@ -23,21 +23,21 @@ public record NumericThresholdSensor : NumericEntity
         StateChanges()
             .Subscribe(x =>
             {
-                if (x.Old != null && x.New != null && x.Old.State >= BelowThreshold && x.New.State < BelowThreshold)
+                if (x.Old != null && x.New != null && x.Old.State > BelowThreshold && x.New.State <= BelowThreshold)
                 {
                     OnDroppedBelowThreshold(new NumericSensorEventArgs(x));
                 }
-                if (x.Old != null && x.New != null && x.Old.State <= Threshold && x.New.State > Threshold)
+                if (x.Old != null && x.New != null && x.Old.State < Threshold && x.New.State >= Threshold)
                 {
                     OnWentAboveThreshold(new NumericSensorEventArgs(x));
                 }
             });
     }
 
-    public static IlluminanceSensor Create(IHaContext haContext, string entityId, Int32? threshold)
+    public static NumericThresholdSensor Create(IHaContext haContext, string entityId, Double? threshold, Double? belowThreshold = null)
     {
-        var sensor = new IlluminanceSensor(haContext, entityId);
-        sensor.Initialize(threshold);
+        var sensor = new NumericThresholdSensor(haContext, entityId);
+        sensor.Initialize(threshold, belowThreshold);
         return sensor;
     }
 

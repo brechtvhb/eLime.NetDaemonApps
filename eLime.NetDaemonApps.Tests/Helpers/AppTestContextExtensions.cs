@@ -84,4 +84,9 @@ public static class AppTestContextExtensions
         ctx.HaContextMock.Verify(c => c.CallService("cover", "close_cover", It.Is<ServiceTarget>(s => Match(entity.EntityId, s)), null), times);
     }
 
+    public static void VerifyScreenGoesUp(this AppTestContext ctx, Cover entity, Func<Times> times)
+    {
+        ctx.HaContextMock.Verify(c => c.CallService("cover", "open_cover", It.Is<ServiceTarget>(s => Match(entity.EntityId, s)), null), times);
+    }
+
 }

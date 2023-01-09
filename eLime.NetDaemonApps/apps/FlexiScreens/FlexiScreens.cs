@@ -2,9 +2,6 @@
 // conflicting names
 
 using eLime.NetDaemonApps.Config;
-using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
-using eLime.NetDaemonApps.Domain.Entities.Covers;
-using eLime.NetDaemonApps.Domain.Entities.Sun;
 using eLime.NetDaemonApps.Domain.FlexiScreens;
 using NetDaemon.Extensions.MqttEntityManager;
 using System.Collections.Generic;
@@ -46,16 +43,7 @@ public class FlexiScreens : IAsyncInitializable, IAsyncDisposable
                 if (String.IsNullOrWhiteSpace(screenConfig.ScreenEntity))
                     throw new ArgumentNullException(nameof(screenConfig.ScreenEntity), "required");
 
-                var screen = new Cover(_ha, screenConfig.ScreenEntity);
-
-                var sun = new Sun(_ha, screenConfig.SunProtection.SunEntity);
-                var sunProtector = screenConfig.SunProtection.ToEntities(sun, screenConfig.Orientation);
-                var stormProtector = screenConfig.StormProtection.ToEntities(_ha);
-                var temperatureProtector = screenConfig.TemperatureProtection.ToEntities(_ha);
-                var manIsAngryProtector = screenConfig.MinimumIntervalSinceLastAutomatedAction != null ? new ManIsAngryProtector(screenConfig.MinimumIntervalSinceLastAutomatedAction) : new ManIsAngryProtector(TimeSpan.FromMinutes(15));
-                var womanIsAngryProtector = screenConfig.MinimumIntervalSinceLastManualAction != null ? new WomanIsAngryProtector(screenConfig.MinimumIntervalSinceLastManualAction) : new WomanIsAngryProtector(TimeSpan.FromHours(1));
-                var childrenAreAngryProtector = screenConfig.SleepSensor != null ? new ChildrenAreAngryProtector(new BinarySensor(_ha, screenConfig.SleepSensor)) : null;
-                var flexiScreen = new FlexiScreen(_ha, _logger, _scheduler, _mqttEntityManager, screenConfig.Enabled ?? true, name, screen, _config.NetDaemonUserId, sunProtector, stormProtector, temperatureProtector, manIsAngryProtector, womanIsAngryProtector, childrenAreAngryProtector);
+                var flexiScreen = screenConfig.ToEntities(_ha, _scheduler, _mqttEntityManager, _logger, _config.NetDaemonUserId, name);
                 Screen.Add(flexiScreen);
             }
         }
@@ -66,6 +54,7 @@ public class FlexiScreens : IAsyncInitializable, IAsyncDisposable
 
         return Task.CompletedTask;
     }
+
 
 
     public ValueTask DisposeAsync()

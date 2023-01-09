@@ -11,15 +11,15 @@ public class FlexiScreen
 {
     public string? Name { get; }
     private FlexiScreenEnabledSwitch EnabledSwitch { get; set; }
-    private Cover Screen { get; }
+    public Cover Screen { get; }
     private string NetDaemonUserId { get; }
 
-    private SunProtector SunProtector { get; }
-    private StormProtector? StormProtector { get; }
-    private TemperatureProtector? TemperatureProtector { get; }
-    private ManIsAngryProtector? ManIsAngryProtector { get; }
-    private WomanIsAngryProtector? WomanIsAngryProtector { get; }
-    private ChildrenAreAngryProtector? ChildrenAreAngryProtector { get; }
+    public SunProtector SunProtector { get; }
+    public StormProtector? StormProtector { get; }
+    public TemperatureProtector? TemperatureProtector { get; }
+    public ManIsAngryProtector? ManIsAngryProtector { get; }
+    public WomanIsAngryProtector? WomanIsAngryProtector { get; }
+    public ChildrenAreAngryProtector? ChildrenAreAngryProtector { get; }
 
     private readonly IHaContext _haContext;
     private readonly ILogger _logger;
@@ -47,13 +47,18 @@ public class FlexiScreen
             return;
 
         Name = name;
-        Screen = screen;
         NetDaemonUserId = ndUserId;
-        Screen.Initialize();
+
+        Screen = screen;
         Screen.StateChanged += async (o, e) => await Screen_StateChanged(o, e);
+
         SunProtector = sunProtector;
         SunProtector.DesiredStateChanged += async (_, _) => await GuardScreen();
+
         StormProtector = stormProtector;
+        if (StormProtector != null)
+            StormProtector.DesiredStateChanged += async (_, _) => await GuardScreen();
+
         TemperatureProtector = temperatureProtector;
         ManIsAngryProtector = manIsAngryProtector;
         WomanIsAngryProtector = womanIsAngryProtector;
@@ -88,17 +93,15 @@ public class FlexiScreen
             return;
         }
 
-        var desiredStormProtectorState = StormProtector?.GetDesiredState(CurrentState.Value);
-
-        if (desiredStormProtectorState is { Enforce: true, State: { } })
+        if (StormProtector?.DesiredState is { Enforce: true, State: { } })
         {
-            await ChangeScreenState(desiredStormProtectorState.Value.State.Value);
+            await ChangeScreenState(StormProtector.DesiredState.State);
             return;
         }
 
         if (SunProtector.DesiredState is { Enforce: true, State: { } })
         {
-            await ChangeScreenState(SunProtector.DesiredState.State.Value);
+            await ChangeScreenState(SunProtector.DesiredState.State);
             return;
         }
 

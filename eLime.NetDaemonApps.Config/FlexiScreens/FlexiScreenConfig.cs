@@ -9,8 +9,8 @@ public class FlexiScreenConfig
     public int Orientation { get; set; }
 
     public SunProtectionConfig SunProtection { get; set; }
-    public StormProtectionConfig StormProtection { get; set; }
-    public TemperatureProtectionConfig TemperatureProtection { get; set; }
+    public StormProtectionConfig? StormProtection { get; set; }
+    public TemperatureProtectionConfig? TemperatureProtection { get; set; }
 
     public String? SleepSensor { get; set; } //Eg: if ((workday && (time>19:15 or time<7:15)) or (!workday && (time>19:15 or time<8:45))) ?? Kids sleeping?
     public TimeSpan? MinimumIntervalSinceLastAutomatedAction { get; set; }

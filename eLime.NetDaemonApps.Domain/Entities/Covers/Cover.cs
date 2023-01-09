@@ -7,10 +7,12 @@ public record Cover : Entity<Cover, EntityState<CoverAttributes>, CoverAttribute
 {
     public Cover(IHaContext haContext, string entityId) : base(haContext, entityId)
     {
+        Initialize();
     }
 
     public Cover(Entity entity) : base(entity)
     {
+        Initialize();
     }
 
 
@@ -40,14 +42,6 @@ public record Cover : Entity<Cover, EntityState<CoverAttributes>, CoverAttribute
     {
         CallService("close_cover");
     }
-
-    public static Cover Create(IHaContext haContext, string entityId)
-    {
-        var sensor = new Cover(haContext, entityId);
-        sensor.Initialize();
-        return sensor;
-    }
-
 
     public event EventHandler<CoverEventArgs>? Opened;
     public event EventHandler<CoverEventArgs>? Closed;
