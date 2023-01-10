@@ -3,8 +3,8 @@ namespace eLime.NetDaemonApps.Config.FlexiScreens;
 public class TemperatureProtectionConfig
 {
     public string? SolarLuxSensor { get; set; }
-    public int? SolarLuxAboveThreshold { get; set; }
-    public int? SolarLuxBelowThreshold { get; set; }
+    public double? SolarLuxAboveThreshold { get; set; }
+    public double? SolarLuxBelowThreshold { get; set; }
     public string? IndoorTemperatureSensor { get; set; }
     public double? MaxIndoorTemperature { get; set; }
     public string? WeatherEntity { get; set; }

@@ -4,6 +4,7 @@ using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 using eLime.NetDaemonApps.Domain.Entities.Covers;
 using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
 using eLime.NetDaemonApps.Domain.Entities.Sun;
+using eLime.NetDaemonApps.Domain.Entities.Weather;
 using eLime.NetDaemonApps.Domain.FlexiScreens;
 using eLime.NetDaemonApps.Tests.Helpers;
 using Microsoft.Extensions.Logging;
@@ -20,9 +21,16 @@ public class ScreenBuilder
     private FlexiScreenConfig _config;
     private Cover? _cover;
     private Sun? _sun;
+    
     private NumericThresholdSensor? _windSpeedSensor;
     private NumericThresholdSensor? _rainRateSensor;
     private NumericThresholdSensor? _shortTermRainForecastSensor;
+
+    private NumericThresholdSensor? _solarLuxSensor;
+    private NumericSensor? _indoorTemperatureSensor;
+    private Weather? _weather;
+
+    private BinarySensor? _sleepSensor;
 
     public ScreenBuilder(AppTestContext testCtx, ILogger logger, IMqttEntityManager mqttEntityManager)
     {
@@ -82,16 +90,56 @@ public class ScreenBuilder
         return this;
     }
 
+    public ScreenBuilder WithSolarLoxSensor(NumericThresholdSensor solarLuxSensor)
+    {
+        _solarLuxSensor = solarLuxSensor;
+        _config.TemperatureProtection ??= new TemperatureProtectionConfig();
+        _config.TemperatureProtection.SolarLuxAboveThreshold = solarLuxSensor.Threshold;
+        _config.TemperatureProtection.SolarLuxBelowThreshold = solarLuxSensor.BelowThreshold;
+        return this;
+    }
+
+    public ScreenBuilder WithIndoorTemperatureSensor(NumericSensor indoorTemperatureSensor, int? maxIndoorTemperature)
+    {
+        _indoorTemperatureSensor = indoorTemperatureSensor;
+        _config.TemperatureProtection ??= new TemperatureProtectionConfig();
+        _config.TemperatureProtection.MaxIndoorTemperature = maxIndoorTemperature;
+        return this;
+    }
+
+    public ScreenBuilder WithWeatherForecast(Weather weather, int? conditionalMaxIndoorTemperature, int? conditionalMaxOutdoorTemperature, int? conditionalPredictionDays)
+    {
+        _weather = weather;
+        _config.TemperatureProtection ??= new TemperatureProtectionConfig();
+        _config.TemperatureProtection.ConditionalMaxIndoorTemperature = conditionalMaxIndoorTemperature;
+        _config.TemperatureProtection.ConditionalOutdoorTemperaturePrediction = conditionalMaxOutdoorTemperature;
+        _config.TemperatureProtection.ConditionalOutdoorTemperaturePredictionDays = conditionalPredictionDays;
+        return this;
+    }
+
     public FlexiScreen Build()
     {
         var screen = _cover ?? new Cover(_testCtx.HaContext, _config.ScreenEntity);
         var sun = _sun ?? new Sun(_testCtx.HaContext, _config.SunProtection.SunEntity);
+
+        var windSpeedSensor = _windSpeedSensor ?? (_config.StormProtection?.WindSpeedEntity != null ? NumericThresholdSensor.Create(_testCtx.HaContext, _config.StormProtection.WindSpeedEntity, _config.StormProtection.WindSpeedStormStartThreshold, _config.StormProtection.WindSpeedStormEndThreshold) : null);
+        var rainRateSensor = _rainRateSensor ?? (_config.StormProtection?.RainRateEntity != null ? NumericThresholdSensor.Create(_testCtx.HaContext, _config.StormProtection.RainRateEntity, _config.StormProtection.RainRateStormStartThreshold, _config.StormProtection.RainRateStormEndThreshold) : null);
+        var forecastRainSensor = _shortTermRainForecastSensor ?? (_config.StormProtection?.ShortTermRainForecastEntity != null ? NumericThresholdSensor.Create(_testCtx.HaContext, _config.StormProtection.ShortTermRainForecastEntity, _config.StormProtection.ShortTermRainStormStartThreshold, _config.StormProtection.ShortTermRainStormStartThreshold) : null);
+
+        var solarLuxSensor = _solarLuxSensor ?? (_config.TemperatureProtection?.SolarLuxSensor != null ? NumericThresholdSensor.Create(_testCtx.HaContext, _config.TemperatureProtection.SolarLuxSensor, _config.TemperatureProtection.SolarLuxAboveThreshold, _config.TemperatureProtection.SolarLuxBelowThreshold) : null);
+        var indoorTemperatureSensor = _indoorTemperatureSensor ?? (_config.TemperatureProtection?.IndoorTemperatureSensor != null ? NumericSensor.Create(_testCtx.HaContext, _config.TemperatureProtection.IndoorTemperatureSensor) : null);
+        var weather = _weather ?? (_config.TemperatureProtection?.WeatherEntity != null ? new Weather(_testCtx.HaContext, _config.TemperatureProtection.WeatherEntity) : null);
+
+        var sleepSensor = _sleepSensor ?? (_config.SleepSensor != null ? BinarySensor.Create(_testCtx.HaContext, _config.SleepSensor) : null);
+
         var sunProtector = _config.SunProtection.ToEntities(sun, _config.Orientation);
-        var stormProtector = _config.StormProtection.ToEntities(_windSpeedSensor, _rainRateSensor, _shortTermRainForecastSensor);
-        var temperatureProtector = _config.TemperatureProtection.ToEntities(_testCtx.HaContext);
+        var stormProtector = _config.StormProtection.ToEntities(windSpeedSensor, rainRateSensor, forecastRainSensor);
+        var temperatureProtector = _config.TemperatureProtection.ToEntities(solarLuxSensor, indoorTemperatureSensor, weather);
         var manIsAngryProtector = _config.MinimumIntervalSinceLastAutomatedAction != null ? new ManIsAngryProtector(_config.MinimumIntervalSinceLastAutomatedAction) : new ManIsAngryProtector(TimeSpan.FromMinutes(15));
         var womanIsAngryProtector = _config.MinimumIntervalSinceLastManualAction != null ? new WomanIsAngryProtector(_config.MinimumIntervalSinceLastManualAction) : new WomanIsAngryProtector(TimeSpan.FromHours(1));
-        var childrenAreAngryProtector = _config.SleepSensor != null ? new ChildrenAreAngryProtector(new BinarySensor(_testCtx.HaContext, _config.SleepSensor)) : null;
+        
+        var childrenAreAngryProtector = sleepSensor != null ? new ChildrenAreAngryProtector(sleepSensor) : null;
+
         var flexiScreen = new FlexiScreen(_testCtx.HaContext, _logger, _testCtx.Scheduler, _mqttEntityManager, _config.Enabled ?? true, _config.Name, screen, "somecoolid", sunProtector, stormProtector, temperatureProtector, manIsAngryProtector, womanIsAngryProtector, childrenAreAngryProtector);
         return flexiScreen;
     }

@@ -20,10 +20,13 @@ public static class ConfigExtensions
         var windSpeedSensor = !String.IsNullOrWhiteSpace(config.StormProtection?.WindSpeedEntity) ? NumericThresholdSensor.Create(ha, config.StormProtection.WindSpeedEntity, config.StormProtection.WindSpeedStormStartThreshold, config.StormProtection.WindSpeedStormEndThreshold) : null;
         var rainRateSensor = !String.IsNullOrWhiteSpace(config.StormProtection?.RainRateEntity) ? NumericThresholdSensor.Create(ha, config.StormProtection.RainRateEntity, config.StormProtection.RainRateStormStartThreshold, config.StormProtection.RainRateStormEndThreshold) : null;
         var shortTermRainForecastSensor = !String.IsNullOrWhiteSpace(config.StormProtection?.ShortTermRainForecastEntity) ? NumericThresholdSensor.Create(ha, config.StormProtection.ShortTermRainForecastEntity, config.StormProtection.ShortTermRainStormStartThreshold, config.StormProtection.ShortTermRainStormEndThreshold) : null;
+        var solarLuxSensor = !String.IsNullOrWhiteSpace(config.TemperatureProtection?.SolarLuxSensor) ? NumericThresholdSensor.Create(ha, config.TemperatureProtection.SolarLuxSensor, config.TemperatureProtection.SolarLuxAboveThreshold, config.TemperatureProtection.SolarLuxBelowThreshold) : null;
+        var indoorTemperatureSensor = !String.IsNullOrWhiteSpace(config.TemperatureProtection?.IndoorTemperatureSensor) ? NumericSensor.Create(ha, config.TemperatureProtection.IndoorTemperatureSensor) : null;
+        var weather = !String.IsNullOrWhiteSpace(config.TemperatureProtection?.WeatherEntity) ? new Weather(ha, config.TemperatureProtection.WeatherEntity) : null;
 
         var sunProtector = config.SunProtection.ToEntities(sun, config.Orientation);
         var stormProtector = config.StormProtection.ToEntities(windSpeedSensor, rainRateSensor, shortTermRainForecastSensor);
-        var temperatureProtector = config.TemperatureProtection.ToEntities(ha);
+        var temperatureProtector = config.TemperatureProtection.ToEntities(solarLuxSensor, indoorTemperatureSensor, weather);
 
         var manIsAngryProtector = config.MinimumIntervalSinceLastAutomatedAction != null
             ? new ManIsAngryProtector(config.MinimumIntervalSinceLastAutomatedAction)
@@ -32,7 +35,7 @@ public static class ConfigExtensions
             ? new WomanIsAngryProtector(config.MinimumIntervalSinceLastManualAction)
             : new WomanIsAngryProtector(TimeSpan.FromHours(1));
 
-        var childrenAreAngryProtector = config.SleepSensor != null ? new ChildrenAreAngryProtector(new BinarySensor(ha, config.SleepSensor)) : null;
+        var childrenAreAngryProtector = config.SleepSensor != null ? new ChildrenAreAngryProtector(BinarySensor.Create(ha, config.SleepSensor)) : null;
 
         var flexiScreen = new FlexiScreen(ha, logger, scheduler, mqttEntityManager, config.Enabled ?? true, name, screen, netDaemonUserId, sunProtector, stormProtector,
             temperatureProtector, manIsAngryProtector, womanIsAngryProtector, childrenAreAngryProtector);
@@ -66,14 +69,10 @@ public static class ConfigExtensions
         return stormProtector;
     }
 
-    public static TemperatureProtector? ToEntities(this TemperatureProtectionConfig config, IHaContext ha)
+    public static TemperatureProtector? ToEntities(this TemperatureProtectionConfig? config, NumericThresholdSensor? solarLuxSensor, NumericSensor? indoorTemperatureSensor, Weather? weather)
     {
         if (config == null)
             return null;
-
-        var solarLuxSensor = !String.IsNullOrWhiteSpace(config.SolarLuxSensor) ? new NumericSensor(ha, config.SolarLuxSensor) : null;
-        var indoorTemperatureSensor = !String.IsNullOrWhiteSpace(config.IndoorTemperatureSensor) ? new NumericSensor(ha, config.IndoorTemperatureSensor) : null;
-        var weather = !String.IsNullOrWhiteSpace(config.WeatherEntity) ? new Weather(ha, config.WeatherEntity) : null;
 
         var temperatureProtector = new TemperatureProtector(solarLuxSensor, config.SolarLuxAboveThreshold, config.SolarLuxBelowThreshold, indoorTemperatureSensor, config.MaxIndoorTemperature,
             config.ConditionalMaxIndoorTemperature, weather, config.ConditionalOutdoorTemperaturePrediction, config.ConditionalOutdoorTemperaturePredictionDays);

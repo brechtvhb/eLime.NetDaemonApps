@@ -65,9 +65,6 @@ public class FlexiScreen
         ChildrenAreAngryProtector = childrenAreAngryProtector;
 
         EnsureEnabledSwitchExists();
-
-        //_scheduler.RunEvery(TimeSpan.FromSeconds(10), DateTimeOffset.Now, () => GuardScreen().RunSync());
-
         RetrieveSateFromHomeAssistant().RunSync();
     }
 
@@ -89,7 +86,7 @@ public class FlexiScreen
         var desiredManIsAngryProtectorState = ManIsAngryProtector?.GetDesiredState(LastAutomatedStateChange, CurrentState.Value);
         if (desiredManIsAngryProtectorState is { Enforce: true, State: { } })
         {
-            await ChangeScreenState(desiredManIsAngryProtectorState.Value.State.Value);
+            await ChangeScreenState(desiredManIsAngryProtectorState.Value.State);
             return;
         }
 
@@ -108,32 +105,28 @@ public class FlexiScreen
         var desiredWomanIsAngryProtectorState = WomanIsAngryProtector?.GetDesiredState(LastManualStateChange, CurrentState.Value);
         if (desiredWomanIsAngryProtectorState is { Enforce: true, State: { } })
         {
-            await ChangeScreenState(desiredWomanIsAngryProtectorState.Value.State.Value);
+            await ChangeScreenState(desiredWomanIsAngryProtectorState.Value.State);
             return;
         }
 
-        var desiredChildrenAreAngryProtectorState = ChildrenAreAngryProtector?.GetDesiredState(CurrentState.Value);
-        if (desiredChildrenAreAngryProtectorState is { Enforce: true, State: { } })
+        if (ChildrenAreAngryProtector?.DesiredState is { Enforce: true, State: { } })
         {
-            await ChangeScreenState(desiredChildrenAreAngryProtectorState.Value.State.Value);
+            await ChangeScreenState(ChildrenAreAngryProtector.DesiredState.State);
             return;
         }
-
-        var desiredTemperatureProtectorState = TemperatureProtector?.GetDesiredState(CurrentState.Value);
-        var stateForTemperatureProtector = desiredTemperatureProtectorState?.State;
 
         switch (SunProtector.DesiredState.State)
         {
             case ScreenState.Up:
                 await ChangeScreenState(ScreenState.Up);
                 break;
-            case ScreenState.Down when stateForTemperatureProtector == ScreenState.Down:
+            case ScreenState.Down when TemperatureProtector?.DesiredState.State == ScreenState.Down:
                 await ChangeScreenState(ScreenState.Down);
                 break;
-            case ScreenState.Down when stateForTemperatureProtector == ScreenState.Up:
+            case ScreenState.Down when TemperatureProtector?.DesiredState.State == ScreenState.Up:
                 await ChangeScreenState(ScreenState.Up);
                 break;
-            case { } when stateForTemperatureProtector is null:
+            case { } when TemperatureProtector?.DesiredState.State is null:
                 await ChangeScreenState(SunProtector.DesiredState.State);
                 break;
         }

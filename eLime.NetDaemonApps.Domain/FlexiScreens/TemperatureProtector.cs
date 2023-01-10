@@ -5,36 +5,69 @@ namespace eLime.NetDaemonApps.Domain.FlexiScreens;
 
 public class TemperatureProtector
 {
-    private NumericSensor SolarLuxSensor { get; }
-    public int? SolarLuxAboveThreshold { get; set; }
-    public int? SolarLuxBelowThreshold { get; set; }
+    private NumericThresholdSensor? SolarLuxSensor { get; }
+    public double? SolarLuxAboveThreshold { get; set; }
+    public double? SolarLuxBelowThreshold { get; set; }
 
-    private NumericSensor IndoorTemperatureSensor { get; }
-    private Weather Weather { get; }
+    private NumericSensor? IndoorTemperatureSensor { get; }
+    private Weather? Weather { get; }
 
     public double? MaxIndoorTemperature { get; }
     public double? ConditionalMaxIndoorTemperature { get; }
     public double? ConditionalMaxOutdoorTemperaturePrediction { get; }
     public int? ConditionalOutdoorTemperaturePredictionDays { get; }
 
-    public TemperatureProtector(NumericSensor solarLuxSensor, int? solarLuxAboveThreshold, int? solarLuxBelowThreshold,
-        NumericSensor indoorTemperature, double? maxIndoorTemperature, double? maxConditionalIndoorTemperature,
-        Weather weather, double? conditionalMaxOutdoorTemperaturePrediction, int? conditionalOutdoorTemperaturePredictionDays)
+    public (ScreenState? State, Boolean Enforce) DesiredState { get; private set; }
+
+    public TemperatureProtector(NumericThresholdSensor? solarLuxSensor, double? solarLuxAboveThreshold, double? solarLuxBelowThreshold,
+        NumericSensor? indoorTemperatureSensor, double? maxIndoorTemperature, double? maxConditionalIndoorTemperature,
+        Weather? weather, double? conditionalMaxOutdoorTemperaturePrediction, int? conditionalOutdoorTemperaturePredictionDays)
     {
         SolarLuxSensor = solarLuxSensor;
-        SolarLuxAboveThreshold = solarLuxAboveThreshold;
-        SolarLuxBelowThreshold = solarLuxBelowThreshold;
+        if (SolarLuxSensor != null)
+        {
+            SolarLuxAboveThreshold = solarLuxAboveThreshold;
+            SolarLuxBelowThreshold = solarLuxBelowThreshold;
+            SolarLuxSensor.WentAboveThreshold += CheckStateDesiredState;
+            SolarLuxSensor.DroppedBelowThreshold += CheckStateDesiredState;
+        }
 
-        IndoorTemperatureSensor = indoorTemperature;
-        MaxIndoorTemperature = maxIndoorTemperature;
-        ConditionalMaxIndoorTemperature = maxConditionalIndoorTemperature;
+        IndoorTemperatureSensor = indoorTemperatureSensor;
+        if (IndoorTemperatureSensor != null)
+        {
+            MaxIndoorTemperature = maxIndoorTemperature;
+            ConditionalMaxIndoorTemperature = maxConditionalIndoorTemperature;
+            IndoorTemperatureSensor.Changed += CheckStateDesiredState;
+        }
 
         Weather = weather;
-        ConditionalMaxOutdoorTemperaturePrediction = conditionalMaxOutdoorTemperaturePrediction;
-        ConditionalOutdoorTemperaturePredictionDays = conditionalOutdoorTemperaturePredictionDays ?? 3;
+        if (Weather != null)
+        {
+            ConditionalMaxOutdoorTemperaturePrediction = conditionalMaxOutdoorTemperaturePrediction;
+            ConditionalOutdoorTemperaturePredictionDays = conditionalOutdoorTemperaturePredictionDays ?? 3;
+        }
     }
 
-    public (ScreenState? State, Boolean Enforce) GetDesiredState(ScreenState currentScreenState)
+
+    private void CheckStateDesiredState(object? sender, NumericSensorEventArgs e)
+    {
+        var desiredState = GetDesiredState();
+
+        if (DesiredState == desiredState)
+            return;
+
+        DesiredState = desiredState;
+        OnDesiredStateChanged(new DesiredStateEventArgs(desiredState.State, desiredState.Enforce));
+    }
+
+    public event EventHandler<DesiredStateEventArgs>? DesiredStateChanged;
+
+    protected void OnDesiredStateChanged(DesiredStateEventArgs e)
+    {
+        DesiredStateChanged?.Invoke(this, e);
+    }
+
+    public (ScreenState? State, Boolean Enforce) GetDesiredState()
     {
         //TODO
         int? averagePredictedTemperature = null; //Weather.Attributes.Forecast;
