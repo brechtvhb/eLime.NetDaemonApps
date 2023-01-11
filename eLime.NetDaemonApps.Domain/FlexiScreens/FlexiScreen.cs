@@ -89,33 +89,33 @@ public class FlexiScreen
         if (CurrentState == null)
             return;
 
-        var desiredManIsAngryProtectorState = ManIsAngryProtector?.GetDesiredState(LastAutomatedStateChange, CurrentState.Value);
-        if (desiredManIsAngryProtectorState is { Enforce: true, State: { } })
+        var desiredManIsAngryProtectorState = ManIsAngryProtector?.GetDesiredState(LastAutomatedStateChange);
+        if (desiredManIsAngryProtectorState is { Enforce: true })
         {
             await ChangeScreenState(desiredManIsAngryProtectorState.Value.State);
             return;
         }
 
-        if (StormProtector?.DesiredState is { Enforce: true, State: { } })
+        if (StormProtector?.DesiredState is { Enforce: true })
         {
             await ChangeScreenState(StormProtector.DesiredState.State);
             return;
         }
 
-        if (SunProtector.DesiredState is { Enforce: true, State: { } })
+        if (SunProtector.DesiredState is { Enforce: true })
         {
             await ChangeScreenState(SunProtector.DesiredState.State);
             return;
         }
 
-        var desiredWomanIsAngryProtectorState = WomanIsAngryProtector?.GetDesiredState(LastManualStateChange, CurrentState.Value);
-        if (desiredWomanIsAngryProtectorState is { Enforce: true, State: { } })
+        var desiredWomanIsAngryProtectorState = WomanIsAngryProtector?.GetDesiredState(LastManualStateChange);
+        if (desiredWomanIsAngryProtectorState is { Enforce: true })
         {
             await ChangeScreenState(desiredWomanIsAngryProtectorState.Value.State);
             return;
         }
 
-        if (ChildrenAreAngryProtector?.DesiredState is { Enforce: true, State: { } })
+        if (ChildrenAreAngryProtector?.DesiredState is { Enforce: true })
         {
             await ChangeScreenState(ChildrenAreAngryProtector.DesiredState.State);
             return;

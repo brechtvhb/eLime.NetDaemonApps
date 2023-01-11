@@ -120,7 +120,23 @@ public class ScreenBuilder
     public ScreenBuilder WithSleepSensor(BinarySensor sleepSensor)
     {
         _sleepSensor = sleepSensor;
+        return this;
+    }
 
+    public ScreenBuilder WithMinimumIntervalSinceLastAutomatedAction(TimeSpan span)
+    {
+        _config.MinimumIntervalSinceLastAutomatedAction = span;
+        return this;
+    }
+    public ScreenBuilder WithMinimumIntervalSinceLastManualAction(TimeSpan span)
+    {
+        _config.MinimumIntervalSinceLastManualAction = span;
+        return this;
+    }
+
+    public ScreenBuilder WithDesiredActionOnBelowElevation(ScreenAction action)
+    {
+        _config.SunProtection.DesiredStateBelowElevationThreshold = action;
         return this;
     }
 

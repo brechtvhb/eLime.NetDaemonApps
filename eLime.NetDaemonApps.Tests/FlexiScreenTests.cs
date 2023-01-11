@@ -1,3 +1,4 @@
+using eLime.NetDaemonApps.Config.FlexiScreens;
 using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 using eLime.NetDaemonApps.Domain.Entities.Covers;
 using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
@@ -489,6 +490,7 @@ public class FlexiScreenTests
     public void KidsSleeping_Closes_Screen()
     {
         // Arrange
+        _testCtx.TriggerStateChangeWithAttributes(_sun, "below_horizon", new SunAttributes { Azimuth = 0, Elevation = 20 });
         _testCtx.TriggerStateChange(_cover, "open");
         var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
             .WithCover(_cover)
@@ -503,11 +505,31 @@ public class FlexiScreenTests
         _testCtx.VerifyScreenGoesDown(_cover, Moq.Times.Once);
     }
 
+    [TestMethod]
+    public void KidsNoLongerSleeping_Opens_Screen()
+    {
+        // Arrange
+        _testCtx.TriggerStateChangeWithAttributes(_sun, "below_horizon", new SunAttributes { Azimuth = 0, Elevation = 20 });
+        _testCtx.TriggerStateChange(_cover, "closed");
+        _testCtx.TriggerStateChange(_sleepSensor, new EntityState { State = "on" });
+        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
+            .WithCover(_cover)
+            .WithSun(_sun)
+            .WithSleepSensor(_sleepSensor)
+            .Build();
+
+        //Act
+        _testCtx.TriggerStateChange(_sleepSensor, new EntityState { State = "off" });
+
+        //Assert
+        _testCtx.VerifyScreenGoesUp(_cover, Moq.Times.Once);
+    }
 
     [TestMethod]
     public void StormProtector_Ignores_AngryKids()
     {
         // Arrange
+        _testCtx.TriggerStateChangeWithAttributes(_sun, "below_horizon", new SunAttributes { Azimuth = 0, Elevation = 20 });
         _testCtx.TriggerStateChange(_cover, "closed");
         _testCtx.TriggerStateChange(_sleepSensor, new EntityState { State = "on" });
 
@@ -520,6 +542,107 @@ public class FlexiScreenTests
 
         //Act
         _testCtx.TriggerStateChange(_windSpeedSensor, new EntityState { State = "80" });
+
+        //Assert
+        _testCtx.VerifyScreenGoesUp(_cover, Moq.Times.Once);
+    }
+
+    [TestMethod]
+    public void Screen_DoesNotMake_Man_Angry()
+    {
+        // Arrange
+        _testCtx.TriggerStateChangeWithAttributes(_sun, "below_horizon", new SunAttributes { Azimuth = 250, Elevation = 20 });
+        _testCtx.TriggerStateChange(_cover, "closed");
+
+        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
+            .WithCover(_cover)
+            .WithSun(_sun)
+            .WithWindSpeedSensor(_windSpeedSensor)
+            .WithMinimumIntervalSinceLastAutomatedAction(TimeSpan.FromMinutes(1))
+            .Build();
+
+        _testCtx.TriggerStateChange(_windSpeedSensor, new EntityState { State = "80" });
+        _testCtx.TriggerStateChange(_cover, "open");
+
+        //Act
+        _testCtx.TriggerStateChange(_windSpeedSensor, new EntityState { State = "20" });
+
+        //Assert
+        _testCtx.VerifyScreenGoesUp(_cover, Moq.Times.Once);
+        _testCtx.VerifyScreenGoesDown(_cover, Moq.Times.Never);
+    }
+
+    [TestMethod]
+    public async Task Screen_Plays_Nice_After_Cooldown()
+    {
+        // Arrange
+        _testCtx.TriggerStateChangeWithAttributes(_sun, "below_horizon", new SunAttributes { Azimuth = 250, Elevation = 20 });
+        _testCtx.TriggerStateChange(_cover, "closed");
+
+        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
+            .WithCover(_cover)
+            .WithSun(_sun)
+            .WithWindSpeedSensor(_windSpeedSensor)
+            .WithMinimumIntervalSinceLastAutomatedAction(TimeSpan.FromMilliseconds(20))
+            .WithMinimumIntervalSinceLastManualAction(TimeSpan.FromMilliseconds(20))
+            .Build();
+
+        _testCtx.TriggerStateChange(_windSpeedSensor, new EntityState { State = "80" });
+        _testCtx.TriggerStateChange(_cover, "open");
+        await Task.Delay(200);
+
+        //Act
+        _testCtx.TriggerStateChange(_windSpeedSensor, new EntityState { State = "20" });
+
+        //Assert
+        _testCtx.VerifyScreenGoesUp(_cover, Moq.Times.Once);
+        _testCtx.VerifyScreenGoesDown(_cover, Moq.Times.Once);
+    }
+
+    [TestMethod]
+    public void Screen_DoesNotMake_Woman_Angry()
+    {
+        // Arrange
+        _testCtx.TriggerStateChangeWithAttributes(_sun, "below_horizon", new SunAttributes { Azimuth = 250, Elevation = 20 });
+        _testCtx.TriggerStateChange(_cover, "closed");
+
+        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
+            .WithCover(_cover)
+            .WithSun(_sun)
+            .WithWindSpeedSensor(_windSpeedSensor)
+            .WithMinimumIntervalSinceLastAutomatedAction(TimeSpan.FromMilliseconds(1))
+            .WithMinimumIntervalSinceLastManualAction(TimeSpan.FromMinutes(1))
+            .Build();
+
+        _testCtx.TriggerStateChange(_cover, "open");
+
+        //Act
+        _testCtx.TriggerStateChange(_windSpeedSensor, new EntityState { State = "20" });
+
+        //Assert
+        _testCtx.VerifyScreenGoesDown(_cover, Moq.Times.Never);
+    }
+
+    [TestMethod]
+    public void Screen_Ignores_Woman_Because_She_Forgetss_To_Pull_Screen_Up()
+    {
+        // Arrange
+        _testCtx.TriggerStateChangeWithAttributes(_sun, "below_horizon", new SunAttributes { Azimuth = 250, Elevation = 20 });
+        _testCtx.TriggerStateChange(_cover, "closed");
+
+        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
+            .WithCover(_cover)
+            .WithSun(_sun)
+            .WithDesiredActionOnBelowElevation(ScreenAction.Up)
+            .WithWindSpeedSensor(_windSpeedSensor)
+            .WithMinimumIntervalSinceLastAutomatedAction(TimeSpan.FromMilliseconds(1))
+            .WithMinimumIntervalSinceLastManualAction(TimeSpan.FromMinutes(1))
+            .Build();
+
+        _testCtx.TriggerStateChange(_cover, "closed");
+
+        //Act
+        _testCtx.TriggerStateChangeWithAttributes(_sun, "below_horizon", new SunAttributes { Azimuth = 250, Elevation = 0 });
 
         //Assert
         _testCtx.VerifyScreenGoesUp(_cover, Moq.Times.Once);
