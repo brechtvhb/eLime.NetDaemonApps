@@ -21,7 +21,7 @@ public class ScreenBuilder
     private FlexiScreenConfig _config;
     private Cover? _cover;
     private Sun? _sun;
-    
+
     private NumericThresholdSensor? _windSpeedSensor;
     private NumericThresholdSensor? _rainRateSensor;
     private NumericThresholdSensor? _shortTermRainForecastSensor;
@@ -90,7 +90,7 @@ public class ScreenBuilder
         return this;
     }
 
-    public ScreenBuilder WithSolarLoxSensor(NumericThresholdSensor solarLuxSensor)
+    public ScreenBuilder WithSolarLuxSensor(NumericThresholdSensor solarLuxSensor)
     {
         _solarLuxSensor = solarLuxSensor;
         _config.TemperatureProtection ??= new TemperatureProtectionConfig();
@@ -99,7 +99,7 @@ public class ScreenBuilder
         return this;
     }
 
-    public ScreenBuilder WithIndoorTemperatureSensor(NumericSensor indoorTemperatureSensor, int? maxIndoorTemperature)
+    public ScreenBuilder WithIndoorTemperatureSensor(NumericSensor indoorTemperatureSensor, double? maxIndoorTemperature)
     {
         _indoorTemperatureSensor = indoorTemperatureSensor;
         _config.TemperatureProtection ??= new TemperatureProtectionConfig();
@@ -107,7 +107,7 @@ public class ScreenBuilder
         return this;
     }
 
-    public ScreenBuilder WithWeatherForecast(Weather weather, int? conditionalMaxIndoorTemperature, int? conditionalMaxOutdoorTemperature, int? conditionalPredictionDays)
+    public ScreenBuilder WithWeatherForecast(Weather weather, double? conditionalMaxIndoorTemperature, double? conditionalMaxOutdoorTemperature, int? conditionalPredictionDays)
     {
         _weather = weather;
         _config.TemperatureProtection ??= new TemperatureProtectionConfig();
@@ -137,7 +137,7 @@ public class ScreenBuilder
         var temperatureProtector = _config.TemperatureProtection.ToEntities(solarLuxSensor, indoorTemperatureSensor, weather);
         var manIsAngryProtector = _config.MinimumIntervalSinceLastAutomatedAction != null ? new ManIsAngryProtector(_config.MinimumIntervalSinceLastAutomatedAction) : new ManIsAngryProtector(TimeSpan.FromMinutes(15));
         var womanIsAngryProtector = _config.MinimumIntervalSinceLastManualAction != null ? new WomanIsAngryProtector(_config.MinimumIntervalSinceLastManualAction) : new WomanIsAngryProtector(TimeSpan.FromHours(1));
-        
+
         var childrenAreAngryProtector = sleepSensor != null ? new ChildrenAreAngryProtector(sleepSensor) : null;
 
         var flexiScreen = new FlexiScreen(_testCtx.HaContext, _logger, _testCtx.Scheduler, _mqttEntityManager, _config.Enabled ?? true, _config.Name, screen, "somecoolid", sunProtector, stormProtector, temperatureProtector, manIsAngryProtector, womanIsAngryProtector, childrenAreAngryProtector);

@@ -27,8 +27,8 @@ public class StormProtector
         {
             WindSpeedStormStartThreshold = windSpeedStormStartThreshold;
             WindSpeedStormEndThreshold = windSpeedStormEndThreshold;
-            WindSpeedSensor.WentAboveThreshold += CheckStateDesiredState;
-            WindSpeedSensor.DroppedBelowThreshold += CheckStateDesiredState;
+            WindSpeedSensor.WentAboveThreshold += (_, _) => CheckDesiredState();
+            WindSpeedSensor.DroppedBelowThreshold += (_, _) => CheckDesiredState();
         }
 
         RainRateSensor = rainRateSensor;
@@ -36,8 +36,8 @@ public class StormProtector
         {
             RainRateStormStartThreshold = rainRateStormStartThreshold;
             RainRateStormEndThreshold = rainRateStormEndThreshold;
-            RainRateSensor.WentAboveThreshold += CheckStateDesiredState;
-            RainRateSensor.DroppedBelowThreshold += CheckStateDesiredState;
+            RainRateSensor.WentAboveThreshold += (_, _) => CheckDesiredState();
+            RainRateSensor.DroppedBelowThreshold += (_, _) => CheckDesiredState();
         }
 
         ShortTermRainForecastSensor = shortTermRainForecastSensor;
@@ -45,12 +45,14 @@ public class StormProtector
         {
             ShortTermRainForecastSensorStormStartThreshold = shortTermRainForecastSensorStormStartThreshold;
             ShortTermRainForecastSensorStormEndThreshold = shortTermRainForecastSensorStormEndThreshold;
-            ShortTermRainForecastSensor.WentAboveThreshold += CheckStateDesiredState;
-            ShortTermRainForecastSensor.DroppedBelowThreshold += CheckStateDesiredState;
+            ShortTermRainForecastSensor.WentAboveThreshold += (_, _) => CheckDesiredState();
+            ShortTermRainForecastSensor.DroppedBelowThreshold += (_, _) => CheckDesiredState();
         }
+
+        CheckDesiredState();
     }
 
-    private void CheckStateDesiredState(object? sender, NumericSensorEventArgs e)
+    private void CheckDesiredState()
     {
         var desiredState = GetDesiredState();
 

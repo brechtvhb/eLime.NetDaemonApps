@@ -1,6 +1,7 @@
 using eLime.NetDaemonApps.Domain.Entities.Covers;
 using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
 using eLime.NetDaemonApps.Domain.Entities.Sun;
+using eLime.NetDaemonApps.Domain.Entities.Weather;
 using eLime.NetDaemonApps.Domain.FlexiScenes.Rooms;
 using eLime.NetDaemonApps.Domain.FlexiScreens;
 using eLime.NetDaemonApps.Tests.Builders;
@@ -26,6 +27,14 @@ public class FlexiScreenTests
     private NumericThresholdSensor _rainRateSensor;
     private NumericThresholdSensor _shortTermRainForecastSensor;
 
+
+    private NumericThresholdSensor _solarLuxSensor;
+    private NumericSensor _indoorTemperatureSensor;
+
+    private Weather _weather;
+    private WeatherAttributes _averageForeast;
+    private WeatherAttributes _hotForecast;
+
     [TestInitialize]
     public void Init()
     {
@@ -35,11 +44,12 @@ public class FlexiScreenTests
         _logger = A.Fake<ILogger<Room>>();
         _mqttEntityManager = A.Fake<IMqttEntityManager>();
 
-
         _cover = new Cover(_testCtx.HaContext, "cover.office");
         _testCtx.TriggerStateChange(_cover, "open");
 
         _sun = new Sun(_testCtx.HaContext, "sun.sun");
+        _testCtx.TriggerStateChangeWithAttributes(_sun, "above_horizon", new SunAttributes { Azimuth = 0, Elevation = 1 });
+
         _windSpeedSensor = NumericThresholdSensor.Create(_testCtx.HaContext, "sensor.windspeed", 60, 40);
         _testCtx.TriggerStateChange(_windSpeedSensor, new EntityState { State = "0" });
 
@@ -48,6 +58,36 @@ public class FlexiScreenTests
 
         _shortTermRainForecastSensor = NumericThresholdSensor.Create(_testCtx.HaContext, "sensor.rainforecast", 0.2d, 0);
         _testCtx.TriggerStateChange(_shortTermRainForecastSensor, new EntityState { State = "0" });
+
+        _solarLuxSensor = NumericThresholdSensor.Create(_testCtx.HaContext, "sensor.solarlux", 7000, 4000);
+        _testCtx.TriggerStateChange(_solarLuxSensor, new EntityState { State = "1000" });
+
+        _indoorTemperatureSensor = NumericSensor.Create(_testCtx.HaContext, "sensor.office_temperature");
+        _testCtx.TriggerStateChange(_indoorTemperatureSensor, new EntityState { State = "21" });
+
+        _weather = new Weather(_testCtx.HaContext, "weather.home");
+        _averageForeast = new WeatherAttributes()
+        {
+            Forecast = new[]
+            {
+                new Forecast {Condition = "Sunny", Temperature = 25},
+                new Forecast {Condition = "Rainy", Temperature = 23},
+                new Forecast {Condition = "Cloudy", Temperature = 24}
+            }
+        };
+
+        _hotForecast = new WeatherAttributes()
+        {
+            Forecast = new[]
+            {
+                new Forecast {Condition = "Sunny", Temperature = 28},
+                new Forecast {Condition = "Sunny", Temperature = 33},
+                new Forecast {Condition = "Sunny", Temperature = 30}
+            }
+        };
+
+        _testCtx.TriggerStateChangeWithAttributes(_weather, "Cloudy", _averageForeast);
+
     }
 
     [TestMethod]
@@ -55,19 +95,14 @@ public class FlexiScreenTests
     {
         // Arrange
         _testCtx.TriggerStateChange(_cover, "open");
+        _testCtx.TriggerStateChangeWithAttributes(_sun, "below_horizon", new SunAttributes { Azimuth = 0, Elevation = -20 });
         var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
             .WithCover(_cover)
             .WithSun(_sun)
             .Build();
 
         //Act
-        var sunAttributes = new SunAttributes
-        {
-            Azimuth = 240,
-            Elevation = 20,
-        };
-
-        _testCtx.TriggerStateChangeWithAttributes(_sun, "below_horizon", sunAttributes);
+        _testCtx.TriggerStateChangeWithAttributes(_sun, "below_horizon", new SunAttributes { Azimuth = 240, Elevation = 20 });
 
         //Assert
         _testCtx.VerifyScreenGoesDown(_cover, Moq.Times.Once);
@@ -77,19 +112,14 @@ public class FlexiScreenTests
     public void SunBelowElevation_Puts_ScreenInCorrectPosition()
     {
         // Arrange
+        _testCtx.TriggerStateChangeWithAttributes(_sun, "below_horizon", new SunAttributes { Azimuth = 240, Elevation = 20 });
         var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
             .WithCover(_cover)
             .WithSun(_sun)
             .Build();
 
         //Act
-        var sunAttributes = new SunAttributes
-        {
-            Azimuth = 0,
-            Elevation = -20,
-        };
-
-        _testCtx.TriggerStateChangeWithAttributes(_sun, "above_horizon", sunAttributes);
+        _testCtx.TriggerStateChangeWithAttributes(_sun, "below_horizon", new SunAttributes { Azimuth = 0, Elevation = -20 });
 
         //Assert
         _testCtx.VerifyScreenGoesDown(_cover, Moq.Times.Once);
@@ -313,4 +343,135 @@ public class FlexiScreenTests
         Assert.AreEqual((ScreenState.Down, true), screen.StormProtector.DesiredState);
     }
 
+    [TestMethod]
+    public void SunInPosition_WithoutRadiation_Keeps_Screen_open()
+    {
+        // Arrange
+        _testCtx.TriggerStateChange(_cover, "open");
+        _testCtx.TriggerStateChangeWithAttributes(_sun, "above_Horizon", new SunAttributes { Azimuth = 240, Elevation = 20 });
+        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
+            .WithCover(_cover)
+            .WithSun(_sun)
+            .WithSolarLuxSensor(_solarLuxSensor)
+            .Build();
+
+        //Act
+        _testCtx.TriggerStateChange(_solarLuxSensor, "2000");
+
+
+        //Assert
+        _testCtx.VerifyScreenGoesDown(_cover, Moq.Times.Never);
+    }
+
+    [TestMethod]
+    public void SunInPosition_WithRadiation_And_Low_Indoor_Temperature_Keeps_Screen_open()
+    {
+        // Arrange
+        _testCtx.TriggerStateChange(_cover, "open");
+        _testCtx.TriggerStateChangeWithAttributes(_sun, "above_Horizon", new SunAttributes { Azimuth = 240, Elevation = 20 });
+        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
+            .WithCover(_cover)
+            .WithSun(_sun)
+            .WithSolarLuxSensor(_solarLuxSensor)
+            .WithIndoorTemperatureSensor(_indoorTemperatureSensor, 25)
+            .Build();
+
+        //Act
+        _testCtx.TriggerStateChange(_solarLuxSensor, "20000");
+
+        //Assert
+        _testCtx.VerifyScreenGoesDown(_cover, Moq.Times.Never);
+    }
+
+    [TestMethod]
+    public void SunInPosition_WithRadiation_And_High_Indoor_Temperature_Closes_Screen()
+    {
+        // Arrange
+        _testCtx.TriggerStateChange(_cover, "open");
+        _testCtx.TriggerStateChangeWithAttributes(_sun, "above_Horizon", new SunAttributes { Azimuth = 240, Elevation = 20 });
+        _testCtx.TriggerStateChange(_solarLuxSensor, "20000");
+
+        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
+            .WithCover(_cover)
+            .WithSun(_sun)
+            .WithSolarLuxSensor(_solarLuxSensor)
+            .WithIndoorTemperatureSensor(_indoorTemperatureSensor, 23.5d)
+            .Build();
+
+        //Act
+        _testCtx.TriggerStateChange(_indoorTemperatureSensor, "25");
+
+        //Assert
+        _testCtx.VerifyScreenGoesDown(_cover, Moq.Times.Once);
+    }
+
+    [TestMethod]
+    public void SunOutOfPosition_WithRadiation_And_High_Indoor_Temperature_Opens_Screen()
+    {
+        // Arrange
+        _testCtx.TriggerStateChange(_cover, "closed");
+        _testCtx.TriggerStateChangeWithAttributes(_sun, "above_Horizon", new SunAttributes { Azimuth = 240, Elevation = 20 });
+        _testCtx.TriggerStateChange(_solarLuxSensor, "20000");
+        _testCtx.TriggerStateChange(_indoorTemperatureSensor, "25");
+
+        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
+            .WithCover(_cover)
+            .WithSun(_sun)
+            .WithSolarLuxSensor(_solarLuxSensor)
+            .WithIndoorTemperatureSensor(_indoorTemperatureSensor, 23.5d)
+            .Build();
+
+        //Act
+        _testCtx.TriggerStateChangeWithAttributes(_sun, "above_horizon", new SunAttributes { Azimuth = 90, Elevation = 20 });
+
+        //Assert
+        _testCtx.VerifyScreenGoesUp(_cover, Moq.Times.Once);
+    }
+
+
+    [TestMethod]
+    public void SunInPosition_WithRadiation_And_Average_Indoor_Temperature_And_Hot_Forecast_Closes_Screen()
+    {
+        // Arrange
+        _testCtx.TriggerStateChange(_cover, "open");
+        _testCtx.TriggerStateChangeWithAttributes(_sun, "above_Horizon", new SunAttributes { Azimuth = 240, Elevation = 20 });
+        _testCtx.TriggerStateChange(_solarLuxSensor, "20000");
+        _testCtx.TriggerStateChangeWithAttributes(_weather, "sunny", _hotForecast);
+        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
+            .WithCover(_cover)
+            .WithSun(_sun)
+            .WithSolarLuxSensor(_solarLuxSensor)
+            .WithIndoorTemperatureSensor(_indoorTemperatureSensor, 23.5d)
+            .WithWeatherForecast(_weather, 22.5d, 27, 3)
+            .Build();
+
+        //Act
+        _testCtx.TriggerStateChange(_indoorTemperatureSensor, "23");
+
+        //Assert
+        _testCtx.VerifyScreenGoesDown(_cover, Moq.Times.Once);
+    }
+
+    [TestMethod]
+    public void SunInPosition_WithRadiation_And_Average_Indoor_Temperature_And_Average_Forecast_Keeps_Screen_Open()
+    {
+        // Arrange
+        _testCtx.TriggerStateChange(_cover, "open");
+        _testCtx.TriggerStateChangeWithAttributes(_sun, "above_Horizon", new SunAttributes { Azimuth = 240, Elevation = 20 });
+        _testCtx.TriggerStateChange(_solarLuxSensor, "20000");
+        _testCtx.TriggerStateChangeWithAttributes(_weather, "sunny", _averageForeast);
+        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
+            .WithCover(_cover)
+            .WithSun(_sun)
+            .WithSolarLuxSensor(_solarLuxSensor)
+            .WithIndoorTemperatureSensor(_indoorTemperatureSensor, 23.5d)
+            .WithWeatherForecast(_weather, 22.5d, 27, 3)
+            .Build();
+
+        //Act
+        _testCtx.TriggerStateChange(_indoorTemperatureSensor, "23");
+
+        //Assert
+        _testCtx.VerifyScreenGoesDown(_cover, Moq.Times.Never);
+    }
 }

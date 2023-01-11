@@ -1,5 +1,4 @@
 ﻿using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
-using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
 
 namespace eLime.NetDaemonApps.Domain.FlexiScreens;
 
@@ -7,17 +6,18 @@ public class ChildrenAreAngryProtector
 {
     //Eg: Kids sleeping sensor / operating mode
     public BinarySensor ForceDownSensor { get; }
+    public (ScreenState? State, Boolean Enforce) DesiredState { get; private set; }
 
     public ChildrenAreAngryProtector(BinarySensor forceDownSensor)
     {
         ForceDownSensor = forceDownSensor;
-        ForceDownSensor.TurnedOn += CheckStateDesiredState;
-        ForceDownSensor.TurnedOff += CheckStateDesiredState;
+        ForceDownSensor.TurnedOn += (_, _) => CheckDesiredState();
+        ForceDownSensor.TurnedOff += (_, _) => CheckDesiredState();
+
+        CheckDesiredState();
     }
 
-    public (ScreenState? State, Boolean Enforce) DesiredState { get; private set; }
-
-    private void CheckStateDesiredState(object? sender, BinarySensorEventArgs e)
+    private void CheckDesiredState()
     {
         var desiredState = GetDesiredState();
 

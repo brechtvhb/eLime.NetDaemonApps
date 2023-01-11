@@ -28,8 +28,8 @@ public class TemperatureProtector
         {
             SolarLuxAboveThreshold = solarLuxAboveThreshold;
             SolarLuxBelowThreshold = solarLuxBelowThreshold;
-            SolarLuxSensor.WentAboveThreshold += CheckStateDesiredState;
-            SolarLuxSensor.DroppedBelowThreshold += CheckStateDesiredState;
+            SolarLuxSensor.WentAboveThreshold += (_, _) => CheckStateDesiredState();
+            SolarLuxSensor.DroppedBelowThreshold += (_, _) => CheckStateDesiredState();
         }
 
         IndoorTemperatureSensor = indoorTemperatureSensor;
@@ -37,7 +37,7 @@ public class TemperatureProtector
         {
             MaxIndoorTemperature = maxIndoorTemperature;
             ConditionalMaxIndoorTemperature = maxConditionalIndoorTemperature;
-            IndoorTemperatureSensor.Changed += CheckStateDesiredState;
+            IndoorTemperatureSensor.Changed += (_, _) => CheckStateDesiredState();
         }
 
         Weather = weather;
@@ -46,10 +46,12 @@ public class TemperatureProtector
             ConditionalMaxOutdoorTemperaturePrediction = conditionalMaxOutdoorTemperaturePrediction;
             ConditionalOutdoorTemperaturePredictionDays = conditionalOutdoorTemperaturePredictionDays ?? 3;
         }
+
+        CheckStateDesiredState();
     }
 
 
-    private void CheckStateDesiredState(object? sender, NumericSensorEventArgs e)
+    private void CheckStateDesiredState()
     {
         var desiredState = GetDesiredState();
 
@@ -69,14 +71,17 @@ public class TemperatureProtector
 
     public (ScreenState? State, Boolean Enforce) GetDesiredState()
     {
-        //TODO
-        int? averagePredictedTemperature = null; //Weather.Attributes.Forecast;
+        double? averagePredictedTemperature = null;
+
+        if (Weather?.Attributes?.Forecast != null && ConditionalOutdoorTemperaturePredictionDays != null)
+            averagePredictedTemperature = Weather.Attributes.Forecast.Take(ConditionalOutdoorTemperaturePredictionDays.Value).Average(x => x.Temperature);
 
         var solarLuxIndicatingSunIsShining = SolarLuxSensor != null && SolarLuxAboveThreshold != null && SolarLuxSensor.State > SolarLuxAboveThreshold;
         var solarLuxIndicatingSunIsNotShining = SolarLuxSensor != null && SolarLuxBelowThreshold != null && SolarLuxSensor.State <= SolarLuxBelowThreshold;
 
         var tooHotInside = IndoorTemperatureSensor != null && MaxIndoorTemperature != null && IndoorTemperatureSensor.State > MaxIndoorTemperature;
-        var hotDaysAhead = IndoorTemperatureSensor != null && ConditionalMaxIndoorTemperature != null && averagePredictedTemperature != null && ConditionalMaxOutdoorTemperaturePrediction != null && IndoorTemperatureSensor.State > ConditionalMaxIndoorTemperature && averagePredictedTemperature > ConditionalMaxOutdoorTemperaturePrediction;
+        var hotDaysAhead = IndoorTemperatureSensor != null && ConditionalMaxIndoorTemperature != null && averagePredictedTemperature != null && ConditionalMaxOutdoorTemperaturePrediction != null
+                           && IndoorTemperatureSensor.State > ConditionalMaxIndoorTemperature && averagePredictedTemperature > ConditionalMaxOutdoorTemperaturePrediction;
 
         if (solarLuxIndicatingSunIsShining && (tooHotInside || hotDaysAhead))
             return (ScreenState.Down, false);
@@ -84,6 +89,6 @@ public class TemperatureProtector
         if (solarLuxIndicatingSunIsNotShining)
             return (ScreenState.Up, false);
 
-        return (null, false);
+        return (ScreenState.Up, false);
     }
 }

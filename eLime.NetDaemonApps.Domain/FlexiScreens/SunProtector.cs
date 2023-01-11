@@ -16,13 +16,15 @@ public class SunProtector
     {
         ScreenOrientation = screenOrientation;
         Sun = sun;
-        Sun.StateChanged += Sun_StateChanged;
+        Sun.StateChanged += (_, _) => CheckDesiredState();
         OrientationThreshold = orientationThreshold;
         ElevationThreshold = elevationThreshold;
         DesiredStateBelowElevationThreshold = desiredStateBelowElevationThreshold;
+
+        CheckDesiredState();
     }
 
-    private void Sun_StateChanged(object? sender, SunEventArgs e)
+    private void CheckDesiredState()
     {
         var desiredState = GetDesiredState();
 

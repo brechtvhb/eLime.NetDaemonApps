@@ -696,10 +696,10 @@ public class Room
 
     public void Guard()
     {
-        _scheduler.RunEvery(TimeSpan.FromSeconds(1), _scheduler.Now, async () =>
+        _scheduler.RunEvery(TimeSpan.FromSeconds(5), _scheduler.Now, () =>
         {
             //Can only happen executes on startup, otherwise we receive a motion detected event
-            await CheckForMotion();
+            CheckForMotion().RunSync();
         });
     }
 

@@ -60,9 +60,15 @@ public class FlexiScreen
             StormProtector.DesiredStateChanged += async (_, _) => await GuardScreen();
 
         TemperatureProtector = temperatureProtector;
+        if (TemperatureProtector != null)
+            TemperatureProtector.DesiredStateChanged += async (_, _) => await GuardScreen();
+
         ManIsAngryProtector = manIsAngryProtector;
         WomanIsAngryProtector = womanIsAngryProtector;
         ChildrenAreAngryProtector = childrenAreAngryProtector;
+
+        if (ChildrenAreAngryProtector != null)
+            ChildrenAreAngryProtector.DesiredStateChanged += async (_, _) => await GuardScreen();
 
         EnsureEnabledSwitchExists();
         RetrieveSateFromHomeAssistant().RunSync();

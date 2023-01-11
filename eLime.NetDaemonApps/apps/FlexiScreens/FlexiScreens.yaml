@@ -11,3 +11,7 @@
         orientationThreshold: 88
         elevationThreshold: 10
         desiredStateBelowElevationThreshold: "Up"
+      temperatureProtection:
+        indoorTemperatureSensor: "sensor.bureau_temp"
+        maxIndoorTemperature: 24
+        weatherEntity: "weather.forecast_ha_main"
