@@ -624,7 +624,7 @@ public class FlexiScreenTests
     }
 
     [TestMethod]
-    public void Screen_Ignores_Woman_Because_She_Forgetss_To_Pull_Screen_Up()
+    public void Screen_Ignores_Woman_Because_She_Forgets_To_Pull_Screen_Up()
     {
         // Arrange
         _testCtx.TriggerStateChangeWithAttributes(_sun, "below_horizon", new SunAttributes { Azimuth = 250, Elevation = 20 });
@@ -643,6 +643,31 @@ public class FlexiScreenTests
 
         //Act
         _testCtx.TriggerStateChangeWithAttributes(_sun, "below_horizon", new SunAttributes { Azimuth = 250, Elevation = 0 });
+
+        //Assert
+        _testCtx.VerifyScreenGoesUp(_cover, Moq.Times.Once);
+    }
+
+    [TestMethod]
+    public void Screen_Ignores_Woman_Because_She_Forgets_To_Pull_Screen_Up_When_It_Storms()
+    {
+        // Arrange
+        _testCtx.TriggerStateChangeWithAttributes(_sun, "below_horizon", new SunAttributes { Azimuth = 250, Elevation = 20 });
+        _testCtx.TriggerStateChange(_cover, "closed");
+
+        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
+            .WithCover(_cover)
+            .WithSun(_sun)
+            .WithDesiredActionOnBelowElevation(ScreenAction.Up)
+            .WithWindSpeedSensor(_windSpeedSensor)
+            .WithMinimumIntervalSinceLastAutomatedAction(TimeSpan.FromMilliseconds(1))
+            .WithMinimumIntervalSinceLastManualAction(TimeSpan.FromMinutes(1))
+            .Build();
+
+        _testCtx.TriggerStateChange(_cover, "closed");
+
+        //Act
+        _testCtx.TriggerStateChange(_windSpeedSensor, "80");
 
         //Assert
         _testCtx.VerifyScreenGoesUp(_cover, Moq.Times.Once);

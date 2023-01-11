@@ -148,12 +148,14 @@ public class FlexiScreen
                 _logger.LogInformation("Changing screen state for screen {screen} to {desiredState}", Name, desiredState);
                 Screen.OpenCover();
                 LastAutomatedStateChange = DateTime.Now;
+                LastManualStateChange = null;
                 await UpdateStateInHomeAssistant();
                 break;
             case ScreenState.Down when Screen.IsOpen():
                 _logger.LogInformation("Changing screen state for screen {screen} to {desiredState}", Name, desiredState);
                 Screen.CloseCover();
                 LastAutomatedStateChange = DateTime.Now;
+                LastManualStateChange = null;
                 await UpdateStateInHomeAssistant();
                 break;
         }
