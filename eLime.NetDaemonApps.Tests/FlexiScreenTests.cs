@@ -1,3 +1,4 @@
+using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 using eLime.NetDaemonApps.Domain.Entities.Covers;
 using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
 using eLime.NetDaemonApps.Domain.Entities.Sun;
@@ -34,6 +35,8 @@ public class FlexiScreenTests
     private Weather _weather;
     private WeatherAttributes _averageForeast;
     private WeatherAttributes _hotForecast;
+
+    private BinarySensor _sleepSensor;
 
     [TestInitialize]
     public void Init()
@@ -87,6 +90,10 @@ public class FlexiScreenTests
         };
 
         _testCtx.TriggerStateChangeWithAttributes(_weather, "Cloudy", _averageForeast);
+
+
+        _sleepSensor = BinarySensor.Create(_testCtx.HaContext, "binary_sensor.kids_sleeping");
+        _testCtx.TriggerStateChange(_sleepSensor, new EntityState { State = "off" });
 
     }
 
@@ -149,9 +156,10 @@ public class FlexiScreenTests
     }
 
     [TestMethod]
-    public void Wind_Closes_Screen()
+    public void Wind_Opens_Screen()
     {
         // Arrange
+        _testCtx.TriggerStateChange(_cover, "closed");
         var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
             .WithCover(_cover)
             .WithSun(_sun)
@@ -162,8 +170,8 @@ public class FlexiScreenTests
         _testCtx.TriggerStateChange(_windSpeedSensor, new EntityState { State = "80" });
 
         //Assert
-        Assert.AreEqual((ScreenState.Down, true), screen.StormProtector.DesiredState);
-        _testCtx.VerifyScreenGoesDown(_cover, Moq.Times.Once);
+        Assert.AreEqual((ScreenState.Up, true), screen.StormProtector.DesiredState);
+        _testCtx.VerifyScreenGoesUp(_cover, Moq.Times.Once);
     }
 
     [TestMethod]
@@ -207,9 +215,11 @@ public class FlexiScreenTests
 
 
     [TestMethod]
-    public void Rain_Closes_Screen()
+    public void Rain_Opens_Screen()
     {
         // Arrange
+        _testCtx.TriggerStateChange(_cover, "closed");
+
         var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
             .WithCover(_cover)
             .WithSun(_sun)
@@ -220,8 +230,8 @@ public class FlexiScreenTests
         _testCtx.TriggerStateChange(_rainRateSensor, new EntityState { State = "3" });
 
         //Assert
-        Assert.AreEqual((ScreenState.Down, true), screen.StormProtector.DesiredState);
-        _testCtx.VerifyScreenGoesDown(_cover, Moq.Times.Once);
+        Assert.AreEqual((ScreenState.Up, true), screen.StormProtector.DesiredState);
+        _testCtx.VerifyScreenGoesUp(_cover, Moq.Times.Once);
     }
 
     [TestMethod]
@@ -265,9 +275,10 @@ public class FlexiScreenTests
 
 
     [TestMethod]
-    public void RainForecast_Closes_Screen()
+    public void RainForecast_Opens_Screen()
     {
         // Arrange
+        _testCtx.TriggerStateChange(_cover, "closed");
         var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
             .WithCover(_cover)
             .WithSun(_sun)
@@ -278,8 +289,8 @@ public class FlexiScreenTests
         _testCtx.TriggerStateChange(_shortTermRainForecastSensor, new EntityState { State = "0.5" });
 
         //Assert
-        Assert.AreEqual((ScreenState.Down, true), screen.StormProtector.DesiredState);
-        _testCtx.VerifyScreenGoesDown(_cover, Moq.Times.Once);
+        Assert.AreEqual((ScreenState.Up, true), screen.StormProtector.DesiredState);
+        _testCtx.VerifyScreenGoesUp(_cover, Moq.Times.Once);
     }
 
     [TestMethod]
@@ -300,10 +311,10 @@ public class FlexiScreenTests
     }
 
     [TestMethod]
-    public void NoRainForecast_AfterStorm_Does_Nothing()
+    public void NoRainForecast_AfterStorm_Lets_SunPosition_Decide()
     {
         _testCtx.TriggerStateChange(_shortTermRainForecastSensor, new EntityState { State = "0.5" });
-        _testCtx.TriggerStateChange(_cover, "closed");
+        _testCtx.TriggerStateChange(_cover, "open");
 
         // Arrange
         var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
@@ -317,12 +328,11 @@ public class FlexiScreenTests
 
         //Assert
         Assert.AreEqual((null, false), screen.StormProtector.DesiredState);
-        _testCtx.VerifyScreenGoesUp(_cover, Moq.Times.Never);
-        _testCtx.VerifyScreenGoesDown(_cover, Moq.Times.Never);
+        _testCtx.VerifyScreenGoesDown(_cover, Moq.Times.Once);
     }
 
     [TestMethod]
-    public void Rain_After_Forecast_Keeps_Screen_Closed()
+    public void Rain_After_Forecast_Keeps_Screen_Open()
     {
         // Arrange
         _testCtx.TriggerStateChange(_cover, "open");
@@ -340,7 +350,7 @@ public class FlexiScreenTests
         _testCtx.TriggerStateChange(_shortTermRainForecastSensor, new EntityState { State = "0" });
 
         //Assert
-        Assert.AreEqual((ScreenState.Down, true), screen.StormProtector.DesiredState);
+        Assert.AreEqual((ScreenState.Up, true), screen.StormProtector.DesiredState);
     }
 
     [TestMethod]
@@ -473,5 +483,45 @@ public class FlexiScreenTests
 
         //Assert
         _testCtx.VerifyScreenGoesDown(_cover, Moq.Times.Never);
+    }
+
+    [TestMethod]
+    public void KidsSleeping_Closes_Screen()
+    {
+        // Arrange
+        _testCtx.TriggerStateChange(_cover, "open");
+        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
+            .WithCover(_cover)
+            .WithSun(_sun)
+            .WithSleepSensor(_sleepSensor)
+            .Build();
+
+        //Act
+        _testCtx.TriggerStateChange(_sleepSensor, new EntityState { State = "on" });
+
+        //Assert
+        _testCtx.VerifyScreenGoesDown(_cover, Moq.Times.Once);
+    }
+
+
+    [TestMethod]
+    public void StormProtector_Ignores_AngryKids()
+    {
+        // Arrange
+        _testCtx.TriggerStateChange(_cover, "closed");
+        _testCtx.TriggerStateChange(_sleepSensor, new EntityState { State = "on" });
+
+        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
+            .WithCover(_cover)
+            .WithSun(_sun)
+            .WithWindSpeedSensor(_windSpeedSensor)
+            .WithSleepSensor(_sleepSensor)
+            .Build();
+
+        //Act
+        _testCtx.TriggerStateChange(_windSpeedSensor, new EntityState { State = "80" });
+
+        //Assert
+        _testCtx.VerifyScreenGoesUp(_cover, Moq.Times.Once);
     }
 }

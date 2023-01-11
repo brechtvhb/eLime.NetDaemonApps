@@ -98,10 +98,10 @@ public class StormProtector
             : ShortTermRainForecastSensor.State <= ShortTermRainForecastSensorStormEndThreshold;
 
         if (windSpeedIsAboveStormThreshold == true || rainRateIsAboveStormThreshold == true || shortTermRainForecastIsAboveStormThreshold == true)
-            return (ScreenState.Down, true);
+            return (ScreenState.Up, true);
 
         if (windSpeedIsBelowStormThreshold == true && rainRateIsBelowStormThreshold == true && shortTermRainForecastIsBelowStormThreshold == true)
-            return (ScreenState.Up, false);
+            return (ScreenState.Down, false);
 
         return (null, false);
     }

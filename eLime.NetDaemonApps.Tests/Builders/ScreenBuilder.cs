@@ -117,6 +117,13 @@ public class ScreenBuilder
         return this;
     }
 
+    public ScreenBuilder WithSleepSensor(BinarySensor sleepSensor)
+    {
+        _sleepSensor = sleepSensor;
+
+        return this;
+    }
+
     public FlexiScreen Build()
     {
         var screen = _cover ?? new Cover(_testCtx.HaContext, _config.ScreenEntity);
