@@ -456,6 +456,20 @@ public class FlexiLightTests
     }
 
     [TestMethod]
+    public void Service_Calls_CorrectScript()
+    {
+        // Arrange
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithScriptActions().Build();
+
+        //Act
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
+
+        //Assert
+        _testCtx.VerifyScriptCalled("wake_up_pc", Moq.Times.Once);
+    }
+
+
+    [TestMethod]
     public void Complex_Conditions_NotSoComplex()
     {
         // Arrange

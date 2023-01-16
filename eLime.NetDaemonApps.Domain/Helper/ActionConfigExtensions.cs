@@ -4,6 +4,7 @@ using eLime.NetDaemonApps.Domain.BinarySensors;
 using eLime.NetDaemonApps.Domain.Lights;
 using eLime.NetDaemonApps.Domain.Rooms.Actions;
 using eLime.NetDaemonApps.Domain.Scenes;
+using eLime.NetDaemonApps.Domain.Scripts;
 using eLime.NetDaemonApps.Domain.TextSensors;
 using NetDaemon.HassModel;
 using Action = eLime.NetDaemonApps.Domain.Rooms.Actions.Action;
@@ -65,6 +66,7 @@ internal static class ActionConfigExtensions
             { Light: not null, LightAction: not Config.FlexiLights.LightAction.Unknown } => config.ConvertToLightActionDomainModel(haContext),
             { Lights: not null, LightAction: not Config.FlexiLights.LightAction.Unknown } => config.ConvertToLightActionDomainModel(haContext),
             { Scene: not null } => config.ConvertToSceneActionDomainModel(haContext),
+            { Script: not null } => config.ConvertToScriptActionDomainModel(haContext),
             { Switch: not null, SwitchAction: not SwitchAction.Unknown } => config.ConvertToSwitchActionDomainModel(haContext),
             _ => throw new ArgumentException("invalid action configuration")
         };
@@ -109,6 +111,20 @@ internal static class ActionConfigExtensions
         };
     }
 
+    internal static Action ConvertToScriptActionDomainModel(this ActionConfig config, IHaContext haContext)
+    {
+        if (config.Script == null)
+            throw new ArgumentException("Service not set");
+
+        var script = new Script(haContext);
+
+        return config.Script switch
+        {
+            "script.momentary_switch" => new MomentarySwitchAction(script, config.ScriptData?["entityId"]),
+            "script.wake_up_pc" => new WakeUpPcAction(script, config.ScriptData?["macAddress"]),
+            _ => throw new ArgumentOutOfRangeException()
+        };
+    }
     internal static Action ConvertToSceneActionDomainModel(this ActionConfig config, IHaContext haContext)
     {
         if (config.Scene == null)

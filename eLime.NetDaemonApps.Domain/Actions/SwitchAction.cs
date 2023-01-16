@@ -1,6 +1,7 @@
 ﻿using eLime.NetDaemonApps.Domain.BinarySensors;
+using Action = eLime.NetDaemonApps.Domain.Rooms.Actions.Action;
 
-namespace eLime.NetDaemonApps.Domain.Rooms.Actions;
+namespace eLime.NetDaemonApps.Domain.Actions;
 
 public class SwitchTurnOnAction : Action
 {

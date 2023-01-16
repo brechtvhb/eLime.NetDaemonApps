@@ -3,6 +3,7 @@ using eLime.NetDaemonApps.Domain.Rooms;
 using eLime.NetDaemonApps.Tests.Helpers;
 using Microsoft.Extensions.Logging;
 using NetDaemon.Extensions.MqttEntityManager;
+using System.Dynamic;
 using InitialClickAfterMotionBehaviour = eLime.NetDaemonApps.Config.FlexiLights.InitialClickAfterMotionBehaviour;
 
 namespace eLime.NetDaemonApps.Tests.Builders
@@ -221,6 +222,32 @@ namespace eLime.NetDaemonApps.Tests.Builders
 
             return this;
         }
+
+        public RoomBuilder WithScriptActions()
+        {
+            dynamic data = new ExpandoObject();
+            data.macAddress = "AB:CD:EF:12:34:56";
+
+            _config.FlexiScenes = new List<FlexiSceneConfig>
+            {
+                new()
+                {
+                    Name = "default",
+                    Actions = new List<ActionConfig>
+                    {
+                        new() {Script = "wake_up_pc", ScriptData = data}
+                    },
+                },
+            };
+
+            _config.OffActions = new List<ActionConfig>
+            {
+                new() {LightAction = LightAction.TurnOff, Light = "light.light1"},
+            };
+
+            return this;
+        }
+
 
 
         public RoomBuilder WithMultipleFlexiScenes()
