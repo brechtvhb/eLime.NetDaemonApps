@@ -5,3 +5,4 @@ appsettings.development.json
 *.gen
 .idea
 /eLime.NetDaemonApps/Properties/launchSettings.json
+*.user
