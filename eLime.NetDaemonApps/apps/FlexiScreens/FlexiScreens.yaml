@@ -4,14 +4,33 @@
     office:
       name: "Office"
       enabled: true
-      screenEntity: "cover.fake_screen"
+      screenEntity: "cover.screen_office"
       orientation: 265
       sunProtection:
         sunEntity: "sun.sun"
         orientationThreshold: 88
         elevationThreshold: 10
         desiredStateBelowElevationThreshold: "Up"
-      temperatureProtection:
-        indoorTemperatureSensor: "sensor.bureau_temp"
-        maxIndoorTemperature: 24
-        weatherEntity: "weather.forecast_ha_main"
+      stormProtection:
+        windSpeedEntity: "sensor.gw2000a_v2_2_0_wind_speed"
+        windSpeedStormStartThreshold: 40
+        windSpeedStormEndThreshold: 20
+        rainRateEntity: "sensor.gw2000a_v2_2_0_rain_rate_piezo"
+        rainRateStormStartThreshold: 1
+        rainRateStormEndThreshold: 0
+        shortTermRainForecastEntity: "sensor.buienradar_precipitation_forecast_total"
+        ShortTermRainStormStartThreshold: 0.05
+        shortTermRainStormEndThreshold: 0.
+      # temperatureProtection:
+      #   solarLuxSensor: "sensor.gw2000a_v2_2_0_solar_lux"
+      #   solarLuxAboveThreshold: 10000
+      #   SolarLuxBelowThreshold: 4000
+      #   indoorTemperatureSensor: "sensor.bureau_temp"
+      #   maxIndoorTemperature: 24
+      #   weatherEntity: "weather.forecast_ha_main"
+      #   conditionalMaxIndoorTemperature: 22.5
+      #   conditionalOutdoorTemperaturePrediction: 25
+      #   conditionalOutdoorTemperaturePredictionDays: 3
+      # sleepSensor: "binary_sensor.operating_mode_kids_sleeping"
+      minimumIntervalSinceLastAutomatedAction: "00:15:00"
+      minimumIntervalSinceLastManualAction: "02:00:00"
