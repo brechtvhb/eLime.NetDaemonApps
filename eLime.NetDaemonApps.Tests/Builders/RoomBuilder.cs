@@ -491,7 +491,8 @@ namespace eLime.NetDaemonApps.Tests.Builders
         public RoomBuilder WithIlluminanceSensor()
         {
             _config.AutoSwitchOffAboveIlluminance = true;
-            _config.IlluminanceThreshold = 30;
+            _config.IlluminanceThreshold = 40;
+            _config.IlluminanceLowerThreshold = 20;
             _config.IlluminanceSensors = new List<string>
             {
                 "sensor.illuminance"
@@ -503,7 +504,8 @@ namespace eLime.NetDaemonApps.Tests.Builders
         public RoomBuilder WithIlluminanceSensors()
         {
             _config.AutoSwitchOffAboveIlluminance = true;
-            _config.IlluminanceThreshold = 30;
+            _config.IlluminanceThreshold = 40;
+            _config.IlluminanceLowerThreshold = 20;
             _config.IlluminanceSensors = new List<string>
             {
                 "sensor.illuminance1",

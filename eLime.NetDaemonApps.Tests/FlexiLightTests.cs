@@ -626,7 +626,7 @@ public class FlexiLightTests
 
 
     [TestMethod]
-    public void DoesNotActivateLight_If_IlluminanceToHigh()
+    public void DoesNotActivateLight_If_IlluminanceAboveUpperThreshold()
     {
         // Arrange
         var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithIlluminanceSensor().Build();
@@ -640,7 +640,7 @@ public class FlexiLightTests
     }
 
     [TestMethod]
-    public void DoesActivateLight_If_IlluminanceOk()
+    public void DoesActivateLight_If_IlluminanceBelowLowerThreshold()
     {
         // Arrange
         var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithIlluminanceSensor().Build();
@@ -652,6 +652,22 @@ public class FlexiLightTests
         //Assert
         _testCtx.VerifyLightTurnOn(new Light(_testCtx.HaContext, "light.test"), Moq.Times.Once);
     }
+
+
+    [TestMethod]
+    public void DoesNotActivateLight_If_IlluminanceBetweenThresholds()
+    {
+        // Arrange
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithIlluminanceSensor().Build();
+        _testCtx.TriggerStateChange(new IlluminanceSensor(_testCtx.HaContext, "sensor.illuminance"), "30");
+
+        //Act
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
+
+        //Assert
+        _testCtx.VerifyLightTurnOn(new Light(_testCtx.HaContext, "light.test"), Moq.Times.Never);
+    }
+
 
     [TestMethod]
     public void DoesActivateLight_If_OneOfIlluminanceOk()
@@ -696,6 +712,21 @@ public class FlexiLightTests
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
         _testCtx.TriggerStateChange(new IlluminanceSensor(_testCtx.HaContext, "sensor.illuminance1"), "10");
         _testCtx.TriggerStateChange(new IlluminanceSensor(_testCtx.HaContext, "sensor.illuminance2"), "100");
+
+        //Assert
+        _testCtx.VerifyLightTurnOff(new Light(_testCtx.HaContext, "light.test"), Moq.Times.Never);
+    }
+
+    [TestMethod]
+    public void DoesNotAutoSwitchOff_If_BetweenThresholds()
+    {
+        // Arrange
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithIlluminanceSensor().Build();
+        _testCtx.TriggerStateChange(new IlluminanceSensor(_testCtx.HaContext, "sensor.illuminance1"), "10");
+
+        //Act
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
+        _testCtx.TriggerStateChange(new IlluminanceSensor(_testCtx.HaContext, "sensor.illuminance2"), "30");
 
         //Assert
         _testCtx.VerifyLightTurnOff(new Light(_testCtx.HaContext, "light.test"), Moq.Times.Never);

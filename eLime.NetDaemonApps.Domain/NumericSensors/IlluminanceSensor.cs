@@ -5,7 +5,8 @@ namespace eLime.NetDaemonApps.Domain.NumericSensors;
 
 public record IlluminanceSensor : NumericEntity
 {
-    public Int32? Threshold { get; private set; }
+    public Int32? UpperThreshold { get; private set; }
+    public Int32? LowerThreshold { get; private set; }
     public IlluminanceSensor(IHaContext haContext, string entityId) : base(haContext, entityId)
     {
     }
@@ -14,27 +15,29 @@ public record IlluminanceSensor : NumericEntity
     {
     }
 
-    public void Initialize(Int32? threshold)
+    public void Initialize(Int32? threshold, Int32? lowerThreshold = null)
     {
-        Threshold = threshold;
+        UpperThreshold = threshold;
+        LowerThreshold = lowerThreshold ?? UpperThreshold;
+
         StateChanges()
             .Subscribe(x =>
             {
-                if (x.Old != null && x.New != null && x.Old.State >= threshold && x.New.State < threshold)
+                if (x.Old != null && x.New != null && x.Old.State >= LowerThreshold && x.New.State < LowerThreshold)
                 {
                     OnDroppedBelowThreshold(new NumericSensorEventArgs(x));
                 }
-                if (x.Old != null && x.New != null && x.Old.State <= threshold && x.New.State > threshold)
+                if (x.Old != null && x.New != null && x.Old.State <= UpperThreshold && x.New.State > UpperThreshold)
                 {
                     OnWentAboveThreshold(new NumericSensorEventArgs(x));
                 }
             });
     }
 
-    public static IlluminanceSensor Create(IHaContext haContext, string entityId, Int32? threshold)
+    public static IlluminanceSensor Create(IHaContext haContext, string entityId, Int32? threshold, Int32? lowerThreshold = null)
     {
         var sensor = new IlluminanceSensor(haContext, entityId);
-        sensor.Initialize(threshold);
+        sensor.Initialize(threshold, lowerThreshold);
         return sensor;
     }
 
