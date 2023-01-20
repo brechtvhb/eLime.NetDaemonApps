@@ -72,6 +72,8 @@ public class FlexiScreen
 
         EnsureEnabledSwitchExists();
         RetrieveSateFromHomeAssistant().RunSync();
+
+        GuardScreen().RunSync();
     }
 
     private async Task Screen_StateChanged(object? sender, CoverEventArgs e)
