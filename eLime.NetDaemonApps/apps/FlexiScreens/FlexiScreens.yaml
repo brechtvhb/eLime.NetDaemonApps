@@ -8,7 +8,7 @@
       orientation: 265
       sunProtection:
         sunEntity: "sun.sun"
-        orientationThreshold: 88
+        orientationThreshold: 85
         elevationThreshold: 10
         desiredStateBelowElevationThreshold: "Up"
       stormProtection:

@@ -9,4 +9,7 @@ public record FlexiScreenEnabledSwitchAttributes : EnabledSwitchAttributes
     public string? LastAutomatedStateChange { get; init; }
     [JsonPropertyName("last_manual_state_change")]
     public string? LastManualStateChange { get; init; }
+
+    [JsonPropertyName("last_state_change_triggered_by")]
+    public string? LastStateChangeTriggeredBy { get; init; }
 }
