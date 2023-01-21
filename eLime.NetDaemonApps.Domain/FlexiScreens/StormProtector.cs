@@ -17,6 +17,7 @@ public class StormProtector
     private double? ShortTermRainForecastSensorStormEndThreshold { get; }
 
     public (ScreenState? State, Boolean Enforce) DesiredState { get; private set; }
+    private bool StormModeActive { get; set; }
 
     public StormProtector(NumericThresholdSensor? windSpeedSensor, double? windSpeedStormStartThreshold, double? windSpeedStormEndThreshold,
         NumericThresholdSensor? rainRateSensor, double? rainRateStormStartThreshold, double? rainRateStormEndThreshold,
@@ -98,10 +99,19 @@ public class StormProtector
             : ShortTermRainForecastSensor.State <= ShortTermRainForecastSensorStormEndThreshold;
 
         if (windSpeedIsAboveStormThreshold == true || rainRateIsAboveStormThreshold == true || shortTermRainForecastIsAboveStormThreshold == true)
+        {
+            StormModeActive = true;
             return (ScreenState.Up, true);
+        }
 
         if (windSpeedIsBelowStormThreshold == true && rainRateIsBelowStormThreshold == true && shortTermRainForecastIsBelowStormThreshold == true)
+        {
+            StormModeActive = false;
             return (ScreenState.Down, false);
+        }
+
+        if (StormModeActive)
+            return (ScreenState.Up, true);
 
         return (null, false);
     }
