@@ -176,7 +176,7 @@ public class FlexiScreenTests
     }
 
     [TestMethod]
-    public void NoWind_DoesNot_Close_Screen()
+    public void NoWind_Lets_SunProtectorDecide()
     {
         // Arrange
         var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
@@ -189,11 +189,11 @@ public class FlexiScreenTests
         _testCtx.TriggerStateChange(_windSpeedSensor, new EntityState { State = "45" });
 
         //Assert
-        _testCtx.VerifyScreenGoesDown(_cover, Moq.Times.Never);
+        _testCtx.VerifyScreenGoesDown(_cover, Moq.Times.Once);
     }
 
     [TestMethod]
-    public void NoWind_AfterStorm_Does_Nothing()
+    public void NoWind_AfterStorm_Lets_SunProtectorDecide()
     {
         // Arrange
         _testCtx.TriggerStateChange(_windSpeedSensor, new EntityState { State = "80" });
@@ -209,8 +209,8 @@ public class FlexiScreenTests
         _testCtx.TriggerStateChange(_windSpeedSensor, new EntityState { State = "20" });
 
         //Assert
-        Assert.AreEqual((null, false), screen.StormProtector.DesiredState);
-        _testCtx.VerifyScreenGoesUp(_cover, Moq.Times.Never);
+        Assert.AreEqual((ScreenState.Down, false), screen.StormProtector.DesiredState);
+        _testCtx.VerifyScreenGoesUp(_cover, Moq.Times.Once);
         _testCtx.VerifyScreenGoesDown(_cover, Moq.Times.Never);
     }
 
@@ -236,7 +236,7 @@ public class FlexiScreenTests
     }
 
     [TestMethod]
-    public void NoRain_DoesNot_Close_Screen()
+    public void NoRain_Lets_SunProtectorDecide()
     {
         // Arrange
         var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
@@ -249,11 +249,11 @@ public class FlexiScreenTests
         _testCtx.TriggerStateChange(_rainRateSensor, new EntityState { State = "0.8" });
 
         //Assert
-        _testCtx.VerifyScreenGoesDown(_cover, Moq.Times.Never);
+        _testCtx.VerifyScreenGoesDown(_cover, Moq.Times.Once);
     }
 
     [TestMethod]
-    public void NoRain_AfterStorm_Does_Nothing()
+    public void NoRain_AfterStorm_AllowsScreenToGoDownAgain()
     {
         // Arrange
         _testCtx.TriggerStateChange(_rainRateSensor, new EntityState { State = "3" });
@@ -269,9 +269,8 @@ public class FlexiScreenTests
         _testCtx.TriggerStateChange(_rainRateSensor, new EntityState { State = "0" });
 
         //Assert
-        Assert.AreEqual((null, false), screen.StormProtector.DesiredState);
-        _testCtx.VerifyScreenGoesUp(_cover, Moq.Times.Never);
-        _testCtx.VerifyScreenGoesDown(_cover, Moq.Times.Never);
+        Assert.AreEqual((ScreenState.Down, false), screen.StormProtector.DesiredState);
+        _testCtx.VerifyScreenGoesUp(_cover, Moq.Times.Once);
     }
 
 
@@ -295,7 +294,7 @@ public class FlexiScreenTests
     }
 
     [TestMethod]
-    public void NoRainForecast_DoesNot_Close_Screen()
+    public void NoRainForecast_Lets_SunProtectorDecide()
     {
         // Arrange
         var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
@@ -308,7 +307,7 @@ public class FlexiScreenTests
         _testCtx.TriggerStateChange(_shortTermRainForecastSensor, new EntityState { State = "0.1" });
 
         //Assert
-        _testCtx.VerifyScreenGoesDown(_cover, Moq.Times.Never);
+        _testCtx.VerifyScreenGoesDown(_cover, Moq.Times.Once);
     }
 
     [TestMethod]
@@ -328,7 +327,7 @@ public class FlexiScreenTests
         _testCtx.TriggerStateChange(_shortTermRainForecastSensor, new EntityState { State = "0" });
 
         //Assert
-        Assert.AreEqual((null, false), screen.StormProtector.DesiredState);
+        Assert.AreEqual((ScreenState.Down, false), screen.StormProtector.DesiredState);
         _testCtx.VerifyScreenGoesDown(_cover, Moq.Times.Once);
     }
 
