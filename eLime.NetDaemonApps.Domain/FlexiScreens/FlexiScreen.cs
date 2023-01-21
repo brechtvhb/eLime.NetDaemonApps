@@ -55,22 +55,40 @@ public class FlexiScreen
         Screen.StateChanged += async (o, e) => await Screen_StateChanged(o, e);
 
         SunProtector = sunProtector;
-        SunProtector.DesiredStateChanged += async (_, _) => await GuardScreen();
+        SunProtector.DesiredStateChanged += async (_, _) =>
+        {
+            _logger.LogInformation($"Desired state for SunProtector changed to  {SunProtector.DesiredState.State} (enforce: {SunProtector.DesiredState.Enforce}).");
+            await GuardScreen();
+        };
 
         StormProtector = stormProtector;
         if (StormProtector != null)
-            StormProtector.DesiredStateChanged += async (_, _) => await GuardScreen();
+            StormProtector.DesiredStateChanged += async (_, _) =>
+            {
+                _logger.LogInformation($"Desired state for StormProtector changed to: {StormProtector?.DesiredState.State} (enforce: {StormProtector?.DesiredState.Enforce}).");
+                await GuardScreen();
+            };
 
         TemperatureProtector = temperatureProtector;
         if (TemperatureProtector != null)
-            TemperatureProtector.DesiredStateChanged += async (_, _) => await GuardScreen();
+            TemperatureProtector.DesiredStateChanged += async (_, _) =>
+            {
+
+                _logger.LogInformation($"Desired state for TemperatureProtector changed to: {TemperatureProtector?.DesiredState.State} (enforce: {TemperatureProtector?.DesiredState.Enforce}).");
+                await GuardScreen();
+            };
 
         ManIsAngryProtector = manIsAngryProtector;
         WomanIsAngryProtector = womanIsAngryProtector;
         ChildrenAreAngryProtector = childrenAreAngryProtector;
 
         if (ChildrenAreAngryProtector != null)
-            ChildrenAreAngryProtector.DesiredStateChanged += async (_, _) => await GuardScreen();
+            ChildrenAreAngryProtector.DesiredStateChanged += async (_, _) =>
+            {
+
+                _logger.LogInformation($"Desired state for ChildrenAreAngryProtector changed to: {ChildrenAreAngryProtector?.DesiredState.State} (enforce: {ChildrenAreAngryProtector?.DesiredState.Enforce}).");
+                await GuardScreen();
+            };
 
         EnsureEnabledSwitchExists();
         RetrieveSateFromHomeAssistant().RunSync();
