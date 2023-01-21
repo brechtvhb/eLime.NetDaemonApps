@@ -208,7 +208,10 @@ public class FlexiScreen
         EnabledSwitch = new FlexiScreenEnabledSwitch(_haContext, switchName);
 
         if (created)
+        {
             _mqttEntityManager.SetStateAsync(switchName, "ON").RunSync();
+            UpdateStateInHomeAssistant().RunSync();
+        }
 
         _mqttEntityManager.PrepareCommandSubscriptionAsync(switchName)
             .RunSync()
@@ -222,8 +225,6 @@ public class FlexiScreen
                 }
                 await _mqttEntityManager.SetStateAsync(switchName, state);
             });
-
-        UpdateStateInHomeAssistant().RunSync();
     }
 
     private Task RetrieveSateFromHomeAssistant()
