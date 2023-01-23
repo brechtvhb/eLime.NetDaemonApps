@@ -5,7 +5,6 @@ using eLime.NetDaemonApps.Domain.Entities.TextSensors;
 using eLime.NetDaemonApps.Domain.FlexiScenes.Actions;
 using eLime.NetDaemonApps.Domain.Scenes;
 using eLime.NetDaemonApps.Domain.Scripts;
-using eLime.NetDaemonApps.Domain.TextSensors;
 using NetDaemon.HassModel;
 using Action = eLime.NetDaemonApps.Domain.FlexiScenes.Actions.Action;
 
