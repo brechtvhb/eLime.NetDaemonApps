@@ -1,4 +1,4 @@
-﻿using eLime.NetDaemonApps.Domain.TextSensors;
+﻿using eLime.NetDaemonApps.Domain.Entities.TextSensors;
 using eLime.NetDaemonApps.Tests.Mocks.Moq;
 using Microsoft.Reactive.Testing;
 using NetDaemon.HassModel;
@@ -42,7 +42,11 @@ public class AppTestContext
         HaContextMock.TriggerEvent(@event);
     }
 
-    public void TriggerStateChange(Entity entity, string newStateValue, object? attributes = null)
+    public void TriggerStateChange(Entity entity, string newStateValue)
+    {
+        HaContextMock.TriggerStateChange(entity, newStateValue);
+    }
+    public void TriggerStateChangeWithAttributes(Entity entity, string newStateValue, object attributes)
     {
         HaContextMock.TriggerStateChange(entity, newStateValue, attributes);
     }

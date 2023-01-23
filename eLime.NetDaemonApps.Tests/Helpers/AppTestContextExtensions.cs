@@ -1,5 +1,6 @@
-﻿using eLime.NetDaemonApps.Domain.BinarySensors;
-using eLime.NetDaemonApps.Domain.Lights;
+﻿using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
+using eLime.NetDaemonApps.Domain.Entities.Covers;
+using eLime.NetDaemonApps.Domain.Entities.Lights;
 using eLime.NetDaemonApps.Domain.Scenes;
 using Moq;
 using NetDaemon.HassModel.Entities;
@@ -82,4 +83,15 @@ public static class AppTestContextExtensions
     {
         return x.EntityIds != null && x.EntityIds.Any(id => id == s);
     }
+
+    public static void VerifyScreenGoesDown(this AppTestContext ctx, Cover entity, Func<Times> times)
+    {
+        ctx.HaContextMock.Verify(c => c.CallService("cover", "close_cover", It.Is<ServiceTarget>(s => Match(entity.EntityId, s)), null), times);
+    }
+
+    public static void VerifyScreenGoesUp(this AppTestContext ctx, Cover entity, Func<Times> times)
+    {
+        ctx.HaContextMock.Verify(c => c.CallService("cover", "open_cover", It.Is<ServiceTarget>(s => Match(entity.EntityId, s)), null), times);
+    }
+
 }

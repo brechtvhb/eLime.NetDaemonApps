@@ -1,5 +1,5 @@
 ﻿using eLime.NetDaemonApps.Config.FlexiLights;
-using eLime.NetDaemonApps.Domain.Rooms;
+using eLime.NetDaemonApps.Domain.FlexiScenes.Rooms;
 using eLime.NetDaemonApps.Tests.Helpers;
 using Microsoft.Extensions.Logging;
 using NetDaemon.Extensions.MqttEntityManager;
