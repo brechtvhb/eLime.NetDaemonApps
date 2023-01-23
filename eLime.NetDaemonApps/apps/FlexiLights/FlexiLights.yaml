@@ -79,8 +79,9 @@
       doubleClickActions:
       - executeOffActions: true
       longClickActions:
-      - switch: input_boolean.triple_click
-        switchAction: Pulse
+      - script: script.wake_up_pc
+        scriptData:
+          macAddress: "12:34:56:78:90:AB"
       tripleClickActions:
       - switch: input_boolean.triple_click
         switchAction: Pulse

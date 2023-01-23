@@ -222,6 +222,29 @@ namespace eLime.NetDaemonApps.Tests.Builders
             return this;
         }
 
+        public RoomBuilder WithScriptActions()
+        {
+            _config.FlexiScenes = new List<FlexiSceneConfig>
+            {
+                new()
+                {
+                    Name = "default",
+                    Actions = new List<ActionConfig>
+                    {
+                        new() {Script = "script.wake_up_pc", ScriptData = new Dictionary<string, string> { { "macAddress", "AB:CD:EF:12:34:56" } }}
+                    },
+                },
+            };
+
+            _config.OffActions = new List<ActionConfig>
+            {
+                new() {LightAction = LightAction.TurnOff, Light = "light.light1"},
+            };
+
+            return this;
+        }
+
+
 
         public RoomBuilder WithMultipleFlexiScenes()
         {
@@ -468,7 +491,8 @@ namespace eLime.NetDaemonApps.Tests.Builders
         public RoomBuilder WithIlluminanceSensor()
         {
             _config.AutoSwitchOffAboveIlluminance = true;
-            _config.IlluminanceThreshold = 30;
+            _config.IlluminanceThreshold = 40;
+            _config.IlluminanceLowerThreshold = 20;
             _config.IlluminanceSensors = new List<string>
             {
                 "sensor.illuminance"
@@ -480,7 +504,8 @@ namespace eLime.NetDaemonApps.Tests.Builders
         public RoomBuilder WithIlluminanceSensors()
         {
             _config.AutoSwitchOffAboveIlluminance = true;
-            _config.IlluminanceThreshold = 30;
+            _config.IlluminanceThreshold = 40;
+            _config.IlluminanceLowerThreshold = 20;
             _config.IlluminanceSensors = new List<string>
             {
                 "sensor.illuminance1",

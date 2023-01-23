@@ -7,6 +7,8 @@ public class ActionConfig
     public List<string> Lights { get; set; }
     public LightAction LightAction { get; set; }
     public string? Scene { get; set; }
+    public string? Script { get; set; }
+    public Dictionary<String, String>? ScriptData { get; set; }
     public TimeSpan? TransitionDuration { get; set; }
     public TimeSpan? AutoTransitionDuration { get; set; }
     public string? Profile { get; set; }

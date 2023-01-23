@@ -74,6 +74,11 @@ public static class AppTestContextExtensions
         ctx.HaContextMock.Verify(c => c.CallService("scene", "turn_on", It.Is<ServiceTarget>(s => Match(entity.SceneId, s)), parameters), times);
     }
 
+    public static void VerifyScriptCalled(this AppTestContext ctx, string script_name, Func<Times> times)
+    {
+        ctx.HaContextMock.Verify(c => c.CallService("script", script_name, null, It.IsAny<Object?>()), times);
+    }
+
     private static bool Match(string s, ServiceTarget x)
     {
         return x.EntityIds != null && x.EntityIds.Any(id => id == s);

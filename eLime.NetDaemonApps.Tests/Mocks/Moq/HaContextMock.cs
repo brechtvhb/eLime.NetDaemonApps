@@ -11,7 +11,8 @@ public class HaContextMock : Mock<HaContextMockBase>
     {
         void Callback(string domain, string service, ServiceTarget target, object? data)
         {
-            TriggerStateChange(target.EntityIds.First(), data == null ? new EntityState { State = "" } : new EntityState { State = data.ToString() });
+            if (target != null)
+                TriggerStateChange(target.EntityIds.First(), data == null ? new EntityState { State = "" } : new EntityState { State = data.ToString() });
         }
 
         Setup(m => m.CallService(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<ServiceTarget>(), It.IsAny<object>()))

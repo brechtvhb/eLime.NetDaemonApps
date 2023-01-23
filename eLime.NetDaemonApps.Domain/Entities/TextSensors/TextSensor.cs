@@ -13,4 +13,24 @@ public record TextSensor : Entity<TextSensor, EntityState<TextSensorAttributes>,
     {
     }
 
+    public void Initialize()
+    {
+
+        StateChanges()
+            .Subscribe(x =>
+            {
+                if (x.New != null)
+                {
+                    OnStateChanged(new TextSensorEventArgs(x));
+                }
+            });
+    }
+
+    public event EventHandler<TextSensorEventArgs>? StateChanged;
+
+    private void OnStateChanged(TextSensorEventArgs e)
+    {
+        if (e.New?.State != e.Old?.State)
+            StateChanged?.Invoke(this, e);
+    }
 }

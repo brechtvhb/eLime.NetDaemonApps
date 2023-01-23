@@ -8,6 +8,7 @@ public class RoomConfig
     public bool AutoTransitionTurnOffIfNoValidSceneFound { get; set; }
     public IList<string>? IlluminanceSensors { get; set; }
     public int? IlluminanceThreshold { get; set; }
+    public int? IlluminanceLowerThreshold { get; set; }
     public bool AutoSwitchOffAboveIlluminance { get; set; }
     public IList<string>? MotionSensors { get; set; }
     public TimeSpan? IgnorePresenceAfterOffDuration { get; set; }
