@@ -24,7 +24,7 @@ RUN dotnet tool install --tool-path /tools dotnet-trace \
 FROM mcr.microsoft.com/dotnet/aspnet:7.0-alpine AS run
 
 WORKDIR /tools
-COPY --from=build-env /tools .
+COPY --from=build /tools .
 
 WORKDIR /app
 COPY --from=build /out .
