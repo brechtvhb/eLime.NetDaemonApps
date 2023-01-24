@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 namespace eLime.NetDaemonApps.apps.SmartWasher;
 
 
-[NetDaemonApp(Id = "smartwasher")]
+//[NetDaemonApp(Id = "smartwasher")]
 public class SmartWasher : IAsyncInitializable, IAsyncDisposable
 {
     private readonly IHaContext _ha;
