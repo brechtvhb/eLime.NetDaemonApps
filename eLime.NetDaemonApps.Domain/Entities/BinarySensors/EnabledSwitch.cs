@@ -3,7 +3,8 @@ using NetDaemon.HassModel.Entities;
 
 namespace eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 
-public record EnabledSwitch : Entity<EnabledSwitch, EntityState<EnabledSwitchAttributes>, EnabledSwitchAttributes>
+public record EnabledSwitch<T> : Entity<EnabledSwitch<T>, EntityState<T>, T>
+    where T : EnabledSwitchAttributes
 {
     public EnabledSwitch(IHaContext haContext, string entityId) : base(haContext, entityId)
     {
@@ -20,30 +21,30 @@ public record EnabledSwitch : Entity<EnabledSwitch, EntityState<EnabledSwitchAtt
             {
                 if (x.New != null && x.New.IsOn())
                 {
-                    OnTurnedOn(new EnabledSwitchEventArgs(x));
+                    OnTurnedOn(new EnabledSwitchEventArgs<T>(x));
                 }
                 if (x.New != null && x.New.IsOff())
                 {
-                    OnTurnedOff(new EnabledSwitchEventArgs(x));
+                    OnTurnedOff(new EnabledSwitchEventArgs<T>(x));
                 }
             });
     }
 
-    public static EnabledSwitch Create(IHaContext haContext, string entityId)
+    public static EnabledSwitch<T> Create(IHaContext haContext, string entityId)
     {
-        var @switch = new EnabledSwitch(haContext, entityId);
+        var @switch = new EnabledSwitch<T>(haContext, entityId);
         @switch.Initialize();
         return @switch;
     }
 
-    public event EventHandler<EnabledSwitchEventArgs>? TurnedOn;
-    public event EventHandler<EnabledSwitchEventArgs>? TurnedOff;
+    public event EventHandler<EnabledSwitchEventArgs<T>>? TurnedOn;
+    public event EventHandler<EnabledSwitchEventArgs<T>>? TurnedOff;
 
-    protected void OnTurnedOn(EnabledSwitchEventArgs e)
+    protected void OnTurnedOn(EnabledSwitchEventArgs<T> e)
     {
         TurnedOn?.Invoke(this, e);
     }
-    protected void OnTurnedOff(EnabledSwitchEventArgs e)
+    protected void OnTurnedOff(EnabledSwitchEventArgs<T> e)
     {
         TurnedOff?.Invoke(this, e);
     }

@@ -17,7 +17,7 @@ namespace eLime.NetDaemonApps.Domain.FlexiScenes.Rooms;
 public class Room
 {
     public string? Name { get; }
-    private EnabledSwitch EnabledSwitch { get; set; }
+    private FlexiScenesEnabledSwitch EnabledSwitch { get; set; }
 
     public bool AutoTransition { get; }
     public bool AutoTransitionTurnOffIfNoValidSceneFound { get; }
@@ -272,7 +272,7 @@ public class Room
             created = true;
         }
 
-        EnabledSwitch = new EnabledSwitch(_haContext, switchName);
+        EnabledSwitch = new FlexiScenesEnabledSwitch(_haContext, switchName);
 
         if (created)
             _mqttEntityManager.SetStateAsync(switchName, "ON").RunSync();
@@ -327,7 +327,7 @@ public class Room
         if (!IsRoomEnabled())
             return;
 
-        var attributes = new EnabledSwitchAttributes
+        var attributes = new FlexiScenesEnabledSwitchAttributes
         {
             IgnorePresenceUntil = IgnorePresenceUntil?.ToString("O"),
             TurnOffAt = TurnOffAt?.ToString("O"),

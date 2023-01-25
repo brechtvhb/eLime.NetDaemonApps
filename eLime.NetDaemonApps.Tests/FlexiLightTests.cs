@@ -2,6 +2,7 @@ using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 using eLime.NetDaemonApps.Domain.Entities.Lights;
 using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
 using eLime.NetDaemonApps.Domain.Entities.TextSensors;
+using eLime.NetDaemonApps.Domain.FlexiScenes;
 using eLime.NetDaemonApps.Domain.FlexiScenes.Rooms;
 using eLime.NetDaemonApps.Domain.Scenes;
 using eLime.NetDaemonApps.Tests.Builders;
@@ -26,7 +27,7 @@ public class FlexiLightTests
     public void Init()
     {
         _testCtx = AppTestContext.Create(DateTime.Now);
-        _testCtx.TriggerStateChange(new EnabledSwitch(_testCtx.HaContext, "switch.flexilights_toilet_1"), "on");
+        _testCtx.TriggerStateChange(new FlexiScenesEnabledSwitch(_testCtx.HaContext, "switch.flexilights_toilet_1"), "on");
 
         _logger = A.Fake<ILogger<Room>>();
         _mqttEntityManager = A.Fake<IMqttEntityManager>();
