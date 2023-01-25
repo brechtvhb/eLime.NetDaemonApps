@@ -1,5 +1,5 @@
-﻿using eLime.NetDaemonApps.Domain.BinarySensors;
-using eLime.NetDaemonApps.Domain.Lights;
+﻿using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
+using eLime.NetDaemonApps.Domain.Entities.Lights;
 using eLime.NetDaemonApps.Domain.Scenes;
 using Moq;
 using NetDaemon.HassModel.Entities;

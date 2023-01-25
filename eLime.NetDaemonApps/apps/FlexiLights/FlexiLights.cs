@@ -1,8 +1,5 @@
-// Use unique namespaces for your apps if you going to share with others to avoid
-// conflicting names
-
 using eLime.netDaemonApps.Config;
-using eLime.NetDaemonApps.Domain.Rooms;
+using eLime.NetDaemonApps.Domain.FlexiScenes.Rooms;
 using NetDaemon.Extensions.MqttEntityManager;
 using System.Collections.Generic;
 using System.Reactive.Concurrency;

@@ -1,4 +1,4 @@
-﻿using eLime.NetDaemonApps.Domain.TextSensors;
+﻿using eLime.NetDaemonApps.Domain.Entities.TextSensors;
 using eLime.NetDaemonApps.Tests.Mocks.Moq;
 using Microsoft.Reactive.Testing;
 using NetDaemon.HassModel;

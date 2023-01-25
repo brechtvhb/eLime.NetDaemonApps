@@ -1,9 +1,9 @@
-using eLime.NetDaemonApps.Domain.BinarySensors;
-using eLime.NetDaemonApps.Domain.Lights;
-using eLime.NetDaemonApps.Domain.NumericSensors;
-using eLime.NetDaemonApps.Domain.Rooms;
+using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
+using eLime.NetDaemonApps.Domain.Entities.Lights;
+using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
+using eLime.NetDaemonApps.Domain.Entities.TextSensors;
+using eLime.NetDaemonApps.Domain.FlexiScenes.Rooms;
 using eLime.NetDaemonApps.Domain.Scenes;
-using eLime.NetDaemonApps.Domain.TextSensors;
 using eLime.NetDaemonApps.Tests.Builders;
 using eLime.NetDaemonApps.Tests.Helpers;
 using FakeItEasy;
