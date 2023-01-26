@@ -33,6 +33,7 @@ public class Room : IAsyncDisposable
     private IDisposable? TurnOffSchedule { get; set; }
     private DateTime? IgnorePresenceUntil { get; set; }
     private IDisposable? ClearIgnorePresenceSchedule { get; set; }
+    private IDisposable? GuardTask { get; set; }
     public InitiatedBy InitiatedBy { get; private set; } = InitiatedBy.NoOne;
 
     private readonly List<BinarySensor> _offSensors = new();
@@ -263,6 +264,9 @@ public class Room : IAsyncDisposable
 
         if (FullyAutomated)
             ExecuteFlexiSceneOnAutoTransition().RunSync();
+
+        //Should this still be a periodic task? Can only happen on startup, otherwise we receive a motion detected event.
+        GuardTask = _scheduler.RunEvery(TimeSpan.FromSeconds(5), _scheduler.Now, CheckForMotion);
     }
 
     private void EnsureEnabledSwitchExists()
@@ -700,13 +704,6 @@ public class Room : IAsyncDisposable
         await UpdateStateInHomeAssistant();
     }
 
-    public void Guard()
-    {
-        //Can only happen on startup, otherwise we receive a motion detected event
-        _scheduler.RunEvery(TimeSpan.FromSeconds(5), _scheduler.Now, CheckForMotion);
-    }
-
-
     private async Task RemoveIgnorePresence()
     {
         IgnorePresenceUntil = null;
@@ -765,6 +762,10 @@ public class Room : IAsyncDisposable
         }
 
         _logger.LogDebug("{Room}: Disposed.", Name);
+
+        GuardTask?.Dispose();
+        ClearIgnorePresenceSchedule?.Dispose();
+        TurnOffSchedule?.Dispose();
 
         GC.SuppressFinalize(this);
 
