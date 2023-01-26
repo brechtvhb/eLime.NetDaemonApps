@@ -697,11 +697,8 @@ public class Room
 
     public void Guard()
     {
-        _scheduler.RunEvery(TimeSpan.FromSeconds(5), _scheduler.Now, () =>
-        {
-            //Can only happen on startup, otherwise we receive a motion detected event
-            CheckForMotion().RunSync();
-        });
+        //Can only happen on startup, otherwise we receive a motion detected event
+        _scheduler.RunEvery(TimeSpan.FromSeconds(5), _scheduler.Now, CheckForMotion);
     }
 
 
@@ -711,7 +708,7 @@ public class Room
         await UpdateStateInHomeAssistant();
     }
 
-    private async Task CheckForMotion()
+    private async void CheckForMotion()
     {
         if (!IsRoomEnabled())
             return;
