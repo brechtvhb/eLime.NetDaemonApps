@@ -28,4 +28,5 @@ COPY --from=build /tools .
 
 WORKDIR /app
 COPY --from=build /out .
+
 ENTRYPOINT ["dotnet", "eLime.NetDaemonApps.dll"]

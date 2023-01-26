@@ -49,4 +49,6 @@ public record BinarySensor : Entity<BinarySensor, EntityState<BinarySensorAttrib
     {
         TurnedOff?.Invoke(this, e);
     }
+
+    public bool IsOn() => State == "on";
 }

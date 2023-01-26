@@ -10,7 +10,7 @@ namespace eLime.NetDaemonApps.Domain.FlexiScenes.Rooms;
 
 public class FlexiScene
 {
-    public String? Name { get; private init; }
+    public string? Name { get; private init; }
 
     private List<ICondition> _conditions = new();
     public IReadOnlyCollection<ICondition> Conditions => _conditions.AsReadOnly();
@@ -21,12 +21,12 @@ public class FlexiScene
     public TimeSpan TurnOffAfterIfTriggeredBySwitch { get; private init; }
     public TimeSpan TurnOffAfterIfTriggeredByMotionSensor { get; private init; }
 
-    private List<String> _nextFlexiScenes = new();
-    public IReadOnlyCollection<String> NextFlexiScenes => _nextFlexiScenes.AsReadOnly();
+    private List<string> _nextFlexiScenes = new();
+    public IReadOnlyCollection<string> NextFlexiScenes => _nextFlexiScenes.AsReadOnly();
 
     public static FlexiScene Create(IHaContext haContext, FlexiSceneConfig config)
     {
-        if (String.IsNullOrWhiteSpace(config.Name))
+        if (string.IsNullOrWhiteSpace(config.Name))
             throw new ArgumentException("flexi scene must have a name");
 
         var flexiScene = new FlexiScene

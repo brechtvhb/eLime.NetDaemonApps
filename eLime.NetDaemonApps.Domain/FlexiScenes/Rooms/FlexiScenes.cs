@@ -22,7 +22,7 @@ public class FlexiScenes
     public FlexiScene? Current => All.SingleOrDefault(x => x.Name == CurrentFlexiScene);
     public FlexiScene? Initial => All.SingleOrDefault(x => x.Name == InitialFlexiScene);
 
-    public FlexiScene? GetByName(String name) => _flexiScenes.SingleOrDefault(x => x.Name == name);
+    public FlexiScene? GetByName(string name) => _flexiScenes.SingleOrDefault(x => x.Name == name);
     internal FlexiScene Next
     {
         get
