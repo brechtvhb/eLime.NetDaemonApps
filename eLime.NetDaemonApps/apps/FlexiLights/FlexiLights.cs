@@ -1,6 +1,3 @@
-// Use unique namespaces for your apps if you going to share with others to avoid
-// conflicting names
-
 using eLime.netDaemonApps.Config;
 using eLime.NetDaemonApps.Domain.FlexiScenes.Rooms;
 using NetDaemon.Extensions.MqttEntityManager;
@@ -42,7 +39,6 @@ public class FlexiLights : IAsyncInitializable, IAsyncDisposable
 
                 var room = new Room(_ha, _logger, _scheduler, _mqttEntityManager, roomConfig, TimeSpan.FromSeconds(1));
                 Rooms.Add(room);
-                room.Guard();
             }
         }
         catch (Exception ex)

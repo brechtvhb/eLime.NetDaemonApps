@@ -93,5 +93,4 @@ public static class AppTestContextExtensions
     {
         ctx.HaContextMock.Verify(c => c.CallService("cover", "open_cover", It.Is<ServiceTarget>(s => Match(entity.EntityId, s)), null), times);
     }
-
 }

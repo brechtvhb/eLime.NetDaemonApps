@@ -10,7 +10,6 @@ using NetDaemon.Extensions.Scheduler;
 using NetDaemon.HassModel;
 using NetDaemon.HassModel.Entities;
 using System.Reactive.Concurrency;
-using System.Reactive.Linq;
 using Action = eLime.NetDaemonApps.Domain.FlexiScenes.Actions.Action;
 
 namespace eLime.NetDaemonApps.Domain.FlexiScenes.Rooms;
@@ -34,6 +33,7 @@ public class Room : IAsyncDisposable
     private IDisposable? TurnOffSchedule { get; set; }
     private DateTime? IgnorePresenceUntil { get; set; }
     private IDisposable? ClearIgnorePresenceSchedule { get; set; }
+    private IDisposable? GuardTask { get; set; }
     public InitiatedBy InitiatedBy { get; private set; } = InitiatedBy.NoOne;
 
     private readonly List<BinarySensor> _offSensors = new();
@@ -117,6 +117,11 @@ public class Room : IAsyncDisposable
             binarySensor.TurnedOff += DebounceAutoTransitionAsync;
             _flexiSceneSensors.Add(binarySensor);
         }
+    }
+
+    private async void DebounceAutoTransitionAsync(object? sender, BinarySensorEventArgs e)
+    {
+        await AutoTransitionDebounceDispatcher.DebounceAsync(ExecuteFlexiSceneOnAutoTransition);
     }
 
     public FlexiScenes FlexiScenes { get; }
@@ -255,10 +260,13 @@ public class Room : IAsyncDisposable
 
         RetrieveSateFromHomeAssistant().RunSync();
 
-        _logger.LogInformation("{Room}: Initialized with scenes: {Scenes}.", Name, string.Join(", ", FlexiScenes.All.Select(x => x.Name)));
+        _logger.LogInformation("{Room}: Initialized with scenes: {Scenes}.", Name, String.Join(", ", FlexiScenes.All.Select(x => x.Name)));
 
         if (FullyAutomated)
             ExecuteFlexiSceneOnAutoTransition().RunSync();
+
+        //Should this still be a periodic task? Can only happen on startup, otherwise we receive a motion detected event.
+        GuardTask = _scheduler.RunEvery(TimeSpan.FromSeconds(5), _scheduler.Now, CheckForMotion);
     }
 
     private void EnsureEnabledSwitchExists()
@@ -298,18 +306,18 @@ public class Room : IAsyncDisposable
 
     private async Task RetrieveSateFromHomeAssistant()
     {
-        IgnorePresenceUntil = !string.IsNullOrWhiteSpace(EnabledSwitch.Attributes?.IgnorePresenceUntil) ? DateTime.Parse(EnabledSwitch.Attributes.IgnorePresenceUntil) : null;
-        TurnOffAt = !string.IsNullOrWhiteSpace(EnabledSwitch.Attributes?.TurnOffAt) ? DateTime.Parse(EnabledSwitch.Attributes.TurnOffAt) : null;
-        InitiatedBy = !string.IsNullOrWhiteSpace(EnabledSwitch.Attributes?.InitiatedBy) ? Enum.Parse<InitiatedBy>(EnabledSwitch.Attributes.InitiatedBy) : InitiatedBy.NoOne;
+        IgnorePresenceUntil = !String.IsNullOrWhiteSpace(EnabledSwitch.Attributes?.IgnorePresenceUntil) ? DateTime.Parse(EnabledSwitch.Attributes.IgnorePresenceUntil) : null;
+        TurnOffAt = !String.IsNullOrWhiteSpace(EnabledSwitch.Attributes?.TurnOffAt) ? DateTime.Parse(EnabledSwitch.Attributes.TurnOffAt) : null;
+        InitiatedBy = !String.IsNullOrWhiteSpace(EnabledSwitch.Attributes?.InitiatedBy) ? Enum.Parse<InitiatedBy>(EnabledSwitch.Attributes.InitiatedBy) : InitiatedBy.NoOne;
 
-        if (!string.IsNullOrWhiteSpace(EnabledSwitch.Attributes?.CurrentFlexiScene))
+        if (!String.IsNullOrWhiteSpace(EnabledSwitch.Attributes?.CurrentFlexiScene))
         {
             var flexiScene = FlexiScenes.GetByName(EnabledSwitch.Attributes.CurrentFlexiScene);
             if (flexiScene != null)
                 FlexiScenes.SetCurrentScene(flexiScene);
         }
 
-        if (!string.IsNullOrWhiteSpace(EnabledSwitch.Attributes?.InitialFlexiScene))
+        if (!String.IsNullOrWhiteSpace(EnabledSwitch.Attributes?.InitialFlexiScene))
         {
             var flexiScene = FlexiScenes.GetByName(EnabledSwitch.Attributes.InitialFlexiScene);
             if (flexiScene != null)
@@ -348,7 +356,7 @@ public class Room : IAsyncDisposable
         return EnabledSwitch.IsOn();
     }
 
-    private async Task<bool> ExecuteFlexiScene(FlexiScene flexiScene, InitiatedBy initiatedBy, bool autoTransition = false, bool overwriteInitialScene = true)
+    private async Task<bool> ExecuteFlexiScene(FlexiScene flexiScene, InitiatedBy initiatedBy, Boolean autoTransition = false, Boolean overwriteInitialScene = true)
     {
         _logger.LogInformation("{Room}: Will execute flexi scene {flexiScene}. Triggered by {InitiatedBy}.", Name, flexiScene.Name, initiatedBy);
         FlexiScenes.SetCurrentScene(flexiScene, overwriteInitialScene);
@@ -356,14 +364,16 @@ public class Room : IAsyncDisposable
 
         return await ExecuteActions(flexiScene.Actions, autoTransition);
     }
-    private async Task ExecuteOffActions()
+
+    private async Task ExecuteOffActions(bool triggeredByManualAction = true)
     {
         _logger.LogDebug("{Room}: Executed off actions.", Name);
 
         FlexiScenes.DeactivateScene();
         InitiatedBy = InitiatedBy.NoOne;
 
-        if (IgnorePresenceAfterOffDuration != TimeSpan.Zero)
+        //Only ignore presence if triggered by manual action
+        if (triggeredByManualAction && IgnorePresenceAfterOffDuration != TimeSpan.Zero)
             IgnorePresenceUntil = DateTime.Now.Add(IgnorePresenceAfterOffDuration);
 
         await ScheduleClearIgnorePresence();
@@ -442,14 +452,14 @@ public class Room : IAsyncDisposable
         if (remainingTime > TimeSpan.Zero)
         {
             TurnOffSchedule?.Dispose();
-            TurnOffSchedule = _scheduler.ScheduleAsync(remainingTime, async (_, _) => await ExecuteOffActions());
+            TurnOffSchedule = _scheduler.ScheduleAsync(remainingTime, async (_, _) => await ExecuteOffActions(triggeredByManualAction: false));
 
             _logger.LogTrace("{Room}: Off actions will be executed at {TurnOffAt} (Set by {InitiatedBy}).", Name, TurnOffAt?.ToString("T"), InitiatedBy);
         }
         else
         {
             _logger.LogDebug("{Room}: Off actions should have been executed at {TurnOffAt} will execute them now (Set by {InitiatedBy}).", Name, TurnOffAt?.ToString("T"), InitiatedBy);
-            await ExecuteOffActions();
+            await ExecuteOffActions(triggeredByManualAction: false);
         }
     }
 
@@ -460,14 +470,14 @@ public class Room : IAsyncDisposable
         TurnOffSchedule?.Dispose();
     }
 
-    private async Task<bool> ExecuteActions(IReadOnlyCollection<Action> actions, bool autoTransition = false)
+    private async Task<Boolean> ExecuteActions(IReadOnlyCollection<Action> actions, Boolean autoTransition = false)
     {
         var offActionsExecuted = false;
         foreach (var action in actions)
         {
             if (action is ExecuteOffActionsAction)
             {
-                await ExecuteOffActions();
+                await ExecuteOffActions(triggeredByManualAction: true);
                 offActionsExecuted = true;
             }
             else
@@ -481,7 +491,7 @@ public class Room : IAsyncDisposable
         if (!IsRoomEnabled())
             return;
 
-        await ExecuteOffActions();
+        await ExecuteOffActions(triggeredByManualAction: true);
     }
 
     private async void MotionSensor_TurnedOn(object? sender, BinarySensorEventArgs e)
@@ -607,7 +617,7 @@ public class Room : IAsyncDisposable
         if (IlluminanceLowerThreshold != null && IlluminanceSensors.All(x => x.State > IlluminanceLowerThreshold))
         {
             _logger.LogTrace(
-                "{Room}: Motion sensor saw something moving but did not turn on lights because all illuminance sensors [{IlluminanceSensorValues}] are above threshold of {IlluminanceThreshold} lux.", Name, string.Join(", ", IlluminanceSensors.Select(x => $"{x.EntityId} - {x.State} lux")), IlluminanceThreshold);
+                "{Room}: Motion sensor saw something moving but did not turn on lights because all illuminance sensors [{IlluminanceSensorValues}] are above threshold of {IlluminanceThreshold} lux.", Name, String.Join(", ", IlluminanceSensors.Select(x => $"{x.EntityId} - {x.State} lux")), IlluminanceLowerThreshold);
             return;
         }
 
@@ -643,11 +653,6 @@ public class Room : IAsyncDisposable
         }
     }
 
-    private async void DebounceAutoTransitionAsync(object? sender, BinarySensorEventArgs e)
-    {
-        await AutoTransitionDebounceDispatcher.DebounceAsync(ExecuteFlexiSceneOnAutoTransition);
-    }
-
     private async void Sensor_WentAboveThreshold(object? sender, NumericSensorEventArgs e)
     {
         if (!IsRoomEnabled())
@@ -656,7 +661,7 @@ public class Room : IAsyncDisposable
         if (AutoSwitchOffAboveIlluminance && IlluminanceSensors.All(x => x.State > IlluminanceThreshold) && FlexiScenes.Current != null)
         {
             _logger.LogDebug("{Room}: Executed off actions. Because a illuminance sensor exceeded the illuminance threshold ({e.New.State} > {IlluminanceThreshold} lux) ", Name);
-            await ExecuteOffActions();
+            await ExecuteOffActions(triggeredByManualAction: false);
         }
     }
 
@@ -688,7 +693,7 @@ public class Room : IAsyncDisposable
             switch (AutoTransitionTurnOffIfNoValidSceneFound)
             {
                 case true when FlexiScenes.Current != null:
-                    await ExecuteOffActions();
+                    await ExecuteOffActions(triggeredByManualAction: false);
                     break;
                 case true when FlexiScenes.Current == null:
                     break;
@@ -701,23 +706,13 @@ public class Room : IAsyncDisposable
         await UpdateStateInHomeAssistant();
     }
 
-    public void Guard()
-    {
-        _scheduler.RunEvery(TimeSpan.FromSeconds(5), _scheduler.Now, () =>
-        {
-            //Can only happen executes on startup, otherwise we receive a motion detected event
-            CheckForMotion().RunSync();
-        });
-    }
-
-
     private async Task RemoveIgnorePresence()
     {
         IgnorePresenceUntil = null;
         await UpdateStateInHomeAssistant();
     }
 
-    private async Task CheckForMotion()
+    private async void CheckForMotion()
     {
         if (!IsRoomEnabled())
             return;
@@ -767,6 +762,10 @@ public class Room : IAsyncDisposable
                 binarySensor.TurnedOff -= DebounceAutoTransitionAsync;
             }
         }
+
+        GuardTask?.Dispose();
+        ClearIgnorePresenceSchedule?.Dispose();
+        TurnOffSchedule?.Dispose();
 
         _logger.LogDebug("{Room}: Disposed.", Name);
 
