@@ -364,14 +364,16 @@ public class Room : IAsyncDisposable
 
         return await ExecuteActions(flexiScene.Actions, autoTransition);
     }
-    private async Task ExecuteOffActions()
+
+    private async Task ExecuteOffActions(bool triggeredByManualAction = true)
     {
         _logger.LogDebug("{Room}: Executed off actions.", Name);
 
         FlexiScenes.DeactivateScene();
         InitiatedBy = InitiatedBy.NoOne;
 
-        if (IgnorePresenceAfterOffDuration != TimeSpan.Zero)
+        //Only ignore presence if triggered by manual action
+        if (triggeredByManualAction && IgnorePresenceAfterOffDuration != TimeSpan.Zero)
             IgnorePresenceUntil = DateTime.Now.Add(IgnorePresenceAfterOffDuration);
 
         await ScheduleClearIgnorePresence();
@@ -450,14 +452,14 @@ public class Room : IAsyncDisposable
         if (remainingTime > TimeSpan.Zero)
         {
             TurnOffSchedule?.Dispose();
-            TurnOffSchedule = _scheduler.ScheduleAsync(remainingTime, async (_, _) => await ExecuteOffActions());
+            TurnOffSchedule = _scheduler.ScheduleAsync(remainingTime, async (_, _) => await ExecuteOffActions(triggeredByManualAction: false));
 
             _logger.LogTrace("{Room}: Off actions will be executed at {TurnOffAt} (Set by {InitiatedBy}).", Name, TurnOffAt?.ToString("T"), InitiatedBy);
         }
         else
         {
             _logger.LogDebug("{Room}: Off actions should have been executed at {TurnOffAt} will execute them now (Set by {InitiatedBy}).", Name, TurnOffAt?.ToString("T"), InitiatedBy);
-            await ExecuteOffActions();
+            await ExecuteOffActions(triggeredByManualAction: false);
         }
     }
 
@@ -475,7 +477,7 @@ public class Room : IAsyncDisposable
         {
             if (action is ExecuteOffActionsAction)
             {
-                await ExecuteOffActions();
+                await ExecuteOffActions(triggeredByManualAction: true);
                 offActionsExecuted = true;
             }
             else
@@ -489,7 +491,7 @@ public class Room : IAsyncDisposable
         if (!IsRoomEnabled())
             return;
 
-        await ExecuteOffActions();
+        await ExecuteOffActions(triggeredByManualAction: true);
     }
 
     private async void MotionSensor_TurnedOn(object? sender, BinarySensorEventArgs e)
@@ -659,7 +661,7 @@ public class Room : IAsyncDisposable
         if (AutoSwitchOffAboveIlluminance && IlluminanceSensors.All(x => x.State > IlluminanceThreshold) && FlexiScenes.Current != null)
         {
             _logger.LogDebug("{Room}: Executed off actions. Because a illuminance sensor exceeded the illuminance threshold ({e.New.State} > {IlluminanceThreshold} lux) ", Name);
-            await ExecuteOffActions();
+            await ExecuteOffActions(triggeredByManualAction: false);
         }
     }
 
@@ -691,7 +693,7 @@ public class Room : IAsyncDisposable
             switch (AutoTransitionTurnOffIfNoValidSceneFound)
             {
                 case true when FlexiScenes.Current != null:
-                    await ExecuteOffActions();
+                    await ExecuteOffActions(triggeredByManualAction: false);
                     break;
                 case true when FlexiScenes.Current == null:
                     break;

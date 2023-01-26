@@ -541,6 +541,24 @@ namespace eLime.NetDaemonApps.Tests.Builders
             return this;
         }
 
+
+        public RoomBuilder WithExecuteOffActionsSwitch()
+        {
+            _config.Switches = new List<SwitchConfig>
+            {
+                new() { State = "sensor.switch" }
+            };
+
+            _config.ClickInterval = TimeSpan.FromMilliseconds(10);
+
+            _config.TripleClickActions = new List<ActionConfig>
+            {
+                new() {Light = "light.evening", LightAction = LightAction.TurnOff},
+            };
+            return this;
+        }
+
+
         public RoomBuilder FullyAutomated()
         {
             _config.AutoTransition = true;

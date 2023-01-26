@@ -62,13 +62,30 @@ public class FlexiLightTests
     }
 
     [TestMethod]
-    public void Motion_IsIgnored_AfterOff()
+    public void Motion_Not_IsIgnored_If_Auto_Off()
     {
         // Arrange
         var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).Build();
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "off");
         _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(5) + TimeSpan.FromSeconds(3));
+
+        //Act
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
+
+        //Assert once = first time before turning off
+        _testCtx.VerifyLightTurnOn(new Light(_testCtx.HaContext, "light.test"), Moq.Times.Exactly(2));
+    }
+
+    [TestMethod]
+    public void Motion_IsIgnored_If_Manual_Turned_Off()
+    {
+        // Arrange
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithExecuteOffActionsSwitch().Build();
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "off");
+        _testCtx.SimulateDoubleClick(new StateSwitch(_testCtx.HaContext, "sensor.switch"));
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(3));
 
         //Act
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
