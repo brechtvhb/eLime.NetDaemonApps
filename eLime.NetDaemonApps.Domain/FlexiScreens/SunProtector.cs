@@ -37,7 +37,7 @@ public class SunProtector : IDisposable
             return;
 
         DesiredState = desiredState;
-        OnDesiredStateChanged(new DesiredStateEventArgs(desiredState.State, desiredState.Enforce));
+        OnDesiredStateChanged(new DesiredStateEventArgs(Protectors.SunProtector, desiredState.State, desiredState.Enforce));
     }
 
     public event EventHandler<DesiredStateEventArgs>? DesiredStateChanged;

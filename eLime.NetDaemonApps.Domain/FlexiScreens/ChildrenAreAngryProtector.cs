@@ -30,7 +30,7 @@ public class ChildrenAreAngryProtector : IDisposable
             return;
 
         DesiredState = desiredState;
-        OnDesiredStateChanged(new DesiredStateEventArgs(desiredState.State, desiredState.Enforce));
+        OnDesiredStateChanged(new DesiredStateEventArgs(Protectors.ChildrenAreAngryProtector, desiredState.State, desiredState.Enforce));
     }
 
     public event EventHandler<DesiredStateEventArgs>? DesiredStateChanged;

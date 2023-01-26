@@ -64,7 +64,7 @@ public class TemperatureProtector : IDisposable
             return;
 
         DesiredState = desiredState;
-        OnDesiredStateChanged(new DesiredStateEventArgs(desiredState.State, desiredState.Enforce));
+        OnDesiredStateChanged(new DesiredStateEventArgs(Protectors.TemperatureProtector, desiredState.State, desiredState.Enforce));
     }
 
     public event EventHandler<DesiredStateEventArgs>? DesiredStateChanged;

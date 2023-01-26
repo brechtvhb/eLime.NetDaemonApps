@@ -66,7 +66,7 @@ public class StormProtector : IDisposable
             return;
 
         DesiredState = desiredState;
-        OnDesiredStateChanged(new DesiredStateEventArgs(desiredState.State, desiredState.Enforce));
+        OnDesiredStateChanged(new DesiredStateEventArgs(Protectors.StormProtector, desiredState.State, desiredState.Enforce));
     }
 
     public event EventHandler<DesiredStateEventArgs>? DesiredStateChanged;
