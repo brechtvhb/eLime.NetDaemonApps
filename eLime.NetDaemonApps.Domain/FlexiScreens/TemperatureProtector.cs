@@ -3,7 +3,7 @@ using eLime.NetDaemonApps.Domain.Entities.Weather;
 
 namespace eLime.NetDaemonApps.Domain.FlexiScreens;
 
-public class TemperatureProtector
+public class TemperatureProtector : IDisposable
 {
     private NumericThresholdSensor? SolarLuxSensor { get; }
     public double? SolarLuxAboveThreshold { get; set; }
@@ -28,8 +28,8 @@ public class TemperatureProtector
         {
             SolarLuxAboveThreshold = solarLuxAboveThreshold;
             SolarLuxBelowThreshold = solarLuxBelowThreshold;
-            SolarLuxSensor.WentAboveThreshold += (_, _) => CheckStateDesiredState();
-            SolarLuxSensor.DroppedBelowThreshold += (_, _) => CheckStateDesiredState();
+            SolarLuxSensor.WentAboveThreshold += CheckDesiredState;
+            SolarLuxSensor.DroppedBelowThreshold += CheckDesiredState;
         }
 
         IndoorTemperatureSensor = indoorTemperatureSensor;
@@ -37,7 +37,7 @@ public class TemperatureProtector
         {
             MaxIndoorTemperature = maxIndoorTemperature;
             ConditionalMaxIndoorTemperature = maxConditionalIndoorTemperature;
-            IndoorTemperatureSensor.Changed += (_, _) => CheckStateDesiredState();
+            IndoorTemperatureSensor.Changed += CheckDesiredState;
         }
 
         Weather = weather;
@@ -47,11 +47,16 @@ public class TemperatureProtector
             ConditionalOutdoorTemperaturePredictionDays = conditionalOutdoorTemperaturePredictionDays ?? 3;
         }
 
-        CheckStateDesiredState();
+        CheckDesiredState();
+    }
+
+    private void CheckDesiredState(Object? o, NumericSensorEventArgs sender)
+    {
+        CheckDesiredState();
     }
 
 
-    private void CheckStateDesiredState()
+    private void CheckDesiredState()
     {
         var desiredState = GetDesiredState();
 
@@ -90,5 +95,19 @@ public class TemperatureProtector
             return (ScreenState.Up, false);
 
         return (ScreenState.Up, false);
+    }
+
+    public void Dispose()
+    {
+        if (SolarLuxSensor != null)
+        {
+            SolarLuxSensor.WentAboveThreshold -= CheckDesiredState;
+            SolarLuxSensor.DroppedBelowThreshold -= CheckDesiredState;
+        }
+
+        if (IndoorTemperatureSensor != null)
+        {
+            IndoorTemperatureSensor.Changed -= CheckDesiredState;
+        }
     }
 }

@@ -769,8 +769,6 @@ public class Room : IAsyncDisposable
 
         _logger.LogDebug("{Room}: Disposed.", Name);
 
-        GC.SuppressFinalize(this);
-
         return ValueTask.CompletedTask;
     }
 }

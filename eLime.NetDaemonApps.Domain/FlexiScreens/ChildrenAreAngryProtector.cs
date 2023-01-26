@@ -2,7 +2,7 @@
 
 namespace eLime.NetDaemonApps.Domain.FlexiScreens;
 
-public class ChildrenAreAngryProtector
+public class ChildrenAreAngryProtector : IDisposable
 {
     //Eg: Kids sleeping sensor / operating mode
     public BinarySensor ForceDownSensor { get; }
@@ -11,9 +11,14 @@ public class ChildrenAreAngryProtector
     public ChildrenAreAngryProtector(BinarySensor forceDownSensor)
     {
         ForceDownSensor = forceDownSensor;
-        ForceDownSensor.TurnedOn += (_, _) => CheckDesiredState();
-        ForceDownSensor.TurnedOff += (_, _) => CheckDesiredState();
+        ForceDownSensor.TurnedOn += CheckDesiredState;
+        ForceDownSensor.TurnedOff += CheckDesiredState;
 
+        CheckDesiredState();
+    }
+
+    private void CheckDesiredState(Object? o, BinarySensorEventArgs sender)
+    {
         CheckDesiredState();
     }
 
@@ -40,5 +45,11 @@ public class ChildrenAreAngryProtector
         return ForceDownSensor.State == "on"
             ? (ScreenState.Down, true)
             : (null, false);
+    }
+
+    public void Dispose()
+    {
+        ForceDownSensor.TurnedOn -= CheckDesiredState;
+        ForceDownSensor.TurnedOff -= CheckDesiredState;
     }
 }

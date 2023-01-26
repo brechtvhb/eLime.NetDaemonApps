@@ -2,7 +2,7 @@
 
 namespace eLime.NetDaemonApps.Domain.FlexiScreens;
 
-public class StormProtector
+public class StormProtector : IDisposable
 {
     private NumericThresholdSensor? WindSpeedSensor { get; }
     private double? WindSpeedStormStartThreshold { get; }
@@ -28,8 +28,8 @@ public class StormProtector
         {
             WindSpeedStormStartThreshold = windSpeedStormStartThreshold;
             WindSpeedStormEndThreshold = windSpeedStormEndThreshold;
-            WindSpeedSensor.WentAboveThreshold += (_, _) => CheckDesiredState();
-            WindSpeedSensor.DroppedBelowThreshold += (_, _) => CheckDesiredState();
+            WindSpeedSensor.WentAboveThreshold += CheckDesiredState;
+            WindSpeedSensor.DroppedBelowThreshold += CheckDesiredState;
         }
 
         RainRateSensor = rainRateSensor;
@@ -37,8 +37,8 @@ public class StormProtector
         {
             RainRateStormStartThreshold = rainRateStormStartThreshold;
             RainRateStormEndThreshold = rainRateStormEndThreshold;
-            RainRateSensor.WentAboveThreshold += (_, _) => CheckDesiredState();
-            RainRateSensor.DroppedBelowThreshold += (_, _) => CheckDesiredState();
+            RainRateSensor.WentAboveThreshold += CheckDesiredState;
+            RainRateSensor.DroppedBelowThreshold += CheckDesiredState;
         }
 
         ShortTermRainForecastSensor = shortTermRainForecastSensor;
@@ -46,10 +46,15 @@ public class StormProtector
         {
             ShortTermRainForecastSensorStormStartThreshold = shortTermRainForecastSensorStormStartThreshold;
             ShortTermRainForecastSensorStormEndThreshold = shortTermRainForecastSensorStormEndThreshold;
-            ShortTermRainForecastSensor.WentAboveThreshold += (_, _) => CheckDesiredState();
-            ShortTermRainForecastSensor.DroppedBelowThreshold += (_, _) => CheckDesiredState();
+            ShortTermRainForecastSensor.WentAboveThreshold += CheckDesiredState;
+            ShortTermRainForecastSensor.DroppedBelowThreshold += CheckDesiredState;
         }
 
+        CheckDesiredState();
+    }
+
+    private void CheckDesiredState(Object? o, NumericSensorEventArgs sender)
+    {
         CheckDesiredState();
     }
 
@@ -114,5 +119,26 @@ public class StormProtector
             return (ScreenState.Up, true);
 
         return (null, false);
+    }
+
+    public void Dispose()
+    {
+        if (WindSpeedSensor != null)
+        {
+            WindSpeedSensor.WentAboveThreshold -= CheckDesiredState;
+            WindSpeedSensor.DroppedBelowThreshold -= CheckDesiredState;
+        }
+
+        if (RainRateSensor != null)
+        {
+            RainRateSensor.WentAboveThreshold -= CheckDesiredState;
+            RainRateSensor.DroppedBelowThreshold -= CheckDesiredState;
+        }
+
+        if (ShortTermRainForecastSensor != null)
+        {
+            ShortTermRainForecastSensor.WentAboveThreshold -= CheckDesiredState;
+            ShortTermRainForecastSensor.DroppedBelowThreshold -= CheckDesiredState;
+        }
     }
 }

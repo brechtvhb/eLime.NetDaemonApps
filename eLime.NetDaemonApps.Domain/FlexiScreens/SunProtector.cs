@@ -2,7 +2,7 @@
 
 namespace eLime.NetDaemonApps.Domain.FlexiScreens;
 
-public class SunProtector
+public class SunProtector : IDisposable
 {
     private double ScreenOrientation { get; }
     private Sun Sun { get; }
@@ -79,5 +79,10 @@ public class SunProtector
             return (ScreenState.Down, false);
 
         return (ScreenState.Up, false);
+    }
+
+    public void Dispose()
+    {
+        Sun.StateChanged -= CheckDesiredState;
     }
 }
