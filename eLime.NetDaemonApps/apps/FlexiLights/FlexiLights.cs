@@ -50,8 +50,14 @@ public class FlexiLights : IAsyncInitializable, IAsyncDisposable
         return Task.CompletedTask;
     }
 
-    public ValueTask DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
-        return ValueTask.CompletedTask;
+        _logger.LogInformation("Disposing Flexi lights");
+
+        foreach (var room in Rooms)
+            await room.DisposeAsync();
+
+        Rooms.Clear();
+        GC.SuppressFinalize(this);
     }
 }

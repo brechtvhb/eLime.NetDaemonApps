@@ -14,7 +14,7 @@ using Action = eLime.NetDaemonApps.Domain.FlexiScenes.Actions.Action;
 
 namespace eLime.NetDaemonApps.Domain.FlexiScenes.Rooms;
 
-public class Room
+public class Room : IAsyncDisposable
 {
     public string? Name { get; }
     private FlexiScenesEnabledSwitch EnabledSwitch { get; set; }
@@ -40,7 +40,7 @@ public class Room
 
     public void AddOffSensor(BinarySensor sensor)
     {
-        sensor.TurnedOn += async (s, e) => await OffSensor_TurnedOn(s, e);
+        sensor.TurnedOn += OffSensor_TurnedOn;
         _offSensors.Add(sensor);
     }
 
@@ -49,7 +49,7 @@ public class Room
 
     public void AddIlluminanceSensor(IlluminanceSensor sensor)
     {
-        sensor.WentAboveThreshold += async (s, e) => await Sensor_WentAboveThreshold(s, e);
+        sensor.WentAboveThreshold += Sensor_WentAboveThreshold;
         _illuminanceSensors.Add(sensor);
     }
 
@@ -58,8 +58,8 @@ public class Room
 
     public void AddMotionSensor(MotionSensor sensor)
     {
-        sensor.TurnedOn += async (s, e) => await MotionSensor_TurnedOn(s, e);
-        sensor.TurnedOff += async (s, e) => await MotionSensor_TurnedOff(s, e);
+        sensor.TurnedOn += MotionSensor_TurnedOn;
+        sensor.TurnedOff += MotionSensor_TurnedOff;
         _motionSensors.Add(sensor);
     }
 
@@ -70,11 +70,11 @@ public class Room
     {
         foreach (var sensor in switches)
         {
-            sensor.Clicked += async (s, e) => await Switch_Clicked(s, e);
-            sensor.DoubleClicked += async (s, e) => await Switch_DoubleClicked(s, e);
-            sensor.TripleClicked += async (s, e) => await Switch_TripleClicked(s, e);
-            sensor.LongClicked += async (s, e) => await Switch_LongClicked(s, e);
-            sensor.UberLongClicked += async (s, e) => await Switch_UberLongClicked(s, e);
+            sensor.Clicked += Switch_Clicked;
+            sensor.DoubleClicked += Switch_DoubleClicked;
+            sensor.TripleClicked += Switch_TripleClicked;
+            sensor.LongClicked += Switch_LongClicked;
+            sensor.UberLongClicked += Switch_UberLongClicked;
             _switches.Add(sensor);
         }
     }
@@ -112,10 +112,15 @@ public class Room
     {
         if (sensor is BinarySensor binarySensor)
         {
-            binarySensor.TurnedOn += async (_, _) => await AutoTransitionDebounceDispatcher.DebounceAsync(ExecuteFlexiSceneOnAutoTransition);
-            binarySensor.TurnedOff += async (_, _) => await AutoTransitionDebounceDispatcher.DebounceAsync(ExecuteFlexiSceneOnAutoTransition);
+            binarySensor.TurnedOn += DebounceAutoTransitionAsync;
+            binarySensor.TurnedOff += DebounceAutoTransitionAsync;
             _flexiSceneSensors.Add(binarySensor);
         }
+    }
+
+    private async void DebounceAutoTransitionAsync(object? sender, BinarySensorEventArgs e)
+    {
+        await AutoTransitionDebounceDispatcher.DebounceAsync(ExecuteFlexiSceneOnAutoTransition);
     }
 
     public FlexiScenes FlexiScenes { get; }
@@ -475,7 +480,7 @@ public class Room
 
         return offActionsExecuted;
     }
-    private async Task OffSensor_TurnedOn(object? sender, BinarySensorEventArgs e)
+    private async void OffSensor_TurnedOn(object? sender, BinarySensorEventArgs e)
     {
         if (!IsRoomEnabled())
             return;
@@ -483,7 +488,7 @@ public class Room
         await ExecuteOffActions();
     }
 
-    private async Task MotionSensor_TurnedOn(object? sender, BinarySensorEventArgs e)
+    private async void MotionSensor_TurnedOn(object? sender, BinarySensorEventArgs e)
     {
         if (!IsRoomEnabled())
             return;
@@ -498,7 +503,7 @@ public class Room
         await ExecuteFlexiSceneOnMotion();
     }
 
-    private async Task Switch_Clicked(object? sender, SwitchEventArgs e)
+    private async void Switch_Clicked(object? sender, SwitchEventArgs e)
     {
         if (!IsRoomEnabled())
             return;
@@ -543,7 +548,7 @@ public class Room
         await UpdateStateInHomeAssistant();
     }
 
-    private async Task Switch_DoubleClicked(object? sender, SwitchEventArgs e)
+    private async void Switch_DoubleClicked(object? sender, SwitchEventArgs e)
     {
         if (!IsRoomEnabled())
             return;
@@ -556,7 +561,7 @@ public class Room
         await ExecuteDoubleClickActions();
     }
 
-    private async Task Switch_TripleClicked(object? sender, SwitchEventArgs e)
+    private async void Switch_TripleClicked(object? sender, SwitchEventArgs e)
     {
         if (!IsRoomEnabled())
             return;
@@ -568,7 +573,7 @@ public class Room
 
         await ExecuteTripleClickActions();
     }
-    private async Task Switch_LongClicked(object? sender, SwitchEventArgs e)
+    private async void Switch_LongClicked(object? sender, SwitchEventArgs e)
     {
         if (!IsRoomEnabled())
             return;
@@ -580,7 +585,7 @@ public class Room
 
         await ExecuteLongClickActions();
     }
-    private async Task Switch_UberLongClicked(object? sender, SwitchEventArgs e)
+    private async void Switch_UberLongClicked(object? sender, SwitchEventArgs e)
     {
         if (!IsRoomEnabled())
             return;
@@ -628,7 +633,7 @@ public class Room
         await UpdateStateInHomeAssistant();
     }
 
-    private async Task MotionSensor_TurnedOff(object? sender, BinarySensorEventArgs e)
+    private async void MotionSensor_TurnedOff(object? sender, BinarySensorEventArgs e)
     {
         if (!IsRoomEnabled())
             return;
@@ -642,7 +647,7 @@ public class Room
         }
     }
 
-    private async Task Sensor_WentAboveThreshold(object? sender, NumericSensorEventArgs e)
+    private async void Sensor_WentAboveThreshold(object? sender, NumericSensorEventArgs e)
     {
         if (!IsRoomEnabled())
             return;
@@ -723,5 +728,46 @@ public class Room
             return;
 
         await ExecuteFlexiSceneOnMotion();
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        _logger.LogDebug("{Room}: Disposing.", Name);
+
+        foreach (var sensor in _offSensors)
+            sensor.TurnedOn -= OffSensor_TurnedOn;
+
+        foreach (var sensor in _illuminanceSensors)
+            sensor.WentAboveThreshold -= Sensor_WentAboveThreshold;
+
+        foreach (var sensor in _motionSensors)
+        {
+            sensor.TurnedOn -= MotionSensor_TurnedOn;
+            sensor.TurnedOff -= MotionSensor_TurnedOff;
+        }
+
+        foreach (var sensor in _switches)
+        {
+            sensor.Clicked -= Switch_Clicked;
+            sensor.DoubleClicked -= Switch_DoubleClicked;
+            sensor.TripleClicked -= Switch_TripleClicked;
+            sensor.LongClicked -= Switch_LongClicked;
+            sensor.UberLongClicked -= Switch_UberLongClicked;
+        }
+
+        foreach (var sensor in _flexiSceneSensors)
+        {
+            if (sensor is BinarySensor binarySensor)
+            {
+                binarySensor.TurnedOn -= DebounceAutoTransitionAsync;
+                binarySensor.TurnedOff -= DebounceAutoTransitionAsync;
+            }
+        }
+
+        _logger.LogDebug("{Room}: Disposed.", Name);
+
+        GC.SuppressFinalize(this);
+
+        return ValueTask.CompletedTask;
     }
 }
