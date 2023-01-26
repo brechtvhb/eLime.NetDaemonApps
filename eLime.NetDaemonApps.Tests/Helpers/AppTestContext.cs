@@ -51,11 +51,6 @@ public class AppTestContext
         HaContextMock.TriggerStateChange(entity, newStateValue, attributes);
     }
 
-    public void TriggerStateChangeWithAttributes(Entity entity, string newStateValue, object attributes)
-    {
-        HaContextMock.TriggerStateChange(entity, newStateValue, attributes);
-    }
-
     public void SimulateClick(StateSwitch @switch, string state = "single-press")
     {
         TriggerStateChange(@switch, state);
