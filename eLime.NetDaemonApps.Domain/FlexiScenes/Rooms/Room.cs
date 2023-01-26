@@ -761,11 +761,11 @@ public class Room : IAsyncDisposable
             }
         }
 
-        _logger.LogDebug("{Room}: Disposed.", Name);
-
         GuardTask?.Dispose();
         ClearIgnorePresenceSchedule?.Dispose();
         TurnOffSchedule?.Dispose();
+
+        _logger.LogDebug("{Room}: Disposed.", Name);
 
         GC.SuppressFinalize(this);
 
