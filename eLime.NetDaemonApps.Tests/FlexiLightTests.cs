@@ -97,7 +97,6 @@ public class FlexiLightTests
     public async Task Motion_IsNotIgnored_AfterOffDuration_WhileThereIsStillMotion()
     {
         var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).Build();
-        room.Guard();
 
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "off");

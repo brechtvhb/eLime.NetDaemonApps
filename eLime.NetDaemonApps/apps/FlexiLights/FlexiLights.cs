@@ -39,7 +39,6 @@ public class FlexiLights : IAsyncInitializable, IAsyncDisposable
 
                 var room = new Room(_ha, _logger, _scheduler, _mqttEntityManager, roomConfig, TimeSpan.FromSeconds(1));
                 Rooms.Add(room);
-                room.Guard();
             }
         }
         catch (Exception ex)
