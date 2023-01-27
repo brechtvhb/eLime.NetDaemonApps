@@ -13,7 +13,15 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers.States
         {
             //TODO: delayed start
             if (context.PowerSensor.State > 1)
-                context.TransitionTo(logger, new PreWashingState());
+            {
+                if (!context.IsDelayedStartEnabled())
+                {
+                    context.TransitionTo(logger, new PreWashingState());
+                    return;
+                }
+
+                context.TransitionTo(logger, new DelayedStartState());
+            }
         }
 
         internal override DateTime? GetEta(ILogger logger, SmartWasher context)
