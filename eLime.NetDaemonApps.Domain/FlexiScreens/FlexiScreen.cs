@@ -92,10 +92,11 @@ public class FlexiScreen : IDisposable
     private async void Screen_StateChanged(object? sender, CoverEventArgs e)
     {
         //NetDaemon user ID is no longer passed a long when state transitions from closing to closed or from opening to opened :/
-        if (e.New?.Context?.UserId != NetDaemonUserId && e.New?.State is "closing " or "Opening")
+        if (e.New?.Context?.UserId != NetDaemonUserId && e.New?.State is "closing " or "opening")
         {
             LastManualStateChange = DateTime.Now;
             LastStateChangeTriggeredBy = Protectors.WomanIsAngryProtector;
+            _logger.LogInformation($"{{ScreenName}}: Manual state change detected ({e.New?.State}) UserID was {e.New?.Context?.UserId} (NetDaemonUserID is {NetDaemonUserId}.", Name);
         }
 
         if (e.Sensor.IsOpen() || e.Sensor.IsClosed())
