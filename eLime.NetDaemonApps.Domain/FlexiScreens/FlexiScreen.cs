@@ -96,7 +96,7 @@ public class FlexiScreen : IDisposable
         {
             LastManualStateChange = DateTime.Now;
             LastStateChangeTriggeredBy = Protectors.WomanIsAngryProtector;
-            _logger.LogInformation($"{{ScreenName}}: Manual state change detected ({e.New?.State}) UserID was {e.New?.Context?.UserId} (NetDaemonUserID is {NetDaemonUserId}.", Name);
+            _logger.LogInformation($"{{ScreenName}}: Manual state change detected ({e.New?.State}) UserID was {e.New?.Context?.UserId} (NetDaemonUserID is {NetDaemonUserId}).", Name);
         }
 
         if (e.Sensor.IsOpen() || e.Sensor.IsClosed())
