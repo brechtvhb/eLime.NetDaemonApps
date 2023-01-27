@@ -75,17 +75,17 @@ public class FlexiScreen : IDisposable
         EnsureEnabledSwitchExists().RunSync();
         RetrieveSateFromHomeAssistant().RunSync();
 
-        _logger.LogInformation($"Desired state for SunProtector is: {SunProtector.DesiredState.State} (enforce: {SunProtector.DesiredState.Enforce}).");
-        _logger.LogInformation($"Desired state for StormProtector is: {StormProtector?.DesiredState.State} (enforce: {StormProtector?.DesiredState.Enforce}).");
-        _logger.LogInformation($"Desired state for TemperatureProtector is: {TemperatureProtector?.DesiredState.State} (enforce: {TemperatureProtector?.DesiredState.Enforce}).");
-        _logger.LogInformation($"Desired state for ChildrenAreAngryProtector is: {ChildrenAreAngryProtector?.DesiredState.State} (enforce: {ChildrenAreAngryProtector?.DesiredState.Enforce}).");
+        _logger.LogInformation($"{{Screen}}: Desired state for SunProtector is: {SunProtector.DesiredState.State} (enforce: {SunProtector.DesiredState.Enforce}).");
+        _logger.LogInformation($"{{Screen}}: Desired state for StormProtector is: {StormProtector?.DesiredState.State} (enforce: {StormProtector?.DesiredState.Enforce}).");
+        _logger.LogInformation($"{{Screen}}: Desired state for TemperatureProtector is: {TemperatureProtector?.DesiredState.State} (enforce: {TemperatureProtector?.DesiredState.Enforce}).");
+        _logger.LogInformation($"{{Screen}}: Desired state for ChildrenAreAngryProtector is: {ChildrenAreAngryProtector?.DesiredState.State} (enforce: {ChildrenAreAngryProtector?.DesiredState.Enforce}).");
 
         GuardScreen().RunSync();
     }
 
     private async void Protector_DesiredStateChanged(object? sender, DesiredStateEventArgs e)
     {
-        _logger.LogInformation($"Desired state for  {e.Protector} changed to {e.DesiredState} (enforce: {e.Enforce}).");
+        _logger.LogInformation($"{{Screen}}: Desired state for  {e.Protector} changed to {e.DesiredState} (enforce: {e.Enforce}).");
         await GuardScreen();
     }
 
@@ -96,7 +96,7 @@ public class FlexiScreen : IDisposable
         {
             LastManualStateChange = DateTime.Now;
             LastStateChangeTriggeredBy = Protectors.WomanIsAngryProtector;
-            _logger.LogInformation($"{{ScreenName}}: Manual state change detected ({e.New?.State}) UserID was {e.New?.Context?.UserId} (NetDaemonUserID is {NetDaemonUserId}).", Name);
+            _logger.LogInformation($"{{Screen}}: Manual state change detected ({e.New?.State}) UserID was {e.New?.Context?.UserId} (NetDaemonUserID is {NetDaemonUserId}).", Name);
         }
 
         if (e.Sensor.IsOpen() || e.Sensor.IsClosed())
@@ -165,7 +165,7 @@ public class FlexiScreen : IDisposable
             case null:
                 break;
             case ScreenState.Up when Screen.IsClosed():
-                _logger.LogInformation("Changing screen state for screen {screen} to {desiredState}", Name, desiredState);
+                _logger.LogInformation("{Screen}: Changing screen state to {DesiredState}", Name, desiredState);
                 Screen.OpenCover();
                 LastAutomatedStateChange = DateTime.Now;
                 LastManualStateChange = null;
@@ -173,7 +173,7 @@ public class FlexiScreen : IDisposable
                 await UpdateStateInHomeAssistant();
                 break;
             case ScreenState.Down when Screen.IsOpen():
-                _logger.LogInformation("Changing screen state for screen {screen} to {desiredState}", Name, desiredState);
+                _logger.LogInformation("{Screen}: Changing screen state to {DesiredState}", Name, desiredState);
                 Screen.CloseCover();
                 LastAutomatedStateChange = DateTime.Now;
                 LastManualStateChange = null;
@@ -190,7 +190,7 @@ public class FlexiScreen : IDisposable
         var created = false;
         if (_haContext.Entity(switchName).State == null || string.Equals(_haContext.Entity(switchName).State, "unavailable", StringComparison.InvariantCultureIgnoreCase))
         {
-            _logger.LogDebug("Creating Enabled switch for screen '{screen}' in home assistant.", Name);
+            _logger.LogDebug("{Screen}: Creating Enabled switch in home assistant.", Name);
             _mqttEntityManager.CreateAsync(switchName, new EntityCreationOptions(Name: $"Flexi screen - {Name}", DeviceClass: "switch", Persist: true)).RunSync();
             created = true;
         }
@@ -208,10 +208,10 @@ public class FlexiScreen : IDisposable
         observer
             .SubscribeAsync(async state =>
             {
-                _logger.LogDebug("Setting flexi screen state for screen '{screen}' to {state}.", Name, state);
+                _logger.LogDebug("{Screen}: Setting flexi screen state to {state}.", Name, state);
                 if (state == "OFF")
                 {
-                    _logger.LogDebug("Clearing flexi screen state because it was disabled for screen '{screen}'.", Name);
+                    _logger.LogDebug("{Screen}: Clearing flexi screen state because it was disabled.", Name);
                     await UpdateStateInHomeAssistant();
                 }
                 await _mqttEntityManager.SetStateAsync(switchName, state);
@@ -242,7 +242,7 @@ public class FlexiScreen : IDisposable
             Icon = "mdi:blinds"
         };
         await _mqttEntityManager.SetAttributesAsync(EnabledSwitch.EntityId, attributes);
-        _logger.LogTrace("Updated flexiscreen state for screen '{screen}' in Home assistant to {attr}", Name, attributes);
+        _logger.LogTrace("{Screen}: Updated flexiscreen state in Home assistant to {Attributes}", Name, attributes);
     }
 
     private bool IsScreenEnabled()
@@ -252,6 +252,7 @@ public class FlexiScreen : IDisposable
 
     public void Dispose()
     {
+        _logger.LogInformation("{Screen}: Disposing", Name);
         Screen.StateChanged -= Screen_StateChanged;
         SunProtector.DesiredStateChanged -= Protector_DesiredStateChanged;
 
@@ -268,5 +269,7 @@ public class FlexiScreen : IDisposable
         StormProtector?.Dispose();
         TemperatureProtector?.Dispose();
         ChildrenAreAngryProtector?.Dispose();
+
+        _logger.LogInformation("{Screen}: Disposed", Name);
     }
 }
