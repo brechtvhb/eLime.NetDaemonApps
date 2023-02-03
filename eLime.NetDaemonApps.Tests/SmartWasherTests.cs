@@ -26,7 +26,7 @@ public class SmartWasherTests
     public void Init()
     {
         _testCtx = AppTestContext.Create(DateTime.Now);
-        _testCtx.TriggerStateChange(new FlexiScreenEnabledSwitch(_testCtx.HaContext, "switch.smartwasher"), "on");
+        _testCtx.TriggerStateChange(new FlexiScreenEnabledSwitch(_testCtx.HaContext, "switch.smartwasher_smartwasher"), "on");
 
         _logger = A.Fake<ILogger<Room>>();
         _mqttEntityManager = A.Fake<IMqttEntityManager>();
