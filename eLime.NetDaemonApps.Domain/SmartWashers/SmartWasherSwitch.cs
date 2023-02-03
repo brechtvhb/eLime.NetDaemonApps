@@ -1,4 +1,5 @@
 ﻿using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
+using eLime.NetDaemonApps.Domain.SmartWashers;
 using NetDaemon.HassModel;
 using NetDaemon.HassModel.Entities;
 

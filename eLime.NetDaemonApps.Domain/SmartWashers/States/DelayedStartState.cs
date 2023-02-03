@@ -1,10 +1,11 @@
 ﻿using Microsoft.Extensions.Logging;
+using System.Reactive.Concurrency;
 
 namespace eLime.NetDaemonApps.Domain.SmartWashers.States;
 
 public class DelayedStartState : SmartWasherState
 {
-    internal override void Enter(ILogger logger, SmartWasher context)
+    internal override void Enter(ILogger logger, IScheduler scheduler, SmartWasher context)
     {
         context.TurnPowerSocketOFf();
     }
@@ -13,12 +14,12 @@ public class DelayedStartState : SmartWasherState
     {
         context.TransitionTo(logger, new PreWashingState());
     }
-    internal override void PowerUsageChanged(ILogger logger, SmartWasher context)
+    internal override void PowerUsageChanged(ILogger logger, IScheduler scheduler, SmartWasher context)
     {
 
     }
 
-    internal override DateTime? GetEta(ILogger logger, SmartWasher context)
+    internal override DateTimeOffset? GetEta(ILogger logger, SmartWasher context)
     {
         return null;
     }

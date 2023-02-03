@@ -1,0 +1,4 @@
+﻿eLime.NetDaemonApps.Config.SmartWasher.SmartWasherConfig:
+  name: "SmartWasher"
+  powerSocket: "switch.socket_washer"
+  powerSensor: "sensor.socket_washer_power"

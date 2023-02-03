@@ -42,6 +42,13 @@ public record BinarySwitch : BinarySensor, ISwitch
             });
     }
 
+    public static BinarySwitch Create(IHaContext haContext, string entityId)
+    {
+        var @switch = new BinarySwitch(haContext, entityId);
+        return @switch;
+    }
+
+
     public static BinarySwitch Create(IHaContext haContext, string entityId, TimeSpan? clickInterval, TimeSpan? longClickDuration, TimeSpan? uberLongClickDuration)
     {
         var @switch = new BinarySwitch(haContext, entityId);

@@ -1,7 +1,7 @@
 ﻿using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 using System.Text.Json.Serialization;
 
-namespace eLime.NetDaemonApps.Domain.FlexiScreens;
+namespace eLime.NetDaemonApps.Domain.SmartWashers;
 
 public record SmartWasherSwitchAttributes : EnabledSwitchAttributes
 {
@@ -9,8 +9,8 @@ public record SmartWasherSwitchAttributes : EnabledSwitchAttributes
     public string? Program { get; init; }
 
 
-    [JsonPropertyName("state")]
-    public string? State { get; init; }
+    [JsonPropertyName("washer_state")]
+    public string? WasherState { get; init; }
 
 
     [JsonPropertyName("last_state_change")]

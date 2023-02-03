@@ -1,30 +1,29 @@
 ﻿using Microsoft.Extensions.Logging;
+using System.Reactive.Concurrency;
 
 namespace eLime.NetDaemonApps.Domain.SmartWashers.States
 {
     public class IdleState : SmartWasherState
     {
-        internal override void Enter(ILogger logger, SmartWasher context)
+        internal override void Enter(ILogger logger, IScheduler scheduler, SmartWasher context)
         {
             return;
         }
 
-        internal override void PowerUsageChanged(ILogger logger, SmartWasher context)
+        internal override void PowerUsageChanged(ILogger logger, IScheduler scheduler, SmartWasher context)
         {
-            //TODO: delayed start
-            if (context.PowerSensor.State > 1)
+            switch (context.PowerSensor.State)
             {
-                if (!context.IsDelayedStartEnabled())
-                {
+                case > 2 when !context.IsDelayedStartEnabled():
                     context.TransitionTo(logger, new PreWashingState());
                     return;
-                }
-
-                context.TransitionTo(logger, new DelayedStartState());
+                case > 2:
+                    context.TransitionTo(logger, new DelayedStartState());
+                    break;
             }
         }
 
-        internal override DateTime? GetEta(ILogger logger, SmartWasher context)
+        internal override DateTimeOffset? GetEta(ILogger logger, SmartWasher context)
         {
             return null;
         }

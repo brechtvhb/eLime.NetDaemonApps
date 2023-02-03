@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using System.Reactive.Concurrency;
 
 namespace eLime.NetDaemonApps.Domain.SmartWashers.States;
 
@@ -6,17 +7,21 @@ public class HeatingState : SmartWasherState
 {
     internal static TimeSpan EstimatedDuration = TimeSpan.FromMinutes(20);
 
+    private readonly TimeSpan minDuration = TimeSpan.FromMinutes(10);
     private readonly TimeSpan maxDuration = TimeSpan.FromMinutes(30);
-    private DateTime? startedSince;
+    private DateTimeOffset? startedSince;
 
-    internal override void Enter(ILogger logger, SmartWasher context)
+    internal override void Enter(ILogger logger, IScheduler scheduler, SmartWasher context)
     {
-        startedSince = DateTime.Now;
+        startedSince = scheduler.Now;
     }
 
-    internal override void PowerUsageChanged(ILogger logger, SmartWasher context)
+    internal override void PowerUsageChanged(ILogger logger, IScheduler scheduler, SmartWasher context)
     {
-        if (startedSince != null && startedSince.Value.AddMinutes(15) < DateTime.Now)
+        if (context.LastStateChange.Add(minDuration) > scheduler.Now)
+            return;
+
+        if (startedSince != null && startedSince.Value.AddMinutes(15) < scheduler.Now)
         {
             context.SetWasherProgram(WasherProgram.Wash60Degrees);
             EstimatedDuration = TimeSpan.FromMinutes(25);
@@ -30,11 +35,11 @@ public class HeatingState : SmartWasherState
             context.TransitionTo(logger, new WashingState());
         }
 
-        if (context.LastStateChange.Add(maxDuration) < DateTime.Now)
+        if (context.LastStateChange.Add(maxDuration) < scheduler.Now)
             context.TransitionTo(logger, new WashingState());
     }
 
-    internal override DateTime? GetEta(ILogger logger, SmartWasher context)
+    internal override DateTimeOffset? GetEta(ILogger logger, SmartWasher context)
     {
         var nextStateEstimations = WashingState.EstimatedDuration + RinsingState.EstimatedDuration + SpinningState.EstimatedDuration;
         return context.LastStateChange.Add(EstimatedDuration + nextStateEstimations);
