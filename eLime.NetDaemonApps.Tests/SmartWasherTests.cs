@@ -26,7 +26,7 @@ public class SmartWasherTests
     public void Init()
     {
         _testCtx = AppTestContext.Create(DateTime.Now);
-        _testCtx.TriggerStateChange(new FlexiScreenEnabledSwitch(_testCtx.HaContext, "switch.smartwasher_smartwasher"), "on");
+        _testCtx.TriggerStateChange(new SmartWasherSwitch(_testCtx.HaContext, "switch.smartwasher_smartwasher"), "on");
 
         _logger = A.Fake<ILogger<Room>>();
         _mqttEntityManager = A.Fake<IMqttEntityManager>();
@@ -48,7 +48,7 @@ public class SmartWasherTests
             .Build();
 
         //Act
-        _testCtx.TriggerStateChange(_powerSensor, "5");
+        _testCtx.TriggerStateChange(_powerSensor, "50");
 
         //Assert
         Assert.AreEqual(WasherStates.PreWashing, washer.State);
@@ -63,7 +63,7 @@ public class SmartWasherTests
             .WithPowerSensor(_powerSensor)
             .Build();
 
-        _testCtx.TriggerStateChange(_powerSensor, "5");
+        _testCtx.TriggerStateChange(_powerSensor, "50");
 
         //Act
         _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(10));
@@ -82,7 +82,7 @@ public class SmartWasherTests
             .WithPowerSensor(_powerSensor)
             .Build();
 
-        _testCtx.TriggerStateChange(_powerSensor, "5");
+        _testCtx.TriggerStateChange(_powerSensor, "50");
         _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(10));
         _testCtx.TriggerStateChange(_powerSensor, "2000");
 
@@ -103,7 +103,7 @@ public class SmartWasherTests
             .WithPowerSensor(_powerSensor)
             .Build();
 
-        _testCtx.TriggerStateChange(_powerSensor, "5");
+        _testCtx.TriggerStateChange(_powerSensor, "50");
         _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(10));
         _testCtx.TriggerStateChange(_powerSensor, "2000");
         _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(20));
@@ -128,7 +128,7 @@ public class SmartWasherTests
             .WithPowerSensor(_powerSensor)
             .Build();
 
-        _testCtx.TriggerStateChange(_powerSensor, "5");
+        _testCtx.TriggerStateChange(_powerSensor, "50");
         _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(10));
         _testCtx.TriggerStateChange(_powerSensor, "2000");
         _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(20));
@@ -155,7 +155,7 @@ public class SmartWasherTests
             .WithPowerSensor(_powerSensor)
             .Build();
 
-        _testCtx.TriggerStateChange(_powerSensor, "5");
+        _testCtx.TriggerStateChange(_powerSensor, "50");
         _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(10));
         _testCtx.TriggerStateChange(_powerSensor, "2000");
         _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(20));
@@ -170,6 +170,8 @@ public class SmartWasherTests
         //Act
         _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(15));
         _testCtx.TriggerStateChange(_powerSensor, "2");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(2));
+        _testCtx.TriggerStateChange(_powerSensor, "3");
 
         //Assert
         Assert.AreEqual(WasherStates.Ready, washer.State);
@@ -184,7 +186,7 @@ public class SmartWasherTests
             .WithPowerSensor(_powerSensor)
             .Build();
 
-        _testCtx.TriggerStateChange(_powerSensor, "5");
+        _testCtx.TriggerStateChange(_powerSensor, "50");
         _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(10));
         _testCtx.TriggerStateChange(_powerSensor, "2000");
         _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(20));
@@ -197,9 +199,118 @@ public class SmartWasherTests
         _testCtx.TriggerStateChange(_powerSensor, "305");
         _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(15));
         _testCtx.TriggerStateChange(_powerSensor, "2");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(2));
+        _testCtx.TriggerStateChange(_powerSensor, "3");
 
         //Act
         _testCtx.TriggerStateChange(_powerSensor, "0.5");
+
+        //Assert
+        Assert.AreEqual(WasherStates.Idle, washer.State);
+    }
+
+    [TestMethod]
+    public void Transitions_To_PreWashing_From_Ready()
+    {
+        // Arrange
+        var washer = new SmartWasherBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+            .WithPowerSocket(_powerSocket)
+            .WithPowerSensor(_powerSensor)
+            .Build();
+
+        _testCtx.TriggerStateChange(_powerSensor, "50");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(10));
+        _testCtx.TriggerStateChange(_powerSensor, "2000");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(20));
+        _testCtx.TriggerStateChange(_powerSensor, "15");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(5));
+        _testCtx.TriggerStateChange(_powerSensor, "31");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(31));
+        _testCtx.TriggerStateChange(_powerSensor, "32");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(45));
+        _testCtx.TriggerStateChange(_powerSensor, "305");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(15));
+        _testCtx.TriggerStateChange(_powerSensor, "2");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(2));
+        _testCtx.TriggerStateChange(_powerSensor, "3");
+
+        //Act
+        _testCtx.TriggerStateChange(_powerSensor, "50");
+
+        //Assert
+        Assert.AreEqual(WasherStates.PreWashing, washer.State);
+    }
+
+    [TestMethod]
+    public void Transitions_To_DelayedStart_If_Switch_On()
+    {
+        // Arrange
+        var washer = new SmartWasherBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+            .WithPowerSocket(_powerSocket)
+            .WithPowerSensor(_powerSensor)
+            .Build();
+
+        //Act
+        _testCtx.TriggerStateChange(new SmartWasherSwitch(_testCtx.HaContext, "switch.smartwasher_smartwasher_delayed_start"), "on");
+        _testCtx.TriggerStateChange(_powerSensor, "50");
+
+        //Assert
+        Assert.AreEqual(WasherStates.DelayedStart, washer.State);
+        _testCtx.VerifySwitchTurnOff(_powerSocket, Moq.Times.Once);
+    }
+
+    [TestMethod]
+    public void Awakens_From_Delayed_Start_By_Turning_Socket_On_On_Trigger()
+    {
+        // Arrange
+        var washer = new SmartWasherBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+            .WithPowerSocket(_powerSocket)
+            .WithPowerSensor(_powerSensor)
+            .Build();
+
+        _testCtx.TriggerStateChange(new SmartWasherDelayedStartSwitch(_testCtx.HaContext, "switch.smartwasher_smartwasher_delayed_start"), "on");
+        _testCtx.TriggerStateChange(_powerSensor, "50");
+
+        //Act
+        _testCtx.TriggerStateChange(new SmartWasherDelayedStartTrigger(_testCtx.HaContext, "switch.smartwasher_smartwasher_delayed_start_activate"), "on");
+
+        //Assert
+        _testCtx.VerifySwitchTurnOn(_powerSocket, Moq.Times.Once);
+    }
+
+    [TestMethod]
+    public void Transitions_From_DelayedStart_To_PreWashing_If_Socket_Turns_On()
+    {
+        // Arrange
+        var washer = new SmartWasherBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+            .WithPowerSocket(_powerSocket)
+            .WithPowerSensor(_powerSensor)
+            .Build();
+
+        _testCtx.TriggerStateChange(new SmartWasherDelayedStartSwitch(_testCtx.HaContext, "switch.smartwasher_smartwasher_delayed_start"), "on");
+        _testCtx.TriggerStateChange(_powerSensor, "50");
+        _testCtx.TriggerStateChange(new SmartWasherDelayedStartTrigger(_testCtx.HaContext, "switch.smartwasher_smartwasher_delayed_start_activate"), "on");
+
+        //Act
+        _testCtx.TriggerStateChange(_powerSocket, "on");
+
+        //Assert
+        Assert.AreEqual(WasherStates.PreWashing, washer.State);
+    }
+
+    [TestMethod]
+    public void Does_Nothing_If_Socket_Turns_On_In_Wrong_State()
+    {
+        // Arrange
+        var washer = new SmartWasherBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+            .WithPowerSocket(_powerSocket)
+            .WithPowerSensor(_powerSensor)
+            .Build();
+
+        _testCtx.TriggerStateChange(new SmartWasherDelayedStartSwitch(_testCtx.HaContext, "switch.smartwasher_smartwasher_delayed_start"), "on");
+
+        //Act
+        _testCtx.TriggerStateChange(_powerSocket, "on");
 
         //Assert
         Assert.AreEqual(WasherStates.Idle, washer.State);

@@ -14,10 +14,10 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers.States
         {
             switch (context.PowerSensor.State)
             {
-                case > 2 when !context.IsDelayedStartEnabled():
+                case > 5 when !context.IsDelayedStartEnabled():
                     context.TransitionTo(logger, new PreWashingState());
                     return;
-                case > 2:
+                case > 5:
                     context.TransitionTo(logger, new DelayedStartState());
                     break;
             }

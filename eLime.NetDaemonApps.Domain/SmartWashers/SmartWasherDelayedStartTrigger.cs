@@ -2,7 +2,7 @@
 using NetDaemon.HassModel;
 using NetDaemon.HassModel.Entities;
 
-namespace eLime.NetDaemonApps.Domain.FlexiScreens;
+namespace eLime.NetDaemonApps.Domain.SmartWashers;
 
 public record SmartWasherDelayedStartTrigger : EnabledSwitch<EnabledSwitchAttributes>
 

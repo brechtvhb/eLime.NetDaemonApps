@@ -45,6 +45,7 @@ public record BinarySwitch : BinarySensor, ISwitch
     public static BinarySwitch Create(IHaContext haContext, string entityId)
     {
         var @switch = new BinarySwitch(haContext, entityId);
+        @switch.Initialize();
         return @switch;
     }
 

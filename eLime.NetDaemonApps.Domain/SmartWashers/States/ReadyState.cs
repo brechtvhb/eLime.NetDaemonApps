@@ -17,10 +17,10 @@ public class ReadyState : SmartWasherState
             case < 1:
                 context.TransitionTo(logger, new IdleState());
                 return;
-            case > 2 when !context.IsDelayedStartEnabled():
+            case > 5 when !context.IsDelayedStartEnabled():
                 context.TransitionTo(logger, new PreWashingState());
                 return;
-            case > 2:
+            case > 5:
                 context.TransitionTo(logger, new DelayedStartState());
                 break;
         }

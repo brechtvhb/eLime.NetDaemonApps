@@ -9,6 +9,7 @@ public class SpinningState : SmartWasherState
 
     private readonly TimeSpan minDuration = TimeSpan.FromMinutes(10);
     private readonly TimeSpan maxDuration = TimeSpan.FromMinutes(20);
+    private DateTimeOffset? belowThresholdSince = null;
 
     internal override void Enter(ILogger logger, IScheduler scheduler, SmartWasher context)
     {
@@ -20,7 +21,16 @@ public class SpinningState : SmartWasherState
         if (context.LastStateChange.Add(minDuration) > scheduler.Now)
             return;
 
-        if (context.PowerSensor.State < 5)
+        if (context.PowerSensor.State > 5)
+        {
+            belowThresholdSince = null;
+            return;
+        }
+
+        if (context.PowerSensor.State < 5 && belowThresholdSince == null)
+            belowThresholdSince = scheduler.Now;
+
+        if (belowThresholdSince.HasValue && belowThresholdSince.Value.Add(TimeSpan.FromSeconds(60)) < scheduler.Now)
             context.TransitionTo(logger, new ReadyState());
 
         if (context.LastStateChange.Add(maxDuration) < scheduler.Now)

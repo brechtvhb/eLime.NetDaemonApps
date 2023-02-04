@@ -64,7 +64,7 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers
             _state = state switch
             {
                 WasherStates.Idle => new IdleState(),
-                WasherStates.DelayedStart => throw new NotImplementedException(),
+                WasherStates.DelayedStart => new DelayedStartState(),
                 WasherStates.PreWashing => new PreWashingState(),
                 WasherStates.Heating => new HeatingState(),
                 WasherStates.Washing => new WashingState(),
@@ -103,7 +103,8 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers
             EnabledSwitch = new SmartWasherSwitch(_haContext, switchName);
             DelayedStart = new SmartWasherDelayedStartSwitch(_haContext, delayedStartName);
             DelayedStartTrigger = new SmartWasherDelayedStartTrigger(_haContext, delayedStartTriggerName);
-
+            DelayedStartTrigger.Initialize();
+            DelayedStartTrigger.TurnedOn += DelayedStartTrigger_TurnedOn;
             if (created)
             {
                 _mqttEntityManager.SetStateAsync(switchName, "ON").RunSync();
@@ -122,22 +123,21 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers
             delayedStartTriggerObserver.SubscribeAsync(DelayedStartTriggerHandler(delayedStartTriggerName));
         }
 
+        private void DelayedStartTrigger_TurnedOn(object? sender, EnabledSwitchEventArgs<EnabledSwitchAttributes> e)
+        {
+            if (!DelayedStart.IsOn() || _state is not DelayedStartState)
+                return;
+
+            TurnPowerSocketOn();
+            _logger.LogDebug("{SmartWasher}: Awakening from delayed start.", Name);
+        }
+
         private Func<string, Task> DelayedStartTriggerHandler(string delayedStartTriggerName)
         {
             return async state =>
             {
-                if (DelayedStart.IsOn() && state == "ON" && _state is DelayedStartState delayedStartState)
-                {
-                    TurnPowerSocketOn();
-                    _logger.LogDebug($"{{SmartWasher}}: Awakening from delayed start.", Name);
-                }
-                else if (state == "ON")
-                {
-                    _logger.LogDebug($"{{SmartWasher}}: Start requested but can not start base smart washer is not in delayed start state ({_state}).", Name);
-                }
-
-                //Switch acts like push button
-                await _mqttEntityManager.SetStateAsync(delayedStartTriggerName, "OFF");
+                _logger.LogDebug("{SmartWasher}: Setting delayed start trigger to {state}.", Name, state);
+                await _mqttEntityManager.SetStateAsync(delayedStartTriggerName, state);
             };
         }
 
