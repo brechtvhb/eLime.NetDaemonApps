@@ -56,12 +56,15 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers
 
             Name = name;
             PowerSensor = powerSensor;
+            PowerSensor.Changed += PowerSensor_Changed;
             PowerSocket = powerSocket;
+            PowerSocket.TurnedOn += PowerSocket_TurnedOn;
+            PowerSocket.TurnedOff += PowerSocket_TurnedOff;
 
             EnsureSensorsExist().RunSync();
             var state = RetrieveSateFromHomeAssistant();
 
-            _state = state switch
+            SmartWasherState initState = state switch
             {
                 WasherStates.Idle => new IdleState(),
                 WasherStates.DelayedStart => new DelayedStartState(),
@@ -74,11 +77,7 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers
                 _ => new IdleState(),
             };
 
-            _state.Enter(_logger, _scheduler, this);
-
-            PowerSensor.Changed += PowerSensor_Changed;
-            PowerSocket.TurnedOn += PowerSocket_TurnedOn;
-            PowerSocket.TurnedOff += PowerSocket_TurnedOff;
+            TransitionTo(_logger, initState);
         }
 
         private async Task EnsureSensorsExist()
@@ -238,7 +237,11 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers
 
         internal void TransitionTo(ILogger logger, SmartWasherState state)
         {
-            logger.LogDebug($"SmartWasher: Transitioning from state {_state.GetType().Name} to {state.GetType().Name}");
+            if (_state != null)
+                logger.LogDebug($"{{SmartWasher}}:  Transitioning from state {_state.GetType().Name} to {state.GetType().Name}", Name);
+            else
+                logger.LogDebug($"{{SmartWasher}}: Initialized in {state.GetType().Name} state.", Name);
+
             LastStateChange = _scheduler.Now;
             _state = state;
             _state.Enter(logger, _scheduler, this);

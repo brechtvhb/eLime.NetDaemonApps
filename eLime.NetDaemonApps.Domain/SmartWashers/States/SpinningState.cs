@@ -30,7 +30,7 @@ public class SpinningState : SmartWasherState
         if (context.PowerSensor.State < 5 && belowThresholdSince == null)
             belowThresholdSince = scheduler.Now;
 
-        if (belowThresholdSince.HasValue && belowThresholdSince.Value.Add(TimeSpan.FromSeconds(60)) < scheduler.Now)
+        if (belowThresholdSince.HasValue && belowThresholdSince.Value.Add(TimeSpan.FromSeconds(40)) < scheduler.Now)
             context.TransitionTo(logger, new ReadyState());
 
         if (context.LastStateChange.Add(maxDuration) < scheduler.Now)

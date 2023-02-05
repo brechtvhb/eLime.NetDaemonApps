@@ -5,6 +5,7 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers.States;
 
 public class ReadyState : SmartWasherState
 {
+    private DateTimeOffset? aboveThresholdSince = null;
     internal override void Enter(ILogger logger, IScheduler scheduler, SmartWasher context)
     {
         context.SetWasherProgram(null);
@@ -16,14 +17,25 @@ public class ReadyState : SmartWasherState
         {
             case < 1:
                 context.TransitionTo(logger, new IdleState());
-                return;
-            case > 5 when !context.IsDelayedStartEnabled():
-                context.TransitionTo(logger, new PreWashingState());
-                return;
-            case > 5:
-                context.TransitionTo(logger, new DelayedStartState());
+                break;
+            case < 5:
+                aboveThresholdSince = null;
+                break;
+            case > 5 when aboveThresholdSince == null:
+                aboveThresholdSince = scheduler.Now;
                 break;
         }
+
+        if (!aboveThresholdSince.HasValue || aboveThresholdSince.Value.Add(TimeSpan.FromSeconds(15)) >= scheduler.Now)
+            return;
+
+        if (context.IsDelayedStartEnabled())
+        {
+            context.TransitionTo(logger, new DelayedStartState());
+            return;
+        }
+
+        context.TransitionTo(logger, new PreWashingState());
     }
 
     internal override DateTimeOffset? GetEta(ILogger logger, SmartWasher context)
