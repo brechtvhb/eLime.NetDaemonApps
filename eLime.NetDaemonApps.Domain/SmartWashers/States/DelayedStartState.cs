@@ -7,6 +7,7 @@ public class DelayedStartState : SmartWasherState
 {
     internal override void Enter(ILogger logger, IScheduler scheduler, SmartWasher context)
     {
+        logger.LogDebug("{SmartWasher}: Turning power socket off because start will be delayed.", context.Name);
         context.TurnPowerSocketOFf();
     }
 

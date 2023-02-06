@@ -27,7 +27,7 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers
 
         private SmartWasherState _state;
 
-        public DateTimeOffset LastStateChange;
+        public DateTimeOffset? LastStateChange;
         public DateTimeOffset? Eta { get; set; }
         public WasherProgram? Program { get; set; }
 
@@ -171,6 +171,7 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers
             var attributes = new SmartWasherSwitchAttributes
             {
                 LastUpdated = DateTime.Now.ToString("O"),
+                LasStateChange = LastStateChange?.ToString("O"),
                 Eta = Eta?.ToString("O"),
                 WasherState = State.ToString(),
                 Program = Program?.ToString(),

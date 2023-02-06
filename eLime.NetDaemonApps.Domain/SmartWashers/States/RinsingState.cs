@@ -16,19 +16,25 @@ public class RinsingState : SmartWasherState
 
     internal override void PowerUsageChanged(ILogger logger, IScheduler scheduler, SmartWasher context)
     {
-        if (context.LastStateChange.Add(minDuration) > scheduler.Now)
+        if (context.LastStateChange?.Add(minDuration) > scheduler.Now)
             return;
 
         if (context.PowerSensor.State > 300)
+        {
+            logger.LogDebug("{SmartWasher}: Will spinning state because high power usage was detected.", context.Name);
             context.TransitionTo(logger, new SpinningState());
+        }
 
-        if (context.LastStateChange.Add(maxDuration) < scheduler.Now)
+        if (context.LastStateChange?.Add(maxDuration) < scheduler.Now)
+        {
+            logger.LogDebug("{SmartWasher}: Will transition to spinning state because max duration elapsed.", context.Name);
             context.TransitionTo(logger, new SpinningState());
+        }
     }
 
     internal override DateTimeOffset? GetEta(ILogger logger, SmartWasher context)
     {
         var nextStateEstimations = SpinningState.EstimatedDuration;
-        return context.LastStateChange.Add(EstimatedDuration + nextStateEstimations);
+        return context.LastStateChange?.Add(EstimatedDuration + nextStateEstimations);
     }
 }

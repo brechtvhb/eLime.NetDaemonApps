@@ -15,19 +15,25 @@ public class PreWashingState : SmartWasherState
 
     internal override void PowerUsageChanged(ILogger logger, IScheduler scheduler, SmartWasher context)
     {
-        if (context.LastStateChange.Add(minDuration) > scheduler.Now)
+        if (context.LastStateChange?.Add(minDuration) > scheduler.Now)
             return;
 
         if (context.PowerSensor.State > 500)
+        {
+            logger.LogDebug("{SmartWasher}: Will transition to heating state because high power usage was detected.", context.Name);
             context.TransitionTo(logger, new HeatingState());
+        }
 
-        if (context.LastStateChange.Add(maxDuration) < scheduler.Now)
+        if (context.LastStateChange?.Add(maxDuration) < scheduler.Now)
+        {
+            logger.LogDebug("{SmartWasher}: Will transition to heating state because max duration elapsed.", context.Name);
             context.TransitionTo(logger, new HeatingState());
+        }
     }
 
     internal override DateTimeOffset? GetEta(ILogger logger, SmartWasher context)
     {
         var nextStateEstimations = WashingState.EstimatedDuration + RinsingState.EstimatedDuration + SpinningState.EstimatedDuration;
-        return context.LastStateChange.Add(EstimatedDuration + nextStateEstimations);
+        return context.LastStateChange?.Add(EstimatedDuration + nextStateEstimations);
     }
 }

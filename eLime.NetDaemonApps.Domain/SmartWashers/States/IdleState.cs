@@ -24,15 +24,17 @@ public class IdleState : SmartWasherState
                 break;
         }
 
-        if (!aboveThresholdSince.HasValue || aboveThresholdSince.Value.Add(TimeSpan.FromSeconds(15)) >= scheduler.Now)
+        if (!aboveThresholdSince.HasValue || aboveThresholdSince.Value.Add(TimeSpan.FromSeconds(10)) >= scheduler.Now)
             return;
 
         if (context.IsDelayedStartEnabled())
         {
+            logger.LogDebug("{SmartWasher}: Will transition to delayed start state because delayed start switch is on.", context.Name);
             context.TransitionTo(logger, new DelayedStartState());
             return;
         }
 
+        logger.LogDebug("{SmartWasher}: Will transition to pre washing state because delayed start switch is off.", context.Name);
         context.TransitionTo(logger, new PreWashingState());
     }
 
