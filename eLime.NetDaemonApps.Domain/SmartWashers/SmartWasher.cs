@@ -106,11 +106,8 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers
             DelayedStartTrigger.TurnedOn += DelayedStartTrigger_TurnedOn;
             if (created)
             {
-                _mqttEntityManager.SetStateAsync(switchName, "ON").RunSync();
-                UpdateStateInHomeAssistant().RunSync();
+                await _mqttEntityManager.SetStateAsync(switchName, "ON");
             }
-
-            await UpdateStateInHomeAssistant();
 
             var switchObserver = await _mqttEntityManager.PrepareCommandSubscriptionAsync(switchName);
             switchObserver.SubscribeAsync(EnabledSwitchHandler(switchName));
