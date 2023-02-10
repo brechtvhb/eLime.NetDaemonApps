@@ -22,6 +22,7 @@ public class PreWashingState : SmartWasherState
         {
             logger.LogDebug("{SmartWasher}: Will transition to heating state because high power usage was detected.", context.Name);
             context.TransitionTo(logger, new HeatingState());
+            return;
         }
 
         if (context.LastStateChange?.Add(maxDuration) < scheduler.Now)

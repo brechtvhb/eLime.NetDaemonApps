@@ -7,7 +7,7 @@ public class HeatingState : SmartWasherState
 {
     internal static TimeSpan EstimatedDuration = TimeSpan.FromMinutes(20);
 
-    private readonly TimeSpan minDuration = TimeSpan.FromMinutes(10);
+    private readonly TimeSpan minDuration = TimeSpan.FromMinutes(7);
     private readonly TimeSpan maxDuration = TimeSpan.FromMinutes(30);
     private DateTimeOffset? startedSince;
 
@@ -34,6 +34,7 @@ public class HeatingState : SmartWasherState
 
             logger.LogDebug("{SmartWasher}: Will transition to washing state because low power usage was detected", context.Name);
             context.TransitionTo(logger, new WashingState());
+            return;
         }
 
         if (context.LastStateChange?.Add(maxDuration) < scheduler.Now)

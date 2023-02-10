@@ -31,8 +31,9 @@ public class WashingState : SmartWasherState
 
         if (aboveThresholdSince.HasValue && aboveThresholdSince.Value.Add(TimeSpan.FromSeconds(30)) < scheduler.Now)
         {
-            logger.LogDebug("{SmartWasher}: Will transition to rinsing state because low power usage was detected in the last 30 seconds.", context.Name);
+            logger.LogDebug("{SmartWasher}: Will transition to rinsing state because high power usage was detected in the last 30 seconds.", context.Name);
             context.TransitionTo(logger, new RinsingState());
+            return;
         }
 
         if (context.LastStateChange?.Add(maxDuration) < scheduler.Now)

@@ -21,8 +21,9 @@ public class RinsingState : SmartWasherState
 
         if (context.PowerSensor.State > 300)
         {
-            logger.LogDebug("{SmartWasher}: Will spinning state because high power usage was detected.", context.Name);
+            logger.LogDebug("{SmartWasher}: Will transition to spinning state because high power usage was detected.", context.Name);
             context.TransitionTo(logger, new SpinningState());
+            return;
         }
 
         if (context.LastStateChange?.Add(maxDuration) < scheduler.Now)

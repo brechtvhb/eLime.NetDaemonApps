@@ -34,6 +34,7 @@ public class SpinningState : SmartWasherState
         {
             logger.LogDebug("{SmartWasher}: Will transition to ready state because low power usage was detected in the last 30 seconds.", context.Name);
             context.TransitionTo(logger, new ReadyState());
+            return;
         }
 
         if (context.LastStateChange?.Add(maxDuration) < scheduler.Now)

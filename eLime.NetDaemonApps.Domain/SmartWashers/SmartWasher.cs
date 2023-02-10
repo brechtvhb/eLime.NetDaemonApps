@@ -179,7 +179,7 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers
             };
             await _mqttEntityManager.SetAttributesAsync(EnabledSwitch.EntityId, attributes);
             await _mqttEntityManager.SetStateAsync($"sensor.smartwasher_{Name.MakeHaFriendly()}_state", State.ToString());
-            _logger.LogTrace("{SmartWasher}: Updated flexiscreen state in Home assistant to {Attributes}", Name, attributes);
+            _logger.LogDebug("{SmartWasher}: Updated smartwasher state in Home assistant to {Attributes}", Name, attributes);
         }
 
         private WasherStates? RetrieveSateFromHomeAssistant()
@@ -239,9 +239,9 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers
         internal void TransitionTo(ILogger logger, SmartWasherState state)
         {
             if (_state != null)
-                logger.LogDebug($"{{SmartWasher}}:  Transitioning from state {_state.GetType().Name} to {state.GetType().Name}", Name);
+                logger.LogDebug($"{{SmartWasher}}: Transitioning from state {_state.GetType().Name.Replace("State", "")} to {state.GetType().Name.Replace("State", "")}", Name);
             else
-                logger.LogDebug($"{{SmartWasher}}: Initialized in {state.GetType().Name} state.", Name);
+                logger.LogDebug($"{{SmartWasher}}: Initialized in {state.GetType().Name.Replace("State", "")} state.", Name);
 
             LastStateChange = _scheduler.Now;
             _state = state;
