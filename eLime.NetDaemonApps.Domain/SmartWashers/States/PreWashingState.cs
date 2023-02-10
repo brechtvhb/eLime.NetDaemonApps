@@ -10,7 +10,7 @@ public class PreWashingState : SmartWasherState
     private readonly TimeSpan maxDuration = TimeSpan.FromMinutes(15);
     internal override void Enter(ILogger logger, IScheduler scheduler, SmartWasher context)
     {
-        context.SetWasherProgram(WasherProgram.Unknown);
+        context.SetWasherProgram(logger, WasherProgram.Unknown);
     }
 
     internal override void PowerUsageChanged(ILogger logger, IScheduler scheduler, SmartWasher context)

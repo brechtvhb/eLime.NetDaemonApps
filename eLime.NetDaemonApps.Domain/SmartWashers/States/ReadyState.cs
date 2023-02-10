@@ -8,7 +8,7 @@ public class ReadyState : SmartWasherState
     private DateTimeOffset? aboveThresholdSince = null;
     internal override void Enter(ILogger logger, IScheduler scheduler, SmartWasher context)
     {
-        context.SetWasherProgram(null);
+        context.SetWasherProgram(logger, null);
     }
 
     internal override void PowerUsageChanged(ILogger logger, IScheduler scheduler, SmartWasher context)

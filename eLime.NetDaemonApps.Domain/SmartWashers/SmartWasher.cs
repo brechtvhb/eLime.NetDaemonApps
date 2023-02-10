@@ -251,12 +251,13 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers
             UpdateStateInHomeAssistant().RunSync();
         }
 
-        internal void SetWasherProgram(WasherProgram? program)
+        internal void SetWasherProgram(ILogger logger, WasherProgram? program)
         {
             Program = program;
             Eta = _state.GetEta(_logger, this);
 
             UpdateStateInHomeAssistant().RunSync();
+            logger.LogInformation($"{{SmartWasher}}: Set washer program to {program}.");
         }
 
         public void Dispose()

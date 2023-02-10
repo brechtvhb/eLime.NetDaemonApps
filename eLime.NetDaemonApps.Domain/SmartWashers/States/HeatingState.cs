@@ -23,14 +23,14 @@ public class HeatingState : SmartWasherState
 
         if (startedSince != null && startedSince.Value.AddMinutes(15) < scheduler.Now)
         {
-            context.SetWasherProgram(WasherProgram.Wash60Degrees);
+            context.SetWasherProgram(logger, WasherProgram.Wash60Degrees);
             EstimatedDuration = TimeSpan.FromMinutes(25);
         }
 
         if (context.PowerSensor.State < 20)
         {
             if (context.Program == WasherProgram.Unknown)
-                context.SetWasherProgram(WasherProgram.Wash40Degrees);
+                context.SetWasherProgram(logger, WasherProgram.Wash40Degrees);
 
             logger.LogDebug("{SmartWasher}: Will transition to washing state because low power usage was detected", context.Name);
             context.TransitionTo(logger, new WashingState());
