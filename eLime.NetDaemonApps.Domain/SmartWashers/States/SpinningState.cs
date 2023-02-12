@@ -7,7 +7,7 @@ public class SpinningState : SmartWasherState
 {
     internal static readonly TimeSpan EstimatedDuration = TimeSpan.FromMinutes(15);
 
-    private readonly TimeSpan minDuration = TimeSpan.FromMinutes(10);
+    private readonly TimeSpan minDuration = TimeSpan.FromMinutes(5);
     private readonly TimeSpan maxDuration = TimeSpan.FromMinutes(20);
     private DateTimeOffset? belowThresholdSince = null;
 
@@ -30,9 +30,9 @@ public class SpinningState : SmartWasherState
         if (context.PowerSensor.State < 5 && belowThresholdSince == null)
             belowThresholdSince = scheduler.Now;
 
-        if (belowThresholdSince.HasValue && belowThresholdSince.Value.Add(TimeSpan.FromSeconds(30)) < scheduler.Now)
+        if (belowThresholdSince.HasValue && belowThresholdSince.Value.Add(TimeSpan.FromSeconds(15)) < scheduler.Now)
         {
-            logger.LogDebug("{SmartWasher}: Will transition to ready state because low power usage was detected in the last 30 seconds.", context.Name);
+            logger.LogDebug("{SmartWasher}: Will transition to ready state because low power usage was detected in the last 15 seconds.", context.Name);
             context.TransitionTo(logger, new ReadyState());
             return;
         }

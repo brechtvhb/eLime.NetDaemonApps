@@ -8,7 +8,7 @@ public class HeatingState : SmartWasherState
     internal static TimeSpan EstimatedDuration = TimeSpan.FromMinutes(20);
 
     private readonly TimeSpan minDuration = TimeSpan.FromMinutes(7);
-    private readonly TimeSpan maxDuration = TimeSpan.FromMinutes(30);
+    private readonly TimeSpan maxDuration = TimeSpan.FromMinutes(35);
     private DateTimeOffset? startedSince;
 
     internal override void Enter(ILogger logger, IScheduler scheduler, SmartWasher context)
