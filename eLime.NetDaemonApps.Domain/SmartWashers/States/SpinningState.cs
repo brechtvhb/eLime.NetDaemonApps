@@ -30,7 +30,7 @@ public class SpinningState : SmartWasherState
         if (context.PowerSensor.State < 5 && belowThresholdSince == null)
             belowThresholdSince = scheduler.Now;
 
-        if (belowThresholdSince.HasValue && belowThresholdSince.Value.Add(TimeSpan.FromSeconds(10)) < scheduler.Now)
+        if (belowThresholdSince.HasValue && belowThresholdSince.Value.Add(TimeSpan.FromSeconds(15)) < scheduler.Now)
         {
             logger.LogDebug("{SmartWasher}: Will transition to ready state because low power usage was detected in the last 10 seconds.", context.Name);
             context.TransitionTo(logger, new ReadyState());
