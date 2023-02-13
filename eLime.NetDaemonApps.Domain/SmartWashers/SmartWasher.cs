@@ -176,7 +176,7 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers
             };
             await _mqttEntityManager.SetAttributesAsync(EnabledSwitch.EntityId, attributes);
             await _mqttEntityManager.SetStateAsync($"sensor.smartwasher_{Name.MakeHaFriendly()}_state", State.ToString());
-            _logger.LogDebug("{SmartWasher}: Updated smartwasher state in Home assistant to {Attributes}", Name, attributes);
+            _logger.LogTrace("{SmartWasher}: Updated smartwasher state in Home assistant to {Attributes}", Name, attributes);
         }
 
         private WasherStates? RetrieveSateFromHomeAssistant()
@@ -259,10 +259,11 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers
 
         public void Dispose()
         {
+            _logger.LogInformation($"{{SmartWasher}}: Disposing.", Name);
             PowerSensor.Changed -= PowerSensor_Changed;
             PowerSocket.TurnedOn -= PowerSocket_TurnedOn;
             PowerSocket.TurnedOff -= PowerSocket_TurnedOff;
-
+            _logger.LogInformation($"{{SmartWasher}}: Disposed.", Name);
         }
     }
 

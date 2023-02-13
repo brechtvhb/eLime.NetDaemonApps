@@ -50,6 +50,8 @@ public class SmartWasher : IAsyncInitializable, IAsyncDisposable
 
     public ValueTask DisposeAsync()
     {
+        _logger.LogInformation("Disposing smart washer");
+
         Washer.Dispose();
 
         return ValueTask.CompletedTask;
