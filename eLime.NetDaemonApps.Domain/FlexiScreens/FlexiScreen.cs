@@ -87,7 +87,7 @@ public class FlexiScreen : IDisposable
 
     private async void Protector_DesiredStateChanged(object? sender, DesiredStateEventArgs e)
     {
-        _logger.LogInformation($"{{Screen}}: Desired state for  {e.Protector} changed to {e.DesiredState} (enforce: {e.Enforce}).");
+        _logger.LogInformation($"{{Screen}}: Desired state for {e.Protector} changed to {e.DesiredState} (enforce: {e.Enforce}).", Name);
         await GuardScreen();
     }
 
