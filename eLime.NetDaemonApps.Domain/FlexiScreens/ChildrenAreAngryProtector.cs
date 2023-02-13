@@ -51,5 +51,7 @@ public class ChildrenAreAngryProtector : IDisposable
     {
         ForceDownSensor.TurnedOn -= CheckDesiredState;
         ForceDownSensor.TurnedOff -= CheckDesiredState;
+
+        ForceDownSensor.Dispose();
     }
 }

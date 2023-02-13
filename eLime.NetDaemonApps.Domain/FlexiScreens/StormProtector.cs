@@ -127,18 +127,21 @@ public class StormProtector : IDisposable
         {
             WindSpeedSensor.WentAboveThreshold -= CheckDesiredState;
             WindSpeedSensor.DroppedBelowThreshold -= CheckDesiredState;
+            WindSpeedSensor.Dispose();
         }
 
         if (RainRateSensor != null)
         {
             RainRateSensor.WentAboveThreshold -= CheckDesiredState;
             RainRateSensor.DroppedBelowThreshold -= CheckDesiredState;
+            RainRateSensor.Dispose();
         }
 
         if (ShortTermRainForecastSensor != null)
         {
             ShortTermRainForecastSensor.WentAboveThreshold -= CheckDesiredState;
             ShortTermRainForecastSensor.DroppedBelowThreshold -= CheckDesiredState;
+            ShortTermRainForecastSensor.Dispose();
         }
     }
 }

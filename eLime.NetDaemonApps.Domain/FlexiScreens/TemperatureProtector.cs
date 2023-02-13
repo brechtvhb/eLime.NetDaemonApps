@@ -103,11 +103,13 @@ public class TemperatureProtector : IDisposable
         {
             SolarLuxSensor.WentAboveThreshold -= CheckDesiredState;
             SolarLuxSensor.DroppedBelowThreshold -= CheckDesiredState;
+            SolarLuxSensor.Dispose();
         }
 
         if (IndoorTemperatureSensor != null)
         {
             IndoorTemperatureSensor.Changed -= CheckDesiredState;
+            IndoorTemperatureSensor.Dispose();
         }
     }
 }

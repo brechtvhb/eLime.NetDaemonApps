@@ -5,7 +5,7 @@ namespace eLime.NetDaemonApps.Domain.Entities.NumericSensors;
 
 public record NumericSensor : NumericEntity, IDisposable
 {
-    private IDisposable subscribeDisposable { get; set; }
+    private IDisposable _subscribeDisposable;
 
     public NumericSensor(IHaContext haContext, string entityId) : base(haContext, entityId)
     {
@@ -18,7 +18,7 @@ public record NumericSensor : NumericEntity, IDisposable
 
     public void Initialize()
     {
-        subscribeDisposable = StateChanges()
+        _subscribeDisposable = StateChanges()
             .Subscribe(x =>
             {
                 OnChanged(new NumericSensorEventArgs(x));
@@ -40,6 +40,6 @@ public record NumericSensor : NumericEntity, IDisposable
 
     public void Dispose()
     {
-        subscribeDisposable.Dispose();
+        _subscribeDisposable?.Dispose();
     }
 }

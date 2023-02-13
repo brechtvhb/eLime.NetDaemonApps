@@ -3,9 +3,11 @@ using NetDaemon.HassModel.Entities;
 
 namespace eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 
-public record EnabledSwitch<T> : Entity<EnabledSwitch<T>, EntityState<T>, T>
+public record EnabledSwitch<T> : Entity<EnabledSwitch<T>, EntityState<T>, T>, IDisposable
     where T : EnabledSwitchAttributes
 {
+    private IDisposable _subscribeDisposable;
+
     public EnabledSwitch(IHaContext haContext, string entityId) : base(haContext, entityId)
     {
     }
@@ -16,7 +18,7 @@ public record EnabledSwitch<T> : Entity<EnabledSwitch<T>, EntityState<T>, T>
 
     public void Initialize()
     {
-        StateChanges()
+        _subscribeDisposable = StateChanges()
             .Subscribe(x =>
             {
                 if (x.New != null && x.New.IsOn())
@@ -62,4 +64,9 @@ public record EnabledSwitch<T> : Entity<EnabledSwitch<T>, EntityState<T>, T>
     }
 
     public bool IsOn() => State == "on";
+
+    public void Dispose()
+    {
+        _subscribeDisposable?.Dispose();
+    }
 }

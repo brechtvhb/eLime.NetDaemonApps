@@ -31,6 +31,8 @@ public class FlexiScreen : IDisposable
 
     private Protectors? LastStateChangeTriggeredBy { get; set; }
 
+    private IDisposable SwitchDisposable { get; set; }
+
     private ScreenState? CurrentState => Screen.IsClosed()
         ? ScreenState.Down
         : Screen.IsOpen()
@@ -204,18 +206,21 @@ public class FlexiScreen : IDisposable
         }
 
         var observer = await _mqttEntityManager.PrepareCommandSubscriptionAsync(switchName);
+        SwitchDisposable = observer.SubscribeAsync(EnabledSwitchHandler(switchName));
+    }
 
-        observer
-            .SubscribeAsync(async state =>
+    private Func<string, Task> EnabledSwitchHandler(string switchName)
+    {
+        return async state =>
+        {
+            _logger.LogDebug("{Screen}: Setting flexi screen state to {state}.", Name, state);
+            if (state == "OFF")
             {
-                _logger.LogDebug("{Screen}: Setting flexi screen state to {state}.", Name, state);
-                if (state == "OFF")
-                {
-                    _logger.LogDebug("{Screen}: Clearing flexi screen state because it was disabled.", Name);
-                    await UpdateStateInHomeAssistant();
-                }
-                await _mqttEntityManager.SetStateAsync(switchName, state);
-            });
+                _logger.LogDebug("{Screen}: Clearing flexi screen state because it was disabled.", Name);
+                await UpdateStateInHomeAssistant();
+            }
+            await _mqttEntityManager.SetStateAsync(switchName, state);
+        };
     }
 
     private Task RetrieveSateFromHomeAssistant()
@@ -269,6 +274,9 @@ public class FlexiScreen : IDisposable
         StormProtector?.Dispose();
         TemperatureProtector?.Dispose();
         ChildrenAreAngryProtector?.Dispose();
+
+        SwitchDisposable.Dispose();
+        Screen.Dispose();
 
         _logger.LogInformation("{Screen}: Disposed", Name);
     }

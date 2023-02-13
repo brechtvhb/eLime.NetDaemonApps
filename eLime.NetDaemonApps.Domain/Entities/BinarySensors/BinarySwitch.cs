@@ -4,8 +4,10 @@ using NetDaemon.HassModel.Entities;
 
 namespace eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 
-public record BinarySwitch : BinarySensor, ISwitch
+public record BinarySwitch : BinarySensor, ISwitch, IDisposable
 {
+    private IDisposable _subscribeDisposable;
+
     private DateTime? _clickStartDateTime;
     private int _clickCount;
     private DebounceDispatcher ClickDebounceDispatcher;
@@ -28,7 +30,7 @@ public record BinarySwitch : BinarySensor, ISwitch
         UberLongClickDuration = uberLongClickDuration ?? TimeSpan.FromSeconds(3);
         ClickDebounceDispatcher = new DebounceDispatcher(ClickInterval);
 
-        StateChanges()
+        _subscribeDisposable = StateChanges()
             .Subscribe(x =>
             {
                 if (x.New != null && x.New.IsOn())
@@ -111,6 +113,11 @@ public record BinarySwitch : BinarySensor, ISwitch
         }
         _clickCount = 0;
     }
+    public new void Dispose()
+    {
+        base.Dispose();
+        _subscribeDisposable?.Dispose();
+    }
 
     //TODO: enhance?
     ///<summary>Turn a switch on and off</summary>
@@ -136,5 +143,6 @@ public record BinarySwitch : BinarySensor, ISwitch
     {
         CallService("turn_off");
     }
+
 
 }

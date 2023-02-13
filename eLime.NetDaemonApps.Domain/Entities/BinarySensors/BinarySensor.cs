@@ -5,7 +5,7 @@ namespace eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 
 public record BinarySensor : Entity<BinarySensor, EntityState<BinarySensorAttributes>, BinarySensorAttributes>, IDisposable
 {
-    private IDisposable subscribeDisposable { get; set; }
+    private IDisposable _subscribeDisposable;
     public BinarySensor(IHaContext haContext, string entityId) : base(haContext, entityId)
     {
     }
@@ -17,7 +17,7 @@ public record BinarySensor : Entity<BinarySensor, EntityState<BinarySensorAttrib
 
     public void Initialize()
     {
-        subscribeDisposable = StateChanges()
+        _subscribeDisposable = StateChanges()
             .Subscribe(x =>
             {
                 if (x.New != null && x.New.IsOn())
@@ -38,7 +38,6 @@ public record BinarySensor : Entity<BinarySensor, EntityState<BinarySensorAttrib
         return sensor;
     }
 
-
     public event EventHandler<BinarySensorEventArgs>? TurnedOn;
     public event EventHandler<BinarySensorEventArgs>? TurnedOff;
 
@@ -55,6 +54,6 @@ public record BinarySensor : Entity<BinarySensor, EntityState<BinarySensorAttrib
 
     public void Dispose()
     {
-        subscribeDisposable.Dispose();
+        _subscribeDisposable?.Dispose();
     }
 }
