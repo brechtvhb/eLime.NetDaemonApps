@@ -8,6 +8,14 @@ using System.Threading.Tasks;
 
 namespace eLime.NetDaemonApps.apps.SmartWasher;
 
+/// <summary>
+/// Peak usage per state
+/// Prewashing (0-10): 120 W
+/// Heating (10-25): 2200 W
+/// Washing (0-10): 170 W
+/// Rinsing (45 min): 330 W
+/// Spinning (10): 420 W
+/// </summary>
 [Focus]
 [NetDaemonApp(Id = "smartwasher")]
 public class SmartWasher : IAsyncInitializable, IAsyncDisposable
