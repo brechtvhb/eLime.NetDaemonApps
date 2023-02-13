@@ -21,7 +21,7 @@ public class HeatingState : SmartWasherState
         if (context.LastStateChange?.Add(minDuration) > scheduler.Now)
             return;
 
-        if (startedSince != null && startedSince.Value.AddMinutes(15) < scheduler.Now)
+        if (startedSince != null && startedSince.Value.AddMinutes(15) < scheduler.Now && context.Program == WasherProgram.Unknown)
         {
             context.SetWasherProgram(logger, WasherProgram.Wash60Degrees);
             EstimatedDuration = TimeSpan.FromMinutes(25);
