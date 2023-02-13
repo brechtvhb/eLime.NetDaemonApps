@@ -31,6 +31,10 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers
         public DateTimeOffset? Eta { get; set; }
         public WasherProgram? Program { get; set; }
 
+        private IDisposable SwitchDisposable { get; set; }
+        private IDisposable DelayedStartDisposable { get; set; }
+        private IDisposable DelayedStartTriggerDisposable { get; set; }
+
         public WasherStates State => _state switch
         {
             IdleState => WasherStates.Idle,
@@ -110,13 +114,13 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers
             }
 
             var switchObserver = await _mqttEntityManager.PrepareCommandSubscriptionAsync(switchName);
-            switchObserver.SubscribeAsync(EnabledSwitchHandler(switchName));
+            SwitchDisposable = switchObserver.SubscribeAsync(EnabledSwitchHandler(switchName));
 
             var delayedStartObserver = await _mqttEntityManager.PrepareCommandSubscriptionAsync(delayedStartName);
-            delayedStartObserver.SubscribeAsync(DelayedStartSwitchHandler(delayedStartName));
+            DelayedStartDisposable = delayedStartObserver.SubscribeAsync(DelayedStartSwitchHandler(delayedStartName));
 
             var delayedStartTriggerObserver = await _mqttEntityManager.PrepareCommandSubscriptionAsync(delayedStartTriggerName);
-            delayedStartTriggerObserver.SubscribeAsync(DelayedStartTriggerHandler(delayedStartTriggerName));
+            DelayedStartTriggerDisposable = delayedStartTriggerObserver.SubscribeAsync(DelayedStartTriggerHandler(delayedStartTriggerName));
         }
 
         private void DelayedStartTrigger_TurnedOn(object? sender, EnabledSwitchEventArgs<EnabledSwitchAttributes> e)
@@ -263,6 +267,13 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers
             PowerSensor.Changed -= PowerSensor_Changed;
             PowerSocket.TurnedOn -= PowerSocket_TurnedOn;
             PowerSocket.TurnedOff -= PowerSocket_TurnedOff;
+
+            SwitchDisposable.Dispose();
+            DelayedStartDisposable.Dispose();
+            DelayedStartTriggerDisposable.Dispose();
+            PowerSensor.Dispose();
+            PowerSocket.Dispose();
+
             _logger.LogInformation($"{{SmartWasher}}: Disposed.", Name);
         }
     }

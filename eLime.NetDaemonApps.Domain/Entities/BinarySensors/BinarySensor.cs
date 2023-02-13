@@ -3,8 +3,9 @@ using NetDaemon.HassModel.Entities;
 
 namespace eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 
-public record BinarySensor : Entity<BinarySensor, EntityState<BinarySensorAttributes>, BinarySensorAttributes>
+public record BinarySensor : Entity<BinarySensor, EntityState<BinarySensorAttributes>, BinarySensorAttributes>, IDisposable
 {
+    private IDisposable subscribeDisposable { get; set; }
     public BinarySensor(IHaContext haContext, string entityId) : base(haContext, entityId)
     {
     }
@@ -16,7 +17,7 @@ public record BinarySensor : Entity<BinarySensor, EntityState<BinarySensorAttrib
 
     public void Initialize()
     {
-        StateChanges()
+        subscribeDisposable = StateChanges()
             .Subscribe(x =>
             {
                 if (x.New != null && x.New.IsOn())
@@ -51,4 +52,9 @@ public record BinarySensor : Entity<BinarySensor, EntityState<BinarySensorAttrib
     }
 
     public bool IsOn() => State == "on";
+
+    public void Dispose()
+    {
+        subscribeDisposable.Dispose();
+    }
 }
