@@ -3,8 +3,10 @@ using NetDaemon.HassModel.Entities;
 
 namespace eLime.NetDaemonApps.Domain.Entities.TextSensors;
 
-public record TextSensor : Entity<TextSensor, EntityState<TextSensorAttributes>, TextSensorAttributes>
+public record TextSensor : Entity<TextSensor, EntityState<TextSensorAttributes>, TextSensorAttributes>, IDisposable
 {
+    private IDisposable _subscribeDisposable;
+
     public TextSensor(IHaContext haContext, string entityId) : base(haContext, entityId)
     {
     }
@@ -16,7 +18,7 @@ public record TextSensor : Entity<TextSensor, EntityState<TextSensorAttributes>,
     public void Initialize()
     {
 
-        StateChanges()
+        _subscribeDisposable = StateChanges()
             .Subscribe(x =>
             {
                 if (x.New != null)
@@ -32,5 +34,10 @@ public record TextSensor : Entity<TextSensor, EntityState<TextSensorAttributes>,
     {
         if (e.New?.State != e.Old?.State)
             StateChanged?.Invoke(this, e);
+    }
+
+    public void Dispose()
+    {
+        _subscribeDisposable?.Dispose();
     }
 }

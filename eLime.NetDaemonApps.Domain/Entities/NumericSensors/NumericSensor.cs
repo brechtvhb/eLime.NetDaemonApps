@@ -3,8 +3,10 @@ using NetDaemon.HassModel.Entities;
 
 namespace eLime.NetDaemonApps.Domain.Entities.NumericSensors;
 
-public record NumericSensor : NumericEntity
+public record NumericSensor : NumericEntity, IDisposable
 {
+    private IDisposable _subscribeDisposable;
+
     public NumericSensor(IHaContext haContext, string entityId) : base(haContext, entityId)
     {
     }
@@ -16,7 +18,7 @@ public record NumericSensor : NumericEntity
 
     public void Initialize()
     {
-        StateChanges()
+        _subscribeDisposable = StateChanges()
             .Subscribe(x =>
             {
                 OnChanged(new NumericSensorEventArgs(x));
@@ -34,5 +36,10 @@ public record NumericSensor : NumericEntity
     private void OnChanged(NumericSensorEventArgs e)
     {
         Changed?.Invoke(this, e);
+    }
+
+    public void Dispose()
+    {
+        _subscribeDisposable?.Dispose();
     }
 }

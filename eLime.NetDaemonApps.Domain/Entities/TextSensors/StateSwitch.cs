@@ -4,8 +4,10 @@ using NetDaemon.HassModel.Entities;
 namespace eLime.NetDaemonApps.Domain.Entities.TextSensors;
 
 
-public record StateSwitch : TextSensor, ISwitch
+public record StateSwitch : TextSensor, ISwitch, IDisposable
 {
+    private IDisposable _subscribeDisposable;
+
     public String SinglePressState { get; private set; }
     public String DoublePressState { get; private set; }
     public String TriplePressState { get; private set; }
@@ -27,7 +29,7 @@ public record StateSwitch : TextSensor, ISwitch
         LongPressState = longPressState ?? "long-press";
         UberLongPressState = uberLongPressState ?? "uber-long-press";
 
-        StateChanges()
+        _subscribeDisposable = StateChanges()
             .Subscribe(x =>
             {
                 if (x.New != null)
@@ -70,5 +72,10 @@ public record StateSwitch : TextSensor, ISwitch
                 UberLongClicked?.Invoke(this, new SwitchEventArgs(e.Sensor));
                 break;
         }
+    }
+
+    public void Dispose()
+    {
+        _subscribeDisposable?.Dispose();
     }
 }

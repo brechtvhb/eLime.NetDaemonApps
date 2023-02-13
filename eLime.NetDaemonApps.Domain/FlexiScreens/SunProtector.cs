@@ -84,5 +84,6 @@ public class SunProtector : IDisposable
     public void Dispose()
     {
         Sun.StateChanged -= CheckDesiredState;
+        Sun.Dispose();
     }
 }

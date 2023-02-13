@@ -3,8 +3,10 @@ using NetDaemon.HassModel.Entities;
 
 namespace eLime.NetDaemonApps.Domain.Entities.NumericSensors;
 
-public record NumericThresholdSensor : NumericEntity
+public record NumericThresholdSensor : NumericEntity, IDisposable
 {
+    private IDisposable _subscribeDisposable;
+
     public Double? Threshold { get; private set; }
     public Double? BelowThreshold { get; private set; }
     public NumericThresholdSensor(IHaContext haContext, string entityId) : base(haContext, entityId)
@@ -20,7 +22,7 @@ public record NumericThresholdSensor : NumericEntity
         Threshold = threshold;
         BelowThreshold = belowThreshold ?? threshold;
 
-        StateChanges()
+        _subscribeDisposable = StateChanges()
             .Subscribe(x =>
             {
                 if (x.Old != null && x.New != null && x.Old.State > BelowThreshold && x.New.State <= BelowThreshold)
@@ -51,6 +53,11 @@ public record NumericThresholdSensor : NumericEntity
     private void OnWentAboveThreshold(NumericSensorEventArgs e)
     {
         WentAboveThreshold?.Invoke(this, e);
+    }
+
+    public void Dispose()
+    {
+        _subscribeDisposable?.Dispose();
     }
 
 }

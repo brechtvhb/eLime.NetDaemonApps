@@ -3,8 +3,10 @@ using NetDaemon.HassModel.Entities;
 
 namespace eLime.NetDaemonApps.Domain.Entities.Covers;
 
-public record Cover : Entity<Cover, EntityState<CoverAttributes>, CoverAttributes>
+public record Cover : Entity<Cover, EntityState<CoverAttributes>, CoverAttributes>, IDisposable
 {
+    private IDisposable _subscribeDisposable;
+
     public Cover(IHaContext haContext, string entityId) : base(haContext, entityId)
     {
         Initialize();
@@ -18,7 +20,7 @@ public record Cover : Entity<Cover, EntityState<CoverAttributes>, CoverAttribute
 
     public void Initialize()
     {
-        StateChanges()
+        _subscribeDisposable = StateChanges()
             .Subscribe(x =>
             {
                 if (x.New == null)
@@ -63,4 +65,8 @@ public record Cover : Entity<Cover, EntityState<CoverAttributes>, CoverAttribute
     public bool IsOpen() => State == "open";
     public bool IsClosed() => State == "closed";
 
+    public void Dispose()
+    {
+        _subscribeDisposable?.Dispose();
+    }
 }

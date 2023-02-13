@@ -3,8 +3,10 @@ using NetDaemon.HassModel.Entities;
 
 namespace eLime.NetDaemonApps.Domain.Entities.Sun;
 
-public record Sun : Entity<Sun, EntityState<SunAttributes>, SunAttributes>
+public record Sun : Entity<Sun, EntityState<SunAttributes>, SunAttributes>, IDisposable
 {
+    private IDisposable _subscribeDisposable;
+
     public Sun(IHaContext haContext, string entityId) : base(haContext, entityId)
     {
         Initialize();
@@ -17,7 +19,7 @@ public record Sun : Entity<Sun, EntityState<SunAttributes>, SunAttributes>
 
     public void Initialize()
     {
-        StateAllChanges()
+        _subscribeDisposable = StateAllChanges()
             .Subscribe(x =>
             {
                 if (x.New == null)
@@ -32,5 +34,10 @@ public record Sun : Entity<Sun, EntityState<SunAttributes>, SunAttributes>
     protected void OnStateChanged(SunEventArgs e)
     {
         StateChanged?.Invoke(this, e);
+    }
+
+    public void Dispose()
+    {
+        _subscribeDisposable?.Dispose();
     }
 }
