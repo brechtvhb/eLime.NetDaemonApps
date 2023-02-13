@@ -77,10 +77,10 @@ public class FlexiScreen : IDisposable
         EnsureEnabledSwitchExists().RunSync();
         RetrieveSateFromHomeAssistant().RunSync();
 
-        _logger.LogInformation($"{{Screen}}: Desired state for SunProtector is: {SunProtector.DesiredState.State} (enforce: {SunProtector.DesiredState.Enforce}).");
-        _logger.LogInformation($"{{Screen}}: Desired state for StormProtector is: {StormProtector?.DesiredState.State} (enforce: {StormProtector?.DesiredState.Enforce}).");
-        _logger.LogInformation($"{{Screen}}: Desired state for TemperatureProtector is: {TemperatureProtector?.DesiredState.State} (enforce: {TemperatureProtector?.DesiredState.Enforce}).");
-        _logger.LogInformation($"{{Screen}}: Desired state for ChildrenAreAngryProtector is: {ChildrenAreAngryProtector?.DesiredState.State} (enforce: {ChildrenAreAngryProtector?.DesiredState.Enforce}).");
+        _logger.LogInformation($"{{Screen}}: Desired state for SunProtector is: {SunProtector.DesiredState.State} (enforce: {SunProtector.DesiredState.Enforce}).", Name);
+        _logger.LogInformation($"{{Screen}}: Desired state for StormProtector is: {StormProtector?.DesiredState.State} (enforce: {StormProtector?.DesiredState.Enforce}).", Name);
+        _logger.LogInformation($"{{Screen}}: Desired state for TemperatureProtector is: {TemperatureProtector?.DesiredState.State} (enforce: {TemperatureProtector?.DesiredState.Enforce}).", Name);
+        _logger.LogInformation($"{{Screen}}: Desired state for ChildrenAreAngryProtector is: {ChildrenAreAngryProtector?.DesiredState.State} (enforce: {ChildrenAreAngryProtector?.DesiredState.Enforce}).", Name);
 
         GuardScreen().RunSync();
     }
