@@ -1,6 +1,6 @@
 ﻿namespace eLime.NetDaemonApps.Domain;
 
-public interface ISwitch
+public interface ISwitch : IDisposable
 {
     public String EntityId { get; }
     event EventHandler<SwitchEventArgs>? Clicked;

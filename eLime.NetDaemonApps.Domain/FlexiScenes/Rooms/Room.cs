@@ -734,15 +734,22 @@ public class Room : IAsyncDisposable
         _logger.LogDebug("{Room}: Disposing.", Name);
 
         foreach (var sensor in _offSensors)
+        {
             sensor.TurnedOn -= OffSensor_TurnedOn;
+            sensor.Dispose();
+        }
 
         foreach (var sensor in _illuminanceSensors)
+        {
             sensor.WentAboveThreshold -= Sensor_WentAboveThreshold;
+            sensor.Dispose();
+        }
 
         foreach (var sensor in _motionSensors)
         {
             sensor.TurnedOn -= MotionSensor_TurnedOn;
             sensor.TurnedOff -= MotionSensor_TurnedOff;
+            sensor.Dispose();
         }
 
         foreach (var sensor in _switches)
@@ -752,6 +759,7 @@ public class Room : IAsyncDisposable
             sensor.TripleClicked -= Switch_TripleClicked;
             sensor.LongClicked -= Switch_LongClicked;
             sensor.UberLongClicked -= Switch_UberLongClicked;
+            sensor.Dispose();
         }
 
         foreach (var sensor in _flexiSceneSensors)
@@ -760,6 +768,7 @@ public class Room : IAsyncDisposable
             {
                 binarySensor.TurnedOn -= DebounceAutoTransitionAsync;
                 binarySensor.TurnedOff -= DebounceAutoTransitionAsync;
+                binarySensor.Dispose();
             }
         }
 
