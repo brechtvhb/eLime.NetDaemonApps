@@ -56,6 +56,28 @@ public class SmartWasherTests
         Assert.AreEqual(WasherStates.PreWashing, washer.State);
     }
 
+
+    [TestMethod]
+    public void Resets_After_5_Minutes()
+    {
+        // Arrange
+        var washer = new SmartWasherBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+            .WithPowerSocket(_powerSocket)
+            .WithPowerSensor(_powerSensor)
+            .Build();
+
+        _testCtx.TriggerStateChange(_powerSensor, "10");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(20));
+        _testCtx.TriggerStateChange(_powerSensor, "50");
+
+        //Act
+        _testCtx.TriggerStateChange(_powerSensor, "0");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(6));
+
+        //Assert
+        Assert.AreEqual(WasherStates.Idle, washer.State);
+    }
+
     [TestMethod]
     public void Transitions_To_Heating_HappyFlow()
     {

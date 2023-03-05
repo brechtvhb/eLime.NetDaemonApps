@@ -19,16 +19,16 @@ public class RinsingState : SmartWasherState
         if (context.LastStateChange?.Add(minDuration) > scheduler.Now)
             return;
 
-        if (context.PowerSensor.State > 300)
+        if (context.LastStateChange?.Add(maxDuration) < scheduler.Now)
         {
-            logger.LogDebug("{SmartWasher}: Will transition to spinning state because high power usage was detected.", context.Name);
+            logger.LogDebug("{SmartWasher}: Will transition to spinning state because max duration elapsed.", context.Name);
             context.TransitionTo(logger, new SpinningState());
             return;
         }
 
-        if (context.LastStateChange?.Add(maxDuration) < scheduler.Now)
+        if (context.PowerSensor.State > 300)
         {
-            logger.LogDebug("{SmartWasher}: Will transition to spinning state because max duration elapsed.", context.Name);
+            logger.LogDebug("{SmartWasher}: Will transition to spinning state because high power usage was detected.", context.Name);
             context.TransitionTo(logger, new SpinningState());
         }
     }

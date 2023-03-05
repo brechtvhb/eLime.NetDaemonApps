@@ -18,16 +18,16 @@ public class PreWashingState : SmartWasherState
         if (context.LastStateChange?.Add(minDuration) > scheduler.Now)
             return;
 
-        if (context.PowerSensor.State > 500)
+        if (context.LastStateChange?.Add(maxDuration) < scheduler.Now)
         {
-            logger.LogDebug("{SmartWasher}: Will transition to heating state because high power usage was detected.", context.Name);
+            logger.LogDebug("{SmartWasher}: Will transition to heating state because max duration elapsed.", context.Name);
             context.TransitionTo(logger, new HeatingState());
             return;
         }
 
-        if (context.LastStateChange?.Add(maxDuration) < scheduler.Now)
+        if (context.PowerSensor.State > 500)
         {
-            logger.LogDebug("{SmartWasher}: Will transition to heating state because max duration elapsed.", context.Name);
+            logger.LogDebug("{SmartWasher}: Will transition to heating state because high power usage was detected.", context.Name);
             context.TransitionTo(logger, new HeatingState());
         }
     }

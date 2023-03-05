@@ -34,6 +34,7 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers
         private IDisposable SwitchDisposable { get; set; }
         private IDisposable DelayedStartDisposable { get; set; }
         private IDisposable DelayedStartTriggerDisposable { get; set; }
+        private IDisposable? NoPowerResetter { get; set; }
 
         public WasherStates State => _state switch
         {
@@ -207,6 +208,12 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers
         {
             if (!IsEnabled())
                 return;
+
+            if (e.New?.State == 0 && NoPowerResetter == null)
+                NoPowerResetter = _scheduler.Schedule(TimeSpan.FromMinutes(5), (_, _) => TransitionTo(_logger, new IdleState()));
+
+            if (e.New?.State != 0 && NoPowerResetter != null)
+                NoPowerResetter.Dispose();
 
             _state.PowerUsageChanged(_logger, _scheduler, this);
         }

@@ -21,6 +21,13 @@ public class SpinningState : SmartWasherState
         if (context.LastStateChange?.Add(minDuration) > scheduler.Now)
             return;
 
+        if (context.LastStateChange?.Add(maxDuration) < scheduler.Now)
+        {
+            logger.LogDebug("{SmartWasher}: Will transition to ready state because max duration elapsed.", context.Name);
+            context.TransitionTo(logger, new ReadyState());
+            return;
+        }
+
         if (context.PowerSensor.State > 5)
         {
             belowThresholdSince = null;
@@ -33,13 +40,6 @@ public class SpinningState : SmartWasherState
         if (belowThresholdSince.HasValue && belowThresholdSince.Value.Add(TimeSpan.FromSeconds(15)) < scheduler.Now)
         {
             logger.LogDebug("{SmartWasher}: Will transition to ready state because low power usage was detected in the last 10 seconds.", context.Name);
-            context.TransitionTo(logger, new ReadyState());
-            return;
-        }
-
-        if (context.LastStateChange?.Add(maxDuration) < scheduler.Now)
-        {
-            logger.LogDebug("{SmartWasher}: Will transition to ready state because max duration elapsed.", context.Name);
             context.TransitionTo(logger, new ReadyState());
         }
     }
