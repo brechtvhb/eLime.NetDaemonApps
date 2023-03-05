@@ -284,6 +284,7 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers
             PowerSensor.Dispose();
             PowerSocket.Dispose();
 
+            NoPowerResetter?.Dispose();
             _logger.LogInformation($"{{SmartWasher}}: Disposed.", Name);
         }
     }
