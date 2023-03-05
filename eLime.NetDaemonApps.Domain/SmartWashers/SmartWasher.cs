@@ -209,7 +209,7 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers
             if (!IsEnabled())
                 return;
 
-            if (e.New?.State == 0 && NoPowerResetter == null)
+            if (e.New?.State == 0 && NoPowerResetter == null && State != WasherStates.Idle && State != WasherStates.DelayedStart && State != WasherStates.Ready)
                 NoPowerResetter = _scheduler.Schedule(TimeSpan.FromMinutes(5), (_, _) => TransitionTo(_logger, new IdleState()));
 
             if (e.New?.State != 0 && NoPowerResetter != null)
