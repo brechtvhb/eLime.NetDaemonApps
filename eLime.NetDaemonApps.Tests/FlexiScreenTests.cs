@@ -43,7 +43,7 @@ public class FlexiScreenTests
     public void Init()
     {
         _testCtx = AppTestContext.Create(DateTime.Now);
-        _testCtx.TriggerStateChange(new FlexiScreenEnabledSwitch(_testCtx.HaContext, "switch.flexiscreen_office"), "on");
+        _testCtx.TriggerStateChange(new FlexiScreenEnabledSwitch(_testCtx.HaContext, "switch.flexiscreens_office"), "on");
 
         _logger = A.Fake<ILogger<Room>>();
         _mqttEntityManager = A.Fake<IMqttEntityManager>();
@@ -209,7 +209,7 @@ public class FlexiScreenTests
         _testCtx.TriggerStateChange(_windSpeedSensor, new EntityState { State = "20" });
 
         //Assert
-        Assert.AreEqual((ScreenState.Down, false), screen.StormProtector.DesiredState);
+        Assert.AreEqual((null, false), screen.StormProtector.DesiredState);
         _testCtx.VerifyScreenGoesUp(_cover, Moq.Times.Once);
         _testCtx.VerifyScreenGoesDown(_cover, Moq.Times.Never);
     }
@@ -269,7 +269,7 @@ public class FlexiScreenTests
         _testCtx.TriggerStateChange(_rainRateSensor, new EntityState { State = "0" });
 
         //Assert
-        Assert.AreEqual((ScreenState.Down, false), screen.StormProtector.DesiredState);
+        Assert.AreEqual((null, false), screen.StormProtector.DesiredState);
         _testCtx.VerifyScreenGoesUp(_cover, Moq.Times.Once);
     }
 
@@ -327,7 +327,7 @@ public class FlexiScreenTests
         _testCtx.TriggerStateChange(_shortTermRainForecastSensor, new EntityState { State = "0" });
 
         //Assert
-        Assert.AreEqual((ScreenState.Down, false), screen.StormProtector.DesiredState);
+        Assert.AreEqual((null, false), screen.StormProtector.DesiredState);
         _testCtx.VerifyScreenGoesDown(_cover, Moq.Times.Once);
     }
 

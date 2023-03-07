@@ -112,7 +112,7 @@ public class StormProtector : IDisposable
         if (windSpeedIsBelowStormThreshold is true or null && rainRateIsBelowStormThreshold is true or null && shortTermRainForecastIsBelowStormThreshold is true or null)
         {
             StormModeActive = false;
-            return (ScreenState.Down, false);
+            return (null, false);
         }
 
         if (StormModeActive)
