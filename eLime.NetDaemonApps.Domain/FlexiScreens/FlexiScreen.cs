@@ -107,6 +107,9 @@ public class FlexiScreen : IDisposable
 
     private async Task GuardScreen()
     {
+        if (!IsScreenEnabled())
+            return;
+
         //State is transitioning
         if (CurrentState == null)
             return;
