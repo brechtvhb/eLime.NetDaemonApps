@@ -1,9 +1,12 @@
 ﻿using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
+using eLime.NetDaemonApps.Domain.Entities.Weather;
 
 namespace eLime.NetDaemonApps.Domain.FlexiScreens;
 
 public class StormProtector : IDisposable
 {
+
+
     private NumericThresholdSensor? WindSpeedSensor { get; }
     private double? WindSpeedStormStartThreshold { get; }
     private double? WindSpeedStormEndThreshold { get; }
@@ -16,12 +19,19 @@ public class StormProtector : IDisposable
     private double? ShortTermRainForecastSensorStormStartThreshold { get; }
     private double? ShortTermRainForecastSensorStormEndThreshold { get; }
 
+    private Weather? HourlyWeather { get; }
+    private int? NightlyPredictionHours { get; }
+    private double? NightlyWindSpeedThreshold { get; }
+    private double? NightlyRainThreshold { get; }
+
     public (ScreenState? State, Boolean Enforce) DesiredState { get; private set; }
     private bool StormModeActive { get; set; }
+    private bool StormyNight { get; set; }
 
     public StormProtector(NumericThresholdSensor? windSpeedSensor, double? windSpeedStormStartThreshold, double? windSpeedStormEndThreshold,
         NumericThresholdSensor? rainRateSensor, double? rainRateStormStartThreshold, double? rainRateStormEndThreshold,
-        NumericThresholdSensor? shortTermRainForecastSensor, double? shortTermRainForecastSensorStormStartThreshold, double? shortTermRainForecastSensorStormEndThreshold)
+        NumericThresholdSensor? shortTermRainForecastSensor, double? shortTermRainForecastSensorStormStartThreshold, double? shortTermRainForecastSensorStormEndThreshold,
+        Weather? hourlyWeather, int? nightlyPredictionHours, double? nightlyWindSpeedThreshold, double? nightlyRainThreshold)
     {
         WindSpeedSensor = windSpeedSensor;
         if (WindSpeedSensor != null)
@@ -50,6 +60,14 @@ public class StormProtector : IDisposable
             ShortTermRainForecastSensor.DroppedBelowThreshold += CheckDesiredState;
         }
 
+        HourlyWeather = hourlyWeather;
+        if (HourlyWeather != null)
+        {
+            NightlyPredictionHours = nightlyPredictionHours ?? 12;
+            NightlyWindSpeedThreshold = nightlyWindSpeedThreshold;
+            NightlyRainThreshold = nightlyRainThreshold;
+        }
+
         CheckDesiredState();
     }
 
@@ -74,6 +92,31 @@ public class StormProtector : IDisposable
     protected void OnDesiredStateChanged(DesiredStateEventArgs e)
     {
         DesiredStateChanged?.Invoke(this, e);
+    }
+
+    public void CheckForStormyNight()
+    {
+        if (HourlyWeather == null) return;
+
+        double? maxWindSpeed = null;
+        double? precipitation = null;
+
+        if (HourlyWeather?.Attributes?.Forecast != null && NightlyPredictionHours != null)
+            maxWindSpeed = HourlyWeather.Attributes.Forecast.Take(NightlyPredictionHours.Value).Average(x => x.WindSpeed);
+
+        if (HourlyWeather?.Attributes?.Forecast != null && NightlyPredictionHours != null)
+            precipitation = HourlyWeather.Attributes.Forecast.Take(NightlyPredictionHours.Value).Sum(x => x.Precipitation);
+
+        StormyNight = maxWindSpeed >= NightlyWindSpeedThreshold || precipitation >= NightlyRainThreshold;
+
+        CheckDesiredState();
+    }
+
+    public void EndNight()
+    {
+        StormyNight = false;
+
+        CheckDesiredState();
     }
 
     public (ScreenState? State, Boolean Enforce) GetDesiredState()
@@ -108,6 +151,9 @@ public class StormProtector : IDisposable
             StormModeActive = true;
             return (ScreenState.Up, true);
         }
+
+        if (StormyNight)
+            return (ScreenState.Up, true);
 
         if (windSpeedIsBelowStormThreshold is true or null && rainRateIsBelowStormThreshold is true or null && shortTermRainForecastIsBelowStormThreshold is true or null)
         {

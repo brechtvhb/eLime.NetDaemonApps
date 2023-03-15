@@ -20,7 +20,11 @@
         rainRateStormEndThreshold: 0
         shortTermRainForecastEntity: "sensor.buienradar_precipitation_forecast_total"
         ShortTermRainStormStartThreshold: 0.05
-        shortTermRainStormEndThreshold: 0.
+        shortTermRainStormEndThreshold: 0
+        hourlyWeatherEntity: "weather.forecast_ha_main_hourly"
+        nightlyPredictionHours: 12
+        nightlyWindSpeedThreshold: 40
+        nightlyRainThreshold: 1
       # temperatureProtection:
       #   solarLuxSensor: "sensor.gw2000a_v2_2_0_solar_lux"
       #   solarLuxAboveThreshold: 10000

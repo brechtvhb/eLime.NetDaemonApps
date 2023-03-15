@@ -1,4 +1,5 @@
 ﻿using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
+using NetDaemon.HassModel.Entities;
 
 namespace eLime.NetDaemonApps.Domain.FlexiScreens;
 
@@ -19,6 +20,12 @@ public class ChildrenAreAngryProtector : IDisposable
 
     private void CheckDesiredState(Object? o, BinarySensorEventArgs sender)
     {
+        if (sender.New.IsOn())
+            OnNightStarted(EventArgs.Empty);
+
+        if (sender.New.IsOff())
+            OnNightEnded(EventArgs.Empty);
+
         CheckDesiredState();
     }
 
@@ -32,6 +39,22 @@ public class ChildrenAreAngryProtector : IDisposable
         DesiredState = desiredState;
         OnDesiredStateChanged(new DesiredStateEventArgs(Protectors.ChildrenAreAngryProtector, desiredState.State, desiredState.Enforce));
     }
+
+
+    public event EventHandler<EventArgs>? NightStarted;
+
+    protected void OnNightStarted(EventArgs e)
+    {
+        NightStarted?.Invoke(this, e);
+    }
+
+    public event EventHandler<EventArgs>? NightEnded;
+
+    protected void OnNightEnded(EventArgs e)
+    {
+        NightEnded?.Invoke(this, e);
+    }
+
 
     public event EventHandler<DesiredStateEventArgs>? DesiredStateChanged;
 

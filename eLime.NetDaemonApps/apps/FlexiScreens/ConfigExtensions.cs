@@ -23,9 +23,10 @@ public static class ConfigExtensions
         var solarLuxSensor = !String.IsNullOrWhiteSpace(config.TemperatureProtection?.SolarLuxSensor) ? NumericThresholdSensor.Create(ha, config.TemperatureProtection.SolarLuxSensor, config.TemperatureProtection.SolarLuxAboveThreshold, config.TemperatureProtection.SolarLuxBelowThreshold) : null;
         var indoorTemperatureSensor = !String.IsNullOrWhiteSpace(config.TemperatureProtection?.IndoorTemperatureSensor) ? NumericSensor.Create(ha, config.TemperatureProtection.IndoorTemperatureSensor) : null;
         var weather = !String.IsNullOrWhiteSpace(config.TemperatureProtection?.WeatherEntity) ? new Weather(ha, config.TemperatureProtection.WeatherEntity) : null;
+        var hourlyWeather = !String.IsNullOrWhiteSpace(config.StormProtection?.HourlyWeatherEntity) ? new Weather(ha, config.StormProtection.HourlyWeatherEntity) : null;
 
         var sunProtector = config.SunProtection.ToEntities(sun, config.Orientation);
-        var stormProtector = config.StormProtection.ToEntities(windSpeedSensor, rainRateSensor, shortTermRainForecastSensor);
+        var stormProtector = config.StormProtection.ToEntities(windSpeedSensor, rainRateSensor, shortTermRainForecastSensor, hourlyWeather);
         var temperatureProtector = config.TemperatureProtection.ToEntities(solarLuxSensor, indoorTemperatureSensor, weather);
 
         var manIsAngryProtector = config.MinimumIntervalSinceLastAutomatedAction != null
@@ -58,14 +59,14 @@ public static class ConfigExtensions
         return sunProtector;
     }
 
-    public static StormProtector? ToEntities(this StormProtectionConfig? config, NumericThresholdSensor? windSpeedSensor, NumericThresholdSensor? rainRateSensor, NumericThresholdSensor? shortTermRainForecastSensor)
+    public static StormProtector? ToEntities(this StormProtectionConfig? config, NumericThresholdSensor? windSpeedSensor, NumericThresholdSensor? rainRateSensor, NumericThresholdSensor? shortTermRainForecastSensor, Weather? hourlyWeather)
     {
         if (config == null)
             return null;
 
         var stormProtector = new StormProtector(windSpeedSensor, config.WindSpeedStormStartThreshold, config.WindSpeedStormEndThreshold, rainRateSensor,
         config.RainRateStormStartThreshold, config.RainRateStormEndThreshold, shortTermRainForecastSensor,
-        config.ShortTermRainStormStartThreshold, config.ShortTermRainStormEndThreshold);
+        config.ShortTermRainStormStartThreshold, config.ShortTermRainStormEndThreshold, hourlyWeather, config.NightlyPredictionHours, config.NightlyWindSpeedThreshold, config.NightlyRainThreshold);
         return stormProtector;
     }
 

@@ -29,7 +29,7 @@ public class ScreenBuilder
     private NumericThresholdSensor? _solarLuxSensor;
     private NumericSensor? _indoorTemperatureSensor;
     private Weather? _weather;
-
+    private Weather? _hourluWeather;
     private BinarySensor? _sleepSensor;
 
     public ScreenBuilder(AppTestContext testCtx, ILogger logger, IMqttEntityManager mqttEntityManager)
@@ -116,6 +116,16 @@ public class ScreenBuilder
         _config.TemperatureProtection.ConditionalOutdoorTemperaturePredictionDays = conditionalPredictionDays;
         return this;
     }
+    public ScreenBuilder WithHourlyWeatherForecast(Weather weather, int? nightlyPredictionHours, double? nightlyWindSpeedThreshold, double? nightlyRainThreshold)
+    {
+        _hourluWeather = weather;
+
+        _config.StormProtection ??= new StormProtectionConfig();
+        _config.StormProtection.NightlyPredictionHours = nightlyPredictionHours;
+        _config.StormProtection.NightlyWindSpeedThreshold = nightlyWindSpeedThreshold;
+        _config.StormProtection.NightlyRainThreshold = nightlyRainThreshold;
+        return this;
+    }
 
     public ScreenBuilder WithSleepSensor(BinarySensor sleepSensor)
     {
@@ -152,11 +162,12 @@ public class ScreenBuilder
         var solarLuxSensor = _solarLuxSensor ?? (_config.TemperatureProtection?.SolarLuxSensor != null ? NumericThresholdSensor.Create(_testCtx.HaContext, _config.TemperatureProtection.SolarLuxSensor, _config.TemperatureProtection.SolarLuxAboveThreshold, _config.TemperatureProtection.SolarLuxBelowThreshold) : null);
         var indoorTemperatureSensor = _indoorTemperatureSensor ?? (_config.TemperatureProtection?.IndoorTemperatureSensor != null ? NumericSensor.Create(_testCtx.HaContext, _config.TemperatureProtection.IndoorTemperatureSensor) : null);
         var weather = _weather ?? (_config.TemperatureProtection?.WeatherEntity != null ? new Weather(_testCtx.HaContext, _config.TemperatureProtection.WeatherEntity) : null);
+        var hourlyWeather = _hourluWeather ?? (_config.StormProtection?.HourlyWeatherEntity != null ? new Weather(_testCtx.HaContext, _config.StormProtection.HourlyWeatherEntity) : null);
 
         var sleepSensor = _sleepSensor ?? (_config.SleepSensor != null ? BinarySensor.Create(_testCtx.HaContext, _config.SleepSensor) : null);
 
         var sunProtector = _config.SunProtection.ToEntities(sun, _config.Orientation);
-        var stormProtector = _config.StormProtection.ToEntities(windSpeedSensor, rainRateSensor, forecastRainSensor);
+        var stormProtector = _config.StormProtection.ToEntities(windSpeedSensor, rainRateSensor, forecastRainSensor, hourlyWeather);
         var temperatureProtector = _config.TemperatureProtection.ToEntities(solarLuxSensor, indoorTemperatureSensor, weather);
         var manIsAngryProtector = _config.MinimumIntervalSinceLastAutomatedAction != null ? new ManIsAngryProtector(_config.MinimumIntervalSinceLastAutomatedAction) : new ManIsAngryProtector(TimeSpan.FromMinutes(15));
         var womanIsAngryProtector = _config.MinimumIntervalSinceLastManualAction != null ? new WomanIsAngryProtector(_config.MinimumIntervalSinceLastManualAction) : new WomanIsAngryProtector(TimeSpan.FromHours(1));

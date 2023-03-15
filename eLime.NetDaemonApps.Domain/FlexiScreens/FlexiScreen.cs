@@ -72,7 +72,11 @@ public class FlexiScreen : IDisposable
         ChildrenAreAngryProtector = childrenAreAngryProtector;
 
         if (ChildrenAreAngryProtector != null)
+        {
+            ChildrenAreAngryProtector.NightStarted += ChildrenAreAngryProtector_NightStarted;
+            ChildrenAreAngryProtector.NightEnded += ChildrenAreAngryProtector_NightEnded;
             ChildrenAreAngryProtector.DesiredStateChanged += Protector_DesiredStateChanged;
+        }
 
         EnsureEnabledSwitchExists().RunSync();
         RetrieveSateFromHomeAssistant().RunSync();
@@ -83,6 +87,15 @@ public class FlexiScreen : IDisposable
         _logger.LogInformation($"{{Screen}}: Desired state for ChildrenAreAngryProtector is: {ChildrenAreAngryProtector?.DesiredState.State} (enforce: {ChildrenAreAngryProtector?.DesiredState.Enforce}).", Name);
 
         GuardScreen().RunSync();
+    }
+
+    private void ChildrenAreAngryProtector_NightStarted(object? sender, EventArgs e)
+    {
+        StormProtector?.CheckForStormyNight();
+    }
+    private void ChildrenAreAngryProtector_NightEnded(object? sender, EventArgs e)
+    {
+        StormProtector?.EndNight();
     }
 
     private async void Protector_DesiredStateChanged(object? sender, DesiredStateEventArgs e)
@@ -271,7 +284,11 @@ public class FlexiScreen : IDisposable
             TemperatureProtector.DesiredStateChanged -= Protector_DesiredStateChanged;
 
         if (ChildrenAreAngryProtector != null)
+        {
+            ChildrenAreAngryProtector.NightStarted -= ChildrenAreAngryProtector_NightStarted;
+            ChildrenAreAngryProtector.NightEnded -= ChildrenAreAngryProtector_NightEnded;
             ChildrenAreAngryProtector.DesiredStateChanged -= Protector_DesiredStateChanged;
+        }
 
         SunProtector.Dispose();
         StormProtector?.Dispose();

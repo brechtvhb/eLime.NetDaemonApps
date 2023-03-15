@@ -11,4 +11,9 @@ public class StormProtectionConfig
     public string? ShortTermRainForecastEntity { get; set; }
     public double? ShortTermRainStormStartThreshold { get; set; }
     public double? ShortTermRainStormEndThreshold { get; set; }
+
+    public string? HourlyWeatherEntity { get; set; }
+    public int? NightlyPredictionHours { get; set; }
+    public double? NightlyWindSpeedThreshold { get; set; }
+    public double? NightlyRainThreshold { get; set; }
 }

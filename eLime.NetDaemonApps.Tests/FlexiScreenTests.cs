@@ -34,8 +34,11 @@ public class FlexiScreenTests
     private NumericSensor _indoorTemperatureSensor;
 
     private Weather _weather;
+    private Weather _hourlyWeather;
     private WeatherAttributes _averageForeast;
     private WeatherAttributes _hotForecast;
+    private WeatherAttributes _rainyForecast;
+    private WeatherAttributes _windyForecast;
 
     private BinarySensor _sleepSensor;
 
@@ -70,13 +73,14 @@ public class FlexiScreenTests
         _testCtx.TriggerStateChange(_indoorTemperatureSensor, new EntityState { State = "21" });
 
         _weather = new Weather(_testCtx.HaContext, "weather.home");
+        _hourlyWeather = new Weather(_testCtx.HaContext, "weather.home_hourly");
         _averageForeast = new WeatherAttributes()
         {
             Forecast = new[]
             {
-                new Forecast {Condition = "Sunny", Temperature = 25},
-                new Forecast {Condition = "Rainy", Temperature = 23},
-                new Forecast {Condition = "Cloudy", Temperature = 24}
+                new Forecast {Condition = "Sunny", Temperature = 25, Precipitation = 0, WindSpeed = 0},
+                new Forecast {Condition = "Rainy", Temperature = 23, Precipitation = 0, WindSpeed = 0},
+                new Forecast {Condition = "Cloudy", Temperature = 24, Precipitation = 0, WindSpeed = 0}
             }
         };
 
@@ -90,7 +94,31 @@ public class FlexiScreenTests
             }
         };
 
+
+        _rainyForecast = new WeatherAttributes()
+        {
+            Forecast = new[]
+            {
+                new Forecast {Condition = "Rainy", Precipitation = 0.5},
+                new Forecast {Condition = "Rainy", Precipitation = 0.5},
+                new Forecast {Condition = "Rainy", Precipitation = 0.5}
+            }
+        };
+
+
+        _windyForecast = new WeatherAttributes()
+        {
+            Forecast = new[]
+        {
+                new Forecast {Condition = "Windy", WindSpeed = 35},
+                new Forecast {Condition = "Windy", WindSpeed = 80},
+                new Forecast {Condition = "Windy", WindSpeed = 60}
+            }
+        };
+
+
         _testCtx.TriggerStateChangeWithAttributes(_weather, "Cloudy", _averageForeast);
+        _testCtx.TriggerStateChangeWithAttributes(_hourlyWeather, "Cloudy", _averageForeast);
 
 
         _sleepSensor = BinarySensor.Create(_testCtx.HaContext, "binary_sensor.kids_sleeping");
@@ -502,6 +530,49 @@ public class FlexiScreenTests
 
         //Assert
         _testCtx.VerifyScreenGoesDown(_cover, Moq.Times.Once);
+    }
+
+    [TestMethod]
+    public void StormyNight_Opens_Screen()
+    {
+        // Arrange
+        _testCtx.TriggerStateChange(_cover, "closed");
+        _testCtx.TriggerStateChangeWithAttributes(_hourlyWeather, "windy", _windyForecast);
+
+        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
+            .WithCover(_cover)
+            .WithHourlyWeatherForecast(_hourlyWeather, 3, 40, 1)
+            .WithSleepSensor(_sleepSensor)
+            .Build();
+
+        //Act
+        _testCtx.TriggerStateChange(_sleepSensor, new EntityState { State = "on" });
+
+        //Assert
+        Assert.AreEqual((ScreenState.Up, true), screen.StormProtector.DesiredState);
+        _testCtx.VerifyScreenGoesUp(_cover, Moq.Times.Once);
+    }
+
+
+    [TestMethod]
+    public void KidsSleeping_WithStormyNight_KeepsScreenOpen()
+    {
+        // Arrange
+        _testCtx.TriggerStateChange(_cover, "open");
+        _testCtx.TriggerStateChangeWithAttributes(_hourlyWeather, "rainy", _rainyForecast);
+
+        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
+            .WithCover(_cover)
+            .WithDesiredActionOnBelowElevation(ScreenAction.None)
+            .WithHourlyWeatherForecast(_hourlyWeather, 3, 40, 1)
+            .WithSleepSensor(_sleepSensor)
+            .Build();
+
+        //Act
+        _testCtx.TriggerStateChange(_sleepSensor, new EntityState { State = "on" });
+
+        //Assert
+        _testCtx.VerifyScreenGoesDown(_cover, Moq.Times.Never);
     }
 
     [TestMethod]
