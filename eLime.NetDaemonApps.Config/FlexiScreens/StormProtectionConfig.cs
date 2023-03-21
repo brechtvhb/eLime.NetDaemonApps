@@ -16,4 +16,5 @@ public class StormProtectionConfig
     public int? NightlyPredictionHours { get; set; }
     public double? NightlyWindSpeedThreshold { get; set; }
     public double? NightlyRainThreshold { get; set; }
+    public double? NightlyRainRateThreshold { get; set; }
 }

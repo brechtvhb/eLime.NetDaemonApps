@@ -66,7 +66,7 @@ public static class ConfigExtensions
 
         var stormProtector = new StormProtector(windSpeedSensor, config.WindSpeedStormStartThreshold, config.WindSpeedStormEndThreshold, rainRateSensor,
         config.RainRateStormStartThreshold, config.RainRateStormEndThreshold, shortTermRainForecastSensor,
-        config.ShortTermRainStormStartThreshold, config.ShortTermRainStormEndThreshold, hourlyWeather, config.NightlyPredictionHours, config.NightlyWindSpeedThreshold, config.NightlyRainThreshold);
+        config.ShortTermRainStormStartThreshold, config.ShortTermRainStormEndThreshold, hourlyWeather, config.NightlyPredictionHours, config.NightlyWindSpeedThreshold, config.NightlyRainThreshold, config.NightlyRainRateThreshold);
         return stormProtector;
     }
 

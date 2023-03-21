@@ -23,15 +23,17 @@ public class StormProtector : IDisposable
     private int? NightlyPredictionHours { get; }
     private double? NightlyWindSpeedThreshold { get; }
     private double? NightlyRainThreshold { get; }
+    private double? NightlyRainRateThreshold { get; }
 
     public (ScreenState? State, Boolean Enforce) DesiredState { get; private set; }
     private bool StormModeActive { get; set; }
+    private bool Night { get; set; }
     private bool StormyNight { get; set; }
 
     public StormProtector(NumericThresholdSensor? windSpeedSensor, double? windSpeedStormStartThreshold, double? windSpeedStormEndThreshold,
         NumericThresholdSensor? rainRateSensor, double? rainRateStormStartThreshold, double? rainRateStormEndThreshold,
         NumericThresholdSensor? shortTermRainForecastSensor, double? shortTermRainForecastSensorStormStartThreshold, double? shortTermRainForecastSensorStormEndThreshold,
-        Weather? hourlyWeather, int? nightlyPredictionHours, double? nightlyWindSpeedThreshold, double? nightlyRainThreshold)
+        Weather? hourlyWeather, int? nightlyPredictionHours, double? nightlyWindSpeedThreshold, double? nightlyRainThreshold, double? nightlyRainRateThreshold)
     {
         WindSpeedSensor = windSpeedSensor;
         if (WindSpeedSensor != null)
@@ -66,6 +68,7 @@ public class StormProtector : IDisposable
             NightlyPredictionHours = nightlyPredictionHours ?? 12;
             NightlyWindSpeedThreshold = nightlyWindSpeedThreshold;
             NightlyRainThreshold = nightlyRainThreshold;
+            NightlyRainRateThreshold = nightlyRainRateThreshold;
         }
 
         CheckDesiredState();
@@ -98,22 +101,29 @@ public class StormProtector : IDisposable
     {
         if (HourlyWeather == null) return;
 
+        Night = true;
+
         double? maxWindSpeed = null;
-        double? precipitation = null;
+        double? totalPrecipitation = null;
+        double? maxPrecipitationRate = null;
 
         if (HourlyWeather?.Attributes?.Forecast != null && NightlyPredictionHours != null)
-            maxWindSpeed = HourlyWeather.Attributes.Forecast.Take(NightlyPredictionHours.Value).Average(x => x.WindSpeed);
+            maxWindSpeed = HourlyWeather.Attributes.Forecast.Take(NightlyPredictionHours.Value).Max(x => x.WindSpeed);
 
         if (HourlyWeather?.Attributes?.Forecast != null && NightlyPredictionHours != null)
-            precipitation = HourlyWeather.Attributes.Forecast.Take(NightlyPredictionHours.Value).Sum(x => x.Precipitation);
+            totalPrecipitation = HourlyWeather.Attributes.Forecast.Take(NightlyPredictionHours.Value).Sum(x => x.Precipitation);
 
-        StormyNight = maxWindSpeed >= NightlyWindSpeedThreshold || precipitation >= NightlyRainThreshold;
+        if (HourlyWeather?.Attributes?.Forecast != null && NightlyPredictionHours != null)
+            maxPrecipitationRate = HourlyWeather.Attributes.Forecast.Take(NightlyPredictionHours.Value).Max(x => x.Precipitation);
+
+        StormyNight = maxWindSpeed >= NightlyWindSpeedThreshold || totalPrecipitation >= NightlyRainThreshold || maxPrecipitationRate >= NightlyRainRateThreshold;
 
         CheckDesiredState();
     }
 
     public void EndNight()
     {
+        Night = false;
         StormyNight = false;
 
         CheckDesiredState();
@@ -149,6 +159,10 @@ public class StormProtector : IDisposable
         if (windSpeedIsAboveStormThreshold == true || rainRateIsAboveStormThreshold == true || shortTermRainForecastIsAboveStormThreshold == true)
         {
             StormModeActive = true;
+
+            if (Night)
+                StormyNight = true;
+
             return (ScreenState.Up, true);
         }
 

@@ -25,6 +25,7 @@
         nightlyPredictionHours: 12
         nightlyWindSpeedThreshold: 40
         nightlyRainThreshold: 1
+        nightlyRainRateThreshold: 0.5
       # temperatureProtection:
       #   solarLuxSensor: "sensor.gw2000a_v2_2_0_solar_lux"
       #   solarLuxAboveThreshold: 10000
