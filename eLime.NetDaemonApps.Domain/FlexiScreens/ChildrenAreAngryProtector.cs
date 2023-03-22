@@ -20,17 +20,17 @@ public class ChildrenAreAngryProtector : IDisposable
 
     private void CheckDesiredState(Object? o, BinarySensorEventArgs sender)
     {
-        if (sender.New.IsOn())
-            OnNightStarted(EventArgs.Empty);
-
-        if (sender.New.IsOff())
-            OnNightEnded(EventArgs.Empty);
-
         CheckDesiredState();
     }
 
     private void CheckDesiredState()
     {
+        if (ForceDownSensor.IsOn())
+            OnNightStarted(EventArgs.Empty);
+
+        if (ForceDownSensor.IsOff())
+            OnNightEnded(EventArgs.Empty);
+
         var desiredState = GetDesiredState();
 
         if (DesiredState == desiredState)
