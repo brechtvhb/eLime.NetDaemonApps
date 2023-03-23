@@ -1,0 +1,57 @@
+﻿eLime.NetDaemonApps.Config.SmartIrrigationConfig:
+  netDaemonUserId: "17e75fc5e676439783970c2536a6c3d9"
+  pumpEntity: switch.socket_shed_pump
+  pumpFlowRate: 2000 #liters per hour
+  availableRainWaterEntity: sensor.rainwater_total
+  minimumAvailableRainWater: 2000
+  zones:
+    - name: pond
+      mode: Sunpower #Automatic, Manual, EnergyManaged (no yaml setting, autogenerate)
+      flowRate: 2000 #liters per hour
+      valveEntity: switch.valve_pond_refill_state
+      container:
+        volumeEntity: sensor.shelly_uni_pond_liters
+        targetVolume: #liters
+        criticalVolume: #liters
+        lowVolume: #liters
+        overflowEntity: binary_sensor.shelly_uni_pond_channel_1_input
+    - name: greenhouse
+      mode: EnergyManaged #  (no yaml setting, autogenerate)
+      flowRate: 200 #liters per hour
+      valveEntity: switch.water_moestuin_2
+      irrigation:
+        soilMoistureEntity: sensor.soil_sensor_witch_hazel_humidity
+        targetSoilMoisture: 43 #percentage
+        lowSoilMoisture: 37
+        criticalSoilMoisture: 33
+    - name: grass
+      mode: Automatic #  (no yaml setting, autogenerate)
+      flowRate: 2000 #liters per hour
+      valveEntity: switch.sprinklers_gras
+      irrigation:
+        soilMoistureEntity: sensor.soil_sensor_grass_humidity
+        targetSoilMoisture: 43 #percentage
+        lowSoilMoisture: 37
+        criticalSoilMoisture: 33
+        irrigationStartWindow: "05:00"
+        irrigationEndWindow: "07:00"
+    - name: fruit blossoms
+      mode: Automatic #  (no yaml setting, autogenerate)
+      flowRate: 20 #liters per hour
+      valveEntity: switch.water_moestuin_3
+      antiFrostMisting:
+         temperatureEntity: sensor.gw2000a_v2_2_0_outdoor_temperature
+         criticalTemperature: 0
+         lowTemperature: 1
+         mistingDuration: "00:15"
+         mistingTimeout: "00:15"
+
+# exposes:
+ #- needsWaering (bool)
+ #- needsCriticalWatering (bool)
+ #- sunPowerAvailable (switch)
+ #- zones:
+ #  - lastWatering (bool)
+ #  - currentlyWattering (bool)
+ #  - requiresWattering (Text: Yes/No/Critical)
+ #  - mode: Automatic, Manual, EnergyManaged (dropdown)
