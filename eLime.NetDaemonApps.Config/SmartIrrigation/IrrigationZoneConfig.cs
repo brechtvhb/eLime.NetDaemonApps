@@ -7,8 +7,8 @@ public class IrrigationZoneConfig
     public int FlowRate { get; set; }
     public string ValveEntity { get; set; }
 
-    public ContainerIrrigationConfig Container { get; set; }
-    public ClassicIrrigationConfig Irrigation { get; set; }
-    public AntiFrostMistingIrrigationConfig AntiFrostMisting { get; set; }
+    public ContainerIrrigationConfig? Container { get; set; }
+    public ClassicIrrigationConfig? Irrigation { get; set; }
+    public AntiFrostMistingIrrigationConfig? AntiFrostMisting { get; set; }
 
 }

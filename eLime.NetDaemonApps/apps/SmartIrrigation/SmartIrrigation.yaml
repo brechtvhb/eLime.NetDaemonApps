@@ -24,6 +24,7 @@
         targetSoilMoisture: 43 #percentage
         lowSoilMoisture: 37
         criticalSoilMoisture: 33
+        maxDuration: "01:00"
     - name: grass
       mode: Automatic #  (no yaml setting, autogenerate)
       flowRate: 2000 #liters per hour
@@ -35,6 +36,7 @@
         criticalSoilMoisture: 33
         irrigationStartWindow: "05:00"
         irrigationEndWindow: "07:00"
+        maxDuration: "01:00"
     - name: fruit blossoms
       mode: Automatic #  (no yaml setting, autogenerate)
       flowRate: 20 #liters per hour
@@ -43,8 +45,8 @@
          temperatureEntity: sensor.gw2000a_v2_2_0_outdoor_temperature
          criticalTemperature: 0
          lowTemperature: 1
-         mistingDuration: "00:15"
-         mistingTimeout: "00:15"
+         mistingDuration: "00:05"
+         mistingTimeout: "00:10"
 
 # exposes:
  #- needsWaering (bool)
