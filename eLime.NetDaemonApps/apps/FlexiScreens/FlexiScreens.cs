@@ -11,7 +11,6 @@ using System.Threading.Tasks;
 
 namespace eLime.NetDaemonApps.apps.FlexiScreens;
 
-[Focus]
 [NetDaemonApp(Id = "flexiscreens")]
 public class FlexiScreens : IAsyncInitializable, IAsyncDisposable
 {

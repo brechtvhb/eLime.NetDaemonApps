@@ -6,7 +6,7 @@
   minimumAvailableRainWater: 2000
   zones:
     - name: pond
-      mode: Sunpower #Automatic, Manual, EnergyManaged (no yaml setting, autogenerate)
+      mode: EnergyManaged #Automatic, Manual, EnergyManaged (no yaml setting, autogenerate)
       flowRate: 2000 #liters per hour
       valveEntity: switch.valve_pond_refill_state
       container:
@@ -56,4 +56,4 @@
  #  - lastWatering (bool)
  #  - currentlyWattering (bool)
  #  - requiresWattering (Text: Yes/No/Critical)
- #  - mode: Automatic, Manual, EnergyManaged (dropdown)
+ #  - mode: Off, Automatic, EnergyManaged (dropdown)

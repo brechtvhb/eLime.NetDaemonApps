@@ -7,6 +7,7 @@ public class ClassicIrrigationConfig
     public int LowSoilMoisture { get; set; }
     public int TargetSoilMoisture { get; set; }
     public TimeSpan? MaxDuration { get; set; }
+    public TimeSpan? MinimumTimeout { get; set; }
     public TimeOnly? IrrigationStartWindow { get; set; }
     public TimeOnly? IrrigationEndWindow { get; set; }
 }

@@ -6,5 +6,5 @@ public class AntiFrostMistingIrrigationConfig
     public int CriticalTemperature { get; set; }
     public int LowTemperature { get; set; }
     public TimeSpan MistingDuration { get; set; }
-    public TimeOnly MistingTimeout { get; set; }
+    public TimeSpan MistingTimeout { get; set; }
 }
