@@ -51,8 +51,11 @@ public class ClassicIrrigationZone : IrrigationZone
                 : NeedsWatering.No;
     }
 
-    public override bool CanStartWatering(DateTimeOffset now)
+    public override bool CanStartWatering(DateTimeOffset now, bool energyAvailable)
     {
+        if (Mode == ZoneMode.EnergyManaged && !energyAvailable)
+            return false;
+
         if (State is NeedsWatering.Ongoing or NeedsWatering.No)
             return false;
 
@@ -84,7 +87,7 @@ public class ClassicIrrigationZone : IrrigationZone
 
     }
 
-    private bool CheckIfWithinWindow(DateTimeOffset now)
+    public bool CheckIfWithinWindow(DateTimeOffset now)
     {
         if (IrrigationStartWindow == null && IrrigationEndWindow == null)
             return true;
@@ -120,6 +123,20 @@ public class ClassicIrrigationZone : IrrigationZone
         }
 
         return true;
+    }
+
+    public override bool CheckForForceStop(DateTimeOffset now)
+    {
+        if (MaxDuration != null && WateringStartedAt?.Add(MaxDuration.Value) < now)
+            return true;
+
+        if (!CheckIfWithinWindow(now))
+            return true;
+
+        if (State == NeedsWatering.No & Valve.IsOn())
+            return true;
+
+        return false;
     }
 
     public new void Dispose()

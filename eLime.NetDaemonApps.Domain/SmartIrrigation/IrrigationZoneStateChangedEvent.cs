@@ -13,12 +13,13 @@ public class IrrigationZoneStateChangedEvent : EventArgs
 
 }
 
-public class IrrigationZoneEndWateringEvent : IrrigationZoneStateChangedEvent
+public class IrrigationZoneWateringNeededEvent : IrrigationZoneStateChangedEvent
 {
-    public IrrigationZoneEndWateringEvent(IrrigationZone zone, NeedsWatering state) : base(zone, state)
+    public IrrigationZoneWateringNeededEvent(IrrigationZone zone, NeedsWatering state) : base(zone, state)
     {
     }
 }
+
 public class IrrigationZoneWateringStartedEvent : IrrigationZoneStateChangedEvent
 {
     public IrrigationZoneWateringStartedEvent(IrrigationZone zone, NeedsWatering state) : base(zone, state)
@@ -26,9 +27,16 @@ public class IrrigationZoneWateringStartedEvent : IrrigationZoneStateChangedEven
     }
 }
 
-public class IrrigationZoneWateringNeededEvent : IrrigationZoneStateChangedEvent
+public class IrrigationZoneEndWateringEvent : IrrigationZoneStateChangedEvent
 {
-    public IrrigationZoneWateringNeededEvent(IrrigationZone zone, NeedsWatering state) : base(zone, state)
+    public IrrigationZoneEndWateringEvent(IrrigationZone zone, NeedsWatering state) : base(zone, state)
+    {
+    }
+}
+
+public class IrrigationZoneWateringEndedEvent : IrrigationZoneStateChangedEvent
+{
+    public IrrigationZoneWateringEndedEvent(IrrigationZone zone, NeedsWatering state) : base(zone, state)
     {
     }
 }

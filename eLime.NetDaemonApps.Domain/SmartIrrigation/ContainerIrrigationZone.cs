@@ -55,12 +55,26 @@ public class ContainerIrrigationZone : IrrigationZone
                 : NeedsWatering.No;
     }
 
-    public override bool CanStartWatering(DateTimeOffset now)
+    public override bool CanStartWatering(DateTimeOffset now, bool energyAvailable)
     {
+        if (Mode == ZoneMode.EnergyManaged && !energyAvailable)
+            return false;
+
         if (State is NeedsWatering.Ongoing or NeedsWatering.No)
             return false;
 
         return OverflowSensor.IsOff();
+    }
+
+    public override bool CheckForForceStop(DateTimeOffset now)
+    {
+        if (OverflowSensor.IsOn())
+            return true;
+
+        if (State == NeedsWatering.No & Valve.IsOn())
+            return true;
+
+        return false;
     }
 
     public new void Dispose()

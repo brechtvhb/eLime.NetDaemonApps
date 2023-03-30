@@ -47,13 +47,3 @@
          lowTemperature: 1
          mistingDuration: "00:05"
          mistingTimeout: "00:10"
-
-# exposes:
- #- needsWaering (bool)
- #- needsCriticalWatering (bool)
- #- sunPowerAvailable (switch)
- #- zones:
- #  - lastWatering (bool)
- #  - currentlyWattering (bool)
- #  - requiresWattering (Text: Yes/No/Critical)
- #  - mode: Off, Automatic, EnergyManaged (dropdown)

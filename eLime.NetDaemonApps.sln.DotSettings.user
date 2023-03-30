@@ -2,5 +2,8 @@
 	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=a018bfde_002D1fd7_002D47c1_002D938e_002Dacfeaaab4d1b/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="Motion_RunsAllActions" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;&#xD;
   &lt;TestAncestor&gt;&#xD;
     &lt;TestId&gt;MSTest::70ADEA2F-1101-4094-8D55-19F4572FDA64::net7.0::eLime.NetDaemonApps.Tests.SmartWasherTests.Resets_After_5_Minutes&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;MSTest::70ADEA2F-1101-4094-8D55-19F4572FDA64::net7.0::eLime.NetDaemonApps.Tests.SmartWateringTests.Init_HappyFlow&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;MSTest::70ADEA2F-1101-4094-8D55-19F4572FDA64::net7.0::eLime.NetDaemonApps.Tests.SmartWateringTests.Below_Low_Volume_Triggers_Valve&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;MSTest::70ADEA2F-1101-4094-8D55-19F4572FDA64::net7.0::eLime.NetDaemonApps.Tests.SmartWateringTests.Valve_Turning_on_Triggers_StateChange&lt;/TestId&gt;&#xD;
   &lt;/TestAncestor&gt;&#xD;
 &lt;/SessionState&gt;</s:String></wpf:ResourceDictionary>
