@@ -37,7 +37,7 @@ public class SmartIrrigation : IDisposable
     private IDisposable? EnergyAvailableStateCHangedCommandHandler { get; set; }
     private IDisposable? GuardTask { get; set; }
 
-    public SmartIrrigation(IHaContext haContext, ILogger logger, IScheduler scheduler, IMqttEntityManager mqttEntityManager, BinarySwitch pumpSocket, Int32 pumpFlowRate, NumericSensor availableRainWaterSensor, Int32 minimumAvailableRainWater, List<IrrigationZone> zones)
+    public SmartIrrigation(IHaContext haContext, ILogger logger, IScheduler scheduler, IMqttEntityManager mqttEntityManager, BinarySwitch pumpSocket, Int32 pumpFlowRate, NumericSensor availableRainWaterSensor, Int32 minimumAvailableRainWater, List<IrrigationZone> zones, TimeSpan debounceDuration)
     {
         _haContext = haContext;
         _logger = logger;
@@ -50,6 +50,7 @@ public class SmartIrrigation : IDisposable
         MinimumAvailableRainWater = minimumAvailableRainWater;
         Zones = zones.Select(x => new ZoneWrapper { Zone = x }).ToList();
 
+        InitializeStateSensor().RunSync();
         InitializeSolarEnergyAvailableSwitch().RunSync();
 
         foreach (var wrapper in Zones)
@@ -59,10 +60,13 @@ public class SmartIrrigation : IDisposable
             wrapper.Zone.StateChanged += Zone_StateChanged;
         }
 
+        StartWateringDebounceDispatcher = new(debounceDuration);
+        StopWateringDebounceDispatcher = new(debounceDuration);
+
         GuardTask = _scheduler.RunEvery(TimeSpan.FromMinutes(5), _scheduler.Now, () =>
         {
-            StartWateringZonesIfNeeded();
-            StopWateringZonesIfNeeded();
+            DebounceStartWatering();
+            DebounceStopWatering();
         });
     }
 
@@ -79,7 +83,7 @@ public class SmartIrrigation : IDisposable
         switch (e)
         {
             case IrrigationZoneWateringNeededEvent:
-                StartWateringZonesIfNeeded();
+                DebounceStartWatering();
                 break;
             case IrrigationZoneWateringStartedEvent:
                 e.Zone.SetStartWateringDate(_scheduler.Now);
@@ -103,7 +107,7 @@ public class SmartIrrigation : IDisposable
                 e.Zone.Valve.TurnOff();
                 zoneWrapper.EndWateringtimer?.Dispose();
 
-                StartWateringZonesIfNeeded();
+                DebounceStartWatering();
                 break;
             case IrrigationZoneWateringEndedEvent:
                 e.Zone.SetLastWateringDate(_scheduler.Now);
@@ -111,6 +115,12 @@ public class SmartIrrigation : IDisposable
         }
 
         UpdateStateInHomeAssistant().RunSync();
+    }
+
+    private readonly DebounceDispatcher StartWateringDebounceDispatcher;
+    private void DebounceStartWatering()
+    {
+        StartWateringDebounceDispatcher.Debounce(StartWateringZonesIfNeeded);
     }
 
     private void StartWateringZonesIfNeeded()
@@ -137,6 +147,12 @@ public class SmartIrrigation : IDisposable
             if (started)
                 remainingFlowRate -= zone.Zone.FlowRate;
         }
+    }
+
+    private readonly DebounceDispatcher StopWateringDebounceDispatcher;
+    private void DebounceStopWatering()
+    {
+        StopWateringDebounceDispatcher.Debounce(StopWateringZonesIfNeeded);
     }
 
     private void StopWateringZonesIfNeeded()
@@ -221,9 +237,9 @@ public class SmartIrrigation : IDisposable
             EnergyAvailable = state == "ON";
 
             if (EnergyAvailable)
-                StartWateringZonesIfNeeded();
+                DebounceStartWatering();
             else
-                StopWateringZonesIfNeeded();
+                DebounceStopWatering();
         };
     }
     private async Task InitializeStateSensor()

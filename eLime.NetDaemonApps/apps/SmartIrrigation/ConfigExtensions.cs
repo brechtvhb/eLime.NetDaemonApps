@@ -34,7 +34,7 @@ public static class ConfigExtensions
         }
 
 
-        var entity = new Domain.SmartIrrigation.SmartIrrigation(ha, logger, scheduler, mqttEntityManager, pumpSocket, pumpFlowRate, availableRainWaterSensor, minimumAvailableWater, zones);
+        var entity = new Domain.SmartIrrigation.SmartIrrigation(ha, logger, scheduler, mqttEntityManager, pumpSocket, pumpFlowRate, availableRainWaterSensor, minimumAvailableWater, zones, TimeSpan.FromSeconds(5));
         return entity;
     }
 
