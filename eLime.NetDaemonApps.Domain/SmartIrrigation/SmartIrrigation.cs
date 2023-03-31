@@ -167,7 +167,7 @@ public class SmartIrrigation : IDisposable
             return;
         }
 
-        var zonesThatShouldForceStopped = Zones.Where(x => x.Zone.CheckForForceStop(_scheduler.Now));
+        var zonesThatShouldForceStopped = Zones.Where(x => x.Zone.CheckForForceStop(_scheduler.Now) && x.Zone.CurrentlyWatering);
         foreach (var wrapper in zonesThatShouldForceStopped)
             wrapper.Zone.Valve.TurnOff();
 

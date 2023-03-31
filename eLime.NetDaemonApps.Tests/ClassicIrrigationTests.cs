@@ -141,7 +141,7 @@ public class ClassicIrrigationTests
         await DeDebounce();
 
         //Assert
-        _testCtx.VerifySwitchTurnOff(new BinarySwitch(_testCtx.HaContext, "switch.front_yard_valve"), Moq.Times.AtLeastOnce); //Guard can also turn zone off if above max duration
+        _testCtx.VerifySwitchTurnOff(new BinarySwitch(_testCtx.HaContext, "switch.front_yard_valve"), Moq.Times.Once);
     }
 
     [TestMethod]
@@ -256,4 +256,97 @@ public class ClassicIrrigationTests
         Assert.AreEqual(NeedsWatering.Yes, irrigation.Zones.First().Zone.State);
         _testCtx.VerifySwitchTurnOn(new BinarySwitch(_testCtx.HaContext, "switch.front_yard_valve"), Moq.Times.Never);
     }
+
+    [TestMethod]
+    public async Task Past_TimeWindow_Triggers_Valve_Off()
+    {
+        // Arrange
+        var zone1 = new ClassicIrrigationZoneBuilder(_testCtx)
+            .WithTimeWindow(new TimeOnly(10, 00), new TimeOnly(12, 00))
+            .Build();
+
+        var irrigation = new SmartIrrigationBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+            .With(_pumpSocket, 2000)
+            .With(_availableRainWaterSensor, 1000)
+            .AddZone(zone1)
+            .Build();
+
+        zone1.SetMode(ZoneMode.Automatic);
+
+        var elevenOClock = DateTime.Now.Date.AddDays(1).AddHours(11);
+        _testCtx.SetCurrentTime(elevenOClock);
+        _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.front_yard_soil_moisture"), "32");
+        _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("switch.front_yard_valve"), "on");
+        await DeDebounce();
+
+        //Act
+        _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(61));
+        await DeDebounce();
+
+        //Assert
+        Assert.AreEqual(NeedsWatering.Ongoing, irrigation.Zones.First().Zone.State);
+        _testCtx.VerifySwitchTurnOff(new BinarySwitch(_testCtx.HaContext, "switch.front_yard_valve"), Moq.Times.Once);
+    }
+
+    [TestMethod]
+    public async Task Within_TimeWindow_Over_2_Days_Triggers_Valve_On()
+    {
+        // Arrange
+        var zone1 = new ClassicIrrigationZoneBuilder(_testCtx)
+            .WithTimeWindow(new TimeOnly(22, 00), new TimeOnly(01, 00))
+            .Build();
+
+        var irrigation = new SmartIrrigationBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+            .With(_pumpSocket, 2000)
+            .With(_availableRainWaterSensor, 1000)
+            .AddZone(zone1)
+            .Build();
+
+        zone1.SetMode(ZoneMode.Automatic);
+
+        var elevenOClock = DateTime.Now.Date.AddDays(1).AddHours(23);
+        _testCtx.SetCurrentTime(elevenOClock);
+
+        //Act
+        _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.front_yard_soil_moisture"), "32");
+        await DeDebounce();
+
+        //Assert
+        Assert.AreEqual(NeedsWatering.Yes, irrigation.Zones.First().Zone.State);
+        _testCtx.VerifySwitchTurnOn(new BinarySwitch(_testCtx.HaContext, "switch.front_yard_valve"), Moq.Times.Once);
+    }
+
+    [TestMethod]
+    public async Task Past_TimeWindow__Over_2_Days_Triggers_Valve_Off()
+    {
+        // Arrange
+        var zone1 = new ClassicIrrigationZoneBuilder(_testCtx)
+            .WithTimeWindow(new TimeOnly(22, 00), new TimeOnly(01, 00))
+            .Build();
+
+        var irrigation = new SmartIrrigationBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+            .With(_pumpSocket, 2000)
+            .With(_availableRainWaterSensor, 1000)
+            .AddZone(zone1)
+            .Build();
+
+        zone1.SetMode(ZoneMode.Automatic);
+
+        var elevenOClock = DateTime.Now.Date.AddDays(1).AddHours(23);
+        _testCtx.SetCurrentTime(elevenOClock);
+        _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.front_yard_soil_moisture"), "32");
+        _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("switch.front_yard_valve"), "on");
+        await DeDebounce();
+
+        //Act
+        _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(121));
+        await DeDebounce();
+
+        //Assert
+        Assert.AreEqual(NeedsWatering.Ongoing, irrigation.Zones.First().Zone.State);
+        _testCtx.VerifySwitchTurnOff(new BinarySwitch(_testCtx.HaContext, "switch.front_yard_valve"), Moq.Times.Once);
+    }
+
+
+    //TODO: test with mix of maxduration and timewindow
 }

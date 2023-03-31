@@ -23,5 +23,8 @@
     &lt;TestId&gt;MSTest::70ADEA2F-1101-4094-8D55-19F4572FDA64::net7.0::eLime.NetDaemonApps.Tests.ClassicIrrigationTests.Can_Turn_On_Again_After_Timeout&lt;/TestId&gt;&#xD;
     &lt;TestId&gt;MSTest::70ADEA2F-1101-4094-8D55-19F4572FDA64::net7.0::eLime.NetDaemonApps.Tests.ClassicIrrigationTests.Within_TimeWindow_Triggers_Valve_On&lt;/TestId&gt;&#xD;
     &lt;TestId&gt;MSTest::70ADEA2F-1101-4094-8D55-19F4572FDA64::net7.0::eLime.NetDaemonApps.Tests.ClassicIrrigationTests.Not_Within_TimeWindow_Does_Not_Trigger_Valve_On&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;MSTest::70ADEA2F-1101-4094-8D55-19F4572FDA64::net7.0::eLime.NetDaemonApps.Tests.ClassicIrrigationTests.Past_TimeWindow_Triggers_Valve_Off&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;MSTest::70ADEA2F-1101-4094-8D55-19F4572FDA64::net7.0::eLime.NetDaemonApps.Tests.ClassicIrrigationTests.Within_TimeWindow_Over_2_Days_Triggers_Valve_On&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;MSTest::70ADEA2F-1101-4094-8D55-19F4572FDA64::net7.0::eLime.NetDaemonApps.Tests.ClassicIrrigationTests.Past_TimeWindow__Over_2_Days_Triggers_Valve_Off&lt;/TestId&gt;&#xD;
   &lt;/TestAncestor&gt;&#xD;
 &lt;/SessionState&gt;</s:String></wpf:ResourceDictionary>
