@@ -317,7 +317,7 @@ public class ClassicIrrigationTests
     }
 
     [TestMethod]
-    public async Task Past_TimeWindow__Over_2_Days_Triggers_Valve_Off()
+    public async Task Past_TimeWindow_Over_2_Days_Triggers_Valve_Off()
     {
         // Arrange
         var zone1 = new ClassicIrrigationZoneBuilder(_testCtx)
