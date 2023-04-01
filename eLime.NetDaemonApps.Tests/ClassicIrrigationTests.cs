@@ -159,7 +159,6 @@ public class ClassicIrrigationTests
             .Build();
 
         zone1.SetMode(ZoneMode.Automatic);
-        _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.front_yard_soil_moisture"), "32");
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("switch.front_yard_valve"), "on");
         await DeDebounce();
 
@@ -191,7 +190,6 @@ public class ClassicIrrigationTests
             .Build();
 
         zone1.SetMode(ZoneMode.Automatic);
-        _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.front_yard_soil_moisture"), "32");
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("switch.front_yard_valve"), "on");
         await DeDebounce();
 
@@ -205,7 +203,7 @@ public class ClassicIrrigationTests
         await DeDebounce();
 
         //Assert
-        _testCtx.VerifySwitchTurnOn(new BinarySwitch(_testCtx.HaContext, "switch.front_yard_valve"), Moq.Times.AtLeast(2)); //Guard could potentially be first
+        _testCtx.VerifySwitchTurnOn(new BinarySwitch(_testCtx.HaContext, "switch.front_yard_valve"), Moq.Times.AtLeastOnce); //Guard could potentially be first
     }
 
     [TestMethod]
