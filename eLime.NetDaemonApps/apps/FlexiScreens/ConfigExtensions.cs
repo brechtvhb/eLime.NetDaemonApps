@@ -39,7 +39,7 @@ public static class ConfigExtensions
         var childrenAreAngryProtector = config.SleepSensor != null ? new ChildrenAreAngryProtector(BinarySensor.Create(ha, config.SleepSensor)) : null;
 
         var flexiScreen = new FlexiScreen(ha, logger, scheduler, mqttEntityManager, config.Enabled ?? true, name, screen, netDaemonUserId, sunProtector, stormProtector,
-            temperatureProtector, manIsAngryProtector, womanIsAngryProtector, childrenAreAngryProtector);
+            temperatureProtector, manIsAngryProtector, womanIsAngryProtector, childrenAreAngryProtector, TimeSpan.FromSeconds(3));
         return flexiScreen;
     }
 

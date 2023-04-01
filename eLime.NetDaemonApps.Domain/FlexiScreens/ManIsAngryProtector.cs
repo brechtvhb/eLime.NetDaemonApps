@@ -9,11 +9,11 @@ public class ManIsAngryProtector
         MinimumIntervalSinceLastAutomatedAction = minimumIntervalSinceLastAutomatedAction ?? TimeSpan.FromMinutes(15);
     }
 
-    public (ScreenState? State, Boolean Enforce) GetDesiredState(DateTime? lastUpdate)
+    public (ScreenState? State, Boolean Enforce) GetDesiredState(DateTimeOffset now, DateTimeOffset? lastUpdate)
     {
-        lastUpdate ??= DateTime.MinValue;
+        lastUpdate ??= DateTimeOffset.MinValue; ;
 
-        if (lastUpdate.Value.Add(MinimumIntervalSinceLastAutomatedAction) > DateTime.Now)
+        if (lastUpdate.Value.Add(MinimumIntervalSinceLastAutomatedAction) > now)
             return (null, true);
 
         return (null, false);

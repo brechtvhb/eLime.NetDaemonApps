@@ -26,8 +26,8 @@ public class FlexiScreen : IDisposable
     private readonly IScheduler _scheduler;
     private readonly IMqttEntityManager _mqttEntityManager;
 
-    private DateTime? LastAutomatedStateChange { get; set; }
-    private DateTime? LastManualStateChange { get; set; }
+    private DateTimeOffset? LastAutomatedStateChange { get; set; }
+    private DateTimeOffset? LastManualStateChange { get; set; }
 
     private Protectors? LastStateChangeTriggeredBy { get; set; }
 
@@ -39,8 +39,11 @@ public class FlexiScreen : IDisposable
             ? ScreenState.Up
             : null;
 
+    private readonly DebounceDispatcher GuardScreenDebounceDispatcher;
+
     public FlexiScreen(IHaContext haContext, ILogger logger, IScheduler scheduler, IMqttEntityManager mqttEntityManager, Boolean enabled, String name, Cover screen, String ndUserId,
-        SunProtector sunProtector, StormProtector? stormProtector, TemperatureProtector? temperatureProtector, ManIsAngryProtector? manIsAngryProtector, WomanIsAngryProtector? womanIsAngryProtector, ChildrenAreAngryProtector? childrenAreAngryProtector)
+        SunProtector sunProtector, StormProtector? stormProtector, TemperatureProtector? temperatureProtector, ManIsAngryProtector? manIsAngryProtector, WomanIsAngryProtector? womanIsAngryProtector, ChildrenAreAngryProtector? childrenAreAngryProtector,
+        TimeSpan debounceDuration)
     {
         _haContext = haContext;
         _logger = logger;
@@ -86,7 +89,9 @@ public class FlexiScreen : IDisposable
         _logger.LogInformation($"{{Screen}}: Desired state for TemperatureProtector is: {TemperatureProtector?.DesiredState.State} (enforce: {TemperatureProtector?.DesiredState.Enforce}).", Name);
         _logger.LogInformation($"{{Screen}}: Desired state for ChildrenAreAngryProtector is: {ChildrenAreAngryProtector?.DesiredState.State} (enforce: {ChildrenAreAngryProtector?.DesiredState.Enforce}).", Name);
 
-        GuardScreen().RunSync();
+        GuardScreenDebounceDispatcher = new(debounceDuration);
+
+        DebounceGuardScreen().RunSync();
     }
 
     private void ChildrenAreAngryProtector_NightStarted(object? sender, EventArgs e)
@@ -101,7 +106,7 @@ public class FlexiScreen : IDisposable
     private async void Protector_DesiredStateChanged(object? sender, DesiredStateEventArgs e)
     {
         _logger.LogInformation($"{{Screen}}: Desired state for {e.Protector} changed to {e.DesiredState} (enforce: {e.Enforce}).", Name);
-        await GuardScreen();
+        await DebounceGuardScreen();
     }
 
     private async void Screen_StateChanged(object? sender, CoverEventArgs e)
@@ -109,13 +114,18 @@ public class FlexiScreen : IDisposable
         //NetDaemon user ID is no longer passed a long when state transitions from closing to closed or from opening to opened :/
         if (e.New?.Context?.UserId != NetDaemonUserId && e.New?.State is "closing" or "opening")
         {
-            LastManualStateChange = DateTime.Now;
+            LastManualStateChange = _scheduler.Now;
             LastStateChangeTriggeredBy = Protectors.WomanIsAngryProtector;
             _logger.LogInformation($"{{Screen}}: Manual state change detected ({e.New?.State}) UserID was {e.New?.Context?.UserId} (NetDaemonUserID is {NetDaemonUserId}).", Name);
         }
 
         if (e.Sensor.IsOpen() || e.Sensor.IsClosed())
             await UpdateStateInHomeAssistant();
+    }
+
+    internal async Task DebounceGuardScreen()
+    {
+        await GuardScreenDebounceDispatcher.DebounceAsync(GuardScreen);
     }
 
     private async Task GuardScreen()
@@ -127,7 +137,7 @@ public class FlexiScreen : IDisposable
         if (CurrentState == null)
             return;
 
-        var desiredManIsAngryProtectorState = ManIsAngryProtector?.GetDesiredState(LastAutomatedStateChange);
+        var desiredManIsAngryProtectorState = ManIsAngryProtector?.GetDesiredState(_scheduler.Now, LastAutomatedStateChange);
         if (desiredManIsAngryProtectorState is { Enforce: true })
         {
             await ChangeScreenState(desiredManIsAngryProtectorState.Value.State, Protectors.ManIsAngryProtector);
@@ -146,7 +156,7 @@ public class FlexiScreen : IDisposable
             return;
         }
 
-        var desiredWomanIsAngryProtectorState = WomanIsAngryProtector?.GetDesiredState(LastManualStateChange);
+        var desiredWomanIsAngryProtectorState = WomanIsAngryProtector?.GetDesiredState(_scheduler.Now, LastManualStateChange);
         if (desiredWomanIsAngryProtectorState is { Enforce: true })
         {
             await ChangeScreenState(desiredWomanIsAngryProtectorState.Value.State, Protectors.WomanIsAngryProtector);
@@ -185,7 +195,7 @@ public class FlexiScreen : IDisposable
             case ScreenState.Up when Screen.IsClosed():
                 _logger.LogInformation("{Screen}: Changing screen state to {DesiredState}", Name, desiredState);
                 Screen.OpenCover();
-                LastAutomatedStateChange = DateTime.Now;
+                LastAutomatedStateChange = _scheduler.Now;
                 LastManualStateChange = null;
                 LastStateChangeTriggeredBy = triggeredBy;
                 await UpdateStateInHomeAssistant();
@@ -193,7 +203,7 @@ public class FlexiScreen : IDisposable
             case ScreenState.Down when Screen.IsOpen():
                 _logger.LogInformation("{Screen}: Changing screen state to {DesiredState}", Name, desiredState);
                 Screen.CloseCover();
-                LastAutomatedStateChange = DateTime.Now;
+                LastAutomatedStateChange = _scheduler.Now;
                 LastManualStateChange = null;
                 LastStateChangeTriggeredBy = triggeredBy;
                 await UpdateStateInHomeAssistant();

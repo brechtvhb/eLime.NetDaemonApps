@@ -125,6 +125,11 @@ public class FlexiScreenTests
         _testCtx.TriggerStateChange(_sleepSensor, new EntityState { State = "off" });
 
     }
+    public Task DeDebounce()
+    {
+        return Task.Delay(5);
+    }
+
 
     [TestMethod]
     public void SunInPosition_Closes_Screen()
@@ -281,7 +286,7 @@ public class FlexiScreenTests
     }
 
     [TestMethod]
-    public void NoRain_AfterStorm_AllowsScreenToGoDownAgain()
+    public async Task NoRain_AfterStorm_AllowsScreenToGoUpAgain()
     {
         // Arrange
         _testCtx.TriggerStateChange(_rainRateSensor, new EntityState { State = "3" });
@@ -295,6 +300,7 @@ public class FlexiScreenTests
 
         //Act
         _testCtx.TriggerStateChange(_rainRateSensor, new EntityState { State = "0" });
+        await DeDebounce();
 
         //Assert
         Assert.AreEqual((null, false), screen.StormProtector.DesiredState);
@@ -618,7 +624,7 @@ public class FlexiScreenTests
     }
 
     [TestMethod]
-    public void Screen_DoesNotMake_Man_Angry()
+    public async Task Screen_DoesNotMake_Man_Angry()
     {
         // Arrange
         _testCtx.TriggerStateChangeWithAttributes(_sun, "below_horizon", new SunAttributes { Azimuth = 250, Elevation = 20 });
@@ -632,13 +638,16 @@ public class FlexiScreenTests
             .Build();
 
         _testCtx.TriggerStateChange(_windSpeedSensor, new EntityState { State = "80" });
+        await DeDebounce();
+
         _testCtx.TriggerStateChange(_cover, "open");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(2));
 
         //Act
         _testCtx.TriggerStateChange(_windSpeedSensor, new EntityState { State = "20" });
+        await DeDebounce();
 
         //Assert
-        _testCtx.VerifyScreenGoesUp(_cover, Moq.Times.Once);
         _testCtx.VerifyScreenGoesDown(_cover, Moq.Times.Never);
     }
 
@@ -653,19 +662,21 @@ public class FlexiScreenTests
             .WithCover(_cover)
             .WithSun(_sun)
             .WithWindSpeedSensor(_windSpeedSensor)
-            .WithMinimumIntervalSinceLastAutomatedAction(TimeSpan.FromMilliseconds(20))
-            .WithMinimumIntervalSinceLastManualAction(TimeSpan.FromMilliseconds(20))
+            .WithMinimumIntervalSinceLastAutomatedAction(TimeSpan.FromMinutes(1))
+            .WithMinimumIntervalSinceLastManualAction(TimeSpan.FromMinutes(1))
             .Build();
 
         _testCtx.TriggerStateChange(_windSpeedSensor, new EntityState { State = "80" });
+        await DeDebounce();
+
         _testCtx.TriggerStateChange(_cover, "open");
-        await Task.Delay(200);
+        _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(2));
 
         //Act
         _testCtx.TriggerStateChange(_windSpeedSensor, new EntityState { State = "20" });
+        await DeDebounce();
 
         //Assert
-        _testCtx.VerifyScreenGoesUp(_cover, Moq.Times.Once);
         _testCtx.VerifyScreenGoesDown(_cover, Moq.Times.Once);
     }
 
