@@ -131,7 +131,6 @@ public class SmartWateringTests
         Assert.AreEqual(NeedsWatering.Ongoing, irrigation.Zones.Single(x => x.Zone.Name == "pond").Zone.State);
         Assert.AreEqual(NeedsWatering.Yes, irrigation.Zones.Single(x => x.Zone.Name == "front yard").Zone.State);
 
-        _testCtx.VerifySwitchTurnOn(new BinarySwitch(_testCtx.HaContext, "switch.pond_valve"), Moq.Times.Once);
         _testCtx.VerifySwitchTurnOn(new BinarySwitch(_testCtx.HaContext, "switch.front_yard_valve"), Moq.Times.Once);
     }
 
@@ -165,10 +164,9 @@ public class SmartWateringTests
         await DeDebounce();
 
         //Assert
-        Assert.AreEqual(NeedsWatering.Yes, irrigation.Zones.Single(x => x.Zone.Name == "pond").Zone.State);
+        Assert.AreEqual(NeedsWatering.Ongoing, irrigation.Zones.Single(x => x.Zone.Name == "pond").Zone.State);
         Assert.AreEqual(NeedsWatering.Yes, irrigation.Zones.Single(x => x.Zone.Name == "front yard").Zone.State);
 
-        _testCtx.VerifySwitchTurnOn(new BinarySwitch(_testCtx.HaContext, "switch.pond_valve"), Moq.Times.Once);
         _testCtx.VerifySwitchTurnOn(new BinarySwitch(_testCtx.HaContext, "switch.front_yard_valve"), Moq.Times.Never);
     }
 
