@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net7.0</TargetFramework>
@@ -14,5 +14,11 @@
 
   <ItemGroup>
     <ProjectReference Include="..\eLime.NetDaemonApps.Config\eLime.NetDaemonApps.Config.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>eLime.NetDaemonApps.Tests</_Parameter1>
+    </AssemblyAttribute>
   </ItemGroup>
 </Project>

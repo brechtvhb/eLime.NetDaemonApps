@@ -202,4 +202,135 @@ public class SmartWateringTests
         _testCtx.VerifySwitchTurnOff(new BinarySwitch(_testCtx.HaContext, "switch.pond_valve"), Moq.Times.Never);
         _testCtx.VerifySwitchTurnOn(new BinarySwitch(_testCtx.HaContext, "switch.front_yard_valve"), Moq.Times.Once);
     }
+
+    [TestMethod]
+    public async Task Energy_Available_Triggers_Start()
+    {
+        // Arrange
+        var zone1 = new ContainerIrrigationZoneBuilder(_testCtx)
+            .WithFlowRate(500)
+            .Build();
+
+        var irrigation = new SmartIrrigationBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+            .With(_pumpSocket, 1000)
+            .With(_availableRainWaterSensor, 1000)
+            .AddZone(zone1)
+            .Build();
+
+        irrigation.EnergyAvailable = true;
+        zone1.SetMode(ZoneMode.EnergyManaged);
+
+        //Act
+        _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.pond_volume"), "5500");
+        await DeDebounce();
+
+
+        //Assert
+        _testCtx.VerifySwitchTurnOn(new BinarySwitch(_testCtx.HaContext, "switch.pond_valve"), Moq.Times.Once);
+    }
+
+    [TestMethod]
+    public async Task Energy_Available_After_Sensor_Update_Triggers_Start()
+    {
+        // Arrange
+        var zone1 = new ContainerIrrigationZoneBuilder(_testCtx)
+            .WithFlowRate(500)
+            .Build();
+
+        var irrigation = new SmartIrrigationBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+            .With(_pumpSocket, 1000)
+            .With(_availableRainWaterSensor, 1000)
+            .AddZone(zone1)
+            .Build();
+
+        zone1.SetMode(ZoneMode.EnergyManaged);
+
+        _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.pond_volume"), "5500");
+        await DeDebounce();
+
+        //Act
+        irrigation.EnergyAvailable = true;
+        irrigation.DebounceStartWatering();
+        await DeDebounce();
+
+        //Assert
+        _testCtx.VerifySwitchTurnOn(new BinarySwitch(_testCtx.HaContext, "switch.pond_valve"), Moq.Times.Once);
+    }
+
+    [TestMethod]
+    public async Task No_Energy_Available_Triggers_No_start()
+    {
+        // Arrange
+        var zone1 = new ContainerIrrigationZoneBuilder(_testCtx)
+            .WithFlowRate(500)
+            .Build();
+
+        var irrigation = new SmartIrrigationBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+            .With(_pumpSocket, 1000)
+            .With(_availableRainWaterSensor, 1000)
+            .AddZone(zone1)
+            .Build();
+
+        zone1.SetMode(ZoneMode.EnergyManaged);
+
+        //Act
+        _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.pond_volume"), "5500");
+        await DeDebounce();
+
+        //Assert
+        _testCtx.VerifySwitchTurnOn(new BinarySwitch(_testCtx.HaContext, "switch.pond_valve"), Moq.Times.Never);
+    }
+
+    [TestMethod]
+    public async Task No_Energy_When_Watering_Triggers_Stop()
+    {
+        // Arrange
+        var zone1 = new ContainerIrrigationZoneBuilder(_testCtx)
+            .WithFlowRate(500)
+            .Build();
+
+        var irrigation = new SmartIrrigationBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+            .With(_pumpSocket, 1000)
+            .With(_availableRainWaterSensor, 1000)
+            .AddZone(zone1)
+            .Build();
+
+        irrigation.EnergyAvailable = true;
+        zone1.SetMode(ZoneMode.EnergyManaged);
+        _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("switch.pond_valve"), "on");
+        await DeDebounce();
+        //Act
+
+        irrigation.EnergyAvailable = false;
+        irrigation.DebounceStopWatering();
+        await DeDebounce();
+
+        //Assert
+        _testCtx.VerifySwitchTurnOff(new BinarySwitch(_testCtx.HaContext, "switch.pond_valve"), Moq.Times.Once);
+    }
+
+    [TestMethod]
+    public async Task Mode_Off_Does_Not_Trigger_Start()
+    {
+        // Arrange
+        var zone1 = new ContainerIrrigationZoneBuilder(_testCtx)
+            .WithFlowRate(500)
+            .Build();
+
+        var irrigation = new SmartIrrigationBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+            .With(_pumpSocket, 1000)
+            .With(_availableRainWaterSensor, 1000)
+            .AddZone(zone1)
+            .Build();
+
+        zone1.SetMode(ZoneMode.Off);
+
+        //Act
+        _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.pond_volume"), "5500");
+        await DeDebounce();
+
+
+        //Assert
+        _testCtx.VerifySwitchTurnOn(new BinarySwitch(_testCtx.HaContext, "switch.pond_valve"), Moq.Times.Never);
+    }
 }

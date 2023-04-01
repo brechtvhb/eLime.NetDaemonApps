@@ -132,7 +132,6 @@ public class AntiFrostMistingIrrigationTests
             .Build();
 
         zone1.SetMode(ZoneMode.Automatic);
-        _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.fruit_trees_temperature"), "0");
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("switch.fruit_trees_valve"), "on");
         await DeDebounce();
 
@@ -164,7 +163,6 @@ public class AntiFrostMistingIrrigationTests
             .Build();
 
         zone1.SetMode(ZoneMode.Automatic);
-        _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.fruit_trees_temperature"), "0");
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("switch.fruit_trees_valve"), "on");
         await DeDebounce();
 

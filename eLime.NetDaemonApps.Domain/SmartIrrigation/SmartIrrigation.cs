@@ -18,7 +18,7 @@ public class SmartIrrigation : IDisposable
     public Int32 PumpFlowRate { get; }
     public NumericSensor AvailableRainWaterSensor { get; }
     public Int32 MinimumAvailableRainWater { get; }
-    public Boolean EnergyAvailable { get; private set; }
+    public Boolean EnergyAvailable { get; internal set; }
 
     public NeedsWatering State => Zones.Any(x => x.Zone.State == NeedsWatering.Critical)
         ? NeedsWatering.Critical
@@ -118,7 +118,7 @@ public class SmartIrrigation : IDisposable
     }
 
     private readonly DebounceDispatcher StartWateringDebounceDispatcher;
-    private void DebounceStartWatering()
+    internal void DebounceStartWatering()
     {
         StartWateringDebounceDispatcher.Debounce(StartWateringZonesIfNeeded);
     }
@@ -150,7 +150,7 @@ public class SmartIrrigation : IDisposable
     }
 
     private readonly DebounceDispatcher StopWateringDebounceDispatcher;
-    private void DebounceStopWatering()
+    internal void DebounceStopWatering()
     {
         StopWateringDebounceDispatcher.Debounce(StopWateringZonesIfNeeded);
     }

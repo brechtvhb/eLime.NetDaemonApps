@@ -23,7 +23,7 @@ public class AntiFrostMistingIrrigationZoneBuilder
         _testCtx = testCtx;
 
         _name = "front yard";
-        _flowRate = 1500;
+        _flowRate = 50;
         _valve = BinarySwitch.Create(_testCtx.HaContext, "switch.fruit_trees_valve");
         _temperatureSensor = NumericSensor.Create(_testCtx.HaContext, "sensor.fruit_trees_temperature");
         _lowTemperature = 1;

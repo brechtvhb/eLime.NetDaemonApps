@@ -20,23 +20,23 @@
       flowRate: 200 #liters per hour
       valveEntity: switch.water_moestuin_2
       irrigation:
-        soilMoistureEntity: sensor.soil_sensor_witch_hazel_humidity
-        targetSoilMoisture: 43 #percentage
-        lowSoilMoisture: 37
-        criticalSoilMoisture: 33
+        soilMoistureEntity: sensor.weather_station_soil_moisture_greenhouse
+        targetSoilMoisture: 45 #percentage
+        lowSoilMoisture: 35
+        criticalSoilMoisture: 30
         maxDuration: "01:00"
-    - name: grass
-      mode: Automatic #  (no yaml setting, autogenerate)
-      flowRate: 2000 #liters per hour
-      valveEntity: switch.sprinklers_gras
-      irrigation:
-        soilMoistureEntity: sensor.soil_sensor_grass_humidity
-        targetSoilMoisture: 43 #percentage
-        lowSoilMoisture: 37
-        criticalSoilMoisture: 33
-        irrigationStartWindow: "05:00"
-        irrigationEndWindow: "07:00"
-        maxDuration: "01:00"
+    #- name: lawn
+    #  mode: Automatic #  (no yaml setting, autogenerate)
+    #  flowRate: 2000 #liters per hour
+    #  valveEntity: switch.sprinklers_gras
+    #  irrigation:
+    #    soilMoistureEntity: sensor.soil_sensor_lawn_humidity
+    #    targetSoilMoisture: 43 #percentage
+    #    lowSoilMoisture: 37
+    #    criticalSoilMoisture: 33
+    #    irrigationStartWindow: "05:00"
+    #    irrigationEndWindow: "07:00"
+    #    maxDuration: "01:00"
     - name: fruit blossoms
       mode: Automatic #  (no yaml setting, autogenerate)
       flowRate: 20 #liters per hour
@@ -46,4 +46,4 @@
          criticalTemperature: 0
          lowTemperature: 1
          mistingDuration: "00:05"
-         mistingTimeout: "00:10"
+         mistingTimeout: "00:05"
