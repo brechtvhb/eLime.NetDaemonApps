@@ -256,8 +256,7 @@ public class SmartIrrigation : IDisposable
         }
     }
 
-
-
+    //TODO: sync on init "off" timers with remaining allowed time (or turn of if already past time)
     private async Task InitializeModeDropdown(ZoneWrapper wrapper)
     {
         var zone = wrapper.Zone;
@@ -325,6 +324,7 @@ public class SmartIrrigation : IDisposable
             zone.SetMode(Enum<ZoneMode>.Cast(state));
         };
     }
+
     private async Task UpdateStateInHomeAssistant()
     {
         await _mqttEntityManager.SetStateAsync("sensor.irrigation_state", State.ToString());
