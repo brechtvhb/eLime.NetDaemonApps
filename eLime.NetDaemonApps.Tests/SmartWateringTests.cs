@@ -40,7 +40,7 @@ public class SmartWateringTests
 
     public Task DeDebounce()
     {
-        return Task.Delay(5);
+        return Task.Delay(2);
     }
 
     [TestMethod]
@@ -120,13 +120,15 @@ public class SmartWateringTests
         zone1.SetMode(ZoneMode.Automatic);
         zone2.SetMode(ZoneMode.Automatic);
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.pond_volume"), "5500");
+        _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("switch.pond_valve"), "on");
+        await DeDebounce();
 
         //Act
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.front_yard_soil_moisture"), "34");
         await DeDebounce();
 
         //Assert
-        Assert.AreEqual(NeedsWatering.Yes, irrigation.Zones.Single(x => x.Zone.Name == "pond").Zone.State);
+        Assert.AreEqual(NeedsWatering.Ongoing, irrigation.Zones.Single(x => x.Zone.Name == "pond").Zone.State);
         Assert.AreEqual(NeedsWatering.Yes, irrigation.Zones.Single(x => x.Zone.Name == "front yard").Zone.State);
 
         _testCtx.VerifySwitchTurnOn(new BinarySwitch(_testCtx.HaContext, "switch.pond_valve"), Moq.Times.Once);
@@ -155,6 +157,8 @@ public class SmartWateringTests
         zone1.SetMode(ZoneMode.Automatic);
         zone2.SetMode(ZoneMode.Automatic);
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.pond_volume"), "5500");
+        _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("switch.pond_valve"), "on");
+        await DeDebounce();
 
         //Act
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.front_yard_soil_moisture"), "35");

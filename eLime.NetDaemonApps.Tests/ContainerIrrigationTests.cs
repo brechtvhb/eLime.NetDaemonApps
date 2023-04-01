@@ -39,8 +39,7 @@ public class ContainerIrrigationTests
 
     public Task DeDebounce()
     {
-        return Task.Delay(5);
-        return Task.Delay(5);
+        return Task.Delay(2);
     }
 
     [TestMethod]
