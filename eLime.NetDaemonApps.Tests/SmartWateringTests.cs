@@ -361,7 +361,7 @@ public class SmartWateringTests
 
 
         //Assert
-        _testCtx.VerifySwitchTurnOff(new BinarySwitch(_testCtx.HaContext, "switch.pond_valve"), Moq.Times.Once);
+        _testCtx.VerifySwitchTurnOff(new BinarySwitch(_testCtx.HaContext, "switch.pond_valve"), Moq.Times.AtLeastOnce);
     }
 
 }

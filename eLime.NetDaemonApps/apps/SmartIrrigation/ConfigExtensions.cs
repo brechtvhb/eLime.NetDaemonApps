@@ -13,9 +13,9 @@ public static class ConfigExtensions
 
     public static Domain.SmartIrrigation.SmartIrrigation ToEntities(this SmartIrrigationConfig config, IHaContext ha, IScheduler scheduler, IMqttEntityManager mqttEntityManager, ILogger logger)
     {
-        var availableRainWaterSensor = new NumericSensor(ha, config.AvailableRainWaterEntity);
+        var availableRainWaterSensor = NumericSensor.Create(ha, config.AvailableRainWaterEntity);
         var minimumAvailableWater = config.MinimumAvailableRainWater;
-        var pumpSocket = new BinarySwitch(ha, config.PumpSocketEntity);
+        var pumpSocket = BinarySwitch.Create(ha, config.PumpSocketEntity);
         var pumpFlowRate = config.PumpFlowRate;
 
         var zones = new List<IrrigationZone>();
@@ -23,11 +23,11 @@ public static class ConfigExtensions
         {
             IrrigationZone irrigationZone = null;
             if (zone.Container != null)
-                irrigationZone = new ContainerIrrigationZone(zone.Name, zone.FlowRate, new BinarySwitch(ha, zone.ValveEntity), new NumericSensor(ha, zone.Container.VolumeEntity), new BinarySensor(ha, zone.Container.OverFlowEntity), zone.Container.CriticalVolume, zone.Container.LowVolume, zone.Container.TargetVolume);
+                irrigationZone = new ContainerIrrigationZone(zone.Name, zone.FlowRate, BinarySwitch.Create(ha, zone.ValveEntity), NumericSensor.Create(ha, zone.Container.VolumeEntity), BinarySensor.Create(ha, zone.Container.OverFlowEntity), zone.Container.CriticalVolume, zone.Container.LowVolume, zone.Container.TargetVolume);
             if (zone.Irrigation != null)
-                irrigationZone = new ClassicIrrigationZone(zone.Name, zone.FlowRate, new BinarySwitch(ha, zone.ValveEntity), new NumericSensor(ha, zone.Irrigation.SoilMoistureEntity), zone.Irrigation.CriticalSoilMoisture, zone.Irrigation.LowSoilMoisture, zone.Irrigation.TargetSoilMoisture, zone.Irrigation.MaxDuration, zone.Irrigation.MinimumTimeout, zone.Irrigation.IrrigationStartWindow, zone.Irrigation.IrrigationEndWindow);
+                irrigationZone = new ClassicIrrigationZone(zone.Name, zone.FlowRate, BinarySwitch.Create(ha, zone.ValveEntity), NumericSensor.Create(ha, zone.Irrigation.SoilMoistureEntity), zone.Irrigation.CriticalSoilMoisture, zone.Irrigation.LowSoilMoisture, zone.Irrigation.TargetSoilMoisture, zone.Irrigation.MaxDuration, zone.Irrigation.MinimumTimeout, zone.Irrigation.IrrigationStartWindow, zone.Irrigation.IrrigationEndWindow);
             if (zone.AntiFrostMisting != null)
-                irrigationZone = new AntiFrostMistingIrrigationZone(zone.Name, zone.FlowRate, new BinarySwitch(ha, zone.ValveEntity), new NumericSensor(ha, zone.AntiFrostMisting.TemperatureEntity), zone.AntiFrostMisting.CriticalTemperature, zone.AntiFrostMisting.LowTemperature, zone.AntiFrostMisting.MistingDuration, zone.AntiFrostMisting.MistingTimeout);
+                irrigationZone = new AntiFrostMistingIrrigationZone(zone.Name, zone.FlowRate, BinarySwitch.Create(ha, zone.ValveEntity), NumericSensor.Create(ha, zone.AntiFrostMisting.TemperatureEntity), zone.AntiFrostMisting.CriticalTemperature, zone.AntiFrostMisting.LowTemperature, zone.AntiFrostMisting.MistingDuration, zone.AntiFrostMisting.MistingTimeout);
 
             if (irrigationZone != null)
                 zones.Add(irrigationZone);

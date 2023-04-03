@@ -74,11 +74,14 @@ public class SmartIrrigation : IDisposable
     private void Zone_StateChanged(object? sender, IrrigationZoneStateChangedEvent e)
     {
         if (e.Zone.Mode == ZoneMode.Off)
+        {
+            UpdateStateInHomeAssistant().RunSync();
             return;
+        }
 
         var zoneWrapper = Zones.Single(x => x.Zone.Name == e.Zone.Name);
 
-        _logger.LogInformation("{IrrigationZone}: State changed to {State}.", e.Zone.Name, e.State);
+        _logger.LogInformation("{IrrigationZone}: Needs watering changed to: {State}.", e.Zone.Name, e.State);
 
         switch (e)
         {
@@ -164,6 +167,8 @@ public class SmartIrrigation : IDisposable
             _logger.LogDebug("{IrrigationZone}: Will start irrigation.", zone.Zone.Name);
             remainingFlowRate -= zone.Zone.FlowRate;
         }
+
+        UpdateStateInHomeAssistant().RunSync();
     }
 
     private readonly DebounceDispatcher StopWateringDebounceDispatcher;
@@ -207,6 +212,8 @@ public class SmartIrrigation : IDisposable
             _logger.LogDebug("{IrrigationZone}: Will stop irrigation for this zone because not enough power is available", wrapper.Zone.Name);
             wrapper.Zone.Valve.TurnOff();
         }
+
+        UpdateStateInHomeAssistant().RunSync();
     }
 
     private bool StartWateringIfNeeded(ZoneWrapper wrapper, int remainingFlowRate)
@@ -310,7 +317,7 @@ public class SmartIrrigation : IDisposable
         {
             _logger.LogDebug("{IrrigationZone}: Initializing zone.", zone.Name);
             zone.SetMode(Enum<ZoneMode>.Cast(state));
-            var attributes = (SmartIrrigationZoneAttributes?)_haContext.Entity(selectName).Attributes;
+            var attributes = _haContext.Entity(selectName).Attributes as SmartIrrigationZoneAttributes;
 
             if (!string.IsNullOrWhiteSpace(attributes?.WateringStartedAt))
                 zone.SetStartWateringDate(DateTime.Parse(attributes.WateringStartedAt));

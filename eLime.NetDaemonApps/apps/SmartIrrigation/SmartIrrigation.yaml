@@ -6,25 +6,24 @@
   minimumAvailableRainWater: 2000
   zones:
     - name: pond
-      mode: EnergyManaged #Automatic, Manual, EnergyManaged (no yaml setting, autogenerate)
       flowRate: 2000 #liters per hour
       valveEntity: switch.valve_pond_refill_state
       container:
         volumeEntity: sensor.shelly_uni_pond_liters
         targetVolume: 7200 #liters
-        criticalVolume:  6000 #liters
-        lowVolume: #liters
+        lowVolume: 6000 #liters
+        criticalVolume: 5000 #liters
         overflowEntity: binary_sensor.shelly_uni_pond_channel_1_input
-    - name: greenhouse
-      mode: EnergyManaged #  (no yaml setting, autogenerate)
-      flowRate: 200 #liters per hour
-      valveEntity: switch.water_moestuin_2
-      irrigation:
-        soilMoistureEntity: sensor.weather_station_soil_moisture_greenhouse
-        targetSoilMoisture: 45 #percentage
-        lowSoilMoisture: 35
-        criticalSoilMoisture: 30
-        maxDuration: "01:00"
+    #- name: greenhouse
+    #  mode: EnergyManaged #  (no yaml setting, autogenerate)
+    #  flowRate: 200 #liters per hour
+    #  valveEntity: switch.water_moestuin_2
+    #  irrigation:
+    #    soilMoistureEntity: sensor.weather_station_soil_moisture_greenhouse
+    #    targetSoilMoisture: 45 #percentage
+    #    lowSoilMoisture: 35
+    #    criticalSoilMoisture: 30
+    #    maxDuration: "01:00"
     #- name: lawn
     #  mode: Automatic #  (no yaml setting, autogenerate)
     #  flowRate: 2000 #liters per hour
@@ -37,13 +36,13 @@
     #    irrigationStartWindow: "05:00"
     #    irrigationEndWindow: "07:00"
     #    maxDuration: "01:00"
-    - name: fruit blossoms
-      mode: Automatic #  (no yaml setting, autogenerate)
-      flowRate: 20 #liters per hour
-      valveEntity: switch.water_moestuin_3
-      antiFrostMisting:
-         temperatureEntity: sensor.gw2000a_v2_2_0_outdoor_temperature
-         criticalTemperature: 0
-         lowTemperature: 1
-         mistingDuration: "00:05"
-         mistingTimeout: "00:05"
+    #- name: fruit blossoms
+    #  mode: Automatic #  (no yaml setting, autogenerate)
+    #  flowRate: 20 #liters per hour
+    #  valveEntity: switch.water_moestuin_3
+    #  antiFrostMisting:
+    #     temperatureEntity: sensor.gw2000a_v2_2_0_outdoor_temperature
+    #     criticalTemperature: 0
+    #     lowTemperature: 1
+    #     mistingDuration: "00:05"
+    #     mistingTimeout: "00:05"
