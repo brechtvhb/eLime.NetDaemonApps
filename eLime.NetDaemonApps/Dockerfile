@@ -23,8 +23,8 @@ RUN dotnet publish -c Release -o /out /src/eLime.NetDaemonApps/eLime.NetDaemonAp
 # Build runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:7.0-alpine AS run
 
-WORKDIR /tools
-COPY --from=build /tools .
+#WORKDIR /tools
+#COPY --from=build /tools .
 
 WORKDIR /app
 COPY --from=build /out .
