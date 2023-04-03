@@ -70,6 +70,7 @@ public class SmartIrrigation : IDisposable
         {
             DebounceStartWatering();
             DebounceStopWatering();
+            UpdateStateInHomeAssistant().RunSync();
         });
     }
 
@@ -176,8 +177,6 @@ public class SmartIrrigation : IDisposable
             _logger.LogDebug("{IrrigationZone}: Will start irrigation.", zone.Zone.Name);
             remainingFlowRate -= zone.Zone.FlowRate;
         }
-
-        UpdateStateInHomeAssistant().RunSync();
     }
 
     private readonly DebounceDispatcher? StopWateringDebounceDispatcher;
@@ -227,8 +226,6 @@ public class SmartIrrigation : IDisposable
             _logger.LogDebug("{IrrigationZone}: Will stop irrigation for this zone because not enough power is available", wrapper.Zone.Name);
             wrapper.Zone.Valve.TurnOff();
         }
-
-        UpdateStateInHomeAssistant().RunSync();
     }
 
     private bool StartWateringIfNeeded(ZoneWrapper wrapper, int remainingFlowRate)
@@ -292,6 +289,9 @@ public class SmartIrrigation : IDisposable
                 DebounceStartWatering();
             else
                 DebounceStopWatering();
+
+
+            UpdateStateInHomeAssistant().RunSync();
         };
     }
     private async Task InitializeStateSensor()
@@ -407,7 +407,7 @@ public class SmartIrrigation : IDisposable
             await _mqttEntityManager.SetAttributesAsync(selectName, attributes);
             await _mqttEntityManager.SetStateAsync(stateName, wrapper.Zone.State.ToString());
 
-            _logger.LogDebug("{IrrigationZone}: Update Zone state sensor in home assistant (attributes: {Attributes})", wrapper.Zone.Name, attributes);
+            _logger.LogTrace("{IrrigationZone}: Update Zone state sensor in home assistant (attributes: {Attributes})", wrapper.Zone.Name, attributes);
         }
     }
 }
