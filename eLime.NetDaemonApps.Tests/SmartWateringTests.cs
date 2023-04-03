@@ -40,7 +40,7 @@ public class SmartWateringTests
 
     public Task DeDebounce()
     {
-        return Task.Delay(5);
+        return Task.Delay(10);
     }
 
     [TestMethod]
