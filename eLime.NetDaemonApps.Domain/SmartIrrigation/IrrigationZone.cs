@@ -93,6 +93,13 @@ public abstract class IrrigationZone : IDisposable
     public abstract bool CanStartWatering(DateTimeOffset now, bool energyAvailable);
     public abstract bool CheckForForceStop(DateTimeOffset now);
 
+    protected TimeSpan? GetRemainingRrunTime(TimeSpan? suggestedRunTime, DateTimeOffset now)
+    {
+        var remainingDuration = now - WateringStartedAt;
+
+        return remainingDuration < suggestedRunTime ? remainingDuration : suggestedRunTime;
+    }
+
     public void Dispose()
     {
         Valve.TurnedOn -= Valve_TurnedOn;

@@ -3,7 +3,7 @@ using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
 
 namespace eLime.NetDaemonApps.Domain.SmartIrrigation;
 
-public class ClassicIrrigationZone : IrrigationZone
+public class ClassicIrrigationZone : IrrigationZone, IZoneWithLimitedRuntime
 {
     public NumericSensor SoilMoistureSensor { get; }
     public Int32 CriticallyLowSoilMoisture { get; }
@@ -67,10 +67,11 @@ public class ClassicIrrigationZone : IrrigationZone
         return !(LastWatering?.Add(MinimumTimeout.Value) > now);
     }
 
-    internal TimeSpan? GetRunTime(DateTimeOffset now)
+    public TimeSpan? GetRunTime(DateTimeOffset now)
     {
+
         if (IrrigationEndWindow == null)
-            return MaxDuration;
+            return GetRemainingRrunTime(MaxDuration, now);
 
         var endWindow = now.Add(-now.TimeOfDay).Add(IrrigationEndWindow.Value.ToTimeSpan());
         if (now > endWindow)
@@ -79,12 +80,11 @@ public class ClassicIrrigationZone : IrrigationZone
         var timeUntilEndOfWindow = now - endWindow;
 
         if (MaxDuration == null)
-            return timeUntilEndOfWindow;
+            return GetRemainingRrunTime(timeUntilEndOfWindow, now);
 
         return MaxDuration < timeUntilEndOfWindow
-            ? MaxDuration
-            : timeUntilEndOfWindow;
-
+            ? GetRemainingRrunTime(MaxDuration, now)
+            : GetRemainingRrunTime(timeUntilEndOfWindow, now);
     }
 
     public bool CheckIfWithinWindow(DateTimeOffset now)

@@ -334,5 +334,34 @@ public class SmartWateringTests
         _testCtx.VerifySwitchTurnOn(new BinarySwitch(_testCtx.HaContext, "switch.pond_valve"), Moq.Times.Never);
     }
 
-    //TODO: Test below rain water level
+    [TestMethod]
+    public async Task No_Water_When_Watering_Triggers_Stop()
+    {
+        // Arrange
+        var zone1 = new ContainerIrrigationZoneBuilder(_testCtx)
+            .WithFlowRate(500)
+            .Build();
+
+        var irrigation = new SmartIrrigationBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+            .With(_pumpSocket, 1000)
+            .With(_availableRainWaterSensor, 1000)
+            .AddZone(zone1)
+            .Build();
+
+        zone1.SetMode(ZoneMode.Automatic);
+        _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("switch.pond_valve"), "on");
+        await DeDebounce();
+        //Act
+
+        _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.rainwater_volume"), "500");
+        await DeDebounce();
+
+        _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(5) + TimeSpan.FromSeconds(1)); //guard runs every 5 min
+        await DeDebounce();
+
+
+        //Assert
+        _testCtx.VerifySwitchTurnOff(new BinarySwitch(_testCtx.HaContext, "switch.pond_valve"), Moq.Times.Once);
+    }
+
 }

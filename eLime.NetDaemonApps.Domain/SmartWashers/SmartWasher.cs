@@ -25,7 +25,7 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers
         private readonly IScheduler _scheduler;
         private readonly IMqttEntityManager _mqttEntityManager;
 
-        private SmartWasherState _state;
+        private SmartWasherState? _state;
 
         public DateTimeOffset? LastStateChange;
         public DateTimeOffset? Eta { get; set; }
@@ -218,7 +218,7 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers
             if (e.New?.State != 0 && NoPowerResetter != null)
                 NoPowerResetter.Dispose();
 
-            _state.PowerUsageChanged(_logger, _scheduler, this);
+            _state?.PowerUsageChanged(_logger, _scheduler, this);
         }
 
         private void PowerSocket_TurnedOn(object? sender, BinarySensorEventArgs e)

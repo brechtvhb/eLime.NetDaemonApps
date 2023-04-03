@@ -1,12 +1,12 @@
 ﻿using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
 using eLime.NetDaemonApps.Domain.Helper;
+using eLime.NetDaemonApps.Domain.Mqtt;
 using Microsoft.Extensions.Logging;
 using NetDaemon.Extensions.MqttEntityManager;
 using NetDaemon.Extensions.Scheduler;
 using NetDaemon.HassModel;
 using System.Reactive.Concurrency;
-using System.Text.Json.Serialization;
 
 namespace eLime.NetDaemonApps.Domain.SmartIrrigation;
 
@@ -86,35 +86,44 @@ public class SmartIrrigation : IDisposable
                 DebounceStartWatering();
                 break;
             case IrrigationZoneWateringStartedEvent:
-                e.Zone.SetStartWateringDate(_scheduler.Now);
-                switch (e.Zone)
-                {
-                    case AntiFrostMistingIrrigationZone antiFrostMistingIrrigationZone:
-                        zoneWrapper.EndWateringtimer = _scheduler.Schedule(antiFrostMistingIrrigationZone.MistingDuration, (_, _) => e.Zone.Valve.TurnOff());
-                        break;
-                    case ClassicIrrigationZone classicIrrigationZone:
-                        {
-                            var timespan = classicIrrigationZone.GetRunTime(_scheduler.Now);
-
-                            if (timespan != null)
-                                zoneWrapper.EndWateringtimer = _scheduler.Schedule(timespan, (_, _) => e.Zone.Valve.TurnOff());
-                            break;
-                        }
-                }
+                SetEndWateringTimer(_scheduler.Now, zoneWrapper);
 
                 break;
             case IrrigationZoneEndWateringEvent:
-                e.Zone.Valve.TurnOff();
+                zoneWrapper.Zone.Valve.TurnOff();
                 zoneWrapper.EndWateringtimer?.Dispose();
 
                 DebounceStartWatering();
                 break;
             case IrrigationZoneWateringEndedEvent:
-                e.Zone.SetLastWateringDate(_scheduler.Now);
+                zoneWrapper.Zone.SetLastWateringDate(_scheduler.Now);
                 break;
         }
 
         UpdateStateInHomeAssistant().RunSync();
+    }
+
+    private void SetEndWateringTimer(DateTimeOffset? startTime, ZoneWrapper zoneWrapper)
+    {
+        if (startTime != null)
+            zoneWrapper.Zone.SetStartWateringDate(startTime.Value);
+
+        if (zoneWrapper.Zone is not IZoneWithLimitedRuntime limitedRunTimeZone)
+            return;
+
+        var timespan = limitedRunTimeZone.GetRunTime(_scheduler.Now);
+
+        switch (timespan)
+        {
+            case null:
+                return;
+            case not null when timespan <= TimeSpan.Zero:
+                zoneWrapper.Zone.Valve.TurnOff();
+                return;
+            case not null when timespan > TimeSpan.Zero:
+                zoneWrapper.EndWateringtimer = _scheduler.Schedule(timespan, (_, _) => zoneWrapper.Zone.Valve.TurnOff());
+                return;
+        }
     }
 
     private readonly DebounceDispatcher StartWateringDebounceDispatcher;
@@ -219,7 +228,8 @@ public class SmartIrrigation : IDisposable
         if (state == null || string.Equals(state, "unavailable", StringComparison.InvariantCultureIgnoreCase))
         {
             _logger.LogDebug("Creating solar energy available switch.");
-            await _mqttEntityManager.CreateAsync(switchName, new EntityCreationOptions(UniqueId: switchName, Name: $"Irrigation - Energy available", Persist: true));
+            var entityOptions = new EntityOptions { Icon = "mdi:solar-power" };
+            await _mqttEntityManager.CreateAsync(switchName, new EntityCreationOptions(UniqueId: switchName, Name: $"Irrigation - Energy available", Persist: true), entityOptions);
             await _mqttEntityManager.SetStateAsync(switchName, "OFF");
         }
         else
@@ -250,8 +260,9 @@ public class SmartIrrigation : IDisposable
         if (state == null || string.Equals(state, "unavailable", StringComparison.InvariantCultureIgnoreCase))
         {
             _logger.LogDebug("Creating Irrigation state sensor in home assistant.");
+            var entityOptions = new EntityOptions { Icon = "far:sprinkler" };
 
-            await _mqttEntityManager.CreateAsync(stateName, new EntityCreationOptions(UniqueId: stateName, Name: $"Irrigation state", Persist: true));
+            await _mqttEntityManager.CreateAsync(stateName, new EntityCreationOptions(UniqueId: stateName, Name: $"Irrigation state", Persist: true), entityOptions);
             await _mqttEntityManager.SetStateAsync(stateName, State.ToString());
         }
     }
@@ -268,6 +279,7 @@ public class SmartIrrigation : IDisposable
             _logger.LogDebug("{IrrigationZone}: Creating Zone mode dropdown in home assistant.", zone.Name);
             var selectOptions = new SelectOptions()
             {
+                Icon = "fapro:sprinkler",
                 Options = Enum<ZoneMode>.AllValuesAsStringList(),
                 Device = GetZoneDevice(zone)
             };
@@ -286,6 +298,8 @@ public class SmartIrrigation : IDisposable
 
             if (!string.IsNullOrWhiteSpace(attributes?.LastWatering))
                 zone.SetLastWateringDate(DateTime.Parse(attributes.LastWatering));
+
+            SetEndWateringTimer(null, wrapper);
         }
 
         var observer = await _mqttEntityManager.PrepareCommandSubscriptionAsync(selectName);
@@ -301,7 +315,7 @@ public class SmartIrrigation : IDisposable
         {
             _logger.LogDebug("{IrrigationZone}: Creating Zone state sensor in home assistant.", zone.Name);
 
-            var entityOptions = new EntityOptions { Device = GetZoneDevice(zone) };
+            var entityOptions = new EntityOptions { Icon = "fapro:sprinkler", Device = GetZoneDevice(zone) };
 
             await _mqttEntityManager.CreateAsync(stateName, new EntityCreationOptions(UniqueId: stateName, Name: $"Irrigation zone state - {zone.Name}", Persist: true), entityOptions);
             await _mqttEntityManager.SetStateAsync(stateName, zone.State.ToString());
@@ -355,32 +369,4 @@ public class SmartIrrigation : IDisposable
             _logger.LogDebug("{IrrigationZone}: Update Zone state sensor in home assistant (attributes: {Attributes})", wrapper.Zone.Name, attributes);
         }
     }
-}
-
-public class EntityOptions
-{
-    [JsonPropertyName("device")]
-    public Device Device { get; set; }
-}
-
-public class SelectOptions : EntityOptions
-{
-    [JsonPropertyName("options")]
-    public List<String> Options { get; set; }
-}
-
-public class Device
-{
-    [JsonPropertyName("name")]
-    public String Name { get; set; }
-    [JsonPropertyName("manufacturer")]
-    public String Manufacturer { get; set; }
-    [JsonPropertyName("identifiers")]
-    public List<String> Identifiers { get; set; }
-}
-public enum ZoneMode
-{
-    Off,
-    Automatic,
-    EnergyManaged
 }

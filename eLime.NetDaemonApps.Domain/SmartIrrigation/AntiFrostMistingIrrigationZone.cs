@@ -3,7 +3,7 @@ using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
 
 namespace eLime.NetDaemonApps.Domain.SmartIrrigation;
 
-public class AntiFrostMistingIrrigationZone : IrrigationZone
+public class AntiFrostMistingIrrigationZone : IrrigationZone, IZoneWithLimitedRuntime
 {
     public NumericSensor TemperatureSensor { get; }
     public Int32 CriticallyLowTemperature { get; }
@@ -53,6 +53,11 @@ public class AntiFrostMistingIrrigationZone : IrrigationZone
             return true;
 
         return !(LastWatering?.Add(MistingTimeout) > now);
+    }
+
+    public TimeSpan? GetRunTime(DateTimeOffset now)
+    {
+        return GetRemainingRrunTime(MistingDuration, now);
     }
 
     public override bool CheckForForceStop(DateTimeOffset now)
