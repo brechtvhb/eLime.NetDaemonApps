@@ -309,7 +309,7 @@ public class FlexiScreenTests
 
 
     [TestMethod]
-    public void RainForecast_Opens_Screen()
+    public async Task RainForecast_Opens_Screen()
     {
         // Arrange
         _testCtx.TriggerStateChange(_cover, "closed");
@@ -321,6 +321,7 @@ public class FlexiScreenTests
 
         //Act
         _testCtx.TriggerStateChange(_shortTermRainForecastSensor, new EntityState { State = "0.5" });
+        await DeDebounce();
 
         //Assert
         Assert.AreEqual((ScreenState.Up, true), screen.StormProtector.DesiredState);
@@ -705,7 +706,7 @@ public class FlexiScreenTests
     }
 
     [TestMethod]
-    public void Screen_Ignores_Woman_Because_She_Forgets_To_Pull_Screen_Up()
+    public async Task Screen_Ignores_Woman_Because_She_Forgets_To_Pull_Screen_Up()
     {
         // Arrange
         _testCtx.TriggerStateChangeWithAttributes(_sun, "below_horizon", new SunAttributes { Azimuth = 250, Elevation = 20 });
@@ -721,9 +722,11 @@ public class FlexiScreenTests
             .Build();
 
         _testCtx.TriggerStateChange(_cover, "closed");
+        await DeDebounce();
 
         //Act
         _testCtx.TriggerStateChangeWithAttributes(_sun, "below_horizon", new SunAttributes { Azimuth = 250, Elevation = 0 });
+        await DeDebounce();
 
         //Assert
         _testCtx.VerifyScreenGoesUp(_cover, Moq.Times.Once);

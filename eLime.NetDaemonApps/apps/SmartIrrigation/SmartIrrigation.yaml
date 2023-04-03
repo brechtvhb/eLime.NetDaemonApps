@@ -11,8 +11,8 @@
       valveEntity: switch.valve_pond_refill_state
       container:
         volumeEntity: sensor.shelly_uni_pond_liters
-        targetVolume: #liters
-        criticalVolume: #liters
+        targetVolume: 7200 #liters
+        criticalVolume:  6000 #liters
         lowVolume: #liters
         overflowEntity: binary_sensor.shelly_uni_pond_channel_1_input
     - name: greenhouse
