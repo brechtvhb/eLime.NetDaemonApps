@@ -60,8 +60,11 @@ public class SmartIrrigation : IDisposable
             wrapper.Zone.StateChanged += Zone_StateChanged;
         }
 
-        StartWateringDebounceDispatcher = new(debounceDuration);
-        StopWateringDebounceDispatcher = new(debounceDuration);
+        if (debounceDuration != TimeSpan.Zero)
+        {
+            StartWateringDebounceDispatcher = new(debounceDuration);
+            StopWateringDebounceDispatcher = new(debounceDuration);
+        }
 
         GuardTask = _scheduler.RunEvery(TimeSpan.FromMinutes(5), _scheduler.Now, () =>
         {
@@ -131,9 +134,15 @@ public class SmartIrrigation : IDisposable
         }
     }
 
-    private readonly DebounceDispatcher StartWateringDebounceDispatcher;
+    private readonly DebounceDispatcher? StartWateringDebounceDispatcher;
     internal void DebounceStartWatering()
     {
+        if (StartWateringDebounceDispatcher == null)
+        {
+            StartWateringZonesIfNeeded();
+            return;
+        }
+
         StartWateringDebounceDispatcher.Debounce(StartWateringZonesIfNeeded);
     }
 
@@ -171,9 +180,15 @@ public class SmartIrrigation : IDisposable
         UpdateStateInHomeAssistant().RunSync();
     }
 
-    private readonly DebounceDispatcher StopWateringDebounceDispatcher;
+    private readonly DebounceDispatcher? StopWateringDebounceDispatcher;
     internal void DebounceStopWatering()
     {
+        if (StopWateringDebounceDispatcher == null)
+        {
+            StopWateringZonesIfNeeded();
+            return;
+        }
+
         StopWateringDebounceDispatcher.Debounce(StopWateringZonesIfNeeded);
     }
 

@@ -37,13 +37,8 @@ public class ContainerIrrigationTests
         _testCtx.TriggerStateChange(_availableRainWaterSensor, "10000");
     }
 
-    public Task DeDebounce()
-    {
-        return Task.Delay(5);
-    }
-
     [TestMethod]
-    public async Task Below_Low_Volume_Triggers_Valve_On()
+    public void Below_Low_Volume_Triggers_Valve_On()
     {
         // Arrange
         var zone = new ContainerIrrigationZoneBuilder(_testCtx)
@@ -57,11 +52,11 @@ public class ContainerIrrigationTests
 
         zone.SetMode(ZoneMode.Automatic);
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("binary_sensor.pond_overflow"), "off");
-        await DeDebounce();
+
 
         //Act
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.pond_volume"), "5500");
-        await DeDebounce();
+
 
         //Assert
         Assert.AreEqual(NeedsWatering.Yes, irrigation.Zones.First().Zone.State);
@@ -69,7 +64,7 @@ public class ContainerIrrigationTests
     }
 
     [TestMethod]
-    public async Task Below_Critical_Volume_Triggers_State_Critical()
+    public void Below_Critical_Volume_Triggers_State_Critical()
     {
         // Arrange
         var zone = new ContainerIrrigationZoneBuilder(_testCtx)
@@ -83,18 +78,18 @@ public class ContainerIrrigationTests
 
         zone.SetMode(ZoneMode.Automatic);
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("binary_sensor.pond_overflow"), "off");
-        await DeDebounce();
+
 
         //Act
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.pond_volume"), "4500");
-        await DeDebounce();
+
 
         //Assert
         Assert.AreEqual(NeedsWatering.Critical, irrigation.Zones.First().Zone.State);
     }
 
     [TestMethod]
-    public async Task Above_Target_Volume_Triggers_Valve_Off()
+    public void Above_Target_Volume_Triggers_Valve_Off()
     {
         // Arrange
         var zone = new ContainerIrrigationZoneBuilder(_testCtx)
@@ -110,11 +105,11 @@ public class ContainerIrrigationTests
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.pond_volume"), "5500");
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("binary_sensor.pond_overflow"), "off");
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("switch.pond_valve"), "on");
-        await DeDebounce();
+
 
         //Act
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.pond_volume"), "7500");
-        await DeDebounce();
+
 
         //Assert
         Assert.AreEqual(NeedsWatering.No, irrigation.Zones.First().Zone.State);
@@ -122,7 +117,7 @@ public class ContainerIrrigationTests
     }
 
     [TestMethod]
-    public async Task Overflow_On_Triggers_Valve_Off()
+    public void Overflow_On_Triggers_Valve_Off()
     {
         // Arrange
         var zone = new ContainerIrrigationZoneBuilder(_testCtx)
@@ -138,11 +133,11 @@ public class ContainerIrrigationTests
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.pond_volume"), "5500");
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("binary_sensor.pond_overflow"), "off");
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("switch.pond_valve"), "on");
-        await DeDebounce();
+
 
         //Act
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("binary_sensor.pond_overflow"), "on");
-        await DeDebounce();
+
 
         //Assert
         Assert.AreEqual(NeedsWatering.No, irrigation.Zones.First().Zone.State);

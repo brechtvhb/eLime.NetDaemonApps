@@ -65,7 +65,7 @@ public class SmartIrrigationBuilder
     public SmartIrrigation Build()
     {
 
-        var x = new SmartIrrigation(_testCtx.HaContext, _logger, _scheduler, _mqttEntityManager, _pumpSocket, _pumpFlowRate, _availableRainWaterSensor, _minimumRainWater, _zones, TimeSpan.FromMicroseconds(100));
+        var x = new SmartIrrigation(_testCtx.HaContext, _logger, _scheduler, _mqttEntityManager, _pumpSocket, _pumpFlowRate, _availableRainWaterSensor, _minimumRainWater, _zones, TimeSpan.Zero);
         return x;
     }
 }

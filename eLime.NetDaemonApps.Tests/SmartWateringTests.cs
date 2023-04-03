@@ -38,11 +38,6 @@ public class SmartWateringTests
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("binary_sensor.pond_overflow"), "off");
     }
 
-    public Task DeDebounce()
-    {
-        return Task.Delay(10);
-    }
-
     [TestMethod]
     public void Init_HappyFlow()
     {
@@ -70,7 +65,7 @@ public class SmartWateringTests
 
     //General
     [TestMethod]
-    public async Task Valve_Turning_on_Triggers_State_Ongoing()
+    public void Valve_Turning_on_Triggers_State_Ongoing()
     {
         // Arrange
         var zone = new ContainerIrrigationZoneBuilder(_testCtx)
@@ -85,11 +80,9 @@ public class SmartWateringTests
         zone.SetMode(ZoneMode.Automatic);
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.pond_volume"), "5500");
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("binary_sensor.pond_overflow"), "off");
-        await DeDebounce();
 
         //Act
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("switch.pond_valve"), "on");
-        await DeDebounce();
 
         //Assert
         Assert.AreEqual(NeedsWatering.Ongoing, irrigation.Zones.First().Zone.State);
@@ -99,7 +92,7 @@ public class SmartWateringTests
 
 
     [TestMethod]
-    public async Task Under_FlowRate_Triggers_Second_Zone()
+    public void Under_FlowRate_Triggers_Second_Zone()
     {
         // Arrange
         var zone1 = new ContainerIrrigationZoneBuilder(_testCtx)
@@ -121,11 +114,9 @@ public class SmartWateringTests
         zone2.SetMode(ZoneMode.Automatic);
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.pond_volume"), "5500");
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("switch.pond_valve"), "on");
-        await DeDebounce();
 
         //Act
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.front_yard_soil_moisture"), "34");
-        await DeDebounce();
 
         //Assert
         Assert.AreEqual(NeedsWatering.Ongoing, irrigation.Zones.Single(x => x.Zone.Name == "pond").Zone.State);
@@ -135,7 +126,7 @@ public class SmartWateringTests
     }
 
     [TestMethod]
-    public async Task Over_FlowRate_Does_Not_Trigger_Second_Zone()
+    public void Over_FlowRate_Does_Not_Trigger_Second_Zone()
     {
         // Arrange
         var zone1 = new ContainerIrrigationZoneBuilder(_testCtx)
@@ -157,11 +148,11 @@ public class SmartWateringTests
         zone2.SetMode(ZoneMode.Automatic);
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.pond_volume"), "5500");
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("switch.pond_valve"), "on");
-        await DeDebounce();
+
 
         //Act
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.front_yard_soil_moisture"), "35");
-        await DeDebounce();
+
 
         //Assert
         Assert.AreEqual(NeedsWatering.Ongoing, irrigation.Zones.Single(x => x.Zone.Name == "pond").Zone.State);
@@ -171,7 +162,7 @@ public class SmartWateringTests
     }
 
     [TestMethod]
-    public async Task Critical_Has_Precedence_Over_Normal()
+    public void Critical_Has_Precedence_Over_Normal()
     {
         // Arrange
         var zone1 = new ContainerIrrigationZoneBuilder(_testCtx)
@@ -192,11 +183,11 @@ public class SmartWateringTests
         zone1.SetMode(ZoneMode.Automatic);
         zone2.SetMode(ZoneMode.Automatic);
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.pond_volume"), "5500");
-        await DeDebounce();
+
 
         //Act
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.front_yard_soil_moisture"), "28");
-        await DeDebounce();
+
 
         //Assert
         _testCtx.VerifySwitchTurnOff(new BinarySwitch(_testCtx.HaContext, "switch.pond_valve"), Moq.Times.Never);
@@ -204,7 +195,7 @@ public class SmartWateringTests
     }
 
     [TestMethod]
-    public async Task Energy_Available_Triggers_Start()
+    public void Energy_Available_Triggers_Start()
     {
         // Arrange
         var zone1 = new ContainerIrrigationZoneBuilder(_testCtx)
@@ -222,7 +213,7 @@ public class SmartWateringTests
 
         //Act
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.pond_volume"), "5500");
-        await DeDebounce();
+
 
 
         //Assert
@@ -230,7 +221,7 @@ public class SmartWateringTests
     }
 
     [TestMethod]
-    public async Task Energy_Available_After_Sensor_Update_Triggers_Start()
+    public void Energy_Available_After_Sensor_Update_Triggers_Start()
     {
         // Arrange
         var zone1 = new ContainerIrrigationZoneBuilder(_testCtx)
@@ -246,19 +237,19 @@ public class SmartWateringTests
         zone1.SetMode(ZoneMode.EnergyManaged);
 
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.pond_volume"), "5500");
-        await DeDebounce();
+
 
         //Act
         irrigation.EnergyAvailable = true;
         irrigation.DebounceStartWatering();
-        await DeDebounce();
+
 
         //Assert
         _testCtx.VerifySwitchTurnOn(new BinarySwitch(_testCtx.HaContext, "switch.pond_valve"), Moq.Times.Once);
     }
 
     [TestMethod]
-    public async Task No_Energy_Available_Triggers_No_start()
+    public void No_Energy_Available_Triggers_No_start()
     {
         // Arrange
         var zone1 = new ContainerIrrigationZoneBuilder(_testCtx)
@@ -275,14 +266,14 @@ public class SmartWateringTests
 
         //Act
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.pond_volume"), "5500");
-        await DeDebounce();
+
 
         //Assert
         _testCtx.VerifySwitchTurnOn(new BinarySwitch(_testCtx.HaContext, "switch.pond_valve"), Moq.Times.Never);
     }
 
     [TestMethod]
-    public async Task No_Energy_When_Watering_Triggers_Stop()
+    public void No_Energy_When_Watering_Triggers_Stop()
     {
         // Arrange
         var zone1 = new ContainerIrrigationZoneBuilder(_testCtx)
@@ -298,19 +289,19 @@ public class SmartWateringTests
         irrigation.EnergyAvailable = true;
         zone1.SetMode(ZoneMode.EnergyManaged);
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("switch.pond_valve"), "on");
-        await DeDebounce();
+
         //Act
 
         irrigation.EnergyAvailable = false;
         irrigation.DebounceStopWatering();
-        await DeDebounce();
+
 
         //Assert
         _testCtx.VerifySwitchTurnOff(new BinarySwitch(_testCtx.HaContext, "switch.pond_valve"), Moq.Times.Once);
     }
 
     [TestMethod]
-    public async Task Mode_Off_Does_Not_Trigger_Start()
+    public void Mode_Off_Does_Not_Trigger_Start()
     {
         // Arrange
         var zone1 = new ContainerIrrigationZoneBuilder(_testCtx)
@@ -327,7 +318,7 @@ public class SmartWateringTests
 
         //Act
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.pond_volume"), "5500");
-        await DeDebounce();
+
 
 
         //Assert
@@ -335,7 +326,7 @@ public class SmartWateringTests
     }
 
     [TestMethod]
-    public async Task No_Water_When_Watering_Triggers_Stop()
+    public void No_Water_When_Watering_Triggers_Stop()
     {
         // Arrange
         var zone1 = new ContainerIrrigationZoneBuilder(_testCtx)
@@ -350,14 +341,14 @@ public class SmartWateringTests
 
         zone1.SetMode(ZoneMode.Automatic);
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("switch.pond_valve"), "on");
-        await DeDebounce();
+
         //Act
 
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.rainwater_volume"), "500");
-        await DeDebounce();
+
 
         _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(5) + TimeSpan.FromSeconds(1)); //guard runs every 5 min
-        await DeDebounce();
+
 
 
         //Assert

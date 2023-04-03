@@ -37,13 +37,8 @@ public class ClassicIrrigationTests
         _testCtx.TriggerStateChange(_availableRainWaterSensor, "10000");
     }
 
-    public Task DeDebounce()
-    {
-        return Task.Delay(5);
-    }
-
     [TestMethod]
-    public async Task Below_Low_Moisture_Triggers_Valve_On()
+    public void Below_Low_Moisture_Triggers_Valve_On()
     {
         // Arrange
         var zone1 = new ClassicIrrigationZoneBuilder(_testCtx)
@@ -59,7 +54,7 @@ public class ClassicIrrigationTests
 
         //Act
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.front_yard_soil_moisture"), "32");
-        await DeDebounce();
+
 
         //Assert
         Assert.AreEqual(NeedsWatering.Yes, irrigation.Zones.First().Zone.State);
@@ -83,7 +78,7 @@ public class ClassicIrrigationTests
 
         //Act
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.front_yard_soil_moisture"), "28");
-        await DeDebounce();
+
 
         //Assert
         Assert.AreEqual(NeedsWatering.Critical, irrigation.Zones.First().Zone.State);
@@ -106,11 +101,11 @@ public class ClassicIrrigationTests
         zone1.SetMode(ZoneMode.Automatic);
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.front_yard_soil_moisture"), "32");
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("switch.front_yard_valve"), "on");
-        await DeDebounce();
+
 
         //Act
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.front_yard_soil_moisture"), "45");
-        await DeDebounce();
+
 
         //Assert
         Assert.AreEqual(NeedsWatering.No, irrigation.Zones.First().Zone.State);
@@ -134,11 +129,11 @@ public class ClassicIrrigationTests
         zone1.SetMode(ZoneMode.Automatic);
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.front_yard_soil_moisture"), "32");
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("switch.front_yard_valve"), "on");
-        await DeDebounce();
+
 
         //Act
         _testCtx.AdvanceTimeBy(TimeSpan.FromHours(1) + TimeSpan.FromSeconds(1));
-        await DeDebounce();
+
 
         //Assert
         _testCtx.VerifySwitchTurnOff(new BinarySwitch(_testCtx.HaContext, "switch.front_yard_valve"), Moq.Times.Once);
@@ -160,15 +155,15 @@ public class ClassicIrrigationTests
 
         zone1.SetMode(ZoneMode.Automatic);
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("switch.front_yard_valve"), "on");
-        await DeDebounce();
+
 
         _testCtx.AdvanceTimeBy(TimeSpan.FromHours(1) + TimeSpan.FromSeconds(1));
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("switch.front_yard_valve"), "off");
-        await DeDebounce();
+
 
         //Act
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.front_yard_soil_moisture"), "33");
-        await DeDebounce();
+
 
         //Assert
         Assert.AreEqual(false, zone1.CanStartWatering(_testCtx.Scheduler.Now, true));
@@ -191,16 +186,16 @@ public class ClassicIrrigationTests
 
         zone1.SetMode(ZoneMode.Automatic);
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("switch.front_yard_valve"), "on");
-        await DeDebounce();
+
 
         _testCtx.AdvanceTimeBy(TimeSpan.FromHours(1) + TimeSpan.FromSeconds(1));
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.front_yard_soil_moisture"), "33");
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("switch.front_yard_valve"), "off");
-        await DeDebounce();
+
 
         //Act
         _testCtx.AdvanceTimeBy(TimeSpan.FromHours(23) + TimeSpan.FromSeconds(1));
-        await DeDebounce();
+
 
         //Assert
         _testCtx.VerifySwitchTurnOn(new BinarySwitch(_testCtx.HaContext, "switch.front_yard_valve"), Moq.Times.AtLeastOnce); //Guard could potentially be first
@@ -227,7 +222,7 @@ public class ClassicIrrigationTests
 
         //Act
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.front_yard_soil_moisture"), "32");
-        await DeDebounce();
+
 
         //Assert
         Assert.AreEqual(NeedsWatering.Yes, irrigation.Zones.First().Zone.State);
@@ -255,7 +250,7 @@ public class ClassicIrrigationTests
 
         //Act
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.front_yard_soil_moisture"), "32");
-        await DeDebounce();
+
 
         //Assert
         Assert.AreEqual(NeedsWatering.Yes, irrigation.Zones.First().Zone.State);
@@ -282,11 +277,11 @@ public class ClassicIrrigationTests
         _testCtx.SetCurrentTime(elevenOClock);
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.front_yard_soil_moisture"), "32");
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("switch.front_yard_valve"), "on");
-        await DeDebounce();
+
 
         //Act
         _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(61));
-        await DeDebounce();
+
 
         //Assert
         Assert.AreEqual(NeedsWatering.Ongoing, irrigation.Zones.First().Zone.State);
@@ -314,7 +309,7 @@ public class ClassicIrrigationTests
 
         //Act
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.front_yard_soil_moisture"), "32");
-        await DeDebounce();
+
 
         //Assert
         Assert.AreEqual(NeedsWatering.Yes, irrigation.Zones.First().Zone.State);
@@ -341,11 +336,11 @@ public class ClassicIrrigationTests
         _testCtx.SetCurrentTime(elevenOClock);
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.front_yard_soil_moisture"), "32");
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("switch.front_yard_valve"), "on");
-        await DeDebounce();
+
 
         //Act
         _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(121));
-        await DeDebounce();
+
 
         //Assert
         Assert.AreEqual(NeedsWatering.Ongoing, irrigation.Zones.First().Zone.State);
@@ -374,11 +369,11 @@ public class ClassicIrrigationTests
         _testCtx.SetCurrentTime(elevenOClock);
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.front_yard_soil_moisture"), "32");
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("switch.front_yard_valve"), "on");
-        await DeDebounce();
+
 
         //Act
         _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(61));
-        await DeDebounce();
+
 
         //Assert
         Assert.AreEqual(NeedsWatering.Ongoing, irrigation.Zones.First().Zone.State);
@@ -406,11 +401,11 @@ public class ClassicIrrigationTests
         _testCtx.SetCurrentTime(elevenOClock);
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.front_yard_soil_moisture"), "32");
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("switch.front_yard_valve"), "on");
-        await DeDebounce();
+
 
         //Act
         _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(31));
-        await DeDebounce();
+
 
         //Assert
         Assert.AreEqual(NeedsWatering.Ongoing, irrigation.Zones.First().Zone.State);

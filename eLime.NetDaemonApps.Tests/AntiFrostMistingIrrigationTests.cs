@@ -37,13 +37,8 @@ public class AntiFrostMistingIrrigationTests
         _testCtx.TriggerStateChange(_availableRainWaterSensor, "10000");
     }
 
-    public Task DeDebounce()
-    {
-        return Task.Delay(5);
-    }
-
     [TestMethod]
-    public async Task Below_Low_Temperature_Triggers_Valve_On()
+    public void Below_Low_Temperature_Triggers_Valve_On()
     {
         // Arrange
         var zone1 = new AntiFrostMistingIrrigationZoneBuilder(_testCtx)
@@ -59,7 +54,7 @@ public class AntiFrostMistingIrrigationTests
 
         //Act
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.fruit_trees_temperature"), "0.5");
-        await DeDebounce();
+
 
         //Assert
         Assert.AreEqual(NeedsWatering.Yes, irrigation.Zones.First().Zone.State);
@@ -67,7 +62,7 @@ public class AntiFrostMistingIrrigationTests
     }
 
     [TestMethod]
-    public async Task Below_Critical_Moisture_Triggers_State_Critical()
+    public void Below_Critical_Moisture_Triggers_State_Critical()
     {
         // Arrange
         var zone1 = new AntiFrostMistingIrrigationZoneBuilder(_testCtx)
@@ -83,7 +78,7 @@ public class AntiFrostMistingIrrigationTests
 
         //Act
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.fruit_trees_temperature"), "0");
-        await DeDebounce();
+
 
         //Assert
         Assert.AreEqual(NeedsWatering.Critical, irrigation.Zones.First().Zone.State);
@@ -91,7 +86,7 @@ public class AntiFrostMistingIrrigationTests
     }
 
     [TestMethod]
-    public async Task End_Of_Misting_Duration_Triggers_Valve_Off()
+    public void End_Of_Misting_Duration_Triggers_Valve_Off()
     {
         // Arrange
         var zone1 = new AntiFrostMistingIrrigationZoneBuilder(_testCtx)
@@ -107,18 +102,18 @@ public class AntiFrostMistingIrrigationTests
         zone1.SetMode(ZoneMode.Automatic);
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.fruit_trees_temperature"), "0");
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("switch.fruit_trees_valve"), "on");
-        await DeDebounce();
+
 
         //Act
         _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(5) + TimeSpan.FromSeconds(1));
-        await DeDebounce();
+
 
         //Assert
         _testCtx.VerifySwitchTurnOff(new BinarySwitch(_testCtx.HaContext, "switch.fruit_trees_valve"), Moq.Times.Once);
     }
 
     [TestMethod]
-    public async Task Respects_Timeout()
+    public void Respects_Timeout()
     {
         // Arrange
         var zone1 = new AntiFrostMistingIrrigationZoneBuilder(_testCtx)
@@ -133,15 +128,15 @@ public class AntiFrostMistingIrrigationTests
 
         zone1.SetMode(ZoneMode.Automatic);
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("switch.fruit_trees_valve"), "on");
-        await DeDebounce();
+
 
         _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(5) + TimeSpan.FromSeconds(1));
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("switch.fruit_trees_valve"), "off");
-        await DeDebounce();
+
 
         //Act
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.fruit_trees_temperature"), "0.1");
-        await DeDebounce();
+
 
         //Assert
         Assert.AreEqual(false, zone1.CanStartWatering(_testCtx.Scheduler.Now, true));
@@ -149,7 +144,7 @@ public class AntiFrostMistingIrrigationTests
     }
 
     [TestMethod]
-    public async Task Can_Turn_On_Again_After_Timeout()
+    public void Can_Turn_On_Again_After_Timeout()
     {
         // Arrange
         var zone1 = new AntiFrostMistingIrrigationZoneBuilder(_testCtx)
@@ -164,16 +159,13 @@ public class AntiFrostMistingIrrigationTests
 
         zone1.SetMode(ZoneMode.Automatic);
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("switch.fruit_trees_valve"), "on");
-        await DeDebounce();
+        _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.fruit_trees_temperature"), "0.1");
 
         _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(5) + TimeSpan.FromSeconds(1));
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("switch.fruit_trees_valve"), "off");
-        _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.fruit_trees_temperature"), "0.1");
-        await DeDebounce();
 
         //Act
         _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(5) + TimeSpan.FromSeconds(1));
-        await DeDebounce();
 
         //Assert
         _testCtx.VerifySwitchTurnOn(new BinarySwitch(_testCtx.HaContext, "switch.fruit_trees_valve"), Moq.Times.AtLeastOnce); //Guard could potentially be first
