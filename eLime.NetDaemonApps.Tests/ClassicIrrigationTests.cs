@@ -62,7 +62,7 @@ public class ClassicIrrigationTests
     }
 
     [TestMethod]
-    public async Task Below_Critical_Moisture_Triggers_State_Critical()
+    public void Below_Critical_Moisture_Triggers_State_Critical()
     {
         // Arrange
         var zone1 = new ClassicIrrigationZoneBuilder(_testCtx)
@@ -86,7 +86,7 @@ public class ClassicIrrigationTests
     }
 
     [TestMethod]
-    public async Task Above_Target_Moisture_Triggers_Valve_Off()
+    public void Above_Target_Moisture_Triggers_Valve_Off()
     {
         // Arrange
         var zone1 = new ClassicIrrigationZoneBuilder(_testCtx)
@@ -113,7 +113,7 @@ public class ClassicIrrigationTests
     }
 
     [TestMethod]
-    public async Task Above_MaxDuration_Triggers_Valve_Off()
+    public void Above_MaxDuration_Triggers_Valve_Off()
     {
         // Arrange
         var zone1 = new ClassicIrrigationZoneBuilder(_testCtx)
@@ -140,7 +140,7 @@ public class ClassicIrrigationTests
     }
 
     [TestMethod]
-    public async Task Respects_Timeout()
+    public void Respects_Timeout()
     {
         // Arrange
         var zone1 = new ClassicIrrigationZoneBuilder(_testCtx)
@@ -171,7 +171,7 @@ public class ClassicIrrigationTests
     }
 
     [TestMethod]
-    public async Task Can_Turn_On_Again_After_Timeout()
+    public void Can_Turn_On_Again_After_Timeout()
     {
         // Arrange
         var zone1 = new ClassicIrrigationZoneBuilder(_testCtx)
@@ -202,7 +202,7 @@ public class ClassicIrrigationTests
     }
 
     [TestMethod]
-    public async Task Within_TimeWindow_Triggers_Valve_On()
+    public void Within_TimeWindow_Triggers_Valve_On()
     {
         // Arrange
         var zone1 = new ClassicIrrigationZoneBuilder(_testCtx)
@@ -230,7 +230,7 @@ public class ClassicIrrigationTests
     }
 
     [TestMethod]
-    public async Task Not_Within_TimeWindow_Does_Not_Trigger_Valve_On()
+    public void Not_Within_TimeWindow_Does_Not_Trigger_Valve_On()
     {
         // Arrange
         var zone1 = new ClassicIrrigationZoneBuilder(_testCtx)
@@ -258,7 +258,7 @@ public class ClassicIrrigationTests
     }
 
     [TestMethod]
-    public async Task Past_TimeWindow_Triggers_Valve_Off()
+    public void Past_TimeWindow_Triggers_Valve_Off()
     {
         // Arrange
         var zone1 = new ClassicIrrigationZoneBuilder(_testCtx)
@@ -289,7 +289,7 @@ public class ClassicIrrigationTests
     }
 
     [TestMethod]
-    public async Task Within_TimeWindow_Over_2_Days_Triggers_Valve_On()
+    public void Within_TimeWindow_Over_2_Days_Triggers_Valve_On()
     {
         // Arrange
         var zone1 = new ClassicIrrigationZoneBuilder(_testCtx)
@@ -317,7 +317,7 @@ public class ClassicIrrigationTests
     }
 
     [TestMethod]
-    public async Task Past_TimeWindow_Over_2_Days_Triggers_Valve_Off()
+    public void Past_TimeWindow_Over_2_Days_Triggers_Valve_Off()
     {
         // Arrange
         var zone1 = new ClassicIrrigationZoneBuilder(_testCtx)
@@ -349,7 +349,7 @@ public class ClassicIrrigationTests
 
 
     [TestMethod]
-    public async Task Past_TimeWindow_And_Larger_Max_Duration_Triggers_Valve_Off_At_End_Of_Window()
+    public void Past_TimeWindow_And_Larger_Max_Duration_Triggers_Valve_Off_At_End_Of_Window()
     {
         // Arrange
         var zone1 = new ClassicIrrigationZoneBuilder(_testCtx)
@@ -381,7 +381,7 @@ public class ClassicIrrigationTests
     }
 
     [TestMethod]
-    public async Task In_TimeWindow_And_Smaller_Max_Duration_Triggers_Valve_Off_At_End_Of_Duration()
+    public void In_TimeWindow_And_Smaller_Max_Duration_Triggers_Valve_Off_At_End_Of_Duration()
     {
         // Arrange
         var zone1 = new ClassicIrrigationZoneBuilder(_testCtx)

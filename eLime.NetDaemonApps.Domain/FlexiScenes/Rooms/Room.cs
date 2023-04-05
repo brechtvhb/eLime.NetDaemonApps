@@ -22,7 +22,7 @@ public class Room : IAsyncDisposable
     public bool AutoTransition { get; }
     public bool AutoTransitionTurnOffIfNoValidSceneFound { get; }
     private bool FullyAutomated { get; }
-    private readonly DebounceDispatcher AutoTransitionDebounceDispatcher;
+    private readonly DebounceDispatcher? AutoTransitionDebounceDispatcher;
 
     public InitialClickAfterMotionBehaviour InitialClickAfterMotionBehaviour { get; }
     public Int32? IlluminanceThreshold { get; }
@@ -121,6 +121,11 @@ public class Room : IAsyncDisposable
 
     private async void DebounceAutoTransitionAsync(object? sender, BinarySensorEventArgs e)
     {
+        if (AutoTransitionDebounceDispatcher == null)
+        {
+            await ExecuteFlexiSceneOnAutoTransition();
+            return;
+        }
         await AutoTransitionDebounceDispatcher.DebounceAsync(ExecuteFlexiSceneOnAutoTransition);
     }
 
@@ -144,7 +149,9 @@ public class Room : IAsyncDisposable
         Name = config.Name;
         EnsureEnabledSwitchExists();
 
-        AutoTransitionDebounceDispatcher = new(autoTransitionDebounce);
+        if (autoTransitionDebounce != TimeSpan.Zero)
+            AutoTransitionDebounceDispatcher = new(autoTransitionDebounce);
+
         if (!(config.Enabled ?? true))
         {
             FlexiScenes = new FlexiScenes(new List<FlexiScene>());

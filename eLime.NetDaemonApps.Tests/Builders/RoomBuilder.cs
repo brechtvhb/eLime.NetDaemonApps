@@ -602,7 +602,7 @@ namespace eLime.NetDaemonApps.Tests.Builders
 
         public Room Build()
         {
-            return new Room(_testCtx.HaContext, _logger, _testCtx.Scheduler, _mqttEntityManager, _config, TimeSpan.FromMilliseconds(5));
+            return new Room(_testCtx.HaContext, _logger, _testCtx.Scheduler, _mqttEntityManager, _config, TimeSpan.Zero);
         }
     }
 

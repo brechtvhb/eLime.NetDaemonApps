@@ -111,7 +111,7 @@ public class FlexiLightTests
     }
 
     [TestMethod]
-    public async Task Motion_IsNotIgnored_AfterOffDuration_WhileThereIsStillMotion()
+    public void Motion_IsNotIgnored_AfterOffDuration_WhileThereIsStillMotion()
     {
         var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).Build();
 
@@ -122,7 +122,6 @@ public class FlexiLightTests
         //Act
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(3));
-        await Task.Delay(1000); //Make sure guard had 1 sec to detect presence is no longer ignored but motion is still active
 
         //Assert twice = first time before turning off and second time after having being turned off
         _testCtx.VerifyLightTurnOn(new Light(_testCtx.HaContext, "light.test"), Moq.Times.Exactly(2));
@@ -206,19 +205,17 @@ public class FlexiLightTests
 
 
     [TestMethod]
-    public async Task AutoTransition_WithCorrectDuration()
+    public void AutoTransition_WithCorrectDuration()
     {
         // Arrange
         var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithMultipleFlexiScenes().WithAutoTransition().Build();
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "off");
-        await Task.Delay(50); //allow debounce to bounce
 
         //Act
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "off");
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_evening"), "on");
-        await Task.Delay(50); //allow debounce to bounce
 
         //Assert
         Assert.AreEqual("evening", room.FlexiScenes.Current.Name);
@@ -226,18 +223,16 @@ public class FlexiLightTests
     }
 
     [TestMethod]
-    public async Task AutoTransition_TurnOffIfNoValidSceneFound()
+    public void AutoTransition_TurnOffIfNoValidSceneFound()
     {
         // Arrange
         var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithMultipleFlexiScenes().WithAutoTransition().WithAutoTransitionTurnOfIfNoValidSceneFound().Build();
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "off");
-        await Task.Delay(50); //allow debounce to bounce
 
         //Act
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "off");
-        await Task.Delay(50); //allow debounce to bounce
 
         //Assert
         Assert.IsNull(room.FlexiScenes.Current);
@@ -246,18 +241,16 @@ public class FlexiLightTests
 
 
     [TestMethod]
-    public async Task AutoTransition_DoNotTurnOffIfNoValidSceneFoundWhenNotConfigured()
+    public void AutoTransition_DoNotTurnOffIfNoValidSceneFoundWhenNotConfigured()
     {
         // Arrange
         var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithMultipleFlexiScenes().WithAutoTransition().Build();
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "off");
-        await Task.Delay(50); //allow debounce to bounce
 
         //Act
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "off");
-        await Task.Delay(50); //allow debounce to bounce
 
         //Assert
         Assert.AreEqual("day", room.FlexiScenes.Current.Name);
@@ -265,14 +258,13 @@ public class FlexiLightTests
     }
 
     [TestMethod]
-    public async Task FullyAutomated_Turns_on()
+    public void FullyAutomated_Turns_on()
     {
         //Arrange
         var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).FullyAutomated().WithMultipleFlexiScenes().Build();
 
         //Act
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
-        await Task.Delay(50); //allow debounce to bounce
 
         //Assert
         Assert.IsNotNull(room.FlexiScenes.Current);
@@ -301,17 +293,15 @@ public class FlexiLightTests
 
 
     [TestMethod]
-    public async Task FullyAutomated_Transitions()
+    public void FullyAutomated_Transitions()
     {
         //Arrange
         var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).FullyAutomated().WithMultipleFlexiScenes().Build();
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
-        await Task.Delay(50); //allow debounce to bounce
 
         //Act
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_evening"), "on");
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "off");
-        await Task.Delay(50); //allow debounce to bounce
 
         //Assert
         Assert.IsNotNull(room.FlexiScenes.Current);
@@ -320,16 +310,14 @@ public class FlexiLightTests
     }
 
     [TestMethod]
-    public async Task FullyAutomated_Turns_Off_IfConfigured()
+    public void FullyAutomated_Turns_Off_IfConfigured()
     {
         //Arrange
         var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).FullyAutomated().WithAutoTransitionTurnOfIfNoValidSceneFound().WithMultipleFlexiScenes().Build();
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
-        await Task.Delay(50); //allow debounce to bounce
 
         //Act
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "off");
-        await Task.Delay(50); //allow debounce to bounce
 
         //Assert
         Assert.IsNull(room.FlexiScenes.Current);
@@ -337,16 +325,14 @@ public class FlexiLightTests
     }
 
     [TestMethod]
-    public async Task FullyAutomated_Does_Not_Turn_Off_If_Not_Configured()
+    public void FullyAutomated_Does_Not_Turn_Off_If_Not_Configured()
     {
         //Arrange
         var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).FullyAutomated().WithMultipleFlexiScenes().Build();
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
-        await Task.Delay(50); //allow debounce to bounce
 
         //Act
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "off");
-        await Task.Delay(50); //allow debounce to bounce
 
         //Assert
         Assert.IsNotNull(room.FlexiScenes.Current);
@@ -448,7 +434,6 @@ public class FlexiLightTests
 
         //Act
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
-
         await Task.Delay(10); //Allow pulse to pulse
 
         //Assert
@@ -750,7 +735,7 @@ public class FlexiLightTests
     }
 
     [TestMethod]
-    public async Task Click_Triggers_FlexiScene()
+    public void Click_Triggers_FlexiScene()
     {
         // Arrange
         var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithSwitch().WithMultipleFlexiScenes().Build();
@@ -759,7 +744,6 @@ public class FlexiLightTests
 
         //Act
         _testCtx.SimulateClick(new StateSwitch(_testCtx.HaContext, "binary_sensor.switch"));
-        await Task.Delay(30); //allow debounce to ... debounce
 
         //Assert
         _testCtx.VerifyLightTurnOn(new Light(_testCtx.HaContext, "light.day"), Moq.Times.Once);
