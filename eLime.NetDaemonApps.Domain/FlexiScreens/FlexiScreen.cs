@@ -2,6 +2,7 @@
 using eLime.NetDaemonApps.Domain.Helper;
 using Microsoft.Extensions.Logging;
 using NetDaemon.Extensions.MqttEntityManager;
+using NetDaemon.Extensions.Scheduler;
 using NetDaemon.HassModel;
 using System.Reactive.Concurrency;
 
@@ -32,6 +33,8 @@ public class FlexiScreen : IDisposable
     private Protectors? LastStateChangeTriggeredBy { get; set; }
 
     private IDisposable SwitchDisposable { get; set; }
+
+    private IDisposable? GuardTask { get; set; }
 
     private ScreenState? CurrentState => Screen.IsClosed()
         ? ScreenState.Down
@@ -92,6 +95,11 @@ public class FlexiScreen : IDisposable
         GuardScreenDebounceDispatcher = new(debounceDuration);
 
         DebounceGuardScreen().RunSync();
+
+        GuardTask = _scheduler.RunEvery(TimeSpan.FromMinutes(1), _scheduler.Now, () =>
+        {
+            DebounceGuardScreen().RunSync();
+        });
     }
 
     private void ChildrenAreAngryProtector_NightStarted(object? sender, EventArgs e)
@@ -307,6 +315,8 @@ public class FlexiScreen : IDisposable
 
         SwitchDisposable.Dispose();
         Screen.Dispose();
+
+        GuardTask?.Dispose();
 
         _logger.LogInformation("{Screen}: Disposed", Name);
     }
