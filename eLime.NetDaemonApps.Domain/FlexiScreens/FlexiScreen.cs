@@ -42,7 +42,7 @@ public class FlexiScreen : IDisposable
             ? ScreenState.Up
             : null;
 
-    private readonly DebounceDispatcher GuardScreenDebounceDispatcher;
+    private readonly DebounceDispatcher? GuardScreenDebounceDispatcher;
 
     public FlexiScreen(IHaContext haContext, ILogger logger, IScheduler scheduler, IMqttEntityManager mqttEntityManager, Boolean enabled, String name, Cover screen, String ndUserId,
         SunProtector sunProtector, StormProtector? stormProtector, TemperatureProtector? temperatureProtector, ManIsAngryProtector? manIsAngryProtector, WomanIsAngryProtector? womanIsAngryProtector, ChildrenAreAngryProtector? childrenAreAngryProtector,
@@ -92,7 +92,11 @@ public class FlexiScreen : IDisposable
         _logger.LogInformation($"{{Screen}}: Desired state for TemperatureProtector is: {TemperatureProtector?.DesiredState.State} (enforce: {TemperatureProtector?.DesiredState.Enforce}).", Name);
         _logger.LogInformation($"{{Screen}}: Desired state for ChildrenAreAngryProtector is: {ChildrenAreAngryProtector?.DesiredState.State} (enforce: {ChildrenAreAngryProtector?.DesiredState.Enforce}).", Name);
 
-        GuardScreenDebounceDispatcher = new(debounceDuration);
+
+        if (debounceDuration != TimeSpan.Zero)
+        {
+            GuardScreenDebounceDispatcher = new(debounceDuration);
+        }
 
         DebounceGuardScreen().RunSync();
 
@@ -133,6 +137,12 @@ public class FlexiScreen : IDisposable
 
     internal async Task DebounceGuardScreen()
     {
+        if (GuardScreenDebounceDispatcher == null)
+        {
+            await GuardScreen();
+            return;
+        }
+
         await GuardScreenDebounceDispatcher.DebounceAsync(GuardScreen);
     }
 

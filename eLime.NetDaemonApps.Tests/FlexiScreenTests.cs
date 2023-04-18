@@ -125,11 +125,6 @@ public class FlexiScreenTests
         _testCtx.TriggerStateChange(_sleepSensor, new EntityState { State = "off" });
 
     }
-    public Task DeDebounce()
-    {
-        return Task.Delay(5);
-    }
-
 
     [TestMethod]
     public void SunInPosition_Closes_Screen()
@@ -286,7 +281,7 @@ public class FlexiScreenTests
     }
 
     [TestMethod]
-    public async Task NoRain_AfterStorm_AllowsScreenToGoUpAgain()
+    public void NoRain_AfterStorm_AllowsScreenToGoUpAgain()
     {
         // Arrange
         _testCtx.TriggerStateChange(_rainRateSensor, new EntityState { State = "3" });
@@ -300,7 +295,6 @@ public class FlexiScreenTests
 
         //Act
         _testCtx.TriggerStateChange(_rainRateSensor, new EntityState { State = "0" });
-        await DeDebounce();
 
         //Assert
         Assert.AreEqual((null, false), screen.StormProtector.DesiredState);
@@ -309,7 +303,7 @@ public class FlexiScreenTests
 
 
     [TestMethod]
-    public async Task RainForecast_Opens_Screen()
+    public void RainForecast_Opens_Screen()
     {
         // Arrange
         _testCtx.TriggerStateChange(_cover, "closed");
@@ -321,7 +315,6 @@ public class FlexiScreenTests
 
         //Act
         _testCtx.TriggerStateChange(_shortTermRainForecastSensor, new EntityState { State = "0.5" });
-        await DeDebounce();
 
         //Assert
         Assert.AreEqual((ScreenState.Up, true), screen.StormProtector.DesiredState);
@@ -625,7 +618,7 @@ public class FlexiScreenTests
     }
 
     [TestMethod]
-    public async Task Screen_DoesNotMake_Man_Angry()
+    public void Screen_DoesNotMake_Man_Angry()
     {
         // Arrange
         _testCtx.TriggerStateChangeWithAttributes(_sun, "below_horizon", new SunAttributes { Azimuth = 250, Elevation = 20 });
@@ -639,21 +632,18 @@ public class FlexiScreenTests
             .Build();
 
         _testCtx.TriggerStateChange(_windSpeedSensor, new EntityState { State = "80" });
-        await DeDebounce();
-
         _testCtx.TriggerStateChange(_cover, "open");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(2));
 
         //Act
         _testCtx.TriggerStateChange(_windSpeedSensor, new EntityState { State = "20" });
-        await DeDebounce();
 
         //Assert
         _testCtx.VerifyScreenGoesDown(_cover, Moq.Times.Never);
     }
 
     [TestMethod]
-    public async Task Screen_Plays_Nice_After_Cooldown()
+    public void Screen_Plays_Nice_After_Cooldown()
     {
         // Arrange
         _testCtx.TriggerStateChangeWithAttributes(_sun, "below_horizon", new SunAttributes { Azimuth = 250, Elevation = 20 });
@@ -668,14 +658,11 @@ public class FlexiScreenTests
             .Build();
 
         _testCtx.TriggerStateChange(_windSpeedSensor, new EntityState { State = "80" });
-        await DeDebounce();
-
         _testCtx.TriggerStateChange(_cover, "open");
         _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(2));
 
         //Act
         _testCtx.TriggerStateChange(_windSpeedSensor, new EntityState { State = "20" });
-        await DeDebounce();
 
         //Assert
         _testCtx.VerifyScreenGoesDown(_cover, Moq.Times.Once);
@@ -706,7 +693,7 @@ public class FlexiScreenTests
     }
 
     [TestMethod]
-    public async Task Screen_Ignores_Woman_Because_She_Forgets_To_Pull_Screen_Up()
+    public void Screen_Ignores_Woman_Because_She_Forgets_To_Pull_Screen_Up()
     {
         // Arrange
         _testCtx.TriggerStateChangeWithAttributes(_sun, "below_horizon", new SunAttributes { Azimuth = 250, Elevation = 20 });
@@ -722,11 +709,9 @@ public class FlexiScreenTests
             .Build();
 
         _testCtx.TriggerStateChange(_cover, "closed");
-        await DeDebounce();
 
         //Act
         _testCtx.TriggerStateChangeWithAttributes(_sun, "below_horizon", new SunAttributes { Azimuth = 250, Elevation = 0 });
-        await DeDebounce();
 
         //Assert
         _testCtx.VerifyScreenGoesUp(_cover, Moq.Times.Once);
