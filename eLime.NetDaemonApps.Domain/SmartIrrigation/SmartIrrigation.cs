@@ -115,6 +115,9 @@ public class SmartIrrigation : IDisposable
         if (startTime != null)
             zoneWrapper.Zone.SetStartWateringDate(startTime.Value);
 
+        if (zoneWrapper.Zone.WateringStartedAt == null)
+            return;
+
         if (zoneWrapper.Zone is not IZoneWithLimitedRuntime limitedRunTimeZone)
             return;
 
