@@ -58,6 +58,7 @@ public class SmartIrrigation : IDisposable
             InitializeModeDropdown(wrapper).RunSync();
             InitializeZoneStateSensor(wrapper).RunSync();
             wrapper.Zone.StateChanged += Zone_StateChanged;
+            wrapper.Zone.CheckDesiredState();
         }
 
         if (debounceDuration != TimeSpan.Zero)

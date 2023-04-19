@@ -43,7 +43,6 @@ public abstract class IrrigationZone : IDisposable
     public void SetMode(ZoneMode mode)
     {
         Mode = mode;
-        CheckDesiredState();
     }
 
     public void SetStartWateringDate(DateTimeOffset now)
@@ -67,7 +66,7 @@ public abstract class IrrigationZone : IDisposable
     }
 
 
-    protected void CheckDesiredState()
+    public void CheckDesiredState()
     {
         var desiredState = GetDesiredState();
 
