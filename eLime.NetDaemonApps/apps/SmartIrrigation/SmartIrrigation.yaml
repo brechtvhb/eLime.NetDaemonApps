@@ -1,19 +1,19 @@
 ﻿eLime.NetDaemonApps.Config.SmartIrrigationConfig:
   netDaemonUserId: "17e75fc5e676439783970c2536a6c3d9"
-  pumpEntity: switch.socket_shed_pump
+  pumpSocketEntity: switch.socket_shed_pump
   pumpFlowRate: 2000 #liters per hour
   availableRainWaterEntity: sensor.rainwater_total
   minimumAvailableRainWater: 2000
   zones:
-    - name: pond
-      flowRate: 2000 #liters per hour
-      valveEntity: switch.valve_pond_refill_state
-      container:
-        volumeEntity: sensor.shelly_uni_pond_liters
-        targetVolume: 7200 #liters
-        lowVolume: 6000 #liters
-        criticalVolume: 5000 #liters
-        overflowEntity: binary_sensor.shelly_uni_pond_channel_1_input
+    - name: "Fruit blossoms"
+      flowRate: 20 #liters per hour
+      valveEntity: switch.water_moestuin_4
+      antiFrostMisting:
+        temperatureEntity: sensor.gw2000a_v2_2_0_outdoor_temperature
+        criticalTemperature: "5"
+        lowTemperature: "6.5"
+        mistingDuration: "00:02:00"
+        mistingTimeout: "00:05:00"
     #- name: greenhouse
     #  mode: EnergyManaged #  (no yaml setting, autogenerate)
     #  flowRate: 200 #liters per hour

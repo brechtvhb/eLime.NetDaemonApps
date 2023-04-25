@@ -6,12 +6,12 @@ namespace eLime.NetDaemonApps.Domain.SmartIrrigation;
 public class AntiFrostMistingIrrigationZone : IrrigationZone, IZoneWithLimitedRuntime
 {
     public NumericSensor TemperatureSensor { get; }
-    public Int32 CriticallyLowTemperature { get; }
-    public Int32 LowTemperature { get; }
+    public Double CriticallyLowTemperature { get; }
+    public Double LowTemperature { get; }
     public TimeSpan MistingDuration { get; }
     public TimeSpan MistingTimeout { get; }
 
-    public AntiFrostMistingIrrigationZone(String name, Int32 flowRate, BinarySwitch valve, NumericSensor temperatureSensor, Int32 criticallyLowTemperature, Int32 lowTemperature, TimeSpan mistingDuration, TimeSpan mistingTimeout)
+    public AntiFrostMistingIrrigationZone(String name, Int32 flowRate, BinarySwitch valve, NumericSensor temperatureSensor, Double criticallyLowTemperature, Double lowTemperature, TimeSpan mistingDuration, TimeSpan mistingTimeout)
     {
         SetCommonFields(name, flowRate, valve);
 
