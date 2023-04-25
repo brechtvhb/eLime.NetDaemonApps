@@ -10,10 +10,10 @@
       valveEntity: switch.water_moestuin_4
       antiFrostMisting:
         temperatureEntity: sensor.gw2000a_v2_2_0_outdoor_temperature
-        criticalTemperature: "5"
-        lowTemperature: "6.5"
+        criticalTemperature: 5
+        lowTemperature: 6
         mistingDuration: "00:02:00"
-        mistingTimeout: "00:05:00"
+        mistingTimeout: "00:01:00"
     #- name: greenhouse
     #  mode: EnergyManaged #  (no yaml setting, autogenerate)
     #  flowRate: 200 #liters per hour

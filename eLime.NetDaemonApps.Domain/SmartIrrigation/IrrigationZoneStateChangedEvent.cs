@@ -8,8 +8,8 @@ public class IrrigationZoneStateChangedEvent : EventArgs
         State = state;
     }
 
-    public IrrigationZone Zone { get; init; }
-    public NeedsWatering? State { get; init; }
+    public IrrigationZone Zone { get; set; }
+    public NeedsWatering? State { get; set; }
 
 }
 

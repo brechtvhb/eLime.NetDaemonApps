@@ -133,7 +133,6 @@ public class AntiFrostMistingIrrigationTests
         _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(5) + TimeSpan.FromSeconds(1));
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("switch.fruit_trees_valve"), "off");
 
-
         //Act
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.fruit_trees_temperature"), "0.1");
 
@@ -148,7 +147,7 @@ public class AntiFrostMistingIrrigationTests
     {
         // Arrange
         var zone1 = new AntiFrostMistingIrrigationZoneBuilder(_testCtx)
-            .WithMistingDurations(TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5))
+            .WithMistingDurations(TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(1))
             .Build();
 
         var irrigation = new SmartIrrigationBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)

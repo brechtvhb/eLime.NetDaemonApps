@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using NetDaemon.Extensions.MqttEntityManager;
 using NetDaemon.Extensions.Scheduler;
 using NetDaemon.HassModel;
+using NetDaemon.HassModel.Entities;
 using System.Reactive.Concurrency;
 
 namespace eLime.NetDaemonApps.Domain.SmartIrrigation;
@@ -67,7 +68,7 @@ public class SmartIrrigation : IDisposable
             StopWateringDebounceDispatcher = new(debounceDuration);
         }
 
-        GuardTask = _scheduler.RunEvery(TimeSpan.FromMinutes(5), _scheduler.Now, () =>
+        GuardTask = _scheduler.RunEvery(TimeSpan.FromMinutes(1), _scheduler.Now, () =>
         {
             DebounceStartWatering();
             DebounceStopWatering();
@@ -133,8 +134,8 @@ public class SmartIrrigation : IDisposable
                 zoneWrapper.Zone.Valve.TurnOff();
                 return;
             case not null when timespan > TimeSpan.Zero:
-                _logger.LogDebug("{IrrigationZone}: Will stop irrigation for this zone in '{TimeSpan}", zoneWrapper.Zone.Name, timespan.ToString());
-                zoneWrapper.EndWateringtimer = _scheduler.Schedule(timespan, (_, _) => zoneWrapper.Zone.Valve.TurnOff());
+                _logger.LogDebug("{IrrigationZone}: Will stop irrigation for this zone in '{TimeSpan}'", zoneWrapper.Zone.Name, timespan.ToString());
+                zoneWrapper.EndWateringtimer = _scheduler.Schedule(timespan.Value, zoneWrapper.Zone.Valve.TurnOff);
                 return;
         }
     }
@@ -164,7 +165,7 @@ public class SmartIrrigation : IDisposable
         foreach (var criticalZone in criticalZonesThatNeedWatering)
         {
             var started = StartWateringIfNeeded(criticalZone, remainingFlowRate);
-            if (started)
+            if (!started)
                 continue;
 
             _logger.LogDebug("{IrrigationZone}: Will start irrigation, zone is in critical need of water.", criticalZone.Zone.Name);
@@ -336,13 +337,14 @@ public class SmartIrrigation : IDisposable
         {
             _logger.LogDebug("{IrrigationZone}: Initializing zone.", zone.Name);
             zone.SetMode(Enum<ZoneMode>.Cast(state));
-            var attributes = _haContext.Entity(selectName).Attributes as SmartIrrigationZoneAttributes;
 
-            if (!string.IsNullOrWhiteSpace(attributes?.WateringStartedAt))
-                zone.SetStartWateringDate(DateTime.Parse(attributes.WateringStartedAt));
+            var entity = new Entity<SmartIrrigationZoneAttributes>(_haContext, selectName);
 
-            if (!string.IsNullOrWhiteSpace(attributes?.LastWatering))
-                zone.SetLastWateringDate(DateTime.Parse(attributes.LastWatering));
+            if (!String.IsNullOrWhiteSpace(entity.Attributes?.LastWatering))
+                zone.SetLastWateringDate(DateTime.Parse(entity.Attributes.LastWatering));
+
+            if (!String.IsNullOrWhiteSpace(entity.Attributes?.WateringStartedAt))
+                zone.SetStartWateringDate(DateTime.Parse(entity.Attributes.WateringStartedAt));
 
             SetEndWateringTimer(wrapper);
         }

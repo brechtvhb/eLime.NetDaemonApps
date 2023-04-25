@@ -27,12 +27,12 @@ public abstract class IrrigationZone : IDisposable
 
     private void Valve_TurnedOn(object? sender, BinarySensorEventArgs e)
     {
-        StateChanged?.Invoke(this, new IrrigationZoneWateringStartedEvent(this, State));
+        CheckDesiredState(new IrrigationZoneWateringStartedEvent(this, State));
     }
 
     private void Valve_TurnedOff(object? sender, BinarySensorEventArgs e)
     {
-        StateChanged?.Invoke(this, new IrrigationZoneWateringEndedEvent(this, State));
+        CheckDesiredState(new IrrigationZoneWateringEndedEvent(this, State));
     }
 
     public void SetState(NeedsWatering state)
@@ -66,7 +66,7 @@ public abstract class IrrigationZone : IDisposable
     }
 
 
-    public void CheckDesiredState()
+    public void CheckDesiredState(IrrigationZoneStateChangedEvent? eventToEmit = null)
     {
         var desiredState = GetDesiredState();
 
@@ -74,6 +74,13 @@ public abstract class IrrigationZone : IDisposable
             return;
 
         State = desiredState;
+
+        if (eventToEmit != null)
+        {
+            eventToEmit.State = State;
+            OnStateCHanged(eventToEmit);
+            return;
+        }
 
         IrrigationZoneStateChangedEvent? @event = desiredState switch
         {
@@ -95,8 +102,8 @@ public abstract class IrrigationZone : IDisposable
 
     protected TimeSpan? GetRemainingRrunTime(TimeSpan? suggestedRunTime, DateTimeOffset now)
     {
-        var remainingDuration = now - WateringStartedAt;
-
+        var currentRuntime = now - WateringStartedAt;
+        var remainingDuration = suggestedRunTime - currentRuntime;
         return remainingDuration < suggestedRunTime ? remainingDuration : suggestedRunTime;
     }
 
