@@ -66,13 +66,7 @@ public class SunProtector : IDisposable
             return (null, false);
 
         var startOrientationThreshold = ScreenOrientation - OrientationThreshold;
-        if (startOrientationThreshold < 0)
-            startOrientationThreshold += 360;
-
         var endOrientationThreshold = ScreenOrientation + OrientationThreshold;
-        if (endOrientationThreshold > 360)
-            endOrientationThreshold -= 360;
-
         var azimuthWithinThreshold = Sun.Attributes.Azimuth > startOrientationThreshold && Sun.Attributes.Azimuth < endOrientationThreshold;
 
         if (elevationAboveThreshold && azimuthWithinThreshold)
