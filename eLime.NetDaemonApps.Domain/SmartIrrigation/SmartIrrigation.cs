@@ -1,5 +1,6 @@
 ﻿using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
+using eLime.NetDaemonApps.Domain.Entities.Weather;
 using eLime.NetDaemonApps.Domain.Helper;
 using eLime.NetDaemonApps.Domain.Mqtt;
 using Microsoft.Extensions.Logging;
@@ -17,8 +18,14 @@ public class SmartIrrigation : IDisposable
 
     public BinarySwitch PumpSocket { get; }
     public Int32 PumpFlowRate { get; }
+
     public NumericSensor AvailableRainWaterSensor { get; }
     public Int32 MinimumAvailableRainWater { get; }
+
+    private Weather? Weather { get; }
+    public Int32? RainPredictionDays { get; }
+    public Double? RainPredictionLiters { get; }
+
     public Boolean EnergyAvailable { get; internal set; }
 
     public NeedsWatering State => Zones.Any(x => x.Zone.State == NeedsWatering.Critical)
@@ -38,7 +45,7 @@ public class SmartIrrigation : IDisposable
     private IDisposable? EnergyAvailableStateCHangedCommandHandler { get; set; }
     private IDisposable? GuardTask { get; set; }
 
-    public SmartIrrigation(IHaContext haContext, ILogger logger, IScheduler scheduler, IMqttEntityManager mqttEntityManager, BinarySwitch pumpSocket, Int32 pumpFlowRate, NumericSensor availableRainWaterSensor, Int32 minimumAvailableRainWater, List<IrrigationZone> zones, TimeSpan debounceDuration)
+    public SmartIrrigation(IHaContext haContext, ILogger logger, IScheduler scheduler, IMqttEntityManager mqttEntityManager, BinarySwitch pumpSocket, Int32 pumpFlowRate, NumericSensor availableRainWaterSensor, Int32 minimumAvailableRainWater, Weather? weather, Int32? rainPredictionDays, Double? rainPredictionLiters, List<IrrigationZone> zones, TimeSpan debounceDuration)
     {
         _haContext = haContext;
         _logger = logger;
@@ -49,6 +56,11 @@ public class SmartIrrigation : IDisposable
         PumpFlowRate = pumpFlowRate;
         AvailableRainWaterSensor = availableRainWaterSensor;
         MinimumAvailableRainWater = minimumAvailableRainWater;
+
+        Weather = weather;
+        RainPredictionDays = rainPredictionDays;
+        RainPredictionLiters = rainPredictionLiters;
+
         Zones = zones.Select(x => new ZoneWrapper { Zone = x }).ToList();
 
         InitializeStateSensor().RunSync();
@@ -155,6 +167,14 @@ public class SmartIrrigation : IDisposable
     private void StartWateringZonesIfNeeded()
     {
         if (AvailableRainWaterSensor.State < MinimumAvailableRainWater)
+            return;
+
+        double? predictedRain = null;
+
+        if (Weather?.Attributes?.Forecast != null && RainPredictionDays != null)
+            predictedRain = Weather.Attributes.Forecast.Take(RainPredictionDays.Value).Sum(x => x.Precipitation);
+
+        if (predictedRain > RainPredictionLiters)
             return;
 
         var totalFlowRate = Zones.Where(x => x.Zone.CurrentlyWatering).Sum(x => x.Zone.FlowRate);

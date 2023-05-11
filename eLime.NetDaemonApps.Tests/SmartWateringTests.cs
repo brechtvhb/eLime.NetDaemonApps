@@ -1,5 +1,6 @@
 using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
+using eLime.NetDaemonApps.Domain.Entities.Weather;
 using eLime.NetDaemonApps.Domain.FlexiScenes.Rooms;
 using eLime.NetDaemonApps.Domain.SmartIrrigation;
 using eLime.NetDaemonApps.Tests.Builders;
@@ -22,6 +23,10 @@ public class SmartWateringTests
     private BinarySwitch _pumpSocket;
     private NumericSensor _availableRainWaterSensor;
 
+    private Weather _weather;
+    private WeatherAttributes _averageForeast;
+    private WeatherAttributes _rainyForecast;
+
     [TestInitialize]
     public void Init()
     {
@@ -36,6 +41,29 @@ public class SmartWateringTests
         _availableRainWaterSensor = NumericSensor.Create(_testCtx.HaContext, "sensor.rainwater_volume");
         _testCtx.TriggerStateChange(_availableRainWaterSensor, "10000");
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("binary_sensor.pond_overflow"), "off");
+
+        _weather = new Weather(_testCtx.HaContext, "weather.home");
+        _averageForeast = new WeatherAttributes()
+        {
+            Forecast = new[]
+            {
+                new Forecast {Condition = "Sunny", Temperature = 25, Precipitation = 0, WindSpeed = 0},
+                new Forecast {Condition = "Rainy", Temperature = 23, Precipitation = 0, WindSpeed = 0},
+                new Forecast {Condition = "Cloudy", Temperature = 24, Precipitation = 0, WindSpeed = 0}
+            }
+        };
+
+        _testCtx.TriggerStateChangeWithAttributes(_weather, "Cloudy", _averageForeast);
+
+        _rainyForecast = new WeatherAttributes()
+        {
+            Forecast = new[]
+            {
+                new Forecast {Condition = "Rainy", Precipitation = 3},
+                new Forecast {Condition = "Rainy", Precipitation = 3},
+                new Forecast {Condition = "Rainy", Precipitation = 1}
+            }
+        };
     }
 
     [TestMethod]
@@ -243,7 +271,6 @@ public class SmartWateringTests
         irrigation.EnergyAvailable = true;
         irrigation.DebounceStartWatering();
 
-
         //Assert
         _testCtx.VerifySwitchTurnOn(new BinarySwitch(_testCtx.HaContext, "switch.pond_valve"), Moq.Times.Once);
     }
@@ -319,8 +346,6 @@ public class SmartWateringTests
         //Act
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.pond_volume"), "5500");
 
-
-
         //Assert
         _testCtx.VerifySwitchTurnOn(new BinarySwitch(_testCtx.HaContext, "switch.pond_valve"), Moq.Times.Never);
     }
@@ -343,16 +368,63 @@ public class SmartWateringTests
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("switch.pond_valve"), "on");
 
         //Act
-
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.rainwater_volume"), "500");
-
-
         _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(5) + TimeSpan.FromSeconds(1)); //guard runs every 5 min
-
-
 
         //Assert
         _testCtx.VerifySwitchTurnOff(new BinarySwitch(_testCtx.HaContext, "switch.pond_valve"), Moq.Times.AtLeastOnce);
+    }
+
+    [TestMethod]
+    public void Rain_Predicted_Does_Not_Trigger_Start()
+    {
+        // Arrange
+        var zone1 = new ContainerIrrigationZoneBuilder(_testCtx)
+            .WithFlowRate(500)
+            .Build();
+
+        _testCtx.TriggerStateChangeWithAttributes(_weather, "Cloudy", _rainyForecast);
+
+        var irrigation = new SmartIrrigationBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+            .With(_pumpSocket, 1000)
+            .With(_availableRainWaterSensor, 100)
+            .With(_weather, 1, 2)
+            .AddZone(zone1)
+            .Build();
+
+        zone1.SetMode(ZoneMode.Automatic);
+
+        //Act
+        _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.pond_volume"), "5500");
+
+        //Assert
+        _testCtx.VerifySwitchTurnOn(new BinarySwitch(_testCtx.HaContext, "switch.pond_valve"), Moq.Times.Never);
+    }
+
+    [TestMethod]
+    public void No_Rain_Predicted_Does_Trigger_Start()
+    {
+        // Arrange
+        var zone1 = new ContainerIrrigationZoneBuilder(_testCtx)
+            .WithFlowRate(500)
+            .Build();
+
+        _testCtx.TriggerStateChangeWithAttributes(_weather, "Cloudy", _averageForeast);
+
+        var irrigation = new SmartIrrigationBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+            .With(_pumpSocket, 1000)
+            .With(_availableRainWaterSensor, 100)
+            .With(_weather, 1, 2)
+            .AddZone(zone1)
+            .Build();
+
+        zone1.SetMode(ZoneMode.Automatic);
+
+        //Act
+        _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.pond_volume"), "5500");
+
+        //Assert
+        _testCtx.VerifySwitchTurnOn(new BinarySwitch(_testCtx.HaContext, "switch.pond_valve"), Moq.Times.Once);
     }
 
 }

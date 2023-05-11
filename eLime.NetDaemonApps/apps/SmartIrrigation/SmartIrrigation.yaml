@@ -4,6 +4,9 @@
   pumpFlowRate: 2000 #liters per hour
   availableRainWaterEntity: sensor.rainwater_total
   minimumAvailableRainWater: 2000
+  weatherEntity: "weather.forecast_ha_main"
+  rainPredictionDays: 1
+  rainPredictionLiters: 3
   zones:
     - name: "Fruit blossoms"
       flowRate: 20 #liters per hour

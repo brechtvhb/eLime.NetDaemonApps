@@ -1,6 +1,7 @@
 ﻿using eLime.NetDaemonApps.Config;
 using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
+using eLime.NetDaemonApps.Domain.Entities.Weather;
 using eLime.NetDaemonApps.Domain.SmartIrrigation;
 using NetDaemon.Extensions.MqttEntityManager;
 using System.Collections.Generic;
@@ -18,6 +19,11 @@ public static class ConfigExtensions
         var pumpSocket = BinarySwitch.Create(ha, config.PumpSocketEntity);
         var pumpFlowRate = config.PumpFlowRate;
 
+        var weather = !String.IsNullOrWhiteSpace(config.WeatherEntity) ? new Weather(ha, config.WeatherEntity) : null;
+        var predictionDays = config.RainPredictionDays;
+        var predictionLiters = config.RainPredictionLiters;
+
+
         var zones = new List<IrrigationZone>();
         foreach (var zone in config.Zones)
         {
@@ -34,7 +40,7 @@ public static class ConfigExtensions
         }
 
 
-        var entity = new Domain.SmartIrrigation.SmartIrrigation(ha, logger, scheduler, mqttEntityManager, pumpSocket, pumpFlowRate, availableRainWaterSensor, minimumAvailableWater, zones, TimeSpan.FromSeconds(5));
+        var entity = new Domain.SmartIrrigation.SmartIrrigation(ha, logger, scheduler, mqttEntityManager, pumpSocket, pumpFlowRate, availableRainWaterSensor, minimumAvailableWater, weather, predictionDays, predictionLiters, zones, TimeSpan.FromSeconds(5));
         return entity;
     }
 

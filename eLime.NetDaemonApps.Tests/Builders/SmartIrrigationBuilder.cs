@@ -1,5 +1,6 @@
 ﻿using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
+using eLime.NetDaemonApps.Domain.Entities.Weather;
 using eLime.NetDaemonApps.Domain.SmartIrrigation;
 using eLime.NetDaemonApps.Tests.Helpers;
 using Microsoft.Extensions.Logging;
@@ -20,6 +21,10 @@ public class SmartIrrigationBuilder
 
     private NumericSensor _availableRainWaterSensor;
     private Int32 _minimumRainWater;
+
+    private Weather? _weather;
+    private Int32? _predictionDays;
+    private Double? _predictedLiters;
 
     private List<IrrigationZone> _zones;
 
@@ -55,6 +60,15 @@ public class SmartIrrigationBuilder
         return this;
     }
 
+    public SmartIrrigationBuilder With(Weather weather, Int32 predictionDays, Double predictedLiters)
+    {
+        _weather = weather;
+        _predictionDays = predictionDays;
+        _predictedLiters = predictedLiters;
+
+        return this;
+    }
+
     public SmartIrrigationBuilder AddZone(IrrigationZone zone)
     {
         _zones.Add(zone);
@@ -65,7 +79,7 @@ public class SmartIrrigationBuilder
     public SmartIrrigation Build()
     {
 
-        var x = new SmartIrrigation(_testCtx.HaContext, _logger, _scheduler, _mqttEntityManager, _pumpSocket, _pumpFlowRate, _availableRainWaterSensor, _minimumRainWater, _zones, TimeSpan.Zero);
+        var x = new SmartIrrigation(_testCtx.HaContext, _logger, _scheduler, _mqttEntityManager, _pumpSocket, _pumpFlowRate, _availableRainWaterSensor, _minimumRainWater, _weather, _predictionDays, _predictedLiters, _zones, TimeSpan.Zero);
         return x;
     }
 }
