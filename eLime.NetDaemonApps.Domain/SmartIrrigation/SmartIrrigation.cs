@@ -260,9 +260,11 @@ public class SmartIrrigation : IDisposable
             return false;
         }
 
-        if (!wrapper.Zone.CanStartWatering(_scheduler.Now, EnergyAvailable))
+        if (wrapper.Zone.Mode == ZoneMode.Off)
             return false;
 
+        if (!wrapper.Zone.CanStartWatering(_scheduler.Now, EnergyAvailable))
+            return false;
 
         wrapper.Zone.Valve.TurnOn();
         return true;
