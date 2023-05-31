@@ -91,13 +91,22 @@ public class SmartIrrigation : IDisposable
 
     private void Zone_StateChanged(object? sender, IrrigationZoneStateChangedEvent e)
     {
+        var zoneWrapper = Zones.Single(x => x.Zone.Name == e.Zone.Name);
+
         if (e.Zone.Mode == ZoneMode.Off)
         {
+            switch (e)
+            {
+                case IrrigationZoneWateringStartedEvent:
+                    SetEndWateringTimer(zoneWrapper, _scheduler.Now);
+                    break;
+                case IrrigationZoneWateringEndedEvent:
+                    zoneWrapper.Zone.SetLastWateringDate(_scheduler.Now);
+                    break;
+            }
             UpdateStateInHomeAssistant().RunSync();
             return;
         }
-
-        var zoneWrapper = Zones.Single(x => x.Zone.Name == e.Zone.Name);
 
         _logger.LogInformation("{IrrigationZone}: Needs watering changed to: {State}.", e.Zone.Name, e.State);
 
@@ -108,7 +117,6 @@ public class SmartIrrigation : IDisposable
                 break;
             case IrrigationZoneWateringStartedEvent:
                 SetEndWateringTimer(zoneWrapper, _scheduler.Now);
-
                 break;
             case IrrigationZoneEndWateringEvent:
                 zoneWrapper.Zone.Valve.TurnOff();
