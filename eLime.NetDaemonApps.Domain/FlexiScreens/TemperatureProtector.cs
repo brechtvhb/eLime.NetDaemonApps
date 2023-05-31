@@ -19,6 +19,8 @@ public class TemperatureProtector : IDisposable
 
     public (ScreenState? State, Boolean Enforce) DesiredState { get; private set; }
 
+    private bool TemperatureProtectorActive { get; set; }
+
     public TemperatureProtector(NumericThresholdSensor? solarLuxSensor, double? solarLuxAboveThreshold, double? solarLuxBelowThreshold,
         NumericSensor? indoorTemperatureSensor, double? maxIndoorTemperature, double? maxConditionalIndoorTemperature,
         Weather? weather, double? conditionalMaxOutdoorTemperaturePrediction, int? conditionalOutdoorTemperaturePredictionDays)
@@ -85,16 +87,26 @@ public class TemperatureProtector : IDisposable
         var solarLuxIndicatingSunIsNotShining = SolarLuxSensor != null && SolarLuxBelowThreshold != null && SolarLuxSensor.State <= SolarLuxBelowThreshold;
 
         var tooHotInside = IndoorTemperatureSensor != null && MaxIndoorTemperature != null && IndoorTemperatureSensor.State > MaxIndoorTemperature;
+        var okInside = IndoorTemperatureSensor != null && MaxIndoorTemperature != null && IndoorTemperatureSensor.State <= MaxIndoorTemperature - 0.3;
+
         var hotDaysAhead = IndoorTemperatureSensor != null && ConditionalMaxIndoorTemperature != null && averagePredictedTemperature != null && ConditionalMaxOutdoorTemperaturePrediction != null
                            && IndoorTemperatureSensor.State > ConditionalMaxIndoorTemperature && averagePredictedTemperature > ConditionalMaxOutdoorTemperaturePrediction;
+        var hotDaysAheadButNotTooHotInside = IndoorTemperatureSensor != null && ConditionalMaxIndoorTemperature != null && averagePredictedTemperature != null && ConditionalMaxOutdoorTemperaturePrediction != null
+                           && IndoorTemperatureSensor.State <= ConditionalMaxIndoorTemperature - 0.3 && averagePredictedTemperature > ConditionalMaxOutdoorTemperaturePrediction;
 
         if (solarLuxIndicatingSunIsShining && (tooHotInside || hotDaysAhead))
+        {
+            TemperatureProtectorActive = true;
             return (ScreenState.Down, false);
+        }
 
         if (solarLuxIndicatingSunIsNotShining)
             return (ScreenState.Up, false);
 
-        return (ScreenState.Up, false);
+        if (okInside && hotDaysAheadButNotTooHotInside)
+            TemperatureProtectorActive = false;
+
+        return TemperatureProtectorActive ? (ScreenState.Down, false) : (ScreenState.Up, false);
     }
 
     public void Dispose()
