@@ -143,6 +143,10 @@ public class SmartIrrigation : IDisposable
         if (zoneWrapper.Zone is not IZoneWithLimitedRuntime limitedRunTimeZone)
             return;
 
+        //Disable automatic turning off of watering for this zone type when mode is off. For other zones automatic turn off is enabled when mode is off because I forget tend to forget that I turned it on manually.
+        if (zoneWrapper.Zone is AntiFrostMistingIrrigationZone && zoneWrapper.Zone.Mode == ZoneMode.Off)
+            return;
+
         var timespan = limitedRunTimeZone.GetRunTime(_scheduler.Now);
 
         switch (timespan)
@@ -154,7 +158,7 @@ public class SmartIrrigation : IDisposable
                 zoneWrapper.Zone.Valve.TurnOff();
                 return;
             case not null when timespan > TimeSpan.Zero:
-                _logger.LogDebug("{IrrigationZone}: Will stop irrigation for this zone in '{TimeSpan}'", zoneWrapper.Zone.Name, timespan.ToString());
+                _logger.LogDebug("{IrrigationZone}: Will stop irrigation for this zone in '{TimeSpan}'", zoneWrapper.Zone.Name, timespan.Round().ToString());
                 zoneWrapper.EndWateringtimer = _scheduler.Schedule(timespan.Value, zoneWrapper.Zone.Valve.TurnOff);
                 return;
         }
