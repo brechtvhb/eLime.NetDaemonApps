@@ -62,6 +62,9 @@ public class AntiFrostMistingIrrigationZone : IrrigationZone, IZoneWithLimitedRu
 
     public override bool CheckForForceStop(DateTimeOffset now)
     {
+        if (Mode == ZoneMode.Off)
+            return false;
+
         if (WateringStartedAt?.Add(MistingDuration) < now)
             return true;
 
