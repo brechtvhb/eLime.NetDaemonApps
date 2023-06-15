@@ -98,7 +98,7 @@ public class FlexiScreen : IDisposable
             GuardScreenDebounceDispatcher = new(debounceDuration);
         }
 
-        DebounceGuardScreen().RunSync();
+        GuardScreen().RunSync();
 
         GuardTask = _scheduler.RunEvery(TimeSpan.FromMinutes(1), _scheduler.Now, () =>
         {

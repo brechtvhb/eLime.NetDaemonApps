@@ -144,4 +144,28 @@ public class ContainerIrrigationTests
         _testCtx.VerifySwitchTurnOff(new BinarySwitch(_testCtx.HaContext, "switch.pond_valve"), Moq.Times.Once);
     }
 
+    [TestMethod]
+    public void Valve_On_Sets_State_Ongoing_When_Off()
+    {
+        // Arrange
+        var zone = new ContainerIrrigationZoneBuilder(_testCtx)
+            .Build();
+
+        var irrigation = new SmartIrrigationBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+            .With(_pumpSocket, 2000)
+            .With(_availableRainWaterSensor, 2000)
+            .AddZone(zone)
+            .Build();
+
+        zone.SetMode(ZoneMode.Off);
+        _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.pond_volume"), "7000");
+        _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("binary_sensor.pond_overflow"), "off");
+
+
+        //Act
+        _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("switch.pond_valve"), "on");
+
+        //Assert
+        Assert.AreEqual(NeedsWatering.Ongoing, irrigation.Zones.First().Zone.State);
+    }
 }
