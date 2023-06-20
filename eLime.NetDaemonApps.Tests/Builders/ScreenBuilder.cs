@@ -116,7 +116,7 @@ public class ScreenBuilder
         _config.TemperatureProtection.ConditionalOutdoorTemperaturePredictionDays = conditionalPredictionDays;
         return this;
     }
-    public ScreenBuilder WithHourlyWeatherForecast(Weather weather, int? nightlyPredictionHours, double? nightlyWindSpeedThreshold, double? nightlyRainThreshold)
+    public ScreenBuilder WithHourlyWeatherForecast(Weather weather, int? nightlyPredictionHours, double? nightlyWindSpeedThreshold, double? nightlyRainThreshold, double? nightlyRainRateThreshold)
     {
         _hourluWeather = weather;
 
@@ -124,6 +124,7 @@ public class ScreenBuilder
         _config.StormProtection.NightlyPredictionHours = nightlyPredictionHours;
         _config.StormProtection.NightlyWindSpeedThreshold = nightlyWindSpeedThreshold;
         _config.StormProtection.NightlyRainThreshold = nightlyRainThreshold;
+        _config.StormProtection.NightlyRainRateThreshold = nightlyRainRateThreshold;
         return this;
     }
 

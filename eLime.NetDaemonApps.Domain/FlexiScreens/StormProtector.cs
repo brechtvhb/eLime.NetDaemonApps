@@ -99,9 +99,9 @@ public class StormProtector : IDisposable
 
     public void CheckForStormyNight()
     {
-        if (HourlyWeather == null) return;
-
         Night = true;
+
+        if (HourlyWeather == null) return;
 
         double? maxWindSpeed = null;
         double? totalPrecipitation = null;

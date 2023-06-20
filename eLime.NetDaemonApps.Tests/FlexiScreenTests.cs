@@ -541,7 +541,7 @@ public class FlexiScreenTests
 
         var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
             .WithCover(_cover)
-            .WithHourlyWeatherForecast(_hourlyWeather, 3, 40, 1)
+            .WithHourlyWeatherForecast(_hourlyWeather, 3, 40, 1, 0.3)
             .WithSleepSensor(_sleepSensor)
             .Build();
 
@@ -564,7 +564,7 @@ public class FlexiScreenTests
         var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
             .WithCover(_cover)
             .WithDesiredActionOnBelowElevation(ScreenAction.None)
-            .WithHourlyWeatherForecast(_hourlyWeather, 3, 40, 1)
+            .WithHourlyWeatherForecast(_hourlyWeather, 3, 40, 1, 0.3)
             .WithSleepSensor(_sleepSensor)
             .Build();
 
@@ -574,6 +574,55 @@ public class FlexiScreenTests
         //Assert
         _testCtx.VerifyScreenGoesDown(_cover, Moq.Times.Never);
     }
+
+    [TestMethod]
+    public void KidsSleeping_StormyDuringNight_Opens_Screen()
+    {
+        // Arrange
+        _testCtx.TriggerStateChange(_cover, "closed");
+
+        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
+            .WithCover(_cover)
+            .WithDesiredActionOnBelowElevation(ScreenAction.None)
+            .WithHourlyWeatherForecast(_hourlyWeather, 3, 40, 1, 0.3)
+            .WithShortTermRainRateSensor(_shortTermRainForecastSensor)
+            .WithSleepSensor(_sleepSensor)
+            .Build();
+
+
+        _testCtx.TriggerStateChange(_sleepSensor, new EntityState { State = "on" });
+        //Act
+
+        _testCtx.TriggerStateChange(_shortTermRainForecastSensor, new EntityState { State = "1" });
+
+        //Assert
+        _testCtx.VerifyScreenGoesUp(_cover, Moq.Times.Once);
+    }
+
+    [TestMethod]
+    public void KidsSleeping_NotStormyAfterStormyDuringNight_KeepsScreenOpen()
+    {
+        // Arrange
+        _testCtx.TriggerStateChange(_cover, "closed");
+
+        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
+            .WithCover(_cover)
+            .WithDesiredActionOnBelowElevation(ScreenAction.None)
+            .WithHourlyWeatherForecast(_hourlyWeather, 3, 40, 1, 0.3)
+            .WithShortTermRainRateSensor(_shortTermRainForecastSensor)
+            .WithSleepSensor(_sleepSensor)
+            .Build();
+
+        _testCtx.TriggerStateChange(_sleepSensor, new EntityState { State = "on" });
+        _testCtx.TriggerStateChange(_shortTermRainForecastSensor, new EntityState { State = "1" });
+
+        //Act
+        _testCtx.TriggerStateChange(_shortTermRainForecastSensor, new EntityState { State = "0" });
+
+        //Assert
+        _testCtx.VerifyScreenGoesDown(_cover, Moq.Times.Never);
+    }
+
 
     [TestMethod]
     public void KidsNoLongerSleeping_Opens_Screen()
