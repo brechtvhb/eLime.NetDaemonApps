@@ -355,7 +355,7 @@ public class SmartIrrigation : IDisposable
             _logger.LogDebug("Creating Irrigation state sensor in home assistant.");
             var entityOptions = new EntityOptionsWithoutDevice { Icon = "far:sprinkler" };
 
-            await _mqttEntityManager.CreateAsync(stateName, new EntityCreationOptions(DeviceClass: "switch", UniqueId: stateName, Name: $"Irrigation state", Persist: true), entityOptions);
+            await _mqttEntityManager.CreateAsync(stateName, new EntityCreationOptions(UniqueId: stateName, Name: $"Irrigation state", Persist: true), entityOptions);
             await _mqttEntityManager.SetStateAsync(stateName, State.ToString());
         }
     }
