@@ -7,6 +7,7 @@
   weatherEntity: "weather.forecast_ha_main"
   rainPredictionDays: 1
   rainPredictionLiters: 3
+  phoneToNotify: "mobile_app_hd1903"
   zones:
     - name: "Fruit blossoms"
       flowRate: 20 #liters per hour

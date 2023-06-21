@@ -1,4 +1,4 @@
-﻿using eLime.NetDaemonApps.Domain.Scripts;
+﻿using eLime.NetDaemonApps.Domain.Entities.Scripts;
 
 namespace eLime.NetDaemonApps.Domain.FlexiScenes.Actions;
 

@@ -1,6 +1,6 @@
 ﻿using NetDaemon.HassModel;
 
-namespace eLime.NetDaemonApps.Domain.Scripts;
+namespace eLime.NetDaemonApps.Domain.Entities.Scripts;
 
 public class Script
 {

@@ -86,6 +86,11 @@ public static class AppTestContextExtensions
         ctx.HaContextMock.Verify(c => c.CallService("script", script_name, null, It.IsAny<Object?>()), times);
     }
 
+    public static void VerifyPhoneNotified(this AppTestContext ctx, string phone, Func<Times> times)
+    {
+        ctx.HaContextMock.Verify(c => c.CallService("notify", phone, null, It.IsAny<Object?>()), times);
+    }
+
     private static bool Match(string s, ServiceTarget x)
     {
         return x.EntityIds != null && x.EntityIds.Any(id => id == s);

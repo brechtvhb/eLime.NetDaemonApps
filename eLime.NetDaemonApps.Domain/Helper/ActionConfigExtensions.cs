@@ -1,10 +1,10 @@
 ﻿using eLime.NetDaemonApps.Config.FlexiLights;
 using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 using eLime.NetDaemonApps.Domain.Entities.Lights;
+using eLime.NetDaemonApps.Domain.Entities.Scripts;
 using eLime.NetDaemonApps.Domain.Entities.TextSensors;
 using eLime.NetDaemonApps.Domain.FlexiScenes.Actions;
 using eLime.NetDaemonApps.Domain.Scenes;
-using eLime.NetDaemonApps.Domain.Scripts;
 using NetDaemon.HassModel;
 using Action = eLime.NetDaemonApps.Domain.FlexiScenes.Actions.Action;
 

@@ -11,5 +11,6 @@ public class SmartIrrigationConfig
     public String WeatherEntity { get; set; }
     public double? RainPredictionLiters { get; set; }
     public int? RainPredictionDays { get; set; }
+    public String PhoneToNotify { get; set; }
     public List<IrrigationZoneConfig> Zones { get; set; }
 }

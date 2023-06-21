@@ -1,5 +1,6 @@
 ﻿using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
+using eLime.NetDaemonApps.Domain.Entities.Services;
 using eLime.NetDaemonApps.Domain.Entities.Weather;
 using eLime.NetDaemonApps.Domain.Helper;
 using eLime.NetDaemonApps.Domain.Mqtt;
@@ -22,6 +23,9 @@ public class SmartIrrigation : IDisposable
     public NumericSensor AvailableRainWaterSensor { get; }
     public Int32 MinimumAvailableRainWater { get; }
 
+    public String? PhoneToNotify { get; }
+    public Service Services { get; }
+
     private Weather? Weather { get; }
     public Int32? RainPredictionDays { get; }
     public Double? RainPredictionLiters { get; }
@@ -41,11 +45,10 @@ public class SmartIrrigation : IDisposable
     private readonly IScheduler _scheduler;
 
     private readonly IMqttEntityManager _mqttEntityManager;
-
     private IDisposable? EnergyAvailableStateCHangedCommandHandler { get; set; }
     private IDisposable? GuardTask { get; set; }
 
-    public SmartIrrigation(IHaContext haContext, ILogger logger, IScheduler scheduler, IMqttEntityManager mqttEntityManager, BinarySwitch pumpSocket, Int32 pumpFlowRate, NumericSensor availableRainWaterSensor, Int32 minimumAvailableRainWater, Weather? weather, Int32? rainPredictionDays, Double? rainPredictionLiters, List<IrrigationZone> zones, TimeSpan debounceDuration)
+    public SmartIrrigation(IHaContext haContext, ILogger logger, IScheduler scheduler, IMqttEntityManager mqttEntityManager, BinarySwitch pumpSocket, Int32 pumpFlowRate, NumericSensor availableRainWaterSensor, Int32 minimumAvailableRainWater, Weather? weather, Int32? rainPredictionDays, Double? rainPredictionLiters, String? phoneToNotify, List<IrrigationZone> zones, TimeSpan debounceDuration)
     {
         _haContext = haContext;
         _logger = logger;
@@ -60,6 +63,9 @@ public class SmartIrrigation : IDisposable
         Weather = weather;
         RainPredictionDays = rainPredictionDays;
         RainPredictionLiters = rainPredictionLiters;
+
+        Services = new Service(_haContext);
+        PhoneToNotify = phoneToNotify;
 
         Zones = zones.Select(x => new ZoneWrapper { Zone = x }).ToList();
 
@@ -97,6 +103,12 @@ public class SmartIrrigation : IDisposable
         {
             switch (e)
             {
+                case IrrigationZoneWateringNeededEvent needWaterEvent when needWaterEvent.State == NeedsWatering.Critical && !String.IsNullOrWhiteSpace(PhoneToNotify):
+                    Services.NotifyPhone(PhoneToNotify, $"{e.Zone.Name} is in critical need of water but it is set to manual watering.", null, "Water");
+                    break;
+                case IrrigationZoneWateringNeededEvent when !String.IsNullOrWhiteSpace(PhoneToNotify):
+                    Services.NotifyPhone(PhoneToNotify, $"{e.Zone.Name} needs water but it is set to manual watering.", null, "Water");
+                    break;
                 case IrrigationZoneWateringStartedEvent:
                     SetEndWateringTimer(zoneWrapper, _scheduler.Now);
                     break;

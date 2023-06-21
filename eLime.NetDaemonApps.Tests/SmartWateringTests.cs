@@ -348,6 +348,7 @@ public class SmartWateringTests
 
         //Assert
         _testCtx.VerifySwitchTurnOn(new BinarySwitch(_testCtx.HaContext, "switch.pond_valve"), Moq.Times.Never);
+        _testCtx.VerifyPhoneNotified("brecht", Moq.Times.Once);
     }
 
     [TestMethod]
