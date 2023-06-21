@@ -318,7 +318,7 @@ public class SmartIrrigation : IDisposable
         if (state == null || string.Equals(state, "unavailable", StringComparison.InvariantCultureIgnoreCase))
         {
             _logger.LogDebug("Creating solar energy available switch.");
-            var entityOptions = new EntityOptions { Icon = "mdi:solar-power" };
+            var entityOptions = new EntityOptionsWithoutDevice { Icon = "mdi:solar-power" };
             await _mqttEntityManager.CreateAsync(switchName, new EntityCreationOptions(DeviceClass: "switch", UniqueId: switchName, Name: $"Irrigation - Energy available", Persist: true), entityOptions);
             await _mqttEntityManager.SetStateAsync(switchName, "OFF");
         }

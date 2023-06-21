@@ -10,3 +10,9 @@ public class EntityOptions
     [JsonPropertyName("icon")]
     public string Icon { get; set; }
 }
+
+public class EntityOptionsWithoutDevice
+{
+    [JsonPropertyName("icon")]
+    public string Icon { get; set; }
+}
