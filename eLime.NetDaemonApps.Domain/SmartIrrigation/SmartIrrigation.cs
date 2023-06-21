@@ -319,7 +319,7 @@ public class SmartIrrigation : IDisposable
         {
             _logger.LogDebug("Creating solar energy available switch.");
             var entityOptions = new EntityOptions { Icon = "mdi:solar-power" };
-            await _mqttEntityManager.CreateAsync(switchName, new EntityCreationOptions(UniqueId: switchName, Name: $"Irrigation - Energy available", Persist: true), entityOptions);
+            await _mqttEntityManager.CreateAsync(switchName, new EntityCreationOptions(DeviceClass: "switch", UniqueId: switchName, Name: $"Irrigation - Energy available", Persist: true), entityOptions);
             await _mqttEntityManager.SetStateAsync(switchName, "OFF");
         }
         else
@@ -355,7 +355,7 @@ public class SmartIrrigation : IDisposable
             _logger.LogDebug("Creating Irrigation state sensor in home assistant.");
             var entityOptions = new EntityOptions { Icon = "far:sprinkler" };
 
-            await _mqttEntityManager.CreateAsync(stateName, new EntityCreationOptions(UniqueId: stateName, Name: $"Irrigation state", Persist: true), entityOptions);
+            await _mqttEntityManager.CreateAsync(stateName, new EntityCreationOptions(DeviceClass: "switch", UniqueId: stateName, Name: $"Irrigation state", Persist: true), entityOptions);
             await _mqttEntityManager.SetStateAsync(stateName, State.ToString());
         }
     }
