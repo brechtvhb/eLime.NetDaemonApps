@@ -318,7 +318,7 @@ public class SmartIrrigation : IDisposable
         if (state == null || string.Equals(state, "unavailable", StringComparison.InvariantCultureIgnoreCase))
         {
             _logger.LogDebug("Creating solar energy available switch.");
-            var entityOptions = new EntityOptionsWithoutDevice { Icon = "mdi:solar-power" };
+            var entityOptions = new EntityOptions() { Icon = "mdi:solar-power", Device = GetGlobalDevice() };
             await _mqttEntityManager.CreateAsync(switchName, new EntityCreationOptions(DeviceClass: "switch", UniqueId: switchName, Name: $"Irrigation - Energy available", Persist: true), entityOptions);
             await _mqttEntityManager.SetStateAsync(switchName, "OFF");
         }
@@ -353,9 +353,9 @@ public class SmartIrrigation : IDisposable
         if (state == null || string.Equals(state, "unavailable", StringComparison.InvariantCultureIgnoreCase))
         {
             _logger.LogDebug("Creating Irrigation state sensor in home assistant.");
-            var entityOptions = new EntityOptionsWithoutDevice { Icon = "far:sprinkler" };
+            var entityOptions = new EnumSensorOptions() { Icon = "far:sprinkler", Device = GetGlobalDevice(), Options = Enum<NeedsWatering>.AllValuesAsStringList() };
 
-            await _mqttEntityManager.CreateAsync(stateName, new EntityCreationOptions(UniqueId: stateName, Name: $"Irrigation state", Persist: true), entityOptions);
+            await _mqttEntityManager.CreateAsync(stateName, new EntityCreationOptions(DeviceClass: "enum", UniqueId: stateName, Name: $"Irrigation state", Persist: true), entityOptions);
             await _mqttEntityManager.SetStateAsync(stateName, State.ToString());
         }
     }
@@ -421,6 +421,12 @@ public class SmartIrrigation : IDisposable
     {
         return new Device { Identifiers = new List<string> { $"irrigation_zone.{zone.Name.MakeHaFriendly()}" }, Name = "Irrigation zone: " + zone.Name, Manufacturer = "Me" };
     }
+
+    public Device GetGlobalDevice()
+    {
+        return new Device { Identifiers = new List<string> { $"smart_irrigation" }, Name = "Smart Irrigation", Manufacturer = "Me" };
+    }
+
 
     private Func<string, Task> SetZoneModeHandler(IrrigationZone zone, string selectName)
     {
