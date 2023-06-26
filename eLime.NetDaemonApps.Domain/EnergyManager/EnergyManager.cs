@@ -94,6 +94,7 @@ public class EnergyManager : IDisposable
         //UpdateStateInHomeAssistant().RunSync();
     }
 
+    //TODO: magic that keeps in mind current grid usage, peak usage and estimated solar production
     //TODO: Keep peak power usage of devices that are already running in mind
     private void StartConsumersIfNeeded()
     {
@@ -103,38 +104,27 @@ public class EnergyManager : IDisposable
 
         foreach (var criticalConsumer in consumersThatCriticallyNeedEnergy)
         {
-            var started = StartConsumerIfNeeded(criticalConsumer, 0);
-            if (!started)
+            if (!criticalConsumer.CanStart(_scheduler.Now))
                 continue;
 
-            _logger.LogDebug("{Consumer}: Will start consumer, consumer is in critical need of water.", criticalConsumer.Name);
+            criticalConsumer.TurnOn();
+
+            _logger.LogDebug("{Consumer}: Started consumer, consumer is in critical need of energy.", criticalConsumer.Name);
             estimatedLoad += criticalConsumer.PeakPowerUsage;
         }
 
         var consumersThatNeedEnergy = EnergyConsumers.Where(x => x is { State: EnergyConsumerState.NeedsEnergy });
         foreach (var consumer in consumersThatNeedEnergy)
         {
-            var started = StartConsumerIfNeeded(consumer, estimatedLoad);
-            if (!started)
+            if (!consumer.CanStart(_scheduler.Now))
                 continue;
 
-            _logger.LogDebug("{IrrigationZone}: Will start consumer.", consumer.Name);
+            consumer.TurnOn();
+
+            _logger.LogDebug("{Consumer}: Will start consumer.", consumer.Name);
             estimatedLoad += consumer.PeakPowerUsage;
         }
     }
-
-    private bool StartConsumerIfNeeded(EnergyConsumer consumer, double remainingFlowRate)
-    {
-        //TODO: magic that keeps in mind current grid usage, peak usage and estimated solar production
-
-        if (!consumer.CanStart(_scheduler.Now))
-            return false;
-
-        consumer.TurnOn();
-        return true;
-    }
-
-
     private readonly DebounceDispatcher? StartConsumesrDebounceDispatcher;
     private readonly DebounceDispatcher? StopConsumersDebounceDispatcher;
     internal void DebounceStartWatering()
