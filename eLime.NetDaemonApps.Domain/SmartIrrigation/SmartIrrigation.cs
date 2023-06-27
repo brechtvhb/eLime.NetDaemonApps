@@ -244,7 +244,11 @@ public class SmartIrrigation : IDisposable
     {
         if (AvailableRainWaterSensor.State < MinimumAvailableRainWater)
         {
-            foreach (var wrapper in Zones)
+            var zonesThatAreWatering = Zones.Where(x => x.Zone.State == NeedsWatering.Ongoing).ToList();
+            if (!zonesThatAreWatering.Any())
+                return;
+
+            foreach (var wrapper in zonesThatAreWatering)
                 wrapper.Zone.Valve.TurnOff();
 
             _logger.LogInformation("Stopping watering because available rain water ({AvailableRainWater}) went below minimum available rain water needed ({MinimumAvailableRainWater}).", AvailableRainWaterSensor.State, MinimumAvailableRainWater);
