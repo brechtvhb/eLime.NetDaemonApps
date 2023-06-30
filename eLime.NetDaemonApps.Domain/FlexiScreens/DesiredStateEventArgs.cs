@@ -1,7 +1,4 @@
-﻿using eLime.NetDaemonApps.Domain.Entities.Sun;
-using NetDaemon.HassModel.Entities;
-
-namespace eLime.NetDaemonApps.Domain.FlexiScreens;
+﻿namespace eLime.NetDaemonApps.Domain.FlexiScreens;
 
 public class DesiredStateEventArgs : EventArgs
 {
@@ -15,6 +12,5 @@ public class DesiredStateEventArgs : EventArgs
     public Protectors Protector { get; init; }
     public ScreenState? DesiredState { get; init; }
     public bool Enforce { get; init; }
-    public EntityState<SunAttributes>? Old { get; init; }
 
 }

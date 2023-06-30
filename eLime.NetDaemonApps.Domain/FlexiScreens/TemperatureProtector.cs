@@ -91,8 +91,8 @@ public class TemperatureProtector : IDisposable
 
         var hotDaysAhead = IndoorTemperatureSensor != null && ConditionalMaxIndoorTemperature != null && averagePredictedTemperature != null && ConditionalMaxOutdoorTemperaturePrediction != null
                            && IndoorTemperatureSensor.State > ConditionalMaxIndoorTemperature && averagePredictedTemperature > ConditionalMaxOutdoorTemperaturePrediction;
-        var hotDaysAheadButNotTooHotInside = IndoorTemperatureSensor != null && ConditionalMaxIndoorTemperature != null && averagePredictedTemperature != null && ConditionalMaxOutdoorTemperaturePrediction != null
-                           && IndoorTemperatureSensor.State <= ConditionalMaxIndoorTemperature - 0.3 && averagePredictedTemperature > ConditionalMaxOutdoorTemperaturePrediction;
+        var noHotDaysAhead = IndoorTemperatureSensor != null && ConditionalMaxIndoorTemperature != null && averagePredictedTemperature != null && ConditionalMaxOutdoorTemperaturePrediction != null
+                           && IndoorTemperatureSensor.State <= ConditionalMaxIndoorTemperature - 0.3 || averagePredictedTemperature <= ConditionalMaxOutdoorTemperaturePrediction;
 
         if (solarLuxIndicatingSunIsShining && (tooHotInside || hotDaysAhead))
         {
@@ -103,7 +103,7 @@ public class TemperatureProtector : IDisposable
         if (solarLuxIndicatingSunIsNotShining)
             return (ScreenState.Up, false);
 
-        if (okInside && hotDaysAheadButNotTooHotInside)
+        if (okInside && noHotDaysAhead)
             TemperatureProtectorActive = false;
 
         return TemperatureProtectorActive ? (ScreenState.Down, false) : (ScreenState.Up, false);

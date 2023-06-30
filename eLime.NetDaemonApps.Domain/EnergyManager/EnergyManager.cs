@@ -20,7 +20,7 @@ public class EnergyManager : IDisposable
     public String? PhoneToNotify { get; }
     public Service Services { get; }
 
-    private List<EnergyConsumer> EnergyConsumers = new();
+    private readonly List<EnergyConsumer> EnergyConsumers;
     private readonly IHaContext _haContext;
     private readonly ILogger _logger;
     private readonly IScheduler _scheduler;
