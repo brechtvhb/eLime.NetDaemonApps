@@ -1,4 +1,5 @@
-﻿using eLime.NetDaemonApps.Domain.Helper;
+﻿using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
+using eLime.NetDaemonApps.Domain.Helper;
 using Microsoft.Extensions.Logging;
 using NetDaemon.HassModel.Entities;
 using System.Reactive.Concurrency;
@@ -9,8 +10,12 @@ public abstract class EnergyConsumer : IDisposable
 {
     public String Name { get; set; }
     public NumericEntity PowerUsage { get; set; }
-    public abstract Boolean IsRunning();
-    public Int32 PeakPowerUsage { get; }
+    public BinarySensor CriticallyNeeded { get; set; }
+    public abstract Boolean Running { get; }
+    public Double CurrentLoad => PowerUsage.State ?? 0;
+
+    public abstract Double PeakLoad { get; }
+    public Double SwitchOnLoad { get; set; }
     public TimeSpan? MinimumRuntime { get; }
     public TimeSpan? MaximumRuntime { get; }
     public TimeSpan? MinimumTimeout { get; }
@@ -35,11 +40,6 @@ public abstract class EnergyConsumer : IDisposable
         State = state;
     }
 
-    public void Started(DateTimeOffset now)
-    {
-        StartedAt = now;
-        CheckDesiredState(now);
-    }
 
     public void Stop()
     {
@@ -150,26 +150,21 @@ public abstract class EnergyConsumer : IDisposable
 
     internal void Started(ILogger logger, IScheduler scheduler, DateTimeOffset? startTime = null)
     {
-        if (startTime != null)
-            Started(startTime.Value);
-
-        if (StartedAt == null)
-            return;
-
+        StartedAt = startTime ?? scheduler.Now;
         var timespan = GetRunTime(scheduler.Now);
 
         switch (timespan)
         {
             case null:
-                return;
+                break;
             case not null when timespan <= TimeSpan.Zero:
                 logger.LogDebug("{EnergyConsumer}: Will stop right now.", Name);
                 TurnOff();
-                return;
+                break;
             case not null when timespan > TimeSpan.Zero:
                 logger.LogDebug("{EnergyConsumer}: Will stop in '{TimeSpan}'", Name, timespan.Round().ToString());
                 StopTimer = scheduler.Schedule(timespan.Value, TurnOff);
-                return;
+                break;
         }
     }
 
@@ -182,7 +177,7 @@ public abstract class EnergyConsumer : IDisposable
 
     protected abstract EnergyConsumerState GetDesiredState(DateTimeOffset? now);
     public abstract bool CanStart(DateTimeOffset now);
-    public abstract bool ShouldForceStop(DateTimeOffset now);
+    public abstract bool CanForceStop(DateTimeOffset now);
 
     public abstract void TurnOn();
     public abstract void TurnOff();
@@ -203,7 +198,6 @@ public enum EnergyConsumerState
     Unknown,
     Off,
     Running,
-    RunOnSolarExcess,
     NeedsEnergy,
     CriticallyNeedsEnergy
 }

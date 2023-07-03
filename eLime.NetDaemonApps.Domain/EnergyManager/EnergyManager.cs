@@ -1,7 +1,9 @@
 ﻿using eLime.NetDaemonApps.Domain.Entities.Services;
 using eLime.NetDaemonApps.Domain.Helper;
+using eLime.NetDaemonApps.Domain.Mqtt;
 using Microsoft.Extensions.Logging;
 using NetDaemon.Extensions.MqttEntityManager;
+using NetDaemon.Extensions.Scheduler;
 using NetDaemon.HassModel;
 using NetDaemon.HassModel.Entities;
 using System.Reactive.Concurrency;
@@ -10,12 +12,8 @@ namespace eLime.NetDaemonApps.Domain.EnergyManager;
 
 public class EnergyManager : IDisposable
 {
-    public NumericEntity GridVoltageSensor { get; }
-    public NumericEntity GridPowerImportSensor { get; }
-    public NumericEntity GridPowerExportSensor { get; }
-    public NumericEntity PeakImportSensor { get; }
+    public GridMonitor GridMonitor { get; set; }
     public NumericEntity SolarProductionRemainingTodaySensor { get; }
-    public Int32 UnmonitoredAveragePowerConsumption { get; }
 
     public String? PhoneToNotify { get; }
     public Service Services { get; }
@@ -26,45 +24,51 @@ public class EnergyManager : IDisposable
     private readonly IScheduler _scheduler;
     private readonly IMqttEntityManager _mqttEntityManager;
 
-    private IDisposable? GuardTask { get; set; }
+    private IDisposable? GuardTask { get; }
 
-    public EnergyManager(IHaContext haContext, ILogger logger, IScheduler scheduler, IMqttEntityManager mqttEntityManager, NumericEntity gridVoltageSensor, NumericEntity gridPowerImportSensor, NumericEntity gridPowerExportSensor, NumericEntity peakImportSensor, NumericEntity solarProductionRemainingTodaySensor, int unmonitoredAveragePowerConsumption, List<EnergyConsumer> energyConsumers, string? phoneToNotify, TimeSpan debounceDuration)
+    public EnergyConsumerState State => EnergyConsumers.Any(x => x.State == EnergyConsumerState.CriticallyNeedsEnergy)
+        ? EnergyConsumerState.CriticallyNeedsEnergy
+        : EnergyConsumers.Any(x => x.State == EnergyConsumerState.NeedsEnergy)
+            ? EnergyConsumerState.NeedsEnergy
+            : EnergyConsumers.Any(x => x.State == EnergyConsumerState.Running)
+                ? EnergyConsumerState.Running
+                : EnergyConsumerState.Off;
+
+    public EnergyManager(IHaContext haContext, ILogger logger, IScheduler scheduler, IMqttEntityManager mqttEntityManager, GridMonitor gridMonitor, NumericEntity solarProductionRemainingTodaySensor, List<EnergyConsumer> energyConsumers, string? phoneToNotify, TimeSpan debounceDuration)
     {
         _haContext = haContext;
         _logger = logger;
         _scheduler = scheduler;
         _mqttEntityManager = mqttEntityManager;
 
-
-        GridVoltageSensor = gridVoltageSensor;
-        GridPowerImportSensor = gridPowerImportSensor;
-        GridPowerExportSensor = gridPowerExportSensor;
-        PeakImportSensor = peakImportSensor;
+        GridMonitor = gridMonitor;
         SolarProductionRemainingTodaySensor = solarProductionRemainingTodaySensor;
-        UnmonitoredAveragePowerConsumption = unmonitoredAveragePowerConsumption;
 
         Services = new Service(_haContext);
         PhoneToNotify = phoneToNotify;
 
         EnergyConsumers = energyConsumers;
 
-        //InitializeStateSensor().RunSync();
-        //InitializeSolarEnergyAvailableSwitch().RunSync();
-
+        InitializeStateSensor().RunSync();
         foreach (var energyConsumer in EnergyConsumers)
         {
-            //InitializeModeDropdown(wrapper).RunSync();
-            //InitializeZoneStateSensor(wrapper).RunSync();
+            InitializeConsumerSensor(energyConsumer).RunSync();
             energyConsumer.StateChanged += EnergyConsumer_StateChanged;
         }
 
         if (debounceDuration != TimeSpan.Zero)
         {
-            StartConsumesrDebounceDispatcher = new(debounceDuration);
+            StartConsumersDebounceDispatcher = new(debounceDuration);
             StopConsumersDebounceDispatcher = new(debounceDuration);
+            UpdateInHomeAssistantDebounceDispatcher = new(TimeSpan.FromSeconds(1));
         }
 
-        //GuardTask = guardTask;
+        GuardTask = _scheduler.RunEvery(TimeSpan.FromMinutes(1), _scheduler.Now, () =>
+        {
+            DebounceStartConsumers();
+            DebounceStopConsumers();
+            DebounceUpdateInHomeAssistant().RunSync();
+        });
     }
 
 
@@ -77,28 +81,31 @@ public class EnergyManager : IDisposable
         switch (e)
         {
             case EnergyConsumerStartCommand:
-                DebounceStartWatering();
+                DebounceStartConsumers();
                 break;
             case EnergyConsumerStartedEvent:
                 energyConsumer.Started(_logger, _scheduler);
                 break;
             case EnergyConsumerStopCommand:
                 energyConsumer.Stop();
-                DebounceStartWatering();
+                DebounceStartConsumers();
                 break;
             case EnergyConsumerStoppedEvent:
                 energyConsumer.Stopped(_scheduler.Now);
                 break;
         }
 
-        //UpdateStateInHomeAssistant().RunSync();
+        DebounceUpdateInHomeAssistant().RunSync();
     }
 
-    //TODO: magic that keeps in mind current grid usage, peak usage and estimated solar production
-    //TODO: Keep peak power usage of devices that are already running in mind
+    //TODO: Use linear programming model and estimates of production and consumption to be able to schedule deferred loads in the future.
     private void StartConsumersIfNeeded()
     {
-        Double estimatedLoad = GridPowerImportSensor.State - GridPowerExportSensor.State ?? 0;
+        var estimatedLoad = GridMonitor.CurrentLoad;
+
+        var runningConsumers = EnergyConsumers.Where(x => x.State == EnergyConsumerState.Running);
+        //Keep remaining peak load for running consumers in mind (eg: to avoid turning on devices when washer is prewashing but still has to heat).
+        estimatedLoad += runningConsumers.Where(consumer => consumer.PeakLoad > consumer.CurrentLoad).Sum(consumer => (consumer.PeakLoad - consumer.CurrentLoad));
 
         var consumersThatCriticallyNeedEnergy = EnergyConsumers.Where(x => x is { State: EnergyConsumerState.CriticallyNeedsEnergy });
 
@@ -107,10 +114,14 @@ public class EnergyManager : IDisposable
             if (!criticalConsumer.CanStart(_scheduler.Now))
                 continue;
 
+            //Will not turn on a load that would exceed current grid import peak
+            if (estimatedLoad + criticalConsumer.PeakLoad > GridMonitor.PeakLoad)
+                continue;
+
             criticalConsumer.TurnOn();
 
             _logger.LogDebug("{Consumer}: Started consumer, consumer is in critical need of energy.", criticalConsumer.Name);
-            estimatedLoad += criticalConsumer.PeakPowerUsage;
+            estimatedLoad += criticalConsumer.PeakLoad;
         }
 
         var consumersThatNeedEnergy = EnergyConsumers.Where(x => x is { State: EnergyConsumerState.NeedsEnergy });
@@ -119,36 +130,167 @@ public class EnergyManager : IDisposable
             if (!consumer.CanStart(_scheduler.Now))
                 continue;
 
+            //Will not turn on a consumer when it is below the allowed switch on load
+            if (estimatedLoad + consumer.PeakLoad > consumer.SwitchOnLoad)
+                continue;
+
             consumer.TurnOn();
 
             _logger.LogDebug("{Consumer}: Will start consumer.", consumer.Name);
-            estimatedLoad += consumer.PeakPowerUsage;
+            estimatedLoad += consumer.PeakLoad;
         }
     }
-    private readonly DebounceDispatcher? StartConsumesrDebounceDispatcher;
+
+    private void StopConsumersIfNeeded()
+    {
+        var consumersThatNoLongerNeedEnergy = EnergyConsumers.Where(x => x is { State: EnergyConsumerState.Off, Running: true });
+        foreach (var consumer in consumersThatNoLongerNeedEnergy)
+        {
+            _logger.LogDebug("{Consumer}: Will stop consumer because it no longer needs energy.", consumer.Name);
+            consumer.TurnOff();
+        }
+
+        var estimatedLoad = GridMonitor.AverageLoadSince(_scheduler.Now, TimeSpan.FromMinutes(3));
+        if (estimatedLoad <= GridMonitor.PeakLoad)
+            return;
+
+        var consumersThatShouldForceStopped = EnergyConsumers.Where(x => x.CanForceStop(_scheduler.Now) && x.Running);
+        foreach (var consumer in consumersThatShouldForceStopped)
+        {
+            _logger.LogDebug("{Consumer}: Will stop consumer right now because peak load was exceeded.", consumer.Name);
+            consumer.TurnOff();
+            estimatedLoad -= consumer.CurrentLoad;
+
+            if (estimatedLoad <= GridMonitor.PeakLoad)
+                break;
+        }
+    }
+
+    private readonly DebounceDispatcher? StartConsumersDebounceDispatcher;
     private readonly DebounceDispatcher? StopConsumersDebounceDispatcher;
-    internal void DebounceStartWatering()
-    {
-        //if (StartConsumesrDebounceDispatcher == null)
-        //{
-        //    StartConsumersIfNeeded();
-        //    return;
-        //}
+    private readonly DebounceDispatcher? UpdateInHomeAssistantDebounceDispatcher;
 
-        //StartConsumesrDebounceDispatcher.Debounce(StartConsumersIfNeeded);
+    internal void DebounceStartConsumers()
+    {
+        if (StartConsumersDebounceDispatcher == null)
+        {
+            StartConsumersIfNeeded();
+            return;
+        }
+
+        StartConsumersDebounceDispatcher.Debounce(StartConsumersIfNeeded);
     }
 
 
-    internal void DebounceStopWatering()
+    internal void DebounceStopConsumers()
     {
-        //if (StopConsumersDebounceDispatcher == null)
-        //{
-        //    StopWateringZonesIfNeeded();
-        //    return;
-        //}
+        if (StopConsumersDebounceDispatcher == null)
+        {
+            StopConsumersIfNeeded();
+            return;
+        }
 
-        //StopConsumersDebounceDispatcher.Debounce(StopWateringZonesIfNeeded);
+        StopConsumersDebounceDispatcher.Debounce(StopConsumersIfNeeded);
     }
+
+    private async Task InitializeStateSensor()
+    {
+        var stateName = $"sensor.energy_manager_state";
+        var state = _haContext.Entity(stateName).State;
+
+        if (state == null || string.Equals(state, "unavailable", StringComparison.InvariantCultureIgnoreCase))
+        {
+            _logger.LogDebug("Creating Energy manager state sensor in home assistant.");
+            var entityOptions = new EnumSensorOptions() { Icon = "fapro:square-bolt", Device = GetGlobalDevice(), Options = Enum<EnergyConsumerState>.AllValuesAsStringList() };
+
+            await _mqttEntityManager.CreateAsync(stateName, new EntityCreationOptions(DeviceClass: "enum", UniqueId: stateName, Name: $"Energy manager state", Persist: true), entityOptions);
+            await _mqttEntityManager.SetStateAsync(stateName, State.ToString());
+        }
+    }
+
+
+    private async Task InitializeConsumerSensor(EnergyConsumer consumer)
+    {
+        var stateName = $"sensor.energy_consumer_{consumer.Name.MakeHaFriendly()}_state";
+
+        var state = _haContext.Entity(stateName).State;
+
+        if (state == null || string.Equals(state, "unavailable", StringComparison.InvariantCultureIgnoreCase))
+        {
+            _logger.LogDebug("{Consumer}: Creating energy consumer state sensor in home assistant.", consumer.Name);
+
+            var entityOptions = new EnumSensorOptions { Icon = "fapro:bolt-auto", Device = GetConsumerDevice(consumer), Options = Enum<EnergyConsumerState>.AllValuesAsStringList() };
+
+            await _mqttEntityManager.CreateAsync(stateName, new EntityCreationOptions(DeviceClass: "enum", UniqueId: stateName, Name: $"Irrigation zone state - {consumer.Name}", Persist: true), entityOptions);
+            await _mqttEntityManager.SetStateAsync(stateName, consumer.State.ToString());
+        }
+        else
+        {
+            consumer.SetState(Enum<EnergyConsumerState>.Cast(state));
+            var entity = new Entity<EnergyConsumerAttributes>(_haContext, stateName);
+
+            if (!String.IsNullOrWhiteSpace(entity.Attributes?.LastRun))
+                consumer.Stopped(DateTime.Parse(entity.Attributes.LastRun));
+
+            if (!String.IsNullOrWhiteSpace(entity.Attributes?.StartedAt))
+                consumer.Started(_logger, _scheduler, DateTime.Parse(entity.Attributes.StartedAt));
+        }
+
+    }
+
+    public Device GetGlobalDevice()
+    {
+        return new Device { Identifiers = new List<string> { $"energy_manager" }, Name = "Energy manager", Manufacturer = "Me" };
+    }
+
+    public Device GetConsumerDevice(EnergyConsumer consumer)
+    {
+        return new Device { Identifiers = new List<string> { $"energy_consumer_{consumer.Name.MakeHaFriendly()}" }, Name = "Energy consumer: " + consumer.Name, Manufacturer = "Me" };
+    }
+
+    private async Task DebounceUpdateInHomeAssistant()
+    {
+        if (UpdateInHomeAssistantDebounceDispatcher == null)
+        {
+            await UpdateStateInHomeAssistant();
+            return;
+        }
+
+        await UpdateInHomeAssistantDebounceDispatcher.DebounceAsync(UpdateStateInHomeAssistant);
+    }
+
+    private async Task UpdateStateInHomeAssistant()
+    {
+        var globalAttributes = new EnergyManagerAttributes()
+        {
+            LastUpdated = DateTime.Now.ToString("O"),
+            RunningConsumers = EnergyConsumers.Where(x => x.State == EnergyConsumerState.Running).Select(x => x.Name).ToList(),
+            NeedEnergyConsumers = EnergyConsumers.Where(x => x.State == EnergyConsumerState.NeedsEnergy).Select(x => x.Name).ToList(),
+            CriticalNeedEnergyConsumers = EnergyConsumers.Where(x => x.State == EnergyConsumerState.CriticallyNeedsEnergy).Select(x => x.Name).ToList()
+        };
+
+        await _mqttEntityManager.SetStateAsync("sensor.energy_manager_state", State.ToString());
+        await _mqttEntityManager.SetAttributesAsync("sensor.energy_manager_state", globalAttributes);
+
+        foreach (var consumer in EnergyConsumers)
+        {
+            var stateName = $"sensor.energy_consumer_{consumer.Name.MakeHaFriendly()}_state";
+
+            var attributes = new EnergyConsumerAttributes()
+            {
+                LastUpdated = DateTime.Now.ToString("O"),
+                StartedAt = consumer.StartedAt?.ToString("O"),
+                LastRun = consumer.LastRun?.ToString("O"),
+                Icon = "fapro:bolt-auto"
+            };
+            await _mqttEntityManager.SetStateAsync(stateName, consumer.State.ToString());
+            await _mqttEntityManager.SetAttributesAsync(stateName, attributes);
+
+            _logger.LogTrace("{Consumer}: Update Consumer state sensor in home assistant (attributes: {Attributes})", consumer.Name, attributes);
+        }
+    }
+
+
     public void Dispose()
     {
         throw new NotImplementedException();

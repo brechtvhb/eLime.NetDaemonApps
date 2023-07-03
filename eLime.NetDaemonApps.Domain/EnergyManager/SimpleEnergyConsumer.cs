@@ -5,39 +5,20 @@ namespace eLime.NetDaemonApps.Domain.EnergyManager;
 public class SimpleEnergyConsumer : EnergyConsumer
 {
     public BinarySwitch Socket { get; set; }
-    public override bool IsRunning()
-    {
-        return Socket.IsOn();
-    }
 
-    public TimeSpan? CriticalTimeout { get; }
+    public override bool Running => Socket.IsOn();
+    public override double PeakLoad { get; }
 
     protected override EnergyConsumerState GetDesiredState(DateTimeOffset? now)
     {
-        if (now == null && IsRunning())
+        return Running switch
         {
-            return EnergyConsumerState.Running;
-        }
-        if (now == null && !IsRunning())
-        {
-            return EnergyConsumerState.Off;
-        }
-
-        if (!IsRunning())
-        {
-            if (CriticalTimeout != null && LastRun?.Add(CriticalTimeout.Value) < now)
-                return EnergyConsumerState.CriticallyNeedsEnergy;
-
-            if (MaximumTimeout != null && LastRun?.Add(MaximumTimeout.Value) < now)
-                return EnergyConsumerState.NeedsEnergy;
-
-            return EnergyConsumerState.RunOnSolarExcess;
-        }
-
-        if (MaximumRuntime != null && LastRun?.Add(MaximumRuntime.Value) < now)
-            return EnergyConsumerState.Off;
-
-        return EnergyConsumerState.Running;
+            true => EnergyConsumerState.Running,
+            false when MaximumTimeout != null && LastRun?.Add(MaximumTimeout.Value) < now => EnergyConsumerState.CriticallyNeedsEnergy,
+            false when CriticallyNeeded.IsOn() && MinimumTimeout != null && LastRun?.Add(MinimumTimeout.Value) < now => EnergyConsumerState.CriticallyNeedsEnergy,
+            false when MinimumTimeout != null && LastRun?.Add(MinimumTimeout.Value) < now => EnergyConsumerState.NeedsEnergy,
+            false => EnergyConsumerState.Off
+        };
     }
 
     public override bool CanStart(DateTimeOffset now)
@@ -55,19 +36,18 @@ public class SimpleEnergyConsumer : EnergyConsumer
     }
 
 
-    public override bool ShouldForceStop(DateTimeOffset now)
+    public override bool CanForceStop(DateTimeOffset now)
     {
-        if (MaximumRuntime != null && StartedAt?.Add(MaximumRuntime.Value) < now)
+        if (MinimumRuntime != null && StartedAt?.Add(MinimumRuntime.Value) < now)
             return true;
 
         if (!IsWithinTimeWindow(now) && HasTimeWindow())
             return true;
 
-        if (State == EnergyConsumerState.Off & Socket.IsOn())
-            return true;
-
         return false;
     }
+
+
 
     public override void TurnOn()
     {
