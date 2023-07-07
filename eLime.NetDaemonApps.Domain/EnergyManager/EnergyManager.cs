@@ -18,7 +18,7 @@ public class EnergyManager : IDisposable
     public String? PhoneToNotify { get; }
     public Service Services { get; }
 
-    private readonly List<EnergyConsumer> EnergyConsumers;
+    public List<EnergyConsumer> Consumers { get; }
     private readonly IHaContext _haContext;
     private readonly ILogger _logger;
     private readonly IScheduler _scheduler;
@@ -26,11 +26,11 @@ public class EnergyManager : IDisposable
 
     private IDisposable? GuardTask { get; }
 
-    public EnergyConsumerState State => EnergyConsumers.Any(x => x.State == EnergyConsumerState.CriticallyNeedsEnergy)
+    public EnergyConsumerState State => Consumers.Any(x => x.State == EnergyConsumerState.CriticallyNeedsEnergy)
         ? EnergyConsumerState.CriticallyNeedsEnergy
-        : EnergyConsumers.Any(x => x.State == EnergyConsumerState.NeedsEnergy)
+        : Consumers.Any(x => x.State == EnergyConsumerState.NeedsEnergy)
             ? EnergyConsumerState.NeedsEnergy
-            : EnergyConsumers.Any(x => x.State == EnergyConsumerState.Running)
+            : Consumers.Any(x => x.State == EnergyConsumerState.Running)
                 ? EnergyConsumerState.Running
                 : EnergyConsumerState.Off;
 
@@ -47,10 +47,10 @@ public class EnergyManager : IDisposable
         Services = new Service(_haContext);
         PhoneToNotify = phoneToNotify;
 
-        EnergyConsumers = energyConsumers;
+        Consumers = energyConsumers;
 
         InitializeStateSensor().RunSync();
-        foreach (var energyConsumer in EnergyConsumers)
+        foreach (var energyConsumer in Consumers)
         {
             InitializeConsumerSensor(energyConsumer).RunSync();
             energyConsumer.StateChanged += EnergyConsumer_StateChanged;
@@ -63,18 +63,24 @@ public class EnergyManager : IDisposable
             UpdateInHomeAssistantDebounceDispatcher = new(TimeSpan.FromSeconds(1));
         }
 
-        GuardTask = _scheduler.RunEvery(TimeSpan.FromMinutes(1), _scheduler.Now, () =>
+        GuardTask = _scheduler.RunEvery(TimeSpan.FromSeconds(30), _scheduler.Now, () =>
         {
+            foreach (var consumer in Consumers)
+                consumer.CheckDesiredState(_scheduler.Now);
+
             DebounceStartConsumers();
             DebounceStopConsumers();
             DebounceUpdateInHomeAssistant().RunSync();
         });
+
+        foreach (var consumer in Consumers)
+            consumer.CheckDesiredState(_scheduler.Now);
     }
 
 
     private void EnergyConsumer_StateChanged(object? sender, EnergyConsumerStateChangedEvent e)
     {
-        var energyConsumer = EnergyConsumers.Single(x => x.Name == e.Consumer.Name);
+        var energyConsumer = Consumers.Single(x => x.Name == e.Consumer.Name);
 
         _logger.LogInformation("{EnergyConsumer}: State changed to: {State}.", e.Consumer.Name, e.State);
 
@@ -103,11 +109,11 @@ public class EnergyManager : IDisposable
     {
         var estimatedLoad = GridMonitor.CurrentLoad;
 
-        var runningConsumers = EnergyConsumers.Where(x => x.State == EnergyConsumerState.Running);
+        var runningConsumers = Consumers.Where(x => x.State == EnergyConsumerState.Running);
         //Keep remaining peak load for running consumers in mind (eg: to avoid turning on devices when washer is prewashing but still has to heat).
         estimatedLoad += runningConsumers.Where(consumer => consumer.PeakLoad > consumer.CurrentLoad).Sum(consumer => (consumer.PeakLoad - consumer.CurrentLoad));
 
-        var consumersThatCriticallyNeedEnergy = EnergyConsumers.Where(x => x is { State: EnergyConsumerState.CriticallyNeedsEnergy });
+        var consumersThatCriticallyNeedEnergy = Consumers.Where(x => x is { State: EnergyConsumerState.CriticallyNeedsEnergy });
 
         foreach (var criticalConsumer in consumersThatCriticallyNeedEnergy)
         {
@@ -124,14 +130,14 @@ public class EnergyManager : IDisposable
             estimatedLoad += criticalConsumer.PeakLoad;
         }
 
-        var consumersThatNeedEnergy = EnergyConsumers.Where(x => x is { State: EnergyConsumerState.NeedsEnergy });
+        var consumersThatNeedEnergy = Consumers.Where(x => x is { State: EnergyConsumerState.NeedsEnergy });
         foreach (var consumer in consumersThatNeedEnergy)
         {
             if (!consumer.CanStart(_scheduler.Now))
                 continue;
 
             //Will not turn on a consumer when it is below the allowed switch on load
-            if (estimatedLoad + consumer.PeakLoad > consumer.SwitchOnLoad)
+            if (estimatedLoad + consumer.PeakLoad >= consumer.SwitchOnLoad)
                 continue;
 
             consumer.TurnOn();
@@ -143,7 +149,7 @@ public class EnergyManager : IDisposable
 
     private void StopConsumersIfNeeded()
     {
-        var consumersThatNoLongerNeedEnergy = EnergyConsumers.Where(x => x is { State: EnergyConsumerState.Off, Running: true });
+        var consumersThatNoLongerNeedEnergy = Consumers.Where(x => x is { State: EnergyConsumerState.Off, Running: true });
         foreach (var consumer in consumersThatNoLongerNeedEnergy)
         {
             _logger.LogDebug("{Consumer}: Will stop consumer because it no longer needs energy.", consumer.Name);
@@ -154,7 +160,7 @@ public class EnergyManager : IDisposable
         if (estimatedLoad <= GridMonitor.PeakLoad)
             return;
 
-        var consumersThatShouldForceStopped = EnergyConsumers.Where(x => x.CanForceStop(_scheduler.Now) && x.Running);
+        var consumersThatShouldForceStopped = Consumers.Where(x => x.CanForceStop(_scheduler.Now) && x.Running);
         foreach (var consumer in consumersThatShouldForceStopped)
         {
             _logger.LogDebug("{Consumer}: Will stop consumer right now because peak load was exceeded.", consumer.Name);
@@ -264,15 +270,15 @@ public class EnergyManager : IDisposable
         var globalAttributes = new EnergyManagerAttributes()
         {
             LastUpdated = DateTime.Now.ToString("O"),
-            RunningConsumers = EnergyConsumers.Where(x => x.State == EnergyConsumerState.Running).Select(x => x.Name).ToList(),
-            NeedEnergyConsumers = EnergyConsumers.Where(x => x.State == EnergyConsumerState.NeedsEnergy).Select(x => x.Name).ToList(),
-            CriticalNeedEnergyConsumers = EnergyConsumers.Where(x => x.State == EnergyConsumerState.CriticallyNeedsEnergy).Select(x => x.Name).ToList()
+            RunningConsumers = Consumers.Where(x => x.State == EnergyConsumerState.Running).Select(x => x.Name).ToList(),
+            NeedEnergyConsumers = Consumers.Where(x => x.State == EnergyConsumerState.NeedsEnergy).Select(x => x.Name).ToList(),
+            CriticalNeedEnergyConsumers = Consumers.Where(x => x.State == EnergyConsumerState.CriticallyNeedsEnergy).Select(x => x.Name).ToList()
         };
 
         await _mqttEntityManager.SetStateAsync("sensor.energy_manager_state", State.ToString());
         await _mqttEntityManager.SetAttributesAsync("sensor.energy_manager_state", globalAttributes);
 
-        foreach (var consumer in EnergyConsumers)
+        foreach (var consumer in Consumers)
         {
             var stateName = $"sensor.energy_consumer_{consumer.Name.MakeHaFriendly()}_state";
 
@@ -293,6 +299,14 @@ public class EnergyManager : IDisposable
 
     public void Dispose()
     {
-        throw new NotImplementedException();
+        foreach (var consumer in Consumers)
+        {
+            _logger.LogInformation("Disposing Consumer: {Consumer}", consumer.Name);
+            consumer.Dispose();
+        }
+
+        GridMonitor.Dispose();
+        GuardTask?.Dispose();
     }
+
 }

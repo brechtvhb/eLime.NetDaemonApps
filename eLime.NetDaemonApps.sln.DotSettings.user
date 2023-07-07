@@ -36,5 +36,8 @@
     &lt;TestId&gt;MSTest::70ADEA2F-1101-4094-8D55-19F4572FDA64::net7.0::eLime.NetDaemonApps.Tests.AntiFrostMistingIrrigationTests.Can_Turn_On_Again_After_Timeout&lt;/TestId&gt;&#xD;
     &lt;TestId&gt;MSTest::70ADEA2F-1101-4094-8D55-19F4572FDA64::net7.0::eLime.NetDaemonApps.Tests.FlexiScreenTests&lt;/TestId&gt;&#xD;
     &lt;TestId&gt;MSTest::70ADEA2F-1101-4094-8D55-19F4572FDA64::net7.0::eLime.NetDaemonApps.Tests.AntiFrostMistingIrrigationTests&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;MSTest::70ADEA2F-1101-4094-8D55-19F4572FDA64::net7.0::eLime.NetDaemonApps.Tests.EnergyManagerTests.Init_HappyFlow&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;MSTest::70ADEA2F-1101-4094-8D55-19F4572FDA64::net7.0::eLime.NetDaemonApps.Tests.EnergyManagerTests.Socket_Turning_on_Triggers_State_Running&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;MSTest::70ADEA2F-1101-4094-8D55-19F4572FDA64::net7.0::eLime.NetDaemonApps.Tests.EnergyManagerTests.Exporting_Energy_SwitchesOnLoad&lt;/TestId&gt;&#xD;
   &lt;/TestAncestor&gt;&#xD;
 &lt;/SessionState&gt;</s:String></wpf:ResourceDictionary>

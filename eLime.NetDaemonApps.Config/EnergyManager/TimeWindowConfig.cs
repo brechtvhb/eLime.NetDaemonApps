@@ -2,6 +2,6 @@
 
 public class TimeWindowConfig
 {
-    public TimeOnly? Start { get; }
-    public TimeOnly? EndW { get; }
+    public TimeOnly Start { get; }
+    public TimeOnly End { get; }
 }

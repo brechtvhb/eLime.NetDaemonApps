@@ -1,14 +1,26 @@
 ﻿using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
+using NetDaemon.HassModel.Entities;
 
 namespace eLime.NetDaemonApps.Domain.EnergyManager;
 
 public class SimpleEnergyConsumer : EnergyConsumer
 {
-    public BinarySwitch Socket { get; set; }
+    public BinarySwitch Socket { get; }
 
     public override bool Running => Socket.IsOn();
     public override double PeakLoad { get; }
 
+
+    public SimpleEnergyConsumer(String name, NumericEntity powerUsage, BinarySensor criticallyNeeded, Double switchOnLoad, TimeSpan? minimumRuntime, TimeSpan? maximumRuntime, TimeSpan? minimumTimeout,
+        TimeSpan? maximumTimeout, List<TimeWindow> timeWindows, BinarySwitch socket, Double peakLoad)
+    {
+        SetCommonFields(name, powerUsage, criticallyNeeded, switchOnLoad, minimumRuntime, maximumRuntime, minimumTimeout, maximumTimeout, timeWindows);
+        Socket = socket;
+        Socket.TurnedOn += Socket_TurnedOn;
+        Socket.TurnedOff += Socket_TurnedOff;
+
+        PeakLoad = peakLoad;
+    }
     protected override EnergyConsumerState GetDesiredState(DateTimeOffset? now)
     {
         return Running switch
@@ -17,6 +29,7 @@ public class SimpleEnergyConsumer : EnergyConsumer
             false when MaximumTimeout != null && LastRun?.Add(MaximumTimeout.Value) < now => EnergyConsumerState.CriticallyNeedsEnergy,
             false when CriticallyNeeded.IsOn() && MinimumTimeout != null && LastRun?.Add(MinimumTimeout.Value) < now => EnergyConsumerState.CriticallyNeedsEnergy,
             false when MinimumTimeout != null && LastRun?.Add(MinimumTimeout.Value) < now => EnergyConsumerState.NeedsEnergy,
+            false when MinimumTimeout == null && MaximumTimeout == null => EnergyConsumerState.NeedsEnergy,
             false => EnergyConsumerState.Off
         };
     }
@@ -61,6 +74,8 @@ public class SimpleEnergyConsumer : EnergyConsumer
 
     public new void Dispose()
     {
+        base.Dispose();
+
         Socket.TurnedOn -= Socket_TurnedOn;
         Socket.TurnedOn -= Socket_TurnedOff;
         Socket.Dispose();

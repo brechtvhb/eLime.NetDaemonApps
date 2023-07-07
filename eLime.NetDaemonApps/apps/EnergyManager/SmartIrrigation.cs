@@ -7,22 +7,23 @@ using System.Reactive.Concurrency;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace eLime.NetDaemonApps.apps.SmartIrrigation;
+namespace eLime.NetDaemonApps.apps.EnergyManager;
 
-[NetDaemonApp(Id = "smartIrrigation")]
-public class SmartIrrigation : IAsyncInitializable, IAsyncDisposable
+[Focus]
+[NetDaemonApp(Id = "energyManager")]
+public class EnergyManager : IAsyncInitializable, IAsyncDisposable
 {
     private readonly IHaContext _ha;
     private readonly IScheduler _scheduler;
     private readonly IMqttEntityManager _mqttEntityManager;
     private readonly ILogger _logger;
-    private readonly SmartIrrigationConfig _config;
+    private readonly EnergyManagerConfig _config;
 
-    private Domain.SmartIrrigation.SmartIrrigation _smartIrrigation;
+    private Domain.EnergyManager.EnergyManager _energyManager;
 
     private CancellationToken _ct;
 
-    public SmartIrrigation(IHaContext ha, IScheduler scheduler, IAppConfig<SmartIrrigationConfig> config, IMqttEntityManager mqttEntityManager, ILogger<SmartIrrigation> logger)
+    public EnergyManager(IHaContext ha, IScheduler scheduler, IAppConfig<EnergyManagerConfig> config, IMqttEntityManager mqttEntityManager, ILogger<EnergyManager> logger)
     {
         _ha = ha;
         _scheduler = scheduler;
@@ -36,7 +37,7 @@ public class SmartIrrigation : IAsyncInitializable, IAsyncDisposable
         _ct = cancellationToken;
         try
         {
-            _smartIrrigation = _config.ToEntities(_ha, _scheduler, _mqttEntityManager, _logger);
+            _energyManager = _config.ToEntities(_ha, _scheduler, _mqttEntityManager, _logger);
         }
         catch (Exception ex)
         {
@@ -50,13 +51,11 @@ public class SmartIrrigation : IAsyncInitializable, IAsyncDisposable
 
     public ValueTask DisposeAsync()
     {
-        _logger.LogInformation("Disposing Smart irrigation");
+        _logger.LogInformation("Disposing Energy manager");
 
-        _smartIrrigation.Dispose();
+        _energyManager.Dispose();
 
-
-        _logger.LogInformation("Disposed Smart irrigation");
-
+        _logger.LogInformation("Disposed Energy manager");
 
         return ValueTask.CompletedTask;
     }

@@ -8,27 +8,42 @@ namespace eLime.NetDaemonApps.Domain.EnergyManager;
 
 public abstract class EnergyConsumer : IDisposable
 {
-    public String Name { get; set; }
-    public NumericEntity PowerUsage { get; set; }
-    public BinarySensor CriticallyNeeded { get; set; }
+    public String Name { get; private set; }
+    public NumericEntity PowerUsage { get; private set; }
+    public BinarySensor CriticallyNeeded { get; private set; }
     public abstract Boolean Running { get; }
     public Double CurrentLoad => PowerUsage.State ?? 0;
 
     public abstract Double PeakLoad { get; }
-    public Double SwitchOnLoad { get; set; }
-    public TimeSpan? MinimumRuntime { get; }
-    public TimeSpan? MaximumRuntime { get; }
-    public TimeSpan? MinimumTimeout { get; }
-    public TimeSpan? MaximumTimeout { get; }
+    public Double SwitchOnLoad { get; private set; }
+    public TimeSpan? MinimumRuntime { get; private set; }
+    public TimeSpan? MaximumRuntime { get; private set; }
+    public TimeSpan? MinimumTimeout { get; private set; }
+    public TimeSpan? MaximumTimeout { get; private set; }
 
-    public List<TimeWindow> TimeWindows { get; }
-    public DateTimeOffset? StartedAt { get; protected set; }
-    public DateTimeOffset? LastRun { get; protected set; }
+    public List<TimeWindow> TimeWindows { get; private set; }
+    public DateTimeOffset? StartedAt { get; private set; }
+    public DateTimeOffset? LastRun { get; private set; }
     public EnergyConsumerState State { get; private set; }
 
     public IDisposable? StopTimer { get; set; }
 
     public event EventHandler<EnergyConsumerStateChangedEvent>? StateChanged;
+
+    protected void SetCommonFields(String name, NumericEntity powerUsage, BinarySensor criticallyNeeded, Double switchOnLoad, TimeSpan? minimumRuntime, TimeSpan? maximumRuntime, TimeSpan? minimumTimeout, TimeSpan? maximumTimeout, List<TimeWindow> timeWindows)
+    {
+        Name = name;
+        PowerUsage = powerUsage;
+        CriticallyNeeded = criticallyNeeded;
+        SwitchOnLoad = switchOnLoad;
+        MinimumRuntime = minimumRuntime;
+        MaximumRuntime = maximumRuntime;
+        MinimumTimeout = minimumTimeout;
+        MaximumTimeout = maximumTimeout;
+
+        TimeWindows = timeWindows;
+
+    }
 
     protected void OnStateCHanged(EnergyConsumerStateChangedEvent e)
     {
@@ -182,8 +197,10 @@ public abstract class EnergyConsumer : IDisposable
     public abstract void TurnOn();
     public abstract void TurnOff();
 
-    public void Dispose()
+    public virtual void Dispose()
     {
+        CriticallyNeeded.Dispose();
+        StopTimer?.Dispose();
     }
 }
 
@@ -191,6 +208,12 @@ public class TimeWindow
 {
     public TimeOnly Start { get; }
     public TimeOnly End { get; }
+
+    public TimeWindow(TimeOnly start, TimeOnly end)
+    {
+        Start = start;
+        End = end;
+    }
 }
 
 public enum EnergyConsumerState
