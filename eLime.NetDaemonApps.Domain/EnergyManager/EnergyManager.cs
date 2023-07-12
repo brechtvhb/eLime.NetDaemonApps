@@ -87,14 +87,12 @@ public class EnergyManager : IDisposable
         switch (e)
         {
             case EnergyConsumerStartCommand:
-                DebounceStartConsumers();
                 break;
             case EnergyConsumerStartedEvent:
                 energyConsumer.Started(_logger, _scheduler);
                 break;
             case EnergyConsumerStopCommand:
                 energyConsumer.Stop();
-                DebounceStartConsumers();
                 break;
             case EnergyConsumerStoppedEvent:
                 energyConsumer.Stopped(_scheduler.Now);

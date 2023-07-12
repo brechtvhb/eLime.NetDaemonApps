@@ -39,5 +39,12 @@
     &lt;TestId&gt;MSTest::70ADEA2F-1101-4094-8D55-19F4572FDA64::net7.0::eLime.NetDaemonApps.Tests.EnergyManagerTests.Init_HappyFlow&lt;/TestId&gt;&#xD;
     &lt;TestId&gt;MSTest::70ADEA2F-1101-4094-8D55-19F4572FDA64::net7.0::eLime.NetDaemonApps.Tests.EnergyManagerTests.Socket_Turning_on_Triggers_State_Running&lt;/TestId&gt;&#xD;
     &lt;TestId&gt;MSTest::70ADEA2F-1101-4094-8D55-19F4572FDA64::net7.0::eLime.NetDaemonApps.Tests.EnergyManagerTests.Exporting_Energy_SwitchesOnLoad&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;MSTest::70ADEA2F-1101-4094-8D55-19F4572FDA64::net7.0::eLime.NetDaemonApps.Tests.EnergyManagerTests.Above_Peak_Energy_SwitchesOffLoad&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;MSTest::70ADEA2F-1101-4094-8D55-19F4572FDA64::net7.0::eLime.NetDaemonApps.Tests.EnergyManagerTests.Above_Peak_Energy_WithMinimumRuntime_DoesNotSwitchOffLoad&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;MSTest::70ADEA2F-1101-4094-8D55-19F4572FDA64::net7.0::eLime.NetDaemonApps.Tests.EnergyManagerTests.Socket_Turning_off_Triggers_State_Off&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;MSTest::70ADEA2F-1101-4094-8D55-19F4572FDA64::net7.0::eLime.NetDaemonApps.Tests.EnergyManagerTests.Above_Peak_Energy_WithMinimumRuntime_SwitchesOffLoad_After_Duration&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;MSTest::70ADEA2F-1101-4094-8D55-19F4572FDA64::net7.0::eLime.NetDaemonApps.Tests.EnergyManagerTests.MaximumRuntime_SwitchesOffLoad&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;MSTest::70ADEA2F-1101-4094-8D55-19F4572FDA64::net7.0::eLime.NetDaemonApps.Tests.EnergyManagerTests.Respects_Timeout&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;MSTest::70ADEA2F-1101-4094-8D55-19F4572FDA64::net7.0::eLime.NetDaemonApps.Tests.EnergyManagerTests.Can_Turn_On_After_Timeout&lt;/TestId&gt;&#xD;
   &lt;/TestAncestor&gt;&#xD;
 &lt;/SessionState&gt;</s:String></wpf:ResourceDictionary>

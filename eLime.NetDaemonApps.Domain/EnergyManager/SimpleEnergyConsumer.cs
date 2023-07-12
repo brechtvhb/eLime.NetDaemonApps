@@ -51,13 +51,10 @@ public class SimpleEnergyConsumer : EnergyConsumer
 
     public override bool CanForceStop(DateTimeOffset now)
     {
-        if (MinimumRuntime != null && StartedAt?.Add(MinimumRuntime.Value) < now)
-            return true;
+        if (MinimumRuntime != null && StartedAt?.Add(MinimumRuntime.Value) > now)
+            return false;
 
-        if (!IsWithinTimeWindow(now) && HasTimeWindow())
-            return true;
-
-        return false;
+        return true;
     }
 
 

@@ -36,6 +36,23 @@ public class SimpleEnergyConsumerBuilder
         _peakLoad = 42;
     }
 
+    public SimpleEnergyConsumerBuilder WithRuntime(TimeSpan? minimum, TimeSpan? maximum)
+    {
+        _minimumRuntime = minimum;
+        _maximumRuntime = maximum;
+
+        return this;
+    }
+
+
+    public SimpleEnergyConsumerBuilder WithTimeout(TimeSpan? minimum, TimeSpan? maximum)
+    {
+        _minimumTimeout = minimum;
+        _maximumTimeout = maximum;
+
+        return this;
+    }
+
     public SimpleEnergyConsumer Build()
     {
         var x = new SimpleEnergyConsumer(_name, _powerUsage, _criticallyNeeded, _switchOnLoad, _minimumRuntime, _maximumRuntime, _minimumTimeout, _maximumTimeout, _timeWindows, _socket, _peakLoad);
