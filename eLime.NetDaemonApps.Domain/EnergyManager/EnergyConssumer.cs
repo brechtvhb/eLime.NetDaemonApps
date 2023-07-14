@@ -143,7 +143,7 @@ public abstract class EnergyConsumer : IDisposable
         foreach (var timeWindow in TimeWindows)
         {
 
-            var start = now.Add(-now.TimeOfDay).Add(timeWindow.End.ToTimeSpan());
+            var start = now.Add(-now.TimeOfDay).Add(timeWindow.Start.ToTimeSpan());
             var end = now.Add(-now.TimeOfDay).Add(timeWindow.End.ToTimeSpan());
 
             if (timeWindow.Start > timeWindow.End)

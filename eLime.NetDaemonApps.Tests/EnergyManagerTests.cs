@@ -4,7 +4,6 @@ using eLime.NetDaemonApps.Tests.Helpers;
 using FakeItEasy;
 using Microsoft.Extensions.Logging;
 using NetDaemon.Extensions.MqttEntityManager;
-using NetDaemon.HassModel;
 using NetDaemon.HassModel.Entities;
 using EnergyManager = eLime.NetDaemonApps.Domain.EnergyManager.EnergyManager;
 
@@ -254,5 +253,188 @@ public class EnergyManagerTests
 
         //Assert
         _testCtx.VerifySwitchTurnOn(consumer.Socket, Moq.Times.Once);
+    }
+
+
+    [TestMethod]
+    public void MultipleConsumers_SwitchOn_One_If_Not_Enough_Power()
+    {
+        // Arrange
+        var consumer1 = new SimpleEnergyConsumerBuilder(_testCtx)
+            .Build();
+        var consumer2 = new SimpleEnergyConsumerBuilder(_testCtx)
+            .WithLoad(-60, 100)
+            .WithName("fridge")
+            .Build();
+
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+            .AddConsumer(consumer1)
+            .AddConsumer(consumer2)
+            .Build();
+
+        //Act
+        _testCtx.TriggerStateChange(energyManager.GridMonitor.GridPowerExportSensor, "50");
+        _testCtx.TriggerStateChange(energyManager.GridMonitor.GridPowerImportSensor, "0");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
+
+        //Assert
+        _testCtx.VerifySwitchTurnOn(consumer1.Socket, Moq.Times.Once);
+        _testCtx.VerifySwitchTurnOn(consumer2.Socket, Moq.Times.Never);
+    }
+
+
+    [TestMethod]
+    public void MultipleConsumers_SwitchOn_Both_If_Enough_Power()
+    {
+        // Arrange
+        var consumer1 = new SimpleEnergyConsumerBuilder(_testCtx)
+            .Build();
+        var consumer2 = new SimpleEnergyConsumerBuilder(_testCtx)
+            .WithLoad(-60, 100)
+            .WithName("fridge")
+            .Build();
+
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+            .AddConsumer(consumer1)
+            .AddConsumer(consumer2)
+            .Build();
+
+        //Act
+        _testCtx.TriggerStateChange(energyManager.GridMonitor.GridPowerExportSensor, "200");
+        _testCtx.TriggerStateChange(energyManager.GridMonitor.GridPowerImportSensor, "0");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
+
+        //Assert
+        _testCtx.VerifySwitchTurnOn(consumer1.Socket, Moq.Times.Once);
+        _testCtx.VerifySwitchTurnOn(consumer2.Socket, Moq.Times.Once);
+    }
+
+
+    [TestMethod]
+    public void MultipleConsumers_Prioritizes_Critical()
+    {
+        // Arrange
+        var consumer1 = new SimpleEnergyConsumerBuilder(_testCtx)
+            .Build();
+        var consumer2 = new SimpleEnergyConsumerBuilder(_testCtx)
+            .WithLoad(-60, 100)
+            .WithName("fridge")
+            .WithCriticalSensor("boolean_sensor.fridge_too_hot")
+            .Build();
+
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+            .AddConsumer(consumer1)
+            .AddConsumer(consumer2)
+            .Build();
+
+        //Act
+        _testCtx.TriggerStateChange(energyManager.GridMonitor.GridPowerExportSensor, "50");
+        _testCtx.TriggerStateChange(energyManager.GridMonitor.GridPowerImportSensor, "0");
+        _testCtx.TriggerStateChange(consumer2.CriticallyNeeded, "on");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
+
+        //Assert
+        _testCtx.VerifySwitchTurnOn(consumer1.Socket, Moq.Times.Never);
+        _testCtx.VerifySwitchTurnOn(consumer2.Socket, Moq.Times.Once);
+    }
+
+
+    [TestMethod]
+    public void Exporting_Energy_SwitchesOnLoad_If_Within_TimeWindow()
+    {
+        _testCtx.SetCurrentTime(DateTime.Today.AddDays(1).AddHours(10));
+
+        // Arrange
+        var consumer = new SimpleEnergyConsumerBuilder(_testCtx)
+            .AddTimeWindow(new TimeOnly(09, 00), new TimeOnly(12, 00))
+            .Build();
+
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+            .AddConsumer(consumer)
+            .Build();
+
+        //Act
+        _testCtx.TriggerStateChange(energyManager.GridMonitor.GridPowerExportSensor, "2000");
+        _testCtx.TriggerStateChange(energyManager.GridMonitor.GridPowerImportSensor, "0");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
+
+        //Assert
+        Assert.AreEqual(EnergyConsumerState.NeedsEnergy, energyManager.Consumers.First().State);
+        _testCtx.VerifySwitchTurnOn(consumer.Socket, Moq.Times.Once);
+    }
+
+    [TestMethod]
+    public void Exporting_Energy_DoesNotSwitchOnLoad_If_Outside_TimeWindow()
+    {
+        _testCtx.SetCurrentTime(DateTime.Today.AddDays(1).AddHours(13));
+
+        // Arrange
+        var consumer = new SimpleEnergyConsumerBuilder(_testCtx)
+            .AddTimeWindow(new TimeOnly(09, 00), new TimeOnly(12, 00))
+            .Build();
+
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+            .AddConsumer(consumer)
+            .Build();
+
+        //Act
+        _testCtx.TriggerStateChange(energyManager.GridMonitor.GridPowerExportSensor, "2000");
+        _testCtx.TriggerStateChange(energyManager.GridMonitor.GridPowerImportSensor, "0");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
+
+        //Assert
+        Assert.AreEqual(EnergyConsumerState.NeedsEnergy, energyManager.Consumers.First().State);
+        _testCtx.VerifySwitchTurnOn(consumer.Socket, Moq.Times.Never);
+    }
+
+    [TestMethod]
+    public void Exporting_Energy_SwitchesOnLoad_If_Within_A_TimeWindow()
+    {
+        _testCtx.SetCurrentTime(DateTime.Today.AddDays(1).AddHours(10));
+
+        // Arrange
+        var consumer = new SimpleEnergyConsumerBuilder(_testCtx)
+            .AddTimeWindow(new TimeOnly(09, 00), new TimeOnly(12, 00))
+            .AddTimeWindow(new TimeOnly(13, 00), new TimeOnly(16, 00))
+            .Build();
+
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+            .AddConsumer(consumer)
+            .Build();
+
+        //Act
+        _testCtx.TriggerStateChange(energyManager.GridMonitor.GridPowerExportSensor, "2000");
+        _testCtx.TriggerStateChange(energyManager.GridMonitor.GridPowerImportSensor, "0");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
+
+        //Assert
+        Assert.AreEqual(EnergyConsumerState.NeedsEnergy, energyManager.Consumers.First().State);
+        _testCtx.VerifySwitchTurnOn(consumer.Socket, Moq.Times.Once);
+    }
+
+
+    [TestMethod]
+    public void Exporting_Energy_DoesNotSwitchOnLoad_If_Outside__All_TimeWindows()
+    {
+        _testCtx.SetCurrentTime(DateTime.Today.AddDays(1).AddHours(13));
+
+        // Arrange
+        var consumer = new SimpleEnergyConsumerBuilder(_testCtx)
+            .AddTimeWindow(new TimeOnly(09, 00), new TimeOnly(12, 00))
+            .AddTimeWindow(new TimeOnly(13, 30), new TimeOnly(16, 00))
+            .Build();
+
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+            .AddConsumer(consumer)
+            .Build();
+
+        //Act
+        _testCtx.TriggerStateChange(energyManager.GridMonitor.GridPowerExportSensor, "2000");
+        _testCtx.TriggerStateChange(energyManager.GridMonitor.GridPowerImportSensor, "0");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
+
+        //Assert
+        Assert.AreEqual(EnergyConsumerState.NeedsEnergy, energyManager.Consumers.First().State);
+        _testCtx.VerifySwitchTurnOn(consumer.Socket, Moq.Times.Never);
     }
 }

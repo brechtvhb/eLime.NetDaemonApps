@@ -1,5 +1,6 @@
 ﻿using eLime.NetDaemonApps.Domain.EnergyManager;
 using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
+using eLime.NetDaemonApps.Domain.Helper;
 using eLime.NetDaemonApps.Tests.Helpers;
 using NetDaemon.HassModel.Entities;
 
@@ -36,6 +37,22 @@ public class SimpleEnergyConsumerBuilder
         _peakLoad = 42;
     }
 
+    public SimpleEnergyConsumerBuilder WithName(String name)
+    {
+        _name = name;
+        _socket = BinarySwitch.Create(_testCtx.HaContext, $"switch.socket_{name.MakeHaFriendly()}");
+        _powerUsage = new NumericEntity(_testCtx.HaContext, $"sensor.socket_{name.MakeHaFriendly()}_power");
+
+        return this;
+    }
+
+    public SimpleEnergyConsumerBuilder WithCriticalSensor(string sensorName)
+    {
+        _criticallyNeeded = BinarySensor.Create(_testCtx.HaContext, sensorName);
+
+        return this;
+    }
+
     public SimpleEnergyConsumerBuilder WithRuntime(TimeSpan? minimum, TimeSpan? maximum)
     {
         _minimumRuntime = minimum;
@@ -44,12 +61,26 @@ public class SimpleEnergyConsumerBuilder
         return this;
     }
 
-
     public SimpleEnergyConsumerBuilder WithTimeout(TimeSpan? minimum, TimeSpan? maximum)
     {
         _minimumTimeout = minimum;
         _maximumTimeout = maximum;
 
+        return this;
+    }
+
+    public SimpleEnergyConsumerBuilder WithLoad(Double switchOnLoad, Double peakLoad)
+    {
+        _switchOnLoad = switchOnLoad;
+        _peakLoad = peakLoad;
+
+        return this;
+    }
+
+
+    public SimpleEnergyConsumerBuilder AddTimeWindow(TimeOnly start, TimeOnly end)
+    {
+        _timeWindows.Add(new TimeWindow(start, end));
         return this;
     }
 

@@ -12,7 +12,7 @@
       powerUsageEntity: "sensor.socket_pond_pump_power"
       minimumRuntime: "00:30:00"
       maximumRuntime: "16:00:00"
-      minimumTimeout: "00:20:00"
+      minimumTimeout: "00:10:00"
       maximumTimeout: "01:30:00"
       criticallyNeededEntity: "boolean_sensor.weather_is_freezing"
       switchOnLoad: 30

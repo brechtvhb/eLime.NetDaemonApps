@@ -46,5 +46,12 @@
     &lt;TestId&gt;MSTest::70ADEA2F-1101-4094-8D55-19F4572FDA64::net7.0::eLime.NetDaemonApps.Tests.EnergyManagerTests.MaximumRuntime_SwitchesOffLoad&lt;/TestId&gt;&#xD;
     &lt;TestId&gt;MSTest::70ADEA2F-1101-4094-8D55-19F4572FDA64::net7.0::eLime.NetDaemonApps.Tests.EnergyManagerTests.Respects_Timeout&lt;/TestId&gt;&#xD;
     &lt;TestId&gt;MSTest::70ADEA2F-1101-4094-8D55-19F4572FDA64::net7.0::eLime.NetDaemonApps.Tests.EnergyManagerTests.Can_Turn_On_After_Timeout&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;MSTest::70ADEA2F-1101-4094-8D55-19F4572FDA64::net7.0::eLime.NetDaemonApps.Tests.EnergyManagerTests.MultipleConsumers_SwitchOn_One&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;MSTest::70ADEA2F-1101-4094-8D55-19F4572FDA64::net7.0::eLime.NetDaemonApps.Tests.EnergyManagerTests.MultipleConsumers_SwitchOn_Both_If_Enough_Power&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;MSTest::70ADEA2F-1101-4094-8D55-19F4572FDA64::net7.0::eLime.NetDaemonApps.Tests.EnergyManagerTests.MultipleConsumers_Prioritizes_Critical&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;MSTest::70ADEA2F-1101-4094-8D55-19F4572FDA64::net7.0::eLime.NetDaemonApps.Tests.EnergyManagerTests.Exporting_Energy_SwitchesOnLoad_If_Within_TimeWindow&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;MSTest::70ADEA2F-1101-4094-8D55-19F4572FDA64::net7.0::eLime.NetDaemonApps.Tests.EnergyManagerTests.Exporting_Energy_DoesNotSwitchOnLoad_If_Outside_TimeWindow&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;MSTest::70ADEA2F-1101-4094-8D55-19F4572FDA64::net7.0::eLime.NetDaemonApps.Tests.EnergyManagerTests.Exporting_Energy_SwitchesOnLoad_If_Within_A_TimeWindow&lt;/TestId&gt;&#xD;
+    &lt;TestId&gt;MSTest::70ADEA2F-1101-4094-8D55-19F4572FDA64::net7.0::eLime.NetDaemonApps.Tests.EnergyManagerTests.Exporting_Energy_DoesNotSwitchOnLoad_If_Outside__All_TimeWindows&lt;/TestId&gt;&#xD;
   &lt;/TestAncestor&gt;&#xD;
 &lt;/SessionState&gt;</s:String></wpf:ResourceDictionary>

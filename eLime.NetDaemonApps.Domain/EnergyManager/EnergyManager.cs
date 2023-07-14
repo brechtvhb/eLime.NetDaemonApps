@@ -135,7 +135,7 @@ public class EnergyManager : IDisposable
                 continue;
 
             //Will not turn on a consumer when it is below the allowed switch on load
-            if (estimatedLoad + consumer.PeakLoad >= consumer.SwitchOnLoad)
+            if (estimatedLoad >= consumer.SwitchOnLoad)
                 continue;
 
             consumer.TurnOn();
