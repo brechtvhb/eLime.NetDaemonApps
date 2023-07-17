@@ -140,27 +140,7 @@ public abstract class EnergyConsumer : IDisposable
         if (!HasTimeWindow())
             return null;
 
-        foreach (var timeWindow in TimeWindows)
-        {
-
-            var start = now.Add(-now.TimeOfDay).Add(timeWindow.Start.ToTimeSpan());
-            var end = now.Add(-now.TimeOfDay).Add(timeWindow.End.ToTimeSpan());
-
-            if (timeWindow.Start > timeWindow.End)
-            {
-                if (now.TimeOfDay > timeWindow.Start.ToTimeSpan())
-                    end = end.AddDays(1);
-
-                if (now.TimeOfDay < timeWindow.End.ToTimeSpan())
-                    start = start.AddDays(1);
-            }
-
-            if (start <= now && end >= now)
-                return timeWindow;
-
-        }
-
-        return null;
+        return TimeWindows.FirstOrDefault(timeWindow => timeWindow.IsActive(now));
     }
 
     internal void Started(ILogger logger, IScheduler scheduler, DateTimeOffset? startTime = null)
@@ -201,18 +181,6 @@ public abstract class EnergyConsumer : IDisposable
     {
         CriticallyNeeded.Dispose();
         StopTimer?.Dispose();
-    }
-}
-
-public class TimeWindow
-{
-    public TimeOnly Start { get; }
-    public TimeOnly End { get; }
-
-    public TimeWindow(TimeOnly start, TimeOnly end)
-    {
-        Start = start;
-        End = end;
     }
 }
 

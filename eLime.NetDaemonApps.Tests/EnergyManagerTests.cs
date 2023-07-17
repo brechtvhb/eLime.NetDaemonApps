@@ -1,4 +1,5 @@
 ﻿using eLime.NetDaemonApps.Domain.EnergyManager;
+using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 using eLime.NetDaemonApps.Tests.Builders;
 using eLime.NetDaemonApps.Tests.Helpers;
 using FakeItEasy;
@@ -346,7 +347,7 @@ public class EnergyManagerTests
 
         // Arrange
         var consumer = new SimpleEnergyConsumerBuilder(_testCtx)
-            .AddTimeWindow(new TimeOnly(09, 00), new TimeOnly(12, 00))
+            .AddTimeWindow(null, new TimeOnly(09, 00), new TimeOnly(12, 00))
             .Build();
 
         var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
@@ -364,13 +365,65 @@ public class EnergyManagerTests
     }
 
     [TestMethod]
+    public void Exporting_Energy_SwitchesOnLoad_If_Within_Active_TimeWindow()
+    {
+        _testCtx.SetCurrentTime(DateTime.Today.AddDays(1).AddHours(10));
+        var active = new BinarySensor(_testCtx.HaContext, "binary_sensor.time_window_active");
+
+        // Arrange
+        var consumer = new SimpleEnergyConsumerBuilder(_testCtx)
+            .AddTimeWindow(active, new TimeOnly(09, 00), new TimeOnly(12, 00))
+            .Build();
+
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+            .AddConsumer(consumer)
+            .Build();
+
+        //Act
+        _testCtx.TriggerStateChange(energyManager.GridMonitor.GridPowerExportSensor, "2000");
+        _testCtx.TriggerStateChange(energyManager.GridMonitor.GridPowerImportSensor, "0");
+        _testCtx.TriggerStateChange(active, "on");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
+
+        //Assert
+        Assert.AreEqual(EnergyConsumerState.NeedsEnergy, energyManager.Consumers.First().State);
+        _testCtx.VerifySwitchTurnOn(consumer.Socket, Moq.Times.Once);
+    }
+
+
+    [TestMethod]
     public void Exporting_Energy_DoesNotSwitchOnLoad_If_Outside_TimeWindow()
     {
         _testCtx.SetCurrentTime(DateTime.Today.AddDays(1).AddHours(13));
 
         // Arrange
         var consumer = new SimpleEnergyConsumerBuilder(_testCtx)
-            .AddTimeWindow(new TimeOnly(09, 00), new TimeOnly(12, 00))
+            .AddTimeWindow(null, new TimeOnly(09, 00), new TimeOnly(12, 00))
+            .Build();
+
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+            .AddConsumer(consumer)
+            .Build();
+
+        //Act
+        _testCtx.TriggerStateChange(energyManager.GridMonitor.GridPowerExportSensor, "2000");
+        _testCtx.TriggerStateChange(energyManager.GridMonitor.GridPowerImportSensor, "0");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
+
+        //Assert
+        Assert.AreEqual(EnergyConsumerState.NeedsEnergy, energyManager.Consumers.First().State);
+        _testCtx.VerifySwitchTurnOn(consumer.Socket, Moq.Times.Never);
+    }
+
+    [TestMethod]
+    public void Exporting_Energy_DoesNotSwitchOnLoad_If_TimeWindow_Not_Active()
+    {
+        _testCtx.SetCurrentTime(DateTime.Today.AddDays(1).AddHours(13));
+        var active = new BinarySensor(_testCtx.HaContext, "binary_sensor.time_window_active");
+
+        // Arrange
+        var consumer = new SimpleEnergyConsumerBuilder(_testCtx)
+            .AddTimeWindow(null, new TimeOnly(09, 00), new TimeOnly(12, 00))
             .Build();
 
         var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
@@ -394,8 +447,8 @@ public class EnergyManagerTests
 
         // Arrange
         var consumer = new SimpleEnergyConsumerBuilder(_testCtx)
-            .AddTimeWindow(new TimeOnly(09, 00), new TimeOnly(12, 00))
-            .AddTimeWindow(new TimeOnly(13, 00), new TimeOnly(16, 00))
+            .AddTimeWindow(null, new TimeOnly(09, 00), new TimeOnly(12, 00))
+            .AddTimeWindow(null, new TimeOnly(13, 00), new TimeOnly(16, 00))
             .Build();
 
         var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
@@ -420,8 +473,8 @@ public class EnergyManagerTests
 
         // Arrange
         var consumer = new SimpleEnergyConsumerBuilder(_testCtx)
-            .AddTimeWindow(new TimeOnly(09, 00), new TimeOnly(12, 00))
-            .AddTimeWindow(new TimeOnly(13, 30), new TimeOnly(16, 00))
+            .AddTimeWindow(null, new TimeOnly(09, 00), new TimeOnly(12, 00))
+            .AddTimeWindow(null, new TimeOnly(13, 30), new TimeOnly(16, 00))
             .Build();
 
         var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)

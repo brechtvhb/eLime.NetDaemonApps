@@ -78,9 +78,9 @@ public class SimpleEnergyConsumerBuilder
     }
 
 
-    public SimpleEnergyConsumerBuilder AddTimeWindow(TimeOnly start, TimeOnly end)
+    public SimpleEnergyConsumerBuilder AddTimeWindow(BinarySensor? isActive, TimeOnly start, TimeOnly end)
     {
-        _timeWindows.Add(new TimeWindow(start, end));
+        _timeWindows.Add(new TimeWindow(isActive, start, end));
         return this;
     }
 

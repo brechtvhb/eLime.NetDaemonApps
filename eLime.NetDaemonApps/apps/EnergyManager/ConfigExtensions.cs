@@ -23,7 +23,7 @@ public static class ConfigExtensions
         {
             var powerUsageEntity = new NumericEntity(ha, consumer.PowerUsageEntity);
             var criticallyNeededEntity = new BinarySensor(ha, consumer.CriticallyNeededEntity);
-            var timeWindows = consumer.TimeWindows.Select(ToEntities).ToList();
+            var timeWindows = consumer.TimeWindows.Select(x => x.ToEntities(ha)).ToList();
 
             EnergyConsumer energyConsumer = null;
             if (consumer.Simple != null)
@@ -40,9 +40,10 @@ public static class ConfigExtensions
         return entity;
     }
 
-    public static TimeWindow ToEntities(this TimeWindowConfig config)
+    public static TimeWindow ToEntities(this TimeWindowConfig config, IHaContext ha)
     {
-        return new TimeWindow(config.Start, config.End);
+        var isActiveEntity = new BinarySensor(ha, config.IsActiveEntity);
+        return new TimeWindow(isActiveEntity, config.Start, config.End);
     }
 
 }
