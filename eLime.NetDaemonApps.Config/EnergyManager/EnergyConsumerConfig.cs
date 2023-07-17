@@ -17,5 +17,6 @@ public class EnergyConsumerConfig
     public List<TimeWindowConfig> TimeWindows { get; set; }
 
     public SimpleEnergyConsumerConfig? Simple { get; set; }
+    public CoolingEnergyConsumerConfig? Cooling { get; set; }
 
 }

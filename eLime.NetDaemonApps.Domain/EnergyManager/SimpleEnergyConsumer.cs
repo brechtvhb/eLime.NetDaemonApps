@@ -27,11 +27,8 @@ public class SimpleEnergyConsumer : EnergyConsumer
         {
             true => EnergyConsumerState.Running,
             false when MaximumTimeout != null && LastRun?.Add(MaximumTimeout.Value) < now => EnergyConsumerState.CriticallyNeedsEnergy,
-            false when CriticallyNeeded.IsOn() && MinimumTimeout != null && LastRun?.Add(MinimumTimeout.Value) < now => EnergyConsumerState.CriticallyNeedsEnergy,
-            false when CriticallyNeeded.IsOn() && MinimumTimeout == null => EnergyConsumerState.CriticallyNeedsEnergy,
-            false when MinimumTimeout != null && LastRun?.Add(MinimumTimeout.Value) < now => EnergyConsumerState.NeedsEnergy,
-            false when MinimumTimeout == null && MaximumTimeout == null => EnergyConsumerState.NeedsEnergy,
-            false => EnergyConsumerState.Off
+            false when CriticallyNeeded != null && CriticallyNeeded.IsOn() => EnergyConsumerState.CriticallyNeedsEnergy,
+            false => EnergyConsumerState.NeedsEnergy,
         };
     }
 

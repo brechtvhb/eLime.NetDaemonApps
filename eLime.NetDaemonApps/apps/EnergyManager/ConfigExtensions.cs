@@ -31,6 +31,15 @@ public static class ConfigExtensions
                 var socket = new BinarySwitch(ha, consumer.Simple.SocketEntity);
                 energyConsumer = new SimpleEnergyConsumer(consumer.Name, powerUsageEntity, criticallyNeededEntity, consumer.SwitchOnLoad, consumer.MinimumRuntime, consumer.MaximumRuntime, consumer.MinimumTimeout, consumer.MaximumTimeout, timeWindows, socket, consumer.Simple.PeakLoad);
             }
+
+            if (consumer.Cooling != null)
+            {
+                var socket = new BinarySwitch(ha, consumer.Cooling.SocketEntity);
+                var temperatureSensor = new NumericEntity(ha, consumer.Cooling.TemperatureSensor);
+
+                energyConsumer = new CoolingEnergyConsumer(consumer.Name, powerUsageEntity, criticallyNeededEntity, consumer.SwitchOnLoad, consumer.MinimumRuntime, consumer.MaximumRuntime, consumer.MinimumTimeout, consumer.MaximumTimeout, timeWindows, socket, consumer.Cooling.PeakLoad, temperatureSensor, consumer.Cooling.TargetTemperature, consumer.Cooling.SwitchOnTemperature, consumer.Cooling.MaxTemperature);
+            }
+
             if (energyConsumer != null)
                 consumers.Add(energyConsumer);
         }

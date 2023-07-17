@@ -10,7 +10,7 @@ public abstract class EnergyConsumer : IDisposable
 {
     public String Name { get; private set; }
     public NumericEntity PowerUsage { get; private set; }
-    public BinarySensor CriticallyNeeded { get; private set; }
+    public BinarySensor? CriticallyNeeded { get; private set; }
     public abstract Boolean Running { get; }
     public Double CurrentLoad => PowerUsage.State ?? 0;
 
@@ -30,7 +30,7 @@ public abstract class EnergyConsumer : IDisposable
 
     public event EventHandler<EnergyConsumerStateChangedEvent>? StateChanged;
 
-    protected void SetCommonFields(String name, NumericEntity powerUsage, BinarySensor criticallyNeeded, Double switchOnLoad, TimeSpan? minimumRuntime, TimeSpan? maximumRuntime, TimeSpan? minimumTimeout, TimeSpan? maximumTimeout, List<TimeWindow> timeWindows)
+    protected void SetCommonFields(String name, NumericEntity powerUsage, BinarySensor? criticallyNeeded, Double switchOnLoad, TimeSpan? minimumRuntime, TimeSpan? maximumRuntime, TimeSpan? minimumTimeout, TimeSpan? maximumTimeout, List<TimeWindow> timeWindows)
     {
         Name = name;
         PowerUsage = powerUsage;

@@ -19,3 +19,17 @@
       simple:
         socketEntity: "switch.socket_pond_pump"
         peakLoad: 42
+    - name: "Fridge"
+      powerUsageEntity: "sensor.socket_reserve_fridge_power"
+      minimumRuntime: "00:30:00"
+      maximumRuntime: "16:00:00"
+      minimumTimeout: "00:15:00"
+      maximumTimeout: "12:00:00"
+      switchOnLoad: -50
+      cooling:
+        socketEntity: "switch.socket_reserve_fridge"
+        peakLoad: 75
+        temperatureSensor: "sensor.woox_reserve_fridge_temperature"
+        targetTemperature: 0.5
+        switchOnTemperature: 5
+        maxTemperature: 9
