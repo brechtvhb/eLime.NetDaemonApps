@@ -32,6 +32,22 @@ public class SwitchTurnOffAction : Action
     }
 }
 
+public class SwitchToggleAction : Action
+{
+    public BinarySwitch Switch { get; init; }
+
+    public SwitchToggleAction(BinarySwitch @switch)
+    {
+        Switch = @switch;
+    }
+
+    public override Task Execute(bool isAutoTransition = false)
+    {
+        Switch.Toggle();
+        return Task.CompletedTask;
+    }
+}
+
 public class SwitchPulseAction : Action
 {
     public BinarySwitch Switch { get; init; }

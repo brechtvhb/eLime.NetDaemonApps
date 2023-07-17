@@ -23,7 +23,7 @@ public static class ConfigExtensions
         {
             var powerUsageEntity = new NumericEntity(ha, consumer.PowerUsageEntity);
             var criticallyNeededEntity = new BinarySensor(ha, consumer.CriticallyNeededEntity);
-            var timeWindows = consumer.TimeWindows.Select(x => x.ToEntities(ha)).ToList();
+            var timeWindows = consumer.TimeWindows?.Select(x => x.ToEntities(ha))?.ToList() ?? new List<TimeWindow>();
 
             EnergyConsumer energyConsumer = null;
             if (consumer.Simple != null)

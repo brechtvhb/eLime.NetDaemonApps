@@ -74,7 +74,12 @@ public class EnergyManager : IDisposable
         });
 
         foreach (var consumer in Consumers)
+        {
             consumer.CheckDesiredState(_scheduler.Now);
+
+            if (consumer is { State: EnergyConsumerState.Running, StartedAt: null })
+                consumer.Started(_logger, _scheduler);
+        }
     }
 
 
@@ -225,7 +230,7 @@ public class EnergyManager : IDisposable
 
             var entityOptions = new EnumSensorOptions { Icon = "fapro:bolt-auto", Device = GetConsumerDevice(consumer), Options = Enum<EnergyConsumerState>.AllValuesAsStringList() };
 
-            await _mqttEntityManager.CreateAsync(stateName, new EntityCreationOptions(DeviceClass: "enum", UniqueId: stateName, Name: $"Irrigation zone state - {consumer.Name}", Persist: true), entityOptions);
+            await _mqttEntityManager.CreateAsync(stateName, new EntityCreationOptions(DeviceClass: "enum", UniqueId: stateName, Name: $"Consumer state - {consumer.Name}", Persist: true), entityOptions);
             await _mqttEntityManager.SetStateAsync(stateName, consumer.State.ToString());
         }
         else

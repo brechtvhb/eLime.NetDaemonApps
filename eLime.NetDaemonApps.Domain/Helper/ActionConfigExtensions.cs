@@ -106,6 +106,7 @@ internal static class ActionConfigExtensions
         {
             SwitchAction.TurnOn => new SwitchTurnOnAction(@switch),
             SwitchAction.TurnOff => new SwitchTurnOffAction(@switch),
+            SwitchAction.Toggle => new SwitchToggleAction(@switch),
             SwitchAction.Pulse => new SwitchPulseAction(@switch, config.PulseDuration),
         };
     }

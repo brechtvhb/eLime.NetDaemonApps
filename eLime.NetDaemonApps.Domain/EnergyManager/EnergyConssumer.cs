@@ -157,7 +157,7 @@ public abstract class EnergyConsumer : IDisposable
                 TurnOff();
                 break;
             case not null when timespan > TimeSpan.Zero:
-                logger.LogDebug("{EnergyConsumer}: Will stop in '{TimeSpan}'", Name, timespan.Round().ToString());
+                logger.LogDebug("{EnergyConsumer}: Will run for maximum span of '{TimeSpan}'", Name, timespan.Round().ToString());
                 StopTimer = scheduler.Schedule(timespan.Value, TurnOff);
                 break;
         }

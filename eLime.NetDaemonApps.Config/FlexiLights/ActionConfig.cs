@@ -50,5 +50,6 @@ public enum SwitchAction
     Unknown,
     TurnOn,
     TurnOff,
+    Toggle,
     Pulse
 }
