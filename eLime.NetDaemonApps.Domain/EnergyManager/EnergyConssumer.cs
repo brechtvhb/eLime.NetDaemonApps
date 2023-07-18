@@ -15,6 +15,7 @@ public abstract class EnergyConsumer : IDisposable
     public Double CurrentLoad => PowerUsage.State ?? 0;
 
     public abstract Double PeakLoad { get; }
+    public bool PreferSolar { get; private set; }
     public Double SwitchOnLoad { get; private set; }
     public TimeSpan? MinimumRuntime { get; private set; }
     public TimeSpan? MaximumRuntime { get; private set; }
@@ -30,12 +31,14 @@ public abstract class EnergyConsumer : IDisposable
 
     public event EventHandler<EnergyConsumerStateChangedEvent>? StateChanged;
 
-    protected void SetCommonFields(String name, NumericEntity powerUsage, BinarySensor? criticallyNeeded, Double switchOnLoad, TimeSpan? minimumRuntime, TimeSpan? maximumRuntime, TimeSpan? minimumTimeout, TimeSpan? maximumTimeout, List<TimeWindow> timeWindows)
+    protected void SetCommonFields(String name, NumericEntity powerUsage, BinarySensor? criticallyNeeded, Boolean preferSolar, Double switchOnLoad, TimeSpan? minimumRuntime, TimeSpan? maximumRuntime, TimeSpan? minimumTimeout, TimeSpan? maximumTimeout, List<TimeWindow> timeWindows)
     {
         Name = name;
         PowerUsage = powerUsage;
         CriticallyNeeded = criticallyNeeded;
+        PreferSolar = preferSolar;
         SwitchOnLoad = switchOnLoad;
+
         MinimumRuntime = minimumRuntime;
         MaximumRuntime = maximumRuntime;
         MinimumTimeout = minimumTimeout;

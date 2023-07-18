@@ -183,6 +183,31 @@ public class EnergyManagerTests
     }
 
     [TestMethod]
+    public void SwitchOffLoad_When_PreferSolar_After_MinimumRuntime()
+    {
+        // Arrange
+        var consumer = new SimpleEnergyConsumerBuilder(_testCtx)
+            .WithRuntime(TimeSpan.FromSeconds(55), TimeSpan.FromMinutes(60))
+            .WithPreferSolar()
+            .Build();
+
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+            .AddConsumer(consumer)
+            .Build();
+
+        _testCtx.TriggerStateChange(consumer.Socket, "on");
+        _testCtx.TriggerStateChange(consumer.PowerUsage, "40");
+
+        //Act
+        _testCtx.TriggerStateChange(energyManager.GridMonitor.GridPowerExportSensor, "0");
+        _testCtx.TriggerStateChange(energyManager.GridMonitor.GridPowerImportSensor, "500");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(61));
+
+        //Assert
+        _testCtx.VerifySwitchTurnOff(consumer.Socket, Moq.Times.Once);
+    }
+
+    [TestMethod]
     public void MaximumRuntime_SwitchesOffLoad()
     {
         // Arrange
@@ -255,7 +280,6 @@ public class EnergyManagerTests
         //Assert
         _testCtx.VerifySwitchTurnOn(consumer.Socket, Moq.Times.Once);
     }
-
 
     [TestMethod]
     public void MultipleConsumers_SwitchOn_One_If_Not_Enough_Power()

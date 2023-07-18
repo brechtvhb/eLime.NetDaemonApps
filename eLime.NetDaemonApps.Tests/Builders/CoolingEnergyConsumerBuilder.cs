@@ -12,7 +12,8 @@ public class CoolingEnergyConsumerBuilder
     private String _name;
 
     private NumericEntity _powerUsage;
-    private BinarySensor _criticallyNeeded;
+    private BinarySensor? _criticallyNeeded;
+    public Boolean _preferSolar;
     private Double _switchOnLoad;
 
     private TimeSpan? _minimumRuntime;
@@ -35,6 +36,7 @@ public class CoolingEnergyConsumerBuilder
 
         _name = "Fridge";
         _powerUsage = new NumericEntity(_testCtx.HaContext, "sensor.socket_fridge_power");
+        _preferSolar = false;
         _switchOnLoad = -50;
 
         _socket = BinarySwitch.Create(_testCtx.HaContext, "switch.socket_fridge");
@@ -93,6 +95,12 @@ public class CoolingEnergyConsumerBuilder
         return this;
     }
 
+    public CoolingEnergyConsumerBuilder WithPreferSolar()
+    {
+        _preferSolar = true;
+        return this;
+    }
+
     public CoolingEnergyConsumerBuilder WithTemperatureSensor(string sensorName, double targetTemperature, double switchOnTemperature, double maxTemperature)
     {
         _temperatureSensor = new NumericEntity(_testCtx.HaContext, sensorName);
@@ -105,7 +113,7 @@ public class CoolingEnergyConsumerBuilder
 
     public CoolingEnergyConsumer Build()
     {
-        var x = new CoolingEnergyConsumer(_name, _powerUsage, _criticallyNeeded, _switchOnLoad, _minimumRuntime, _maximumRuntime, _minimumTimeout, _maximumTimeout, _timeWindows, _socket, _peakLoad, _temperatureSensor, _targetTemperature, _switchOnTemperature, _maxTemperature);
+        var x = new CoolingEnergyConsumer(_name, _powerUsage, _criticallyNeeded, _preferSolar, _switchOnLoad, _minimumRuntime, _maximumRuntime, _minimumTimeout, _maximumTimeout, _timeWindows, _socket, _peakLoad, _temperatureSensor, _targetTemperature, _switchOnTemperature, _maxTemperature);
         return x;
     }
 }

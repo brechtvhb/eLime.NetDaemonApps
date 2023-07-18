@@ -152,6 +152,8 @@ public class EnergyManager : IDisposable
 
     private void StopConsumersIfNeeded()
     {
+        var estimatedLoad = GridMonitor.AverageLoadSince(_scheduler.Now, TimeSpan.FromMinutes(3));
+
         var consumersThatNoLongerNeedEnergy = Consumers.Where(x => x is { State: EnergyConsumerState.Off, Running: true });
         foreach (var consumer in consumersThatNoLongerNeedEnergy)
         {
@@ -159,19 +161,29 @@ public class EnergyManager : IDisposable
             consumer.TurnOff();
         }
 
-        var estimatedLoad = GridMonitor.AverageLoadSince(_scheduler.Now, TimeSpan.FromMinutes(3));
-        if (estimatedLoad <= GridMonitor.PeakLoad)
-            return;
 
-        var consumersThatShouldForceStopped = Consumers.Where(x => x.CanForceStop(_scheduler.Now) && x.Running);
-        foreach (var consumer in consumersThatShouldForceStopped)
+        if (estimatedLoad > 0)
         {
-            _logger.LogDebug("{Consumer}: Will stop consumer right now because peak load was exceeded.", consumer.Name);
-            consumer.TurnOff();
-            estimatedLoad -= consumer.CurrentLoad;
+            var consumersThatPreferSolar = Consumers.Where(x => x is { State: EnergyConsumerState.Running, PreferSolar: true });
+            foreach (var consumer in consumersThatPreferSolar)
+            {
+                _logger.LogDebug("{Consumer}: Will stop consumer because it prefers solar energy.", consumer.Name);
+                consumer.TurnOff();
+            }
+        }
 
-            if (estimatedLoad <= GridMonitor.PeakLoad)
-                break;
+        if (estimatedLoad > GridMonitor.PeakLoad)
+        {
+            var consumersThatShouldForceStopped = Consumers.Where(x => x.CanForceStop(_scheduler.Now) && x.Running);
+            foreach (var consumer in consumersThatShouldForceStopped)
+            {
+                _logger.LogDebug("{Consumer}: Will stop consumer right now because peak load was exceeded.", consumer.Name);
+                consumer.TurnOff();
+                estimatedLoad -= consumer.CurrentLoad;
+
+                if (estimatedLoad <= GridMonitor.PeakLoad)
+                    break;
+            }
         }
     }
 

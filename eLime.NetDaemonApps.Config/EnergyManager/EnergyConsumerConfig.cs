@@ -14,6 +14,7 @@ public class EnergyConsumerConfig
 
     //Extra entity to force something to run (Eg : pond pump when it is freezing)
     public string CriticallyNeededEntity { get; set; }
+    public bool PreferSolar { get; set; }
     public List<TimeWindowConfig> TimeWindows { get; set; }
 
     public SimpleEnergyConsumerConfig? Simple { get; set; }
