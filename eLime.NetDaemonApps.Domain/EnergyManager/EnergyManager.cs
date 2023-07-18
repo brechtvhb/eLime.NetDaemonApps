@@ -100,7 +100,7 @@ public class EnergyManager : IDisposable
                 energyConsumer.Stop();
                 break;
             case EnergyConsumerStoppedEvent:
-                energyConsumer.Stopped(_scheduler.Now);
+                energyConsumer.Stopped(_logger, _scheduler.Now);
                 break;
         }
 
@@ -158,9 +158,8 @@ public class EnergyManager : IDisposable
         foreach (var consumer in consumersThatNoLongerNeedEnergy)
         {
             _logger.LogDebug("{Consumer}: Will stop consumer because it no longer needs energy.", consumer.Name);
-            consumer.TurnOff();
+            consumer.Stop();
         }
-
 
         if (estimatedLoad > 0)
         {
@@ -168,7 +167,7 @@ public class EnergyManager : IDisposable
             foreach (var consumer in consumersThatPreferSolar)
             {
                 _logger.LogDebug("{Consumer}: Will stop consumer because it prefers solar energy.", consumer.Name);
-                consumer.TurnOff();
+                consumer.Stop();
             }
         }
 
@@ -178,7 +177,7 @@ public class EnergyManager : IDisposable
             foreach (var consumer in consumersThatShouldForceStopped)
             {
                 _logger.LogDebug("{Consumer}: Will stop consumer right now because peak load was exceeded.", consumer.Name);
-                consumer.TurnOff();
+                consumer.Stop();
                 estimatedLoad -= consumer.CurrentLoad;
 
                 if (estimatedLoad <= GridMonitor.PeakLoad)
@@ -251,7 +250,7 @@ public class EnergyManager : IDisposable
             var entity = new Entity<EnergyConsumerAttributes>(_haContext, stateName);
 
             if (!String.IsNullOrWhiteSpace(entity.Attributes?.LastRun))
-                consumer.Stopped(DateTime.Parse(entity.Attributes.LastRun));
+                consumer.Stopped(_logger, DateTime.Parse(entity.Attributes.LastRun));
 
             if (!String.IsNullOrWhiteSpace(entity.Attributes?.StartedAt))
                 consumer.Started(_logger, _scheduler, DateTime.Parse(entity.Attributes.StartedAt));

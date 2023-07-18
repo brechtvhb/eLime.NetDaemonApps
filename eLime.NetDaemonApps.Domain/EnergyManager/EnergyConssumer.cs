@@ -66,10 +66,13 @@ public abstract class EnergyConsumer : IDisposable
         StopTimer = null;
     }
 
-    public void Stopped(DateTimeOffset now)
+    public void Stopped(ILogger logger, DateTimeOffset now)
     {
         StartedAt = null;
         LastRun = now;
+
+        logger.LogDebug("{EnergyConsumer}: Was stopped.'", Name);
+
         CheckDesiredState(now);
     }
 
@@ -79,7 +82,6 @@ public abstract class EnergyConsumer : IDisposable
         if (State != eventToEmit.State)
             State = eventToEmit.State;
 
-        eventToEmit.State = State;
         OnStateCHanged(eventToEmit);
     }
 
@@ -182,7 +184,7 @@ public abstract class EnergyConsumer : IDisposable
 
     public virtual void Dispose()
     {
-        CriticallyNeeded.Dispose();
+        CriticallyNeeded?.Dispose();
         StopTimer?.Dispose();
     }
 }
