@@ -47,6 +47,8 @@ public class TriggeredEnergyConsumer : EnergyConsumer
         Socket.TurnedOff += Socket_TurnedOff;
 
         StateSensor = stateSensor;
+        StateSensor.StateChanged += StateSensor_StateChanged;
+
         StartState = startState;
         CriticalState = criticalState;
 
@@ -60,7 +62,7 @@ public class TriggeredEnergyConsumer : EnergyConsumer
         {
             true => EnergyConsumerState.Running,
             false when StateSensor.State == StartState => EnergyConsumerState.NeedsEnergy,
-            false when StateSensor.State == CriticalState => EnergyConsumerState.CriticallyNeedsEnergy,
+            false when StateSensor.State == CriticalState && !String.IsNullOrWhiteSpace(CriticalState) => EnergyConsumerState.CriticallyNeedsEnergy,
             false when StateSensor.State == StartState && CriticallyNeeded != null && CriticallyNeeded.IsOn() => EnergyConsumerState.CriticallyNeedsEnergy,
             false => EnergyConsumerState.Off,
         };
@@ -109,8 +111,20 @@ public class TriggeredEnergyConsumer : EnergyConsumer
         Socket.TurnedOn -= Socket_TurnedOn;
         Socket.TurnedOn -= Socket_TurnedOff;
         Socket.Dispose();
+
+        StateSensor.StateChanged -= StateSensor_StateChanged;
+        StateSensor.Dispose();
     }
 
+    private void StateSensor_StateChanged(object? sender, TextSensorEventArgs e)
+    {
+        if (e.Sensor.State == StartState)
+            CheckDesiredState(new EnergyConsumerStartCommand(this, EnergyConsumerState.NeedsEnergy));
+
+        if (e.Sensor.State == CriticalState)
+            CheckDesiredState(new EnergyConsumerStartCommand(this, EnergyConsumerState.CriticallyNeedsEnergy));
+
+    }
 
     private void Socket_TurnedOn(object? sender, BinarySensorEventArgs e)
     {

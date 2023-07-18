@@ -43,7 +43,7 @@ public static class ConfigExtensions
             if (consumer.Triggered != null)
             {
                 var socket = BinarySwitch.Create(ha, consumer.Triggered.SocketEntity);
-                var stateSensor = new TextSensor(ha, consumer.Triggered.StateSensor);
+                var stateSensor = TextSensor.Create(ha, consumer.Triggered.StateSensor);
                 var stateMap = consumer.Triggered.PeakLoads.Select(x => (x.State, x.PeakLoad)).ToList();
 
                 energyConsumer = new TriggeredEnergyConsumer(consumer.Name, powerUsageEntity, criticallyNeededEntity, consumer.PreferSolar, consumer.SwitchOnLoad, consumer.MinimumRuntime, consumer.MaximumRuntime, consumer.MinimumTimeout, consumer.MaximumTimeout, timeWindows, socket, stateMap, stateSensor, consumer.Triggered.StartState, consumer.Triggered.CriticalState, consumer.Triggered.CanForceShutdown);

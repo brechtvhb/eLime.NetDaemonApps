@@ -28,6 +28,14 @@ public record TextSensor : Entity<TextSensor, EntityState<TextSensorAttributes>,
             });
     }
 
+    public static TextSensor Create(IHaContext haContext, string entityId)
+    {
+        var sensor = new TextSensor(haContext, entityId);
+        sensor.Initialize();
+        return sensor;
+    }
+
+
     public event EventHandler<TextSensorEventArgs>? StateChanged;
 
     private void OnStateChanged(TextSensorEventArgs e)
