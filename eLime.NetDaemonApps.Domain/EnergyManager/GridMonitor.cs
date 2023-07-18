@@ -16,8 +16,8 @@ public class GridMonitor : IDisposable
     public double CurrentLoad => GridPowerImportSensor.State - GridPowerExportSensor.State ?? 0;
     public Double PeakLoad => PeakImportSensor.State * 1000 ?? 0;
 
-    private readonly FixedSizeConcurrentQueue<(DateTimeOffset Moment, double Value)> _lastImportValues = new(100);
-    private readonly FixedSizeConcurrentQueue<(DateTimeOffset Moment, double Value)> _lastExportValues = new(100);
+    private readonly FixedSizeConcurrentQueue<(DateTimeOffset Moment, double Value)> _lastImportValues = new(200);
+    private readonly FixedSizeConcurrentQueue<(DateTimeOffset Moment, double Value)> _lastExportValues = new(200);
 
     public GridMonitor(IScheduler scheduler, NumericEntity gridVoltageSensor, NumericSensor gridPowerImportSensor, NumericSensor gridPowerExportSensor, NumericEntity peakImportSensor)
     {
