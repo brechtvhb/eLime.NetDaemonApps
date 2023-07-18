@@ -168,6 +168,10 @@ public class EnergyManager : IDisposable
             {
                 _logger.LogDebug("{Consumer}: Will stop consumer because it prefers solar energy.", consumer.Name);
                 consumer.Stop();
+                estimatedLoad -= consumer.CurrentLoad;
+
+                if (estimatedLoad <= GridMonitor.PeakLoad)
+                    break;
             }
         }
 
