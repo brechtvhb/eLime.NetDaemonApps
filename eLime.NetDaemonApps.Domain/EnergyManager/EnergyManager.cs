@@ -164,7 +164,7 @@ public class EnergyManager : IDisposable
 
         if (estimatedLoad > 0)
         {
-            var consumersThatPreferSolar = Consumers.Where(x => x is { State: EnergyConsumerState.Running, PreferSolar: true });
+            var consumersThatPreferSolar = Consumers.Where(x => x.CanForceStop(_scheduler.Now) && x is { Running: true, PreferSolar: true });
             foreach (var consumer in consumersThatPreferSolar)
             {
                 _logger.LogDebug("{Consumer}: Will stop consumer because it prefers solar energy.", consumer.Name);
