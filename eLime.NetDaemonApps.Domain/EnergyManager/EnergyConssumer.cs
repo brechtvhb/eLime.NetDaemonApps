@@ -71,7 +71,7 @@ public abstract class EnergyConsumer : IDisposable
         StartedAt = null;
         LastRun = now;
 
-        logger.LogDebug("{EnergyConsumer}: Was stopped.'", Name);
+        logger.LogDebug("{EnergyConsumer}: Was stopped.", Name);
 
         CheckDesiredState(now);
     }
@@ -79,9 +79,7 @@ public abstract class EnergyConsumer : IDisposable
 
     public void CheckDesiredState(EnergyConsumerStateChangedEvent eventToEmit)
     {
-        if (State != eventToEmit.State)
-            State = eventToEmit.State;
-
+        State = eventToEmit.State;
         OnStateCHanged(eventToEmit);
     }
 

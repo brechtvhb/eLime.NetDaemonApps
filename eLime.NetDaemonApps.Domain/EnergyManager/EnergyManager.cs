@@ -114,7 +114,7 @@ public class EnergyManager : IDisposable
 
         var runningConsumers = Consumers.Where(x => x.State == EnergyConsumerState.Running);
         //Keep remaining peak load for running consumers in mind (eg: to avoid turning on devices when washer is prewashing but still has to heat).
-        estimatedLoad += runningConsumers.Where(consumer => consumer.PeakLoad > consumer.CurrentLoad).Sum(consumer => (consumer.PeakLoad - consumer.CurrentLoad));
+        estimatedLoad += runningConsumers.Where(x => x.PeakLoad > x.CurrentLoad).Sum(x => (x.PeakLoad - x.CurrentLoad));
 
         var consumersThatCriticallyNeedEnergy = Consumers.Where(x => x is { State: EnergyConsumerState.CriticallyNeedsEnergy });
 
