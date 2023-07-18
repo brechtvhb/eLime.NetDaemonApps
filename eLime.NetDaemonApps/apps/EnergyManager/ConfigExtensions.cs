@@ -22,7 +22,7 @@ public static class ConfigExtensions
         foreach (var consumer in config.Consumers)
         {
             var powerUsageEntity = new NumericEntity(ha, consumer.PowerUsageEntity);
-            var criticallyNeededEntity = new BinarySensor(ha, consumer.CriticallyNeededEntity);
+            var criticallyNeededEntity = !String.IsNullOrWhiteSpace(consumer.CriticallyNeededEntity) ? new BinarySensor(ha, consumer.CriticallyNeededEntity) : null;
             var timeWindows = consumer.TimeWindows?.Select(x => x.ToEntities(ha))?.ToList() ?? new List<TimeWindow>();
 
             EnergyConsumer energyConsumer = null;

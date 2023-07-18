@@ -11,7 +11,7 @@ public class SimpleEnergyConsumer : EnergyConsumer
     public override double PeakLoad { get; }
 
 
-    public SimpleEnergyConsumer(String name, NumericEntity powerUsage, BinarySensor criticallyNeeded, Double switchOnLoad, TimeSpan? minimumRuntime, TimeSpan? maximumRuntime, TimeSpan? minimumTimeout,
+    public SimpleEnergyConsumer(String name, NumericEntity powerUsage, BinarySensor? criticallyNeeded, Double switchOnLoad, TimeSpan? minimumRuntime, TimeSpan? maximumRuntime, TimeSpan? minimumTimeout,
         TimeSpan? maximumTimeout, List<TimeWindow> timeWindows, BinarySwitch socket, Double peakLoad)
     {
         SetCommonFields(name, powerUsage, criticallyNeeded, switchOnLoad, minimumRuntime, maximumRuntime, minimumTimeout, maximumTimeout, timeWindows);
