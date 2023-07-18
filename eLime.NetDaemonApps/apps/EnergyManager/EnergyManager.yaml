@@ -33,3 +33,24 @@
         targetTemperature: 0.5
         switchOnTemperature: 5
         maxTemperature: 9
+    - name: "Irrigation"
+      powerUsageEntity: "sensor.socket_shed_pump_power"
+      minimumRuntime: "00:15:00"
+      maximumRuntime: "04:00:00"
+      minimumTimeout: "00:15:00"
+      maximumTimeout: "999.00:00:00"
+      preferSolar: true
+      switchOnLoad: -700
+      triggered:
+        socketEntity: "switch.irrigation_energy_available"
+        stateSensor: "sensor.irrigation_state"
+        startState: "Yes"
+        criticalState: "Critical"
+        canForceShutdown: true
+        statePeakLoads:
+          - state: "No"
+            peakLoad: 1
+          - state: "Yes"
+            peakLoad: 700
+          - state: "Critical"
+            peakLoad: 700

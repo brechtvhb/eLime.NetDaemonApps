@@ -39,7 +39,7 @@ public class SimpleEnergyConsumer : EnergyConsumer
         if (!IsWithinTimeWindow(now) && HasTimeWindow())
             return false;
 
-        if (MinimumTimeout == null || LastRun == null)
+        if (MinimumTimeout == null)
             return true;
 
         return !(LastRun?.Add(MinimumTimeout.Value) > now);

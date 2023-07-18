@@ -3,6 +3,7 @@ using eLime.NetDaemonApps.Config.EnergyManager;
 using eLime.NetDaemonApps.Domain.EnergyManager;
 using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
+using eLime.NetDaemonApps.Domain.Entities.TextSensors;
 using NetDaemon.Extensions.MqttEntityManager;
 using NetDaemon.HassModel.Entities;
 using System.Collections.Generic;
@@ -39,6 +40,15 @@ public static class ConfigExtensions
 
                 energyConsumer = new CoolingEnergyConsumer(consumer.Name, powerUsageEntity, criticallyNeededEntity, consumer.PreferSolar, consumer.SwitchOnLoad, consumer.MinimumRuntime, consumer.MaximumRuntime, consumer.MinimumTimeout, consumer.MaximumTimeout, timeWindows, socket, consumer.Cooling.PeakLoad, temperatureSensor, consumer.Cooling.TargetTemperature, consumer.Cooling.SwitchOnTemperature, consumer.Cooling.MaxTemperature);
             }
+            if (consumer.Triggered != null)
+            {
+                var socket = BinarySwitch.Create(ha, consumer.Triggered.SocketEntity);
+                var stateSensor = new TextSensor(ha, consumer.Triggered.StateSensor);
+                var stateMap = consumer.Triggered.PeakLoads.Select(x => (x.State, x.PeakLoad)).ToList();
+
+                energyConsumer = new TriggeredEnergyConsumer(consumer.Name, powerUsageEntity, criticallyNeededEntity, consumer.PreferSolar, consumer.SwitchOnLoad, consumer.MinimumRuntime, consumer.MaximumRuntime, consumer.MinimumTimeout, consumer.MaximumTimeout, timeWindows, socket, stateMap, stateSensor, consumer.Triggered.StartState, consumer.Triggered.CriticalState, consumer.Triggered.CanForceShutdown);
+            }
+
 
             if (energyConsumer != null)
                 consumers.Add(energyConsumer);

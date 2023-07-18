@@ -56,7 +56,7 @@ public class CoolingEnergyConsumer : EnergyConsumer
         if (TemperatureSensor.State < SwitchOnTemperature)
             return false;
 
-        if (MinimumTimeout == null || LastRun == null)
+        if (MinimumTimeout == null)
             return true;
 
         return !(LastRun?.Add(MinimumTimeout.Value) > now);
