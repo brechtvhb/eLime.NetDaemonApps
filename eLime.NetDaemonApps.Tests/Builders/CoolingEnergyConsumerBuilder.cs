@@ -27,7 +27,6 @@ public class CoolingEnergyConsumerBuilder
 
     private NumericEntity _temperatureSensor;
     private Double _targetTemperature;
-    private Double _switchOnTemperature;
     private Double _maxTemperature;
 
     public CoolingEnergyConsumerBuilder(AppTestContext testCtx)
@@ -44,7 +43,6 @@ public class CoolingEnergyConsumerBuilder
 
         _temperatureSensor = new NumericEntity(_testCtx.HaContext, "sensor.fridge_temperature");
         _targetTemperature = 0.5;
-        _switchOnTemperature = 6;
         _maxTemperature = 8.5;
     }
 
@@ -101,11 +99,10 @@ public class CoolingEnergyConsumerBuilder
         return this;
     }
 
-    public CoolingEnergyConsumerBuilder WithTemperatureSensor(string sensorName, double targetTemperature, double switchOnTemperature, double maxTemperature)
+    public CoolingEnergyConsumerBuilder WithTemperatureSensor(string sensorName, double targetTemperature, double maxTemperature)
     {
         _temperatureSensor = new NumericEntity(_testCtx.HaContext, sensorName);
         _targetTemperature = targetTemperature;
-        _switchOnTemperature = switchOnTemperature;
         _maxTemperature = maxTemperature;
 
         return this;
@@ -113,7 +110,7 @@ public class CoolingEnergyConsumerBuilder
 
     public CoolingEnergyConsumer Build()
     {
-        var x = new CoolingEnergyConsumer(_name, _powerUsage, _criticallyNeeded, _preferSolar, _switchOnLoad, _minimumRuntime, _maximumRuntime, _minimumTimeout, _maximumTimeout, _timeWindows, _socket, _peakLoad, _temperatureSensor, _targetTemperature, _switchOnTemperature, _maxTemperature);
+        var x = new CoolingEnergyConsumer(_name, _powerUsage, _criticallyNeeded, _preferSolar, _switchOnLoad, _minimumRuntime, _maximumRuntime, _minimumTimeout, _maximumTimeout, _timeWindows, _socket, _peakLoad, _temperatureSensor, _targetTemperature, _maxTemperature);
         return x;
     }
 }

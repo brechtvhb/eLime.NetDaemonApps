@@ -102,7 +102,7 @@ public class CoolingEnergyConsumerTests
             .Build();
         var consumer2 = new CoolingEnergyConsumerBuilder(_testCtx)
             .WithName("VeryHotFridge")
-            .WithTemperatureSensor("sensor.very_hot_fridge_temperature", 1, 6, 8)
+            .WithTemperatureSensor("sensor.very_hot_fridge_temperature", 1, 8)
             .Build();
 
         _testCtx.TriggerStateChange(consumer.TemperatureSensor, "4");

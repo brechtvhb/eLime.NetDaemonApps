@@ -38,7 +38,7 @@ public static class ConfigExtensions
                 var socket = BinarySwitch.Create(ha, consumer.Cooling.SocketEntity);
                 var temperatureSensor = new NumericEntity(ha, consumer.Cooling.TemperatureSensor);
 
-                energyConsumer = new CoolingEnergyConsumer(consumer.Name, powerUsageEntity, criticallyNeededEntity, consumer.PreferSolar, consumer.SwitchOnLoad, consumer.MinimumRuntime, consumer.MaximumRuntime, consumer.MinimumTimeout, consumer.MaximumTimeout, timeWindows, socket, consumer.Cooling.PeakLoad, temperatureSensor, consumer.Cooling.TargetTemperature, consumer.Cooling.SwitchOnTemperature, consumer.Cooling.MaxTemperature);
+                energyConsumer = new CoolingEnergyConsumer(consumer.Name, powerUsageEntity, criticallyNeededEntity, consumer.PreferSolar, consumer.SwitchOnLoad, consumer.MinimumRuntime, consumer.MaximumRuntime, consumer.MinimumTimeout, consumer.MaximumTimeout, timeWindows, socket, consumer.Cooling.PeakLoad, temperatureSensor, consumer.Cooling.TargetTemperature, consumer.Cooling.MaxTemperature);
             }
             if (consumer.Triggered != null)
             {

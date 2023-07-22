@@ -7,6 +7,5 @@ public class CoolingEnergyConsumerConfig
 
     public String TemperatureSensor { get; set; }
     public Double TargetTemperature { get; set; }
-    public Double SwitchOnTemperature { get; set; }
     public Double MaxTemperature { get; set; }
 }

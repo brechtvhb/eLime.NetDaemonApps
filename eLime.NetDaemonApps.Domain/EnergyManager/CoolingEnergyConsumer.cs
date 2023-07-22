@@ -7,7 +7,6 @@ public class CoolingEnergyConsumer : EnergyConsumer
 {
     public NumericEntity TemperatureSensor { get; set; }
     public Double TargetTemperature { get; set; }
-    public Double SwitchOnTemperature { get; set; }
     public Double MaxTemperature { get; set; }
 
     public override bool Running => Socket.IsOn();
@@ -16,7 +15,7 @@ public class CoolingEnergyConsumer : EnergyConsumer
 
 
     public CoolingEnergyConsumer(String name, NumericEntity powerUsage, BinarySensor? criticallyNeeded, Boolean preferSolar, Double switchOnLoad, TimeSpan? minimumRuntime, TimeSpan? maximumRuntime, TimeSpan? minimumTimeout,
-        TimeSpan? maximumTimeout, List<TimeWindow> timeWindows, BinarySwitch socket, Double peakLoad, NumericEntity temperatureSensor, Double targetTemperature, Double switchOnTemperature, Double maxTemperature)
+        TimeSpan? maximumTimeout, List<TimeWindow> timeWindows, BinarySwitch socket, Double peakLoad, NumericEntity temperatureSensor, Double targetTemperature, Double maxTemperature)
     {
         SetCommonFields(name, powerUsage, criticallyNeeded, preferSolar, switchOnLoad, minimumRuntime, maximumRuntime, minimumTimeout, maximumTimeout, timeWindows);
         Socket = socket;
@@ -25,7 +24,6 @@ public class CoolingEnergyConsumer : EnergyConsumer
 
         TemperatureSensor = temperatureSensor;
         TargetTemperature = targetTemperature;
-        SwitchOnTemperature = switchOnTemperature;
         MaxTemperature = maxTemperature;
 
         PeakLoad = peakLoad;
@@ -40,7 +38,7 @@ public class CoolingEnergyConsumer : EnergyConsumer
             false when MaximumTimeout != null && LastRun?.Add(MaximumTimeout.Value) < now => EnergyConsumerState.CriticallyNeedsEnergy,
             false when CriticallyNeeded != null && CriticallyNeeded.IsOn() => EnergyConsumerState.CriticallyNeedsEnergy,
             false when TemperatureSensor.State >= MaxTemperature => EnergyConsumerState.CriticallyNeedsEnergy,
-            false when TemperatureSensor.State >= SwitchOnTemperature => EnergyConsumerState.NeedsEnergy,
+            false when TemperatureSensor.State >= TargetTemperature => EnergyConsumerState.NeedsEnergy,
             false => EnergyConsumerState.Off
         };
     }
@@ -53,7 +51,7 @@ public class CoolingEnergyConsumer : EnergyConsumer
         if (!IsWithinTimeWindow(now) && HasTimeWindow())
             return false;
 
-        if (TemperatureSensor.State < SwitchOnTemperature)
+        if (TemperatureSensor.State < TargetTemperature)
             return false;
 
         if (MinimumTimeout == null)
