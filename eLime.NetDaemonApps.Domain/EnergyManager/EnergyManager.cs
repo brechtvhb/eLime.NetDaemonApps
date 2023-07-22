@@ -161,19 +161,15 @@ public class EnergyManager : IDisposable
             consumer.Stop();
         }
 
-        if (estimatedLoad > 0)
-        {
-            var consumersThatPreferSolar = Consumers.Where(x => x.CanForceStop(_scheduler.Now) && x is { Running: true, PreferSolar: true });
-            foreach (var consumer in consumersThatPreferSolar)
-            {
-                _logger.LogDebug("{Consumer}: Will stop consumer because it prefers solar energy.", consumer.Name);
-                consumer.Stop();
-                estimatedLoad -= consumer.CurrentLoad;
 
-                if (estimatedLoad <= GridMonitor.PeakLoad)
-                    break;
-            }
+        var consumersThatPreferSolar = Consumers.OrderByDescending(x => x.SwitchOffLoad).Where(x => x.CanForceStop(_scheduler.Now) && x is { Running: true } && x.SwitchOffLoad < estimatedLoad).ToList();
+        foreach (var consumer in consumersThatPreferSolar.TakeWhile(consumer => consumer.SwitchOffLoad < estimatedLoad))
+        {
+            _logger.LogDebug("{Consumer}: Will stop consumer because it went below switch off load", consumer.Name);
+            consumer.Stop();
+            estimatedLoad -= consumer.CurrentLoad;
         }
+
 
         if (estimatedLoad > GridMonitor.PeakLoad)
         {

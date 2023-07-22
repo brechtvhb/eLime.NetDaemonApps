@@ -183,12 +183,12 @@ public class EnergyManagerTests
     }
 
     [TestMethod]
-    public void SwitchOffLoad_When_PreferSolar_After_MinimumRuntime()
+    public void SwitchOffLoad_When_Consuming_More_Than_SwitchOffLoad_After_MinimumRuntime()
     {
         // Arrange
         var consumer = new SimpleEnergyConsumerBuilder(_testCtx)
             .WithRuntime(TimeSpan.FromSeconds(55), TimeSpan.FromMinutes(60))
-            .WithPreferSolar()
+            .WithLoad(-50, 200, 100)
             .Build();
 
         var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
@@ -208,12 +208,12 @@ public class EnergyManagerTests
     }
 
     [TestMethod]
-    public void DoNotSwitchOffLoad_When_PreferSolar_Before_MinimumRuntime()
+    public void DoNotSwitchOffLoad_When_Consuming_More_Than_SwitchOffLoad_Before_MinimumRuntime()
     {
         // Arrange
         var consumer = new SimpleEnergyConsumerBuilder(_testCtx)
             .WithRuntime(TimeSpan.FromSeconds(90), TimeSpan.FromMinutes(60))
-            .WithPreferSolar()
+            .WithLoad(-50, 200, 100)
             .Build();
 
         var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
@@ -313,7 +313,7 @@ public class EnergyManagerTests
         var consumer1 = new SimpleEnergyConsumerBuilder(_testCtx)
             .Build();
         var consumer2 = new SimpleEnergyConsumerBuilder(_testCtx)
-            .WithLoad(-60, 100)
+            .WithLoad(-60, 200, 100)
             .WithName("fridge")
             .Build();
 
@@ -340,7 +340,7 @@ public class EnergyManagerTests
         var consumer1 = new SimpleEnergyConsumerBuilder(_testCtx)
             .Build();
         var consumer2 = new SimpleEnergyConsumerBuilder(_testCtx)
-            .WithLoad(-60, 100)
+            .WithLoad(-60, 200, 100)
             .WithName("fridge")
             .Build();
 
@@ -367,7 +367,7 @@ public class EnergyManagerTests
         var consumer1 = new SimpleEnergyConsumerBuilder(_testCtx)
             .Build();
         var consumer2 = new SimpleEnergyConsumerBuilder(_testCtx)
-            .WithLoad(-60, 100)
+            .WithLoad(-60, 200, 100)
             .WithName("fridge")
             .WithCriticalSensor("boolean_sensor.fridge_too_hot")
             .Build();

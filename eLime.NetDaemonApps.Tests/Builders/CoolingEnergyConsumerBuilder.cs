@@ -13,8 +13,8 @@ public class CoolingEnergyConsumerBuilder
 
     private NumericEntity _powerUsage;
     private BinarySensor? _criticallyNeeded;
-    public Boolean _preferSolar;
     private Double _switchOnLoad;
+    private Double _switchOffLoad;
 
     private TimeSpan? _minimumRuntime;
     private TimeSpan? _maximumRuntime;
@@ -35,8 +35,8 @@ public class CoolingEnergyConsumerBuilder
 
         _name = "Fridge";
         _powerUsage = new NumericEntity(_testCtx.HaContext, "sensor.socket_fridge_power");
-        _preferSolar = false;
         _switchOnLoad = -50;
+        _switchOffLoad = 200;
 
         _socket = BinarySwitch.Create(_testCtx.HaContext, "switch.socket_fridge");
         _peakLoad = 75;
@@ -78,7 +78,7 @@ public class CoolingEnergyConsumerBuilder
         return this;
     }
 
-    public CoolingEnergyConsumerBuilder WithLoad(Double switchOnLoad, Double peakLoad)
+    public CoolingEnergyConsumerBuilder WithLoad(Double switchOnLoad, Double switchOffLoad, Double peakLoad)
     {
         _switchOnLoad = switchOnLoad;
         _peakLoad = peakLoad;
@@ -93,12 +93,6 @@ public class CoolingEnergyConsumerBuilder
         return this;
     }
 
-    public CoolingEnergyConsumerBuilder WithPreferSolar()
-    {
-        _preferSolar = true;
-        return this;
-    }
-
     public CoolingEnergyConsumerBuilder WithTemperatureSensor(string sensorName, double targetTemperature, double maxTemperature)
     {
         _temperatureSensor = new NumericEntity(_testCtx.HaContext, sensorName);
@@ -110,7 +104,7 @@ public class CoolingEnergyConsumerBuilder
 
     public CoolingEnergyConsumer Build()
     {
-        var x = new CoolingEnergyConsumer(_name, _powerUsage, _criticallyNeeded, _preferSolar, _switchOnLoad, _minimumRuntime, _maximumRuntime, _minimumTimeout, _maximumTimeout, _timeWindows, _socket, _peakLoad, _temperatureSensor, _targetTemperature, _maxTemperature);
+        var x = new CoolingEnergyConsumer(_name, _powerUsage, _criticallyNeeded, _switchOnLoad, _switchOffLoad, _minimumRuntime, _maximumRuntime, _minimumTimeout, _maximumTimeout, _timeWindows, _socket, _peakLoad, _temperatureSensor, _targetTemperature, _maxTemperature);
         return x;
     }
 }

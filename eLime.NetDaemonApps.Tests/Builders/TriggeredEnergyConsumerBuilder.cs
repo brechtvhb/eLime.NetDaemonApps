@@ -14,8 +14,8 @@ public class TriggeredEnergyConsumerBuilder
 
     private NumericEntity _powerUsage;
     private BinarySensor? _criticallyNeeded;
-    public Boolean _preferSolar;
     private Double _switchOnLoad;
+    private Double _switchOffLoad;
 
     private TimeSpan? _minimumRuntime;
     private TimeSpan? _maximumRuntime;
@@ -39,8 +39,8 @@ public class TriggeredEnergyConsumerBuilder
         {
             _name = "Irrigation";
             _powerUsage = new NumericEntity(_testCtx.HaContext, "sensor.socket_shed_pump_power");
-            _preferSolar = true;
             _switchOnLoad = -700;
+            _switchOffLoad = 200;
 
             _socket = BinarySwitch.Create(_testCtx.HaContext, "switch.irrigation_energy_available");
 
@@ -91,9 +91,10 @@ public class TriggeredEnergyConsumerBuilder
         return this;
     }
 
-    public TriggeredEnergyConsumerBuilder WithPreferSolar()
+    public TriggeredEnergyConsumerBuilder WithLoads(Double switchOn, Double switchOff)
     {
-        _preferSolar = true;
+        _switchOnLoad = switchOn;
+        _switchOffLoad = switchOff;
         return this;
     }
 
@@ -119,7 +120,7 @@ public class TriggeredEnergyConsumerBuilder
 
     public TriggeredEnergyConsumer Build()
     {
-        var x = new TriggeredEnergyConsumer(_name, _powerUsage, _criticallyNeeded, _preferSolar, _switchOnLoad, _minimumRuntime, _maximumRuntime, _minimumTimeout, _maximumTimeout, _timeWindows, _socket, _statePeakLoads, _stateSensor, _startState, _criticalState, _canForceShutdown);
+        var x = new TriggeredEnergyConsumer(_name, _powerUsage, _criticallyNeeded, _switchOnLoad, _switchOffLoad, _minimumRuntime, _maximumRuntime, _minimumTimeout, _maximumTimeout, _timeWindows, _socket, _statePeakLoads, _stateSensor, _startState, _criticalState, _canForceShutdown);
         return x;
     }
 }

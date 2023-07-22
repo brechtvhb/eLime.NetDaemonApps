@@ -13,8 +13,8 @@ public class SimpleEnergyConsumerBuilder
 
     private NumericEntity _powerUsage;
     private BinarySensor _criticallyNeeded;
-    private bool _preferSolar;
     private Double _switchOnLoad;
+    private Double _switchOffLoad;
 
     private TimeSpan? _minimumRuntime;
     private TimeSpan? _maximumRuntime;
@@ -32,8 +32,8 @@ public class SimpleEnergyConsumerBuilder
         _name = "Pond pump";
         _powerUsage = new NumericEntity(_testCtx.HaContext, "sensor.socket_pond_pump_power");
         _criticallyNeeded = BinarySensor.Create(_testCtx.HaContext, "boolean_sensor.weather_is_freezing");
-        _preferSolar = false;
         _switchOnLoad = -40;
+        _switchOffLoad = 100;
 
         _socket = BinarySwitch.Create(_testCtx.HaContext, "switch.socket_pond_pump");
         _peakLoad = 42;
@@ -71,17 +71,12 @@ public class SimpleEnergyConsumerBuilder
         return this;
     }
 
-    public SimpleEnergyConsumerBuilder WithLoad(Double switchOnLoad, Double peakLoad)
+    public SimpleEnergyConsumerBuilder WithLoad(Double switchOnLoad, Double switchOffLoad, Double peakLoad)
     {
         _switchOnLoad = switchOnLoad;
+        _switchOffLoad = switchOffLoad;
         _peakLoad = peakLoad;
 
-        return this;
-    }
-
-    public SimpleEnergyConsumerBuilder WithPreferSolar()
-    {
-        _preferSolar = true;
         return this;
     }
 
@@ -94,7 +89,7 @@ public class SimpleEnergyConsumerBuilder
 
     public SimpleEnergyConsumer Build()
     {
-        var x = new SimpleEnergyConsumer(_name, _powerUsage, _criticallyNeeded, _preferSolar, _switchOnLoad, _minimumRuntime, _maximumRuntime, _minimumTimeout, _maximumTimeout, _timeWindows, _socket, _peakLoad);
+        var x = new SimpleEnergyConsumer(_name, _powerUsage, _criticallyNeeded, _switchOnLoad, _switchOffLoad, _minimumRuntime, _maximumRuntime, _minimumTimeout, _maximumTimeout, _timeWindows, _socket, _peakLoad);
         return x;
     }
 }
