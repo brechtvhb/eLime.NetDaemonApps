@@ -47,8 +47,29 @@ public class TriggeredEnergyConsumerBuilder
             WithStateSensor(TextSensor.Create(_testCtx.HaContext, "sensor.irrigation_state"), "Yes", "Critical");
             WithCanForceShutdown();
             AddStatePeakLoad("No", 1);
-            AddStatePeakLoad("Yes", 700);
-            AddStatePeakLoad("Critical", 700);
+            AddStatePeakLoad("Yes", 1);
+            AddStatePeakLoad("Critical", 1);
+            AddStatePeakLoad("Ongoing", 700);
+        }
+
+        if (baseType == "washer")
+        {
+            _name = "Washer";
+            _powerUsage = new NumericEntity(_testCtx.HaContext, "sensor.socket_washer");
+            _switchOnLoad = -700;
+            _switchOffLoad = 5000;
+
+            _socket = BinarySwitch.Create(_testCtx.HaContext, "switch.smartwasher_smartwasher_delayed_start_activate");
+
+            WithStateSensor(TextSensor.Create(_testCtx.HaContext, "sensor.smartwasher_smartwasher_state"), "DelayedStart", "Critical");
+            WithCanForceShutdown();
+            AddStatePeakLoad("Idle", 0);
+            AddStatePeakLoad("DelayedStart", 0);
+            AddStatePeakLoad("Prewashing", 120);
+            AddStatePeakLoad("Heating", 2200);
+            AddStatePeakLoad("Washing", 170);
+            AddStatePeakLoad("Rinsing", 330);
+            AddStatePeakLoad("Spinning", 420);
         }
 
     }
