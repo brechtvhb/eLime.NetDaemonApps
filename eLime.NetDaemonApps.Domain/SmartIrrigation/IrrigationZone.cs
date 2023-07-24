@@ -16,6 +16,8 @@ public abstract class IrrigationZone : IDisposable
 
     public ZoneMode Mode { get; private set; }
 
+    public DateTimeOffset? LastNotification { get; private set; }
+
     protected void SetCommonFields(String name, Int32 flowRate, BinarySwitch valve)
     {
         Name = name;
@@ -39,6 +41,12 @@ public abstract class IrrigationZone : IDisposable
     {
         State = state;
     }
+
+    public void NotificationSent(DateTimeOffset now)
+    {
+        LastNotification = now;
+    }
+
 
     public void SetMode(ZoneMode mode)
     {
