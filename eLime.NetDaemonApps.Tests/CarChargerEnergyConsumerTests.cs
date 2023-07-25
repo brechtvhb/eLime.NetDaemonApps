@@ -148,7 +148,7 @@ public class CarChargerEnergyConsumerTests
 
         //Assert
         Assert.AreEqual(EnergyConsumerState.Running, energyManager.Consumers.First().State);
-        _testCtx.InputNumberChanged(consumer.CurrentEntity, 12, Moq.Times.Once);
+        _testCtx.InputNumberChanged(consumer.CurrentEntity, 13, Moq.Times.Once);
     }
 
     [TestMethod]
@@ -174,14 +174,16 @@ public class CarChargerEnergyConsumerTests
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(30));
 
         //Act
-        _testCtx.TriggerStateChange(consumer.CurrentEntity, "12");
+        _testCtx.TriggerStateChange(consumer.CurrentEntity, "13");
         _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_production_watt"), "0");
-        _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_consumption_watt"), "-120");
+        _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_consumption_watt"), "110");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(30));
 
         //Assert
         Assert.AreEqual(EnergyConsumerState.Running, energyManager.Consumers.First().State);
-        _testCtx.InputNumberChanged(consumer.CurrentEntity, 12, Moq.Times.Once);
+        _testCtx.InputNumberChanged(consumer.CurrentEntity, 13, Moq.Times.Once);
+        _testCtx.InputNumberChanged(consumer.CurrentEntity, 12, Moq.Times.Never);
+        _testCtx.InputNumberChanged(consumer.CurrentEntity, 14, Moq.Times.Never);
     }
 
     [TestMethod]
