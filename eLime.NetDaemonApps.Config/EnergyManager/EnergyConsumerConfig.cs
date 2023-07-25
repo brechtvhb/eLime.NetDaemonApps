@@ -21,6 +21,7 @@ public class EnergyConsumerConfig
     public SimpleEnergyConsumerConfig? Simple { get; set; }
     public CoolingEnergyConsumerConfig? Cooling { get; set; }
     public TriggeredEnergyConsumerConfig? Triggered { get; set; }
+    public CarChargerEnergyConsumerConfig? CarCharger{ get; set; }
 
 
 }

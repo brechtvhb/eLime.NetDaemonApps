@@ -61,9 +61,9 @@ public class TriggeredEnergyConsumer : EnergyConsumer
         return Running switch
         {
             true => EnergyConsumerState.Running,
-            false when StateSensor.State == StartState => EnergyConsumerState.NeedsEnergy,
-            false when StateSensor.State == CriticalState && !String.IsNullOrWhiteSpace(CriticalState) => EnergyConsumerState.CriticallyNeedsEnergy,
             false when StateSensor.State == StartState && CriticallyNeeded != null && CriticallyNeeded.IsOn() => EnergyConsumerState.CriticallyNeedsEnergy,
+            false when StateSensor.State == CriticalState && !String.IsNullOrWhiteSpace(CriticalState) => EnergyConsumerState.CriticallyNeedsEnergy,
+            false when StateSensor.State == StartState => EnergyConsumerState.NeedsEnergy,
             false => EnergyConsumerState.Off,
         };
     }

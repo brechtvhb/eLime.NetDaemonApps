@@ -1,6 +1,3 @@
-// Use unique namespaces for your apps if you going to share with others to avoid
-// conflicting names
-
 using eLime.NetDaemonApps.Config;
 using NetDaemon.Extensions.MqttEntityManager;
 using System.Reactive.Concurrency;

@@ -1,5 +1,6 @@
 ﻿using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 using eLime.NetDaemonApps.Domain.Entities.Covers;
+using eLime.NetDaemonApps.Domain.Entities.Input;
 using eLime.NetDaemonApps.Domain.Entities.Lights;
 using eLime.NetDaemonApps.Domain.Scenes;
 using Moq;
@@ -66,6 +67,7 @@ public static class AppTestContextExtensions
     {
         ctx.HaContextMock.Verify(c => c.CallService("switch", "turn_on", It.Is<ServiceTarget>(s => Match(entity.EntityId, s)), null), times);
     }
+
     public static void VerifySwitchTurnOn(this AppTestContext ctx, BinarySwitch entity, Times times)
     {
         ctx.HaContextMock.Verify(c => c.CallService("switch", "turn_on", It.Is<ServiceTarget>(s => Match(entity.EntityId, s)), null), times);
@@ -89,6 +91,15 @@ public static class AppTestContextExtensions
     public static void VerifyPhoneNotified(this AppTestContext ctx, string phone, Func<Times> times)
     {
         ctx.HaContextMock.Verify(c => c.CallService("notify", phone, null, It.IsAny<Object?>()), times);
+    }
+
+    public static void InputNumberChanged(this AppTestContext ctx, InputNumberEntity entity, Double value, Func<Times> times)
+    {
+        ctx.HaContextMock.Verify(c => c.CallService("input_number", "set_value", It.Is<ServiceTarget>(s => Match(entity.EntityId, s)), It.Is<InputNumberSetValueParameters>(x => x.Value == value)), times);
+    }
+    public static void InputNumberChanged(this AppTestContext ctx, InputNumberEntity entity, Double value, Times times)
+    {
+        ctx.HaContextMock.Verify(c => c.CallService("input_number", "set_value", It.Is<ServiceTarget>(s => Match(entity.EntityId, s)), It.Is<InputNumberSetValueParameters>(x => x.Value == value)), times);
     }
 
     private static bool Match(string s, ServiceTarget x)

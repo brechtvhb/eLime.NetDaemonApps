@@ -54,3 +54,22 @@
             peakLoad: 700
           - state: "Critical"
             peakLoad: 700
+    - name: "Veton"
+      powerUsageEntity: "sensor.xxx"
+      minimumRuntime: "00:10:00"
+      maximumRuntime: "12:00:00"
+      minimumTimeout: "00:05:00"
+      switchOnLoad: -800
+      switchOffLoad: 1000
+      carCharger:
+        minimumCurrent: 6
+        maximumCurrent: 16
+        offcurrent: 5
+        currentEntity: "input_number.xxx"
+        stateSensor: "sensor.xxx"
+        cars:
+          - name: "Passat GTE"
+            batteryCapacity: 11.5
+            batteryPercentageSensor: "sensor.xxx"
+            cableConnectedSensor: "boolean_sensor.xxx"
+    

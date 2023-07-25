@@ -58,9 +58,8 @@ public class EnergyManager : IDisposable
 
         if (debounceDuration != TimeSpan.Zero)
         {
-            StartConsumersDebounceDispatcher = new(debounceDuration);
-            StopConsumersDebounceDispatcher = new(debounceDuration);
-            UpdateInHomeAssistantDebounceDispatcher = new(TimeSpan.FromSeconds(1));
+            ManageConsumersDebounceDispatcher = new DebounceDispatcher(debounceDuration);
+            UpdateInHomeAssistantDebounceDispatcher = new DebounceDispatcher(TimeSpan.FromSeconds(1));
         }
 
         GuardTask = _scheduler.RunEvery(TimeSpan.FromSeconds(30), _scheduler.Now, () =>
@@ -68,8 +67,7 @@ public class EnergyManager : IDisposable
             foreach (var consumer in Consumers)
                 consumer.CheckDesiredState(_scheduler.Now);
 
-            DebounceStartConsumers();
-            DebounceStopConsumers();
+            DebounceManageConsumers();
             DebounceUpdateInHomeAssistant().RunSync();
         });
 
@@ -107,11 +105,30 @@ public class EnergyManager : IDisposable
         DebounceUpdateInHomeAssistant().RunSync();
     }
 
-    //TODO: Use linear programming model and estimates of production and consumption to be able to schedule deferred loads in the future.
-    private void StartConsumersIfNeeded()
+    private void ManageConsumersIfNeeded()
     {
         var estimatedLoad = GridMonitor.CurrentLoad;
+        AdjustDynamicLoadsIfNeeded(estimatedLoad);
+        StartConsumersIfNeeded(estimatedLoad);
+        StopConsumersIfNeeded();
+    }
 
+    private void AdjustDynamicLoadsIfNeeded(Double estimatedLoad)
+    {
+        var dynamicLoadConsumers = Consumers.Where(x => x.State == EnergyConsumerState.Running && x is IDynamicLoadConsumer).OfType<IDynamicLoadConsumer>().ToList();
+
+        foreach (var dynamicLoadConsumer in dynamicLoadConsumers)
+        {
+            var netChange = dynamicLoadConsumer.Rebalance(estimatedLoad);
+            _logger.LogDebug("{Consumer}: Changed Load for consumer,", dynamicLoadConsumer.Name);
+            estimatedLoad += netChange;
+        }
+    }
+
+
+    //TODO: Use linear programming model and estimates of production and consumption to be able to schedule deferred loads in the future.
+    private void StartConsumersIfNeeded(Double estimatedLoad)
+    {
         var runningConsumers = Consumers.Where(x => x.State == EnergyConsumerState.Running);
         //Keep remaining peak load for running consumers in mind (eg: to avoid turning on devices when washer is prewashing but still has to heat).
         estimatedLoad += runningConsumers.Where(x => x.PeakLoad > x.CurrentLoad).Sum(x => (x.PeakLoad - x.CurrentLoad));
@@ -186,31 +203,18 @@ public class EnergyManager : IDisposable
         }
     }
 
-    private readonly DebounceDispatcher? StartConsumersDebounceDispatcher;
-    private readonly DebounceDispatcher? StopConsumersDebounceDispatcher;
+    private readonly DebounceDispatcher? ManageConsumersDebounceDispatcher;
     private readonly DebounceDispatcher? UpdateInHomeAssistantDebounceDispatcher;
 
-    internal void DebounceStartConsumers()
+    internal void DebounceManageConsumers()
     {
-        if (StartConsumersDebounceDispatcher == null)
+        if (ManageConsumersDebounceDispatcher == null)
         {
-            StartConsumersIfNeeded();
+            ManageConsumersIfNeeded();
             return;
         }
 
-        StartConsumersDebounceDispatcher.Debounce(StartConsumersIfNeeded);
-    }
-
-
-    internal void DebounceStopConsumers()
-    {
-        if (StopConsumersDebounceDispatcher == null)
-        {
-            StopConsumersIfNeeded();
-            return;
-        }
-
-        StopConsumersDebounceDispatcher.Debounce(StopConsumersIfNeeded);
+        ManageConsumersDebounceDispatcher.Debounce(ManageConsumersIfNeeded);
     }
 
     private async Task InitializeStateSensor()

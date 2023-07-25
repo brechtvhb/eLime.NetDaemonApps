@@ -9,6 +9,7 @@ using NetDaemon.HassModel.Entities;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Concurrency;
+using eLime.NetDaemonApps.Domain.Entities.Input;
 
 namespace eLime.NetDaemonApps.apps.EnergyManager;
 
@@ -47,6 +48,22 @@ public static class ConfigExtensions
                 var stateMap = consumer.Triggered.PeakLoads.Select(x => (x.State, x.PeakLoad)).ToList();
 
                 energyConsumer = new TriggeredEnergyConsumer(consumer.Name, powerUsageEntity, criticallyNeededEntity, consumer.SwitchOnLoad, consumer.SwitchOffLoad, consumer.MinimumRuntime, consumer.MaximumRuntime, consumer.MinimumTimeout, consumer.MaximumTimeout, timeWindows, socket, stateMap, stateSensor, consumer.Triggered.StartState, consumer.Triggered.CriticalState, consumer.Triggered.CanForceShutdown);
+            }
+
+            if (consumer.CarCharger != null)
+            {
+                var cars = new List<Car>();
+                foreach (var car in consumer.CarCharger.Cars)
+                {
+                    var batteryPercentageSensor = new NumericEntity(ha, car.BatteryPercentageSensor);
+                    var cableConnectedSensor = new BinarySensor(ha, car.CableConnectedSensor);
+                    cars.Add(new Car(car.Name, car.BatteryCapacity, batteryPercentageSensor, cableConnectedSensor));
+                }
+
+                var currentEntity = new InputNumberEntity(ha, consumer.CarCharger.CurrentEntity);
+                var stateSensor = TextSensor.Create(ha, consumer.CarCharger.StateSensor);
+
+                energyConsumer = new CarChargerEnergyConsumer(consumer.Name, powerUsageEntity, criticallyNeededEntity, consumer.SwitchOnLoad, consumer.SwitchOffLoad, consumer.MinimumRuntime, consumer.MaximumRuntime, consumer.MinimumTimeout, consumer.MaximumTimeout, timeWindows, consumer.CarCharger.MinimumCurrent, consumer.CarCharger.MaximumCurrent, consumer.CarCharger.OffCurrent, currentEntity, stateSensor, cars);
             }
 
 

@@ -5,7 +5,16 @@ namespace eLime.NetDaemonApps.Domain.EnergyManager;
 
 public class Car
 {
-    public Double BatteryCapacity { get; set; }
-    public NumericEntity BatteryPercentageSensor { get; set; }
-    public BinarySensor CableConnectedSensor { get; set; }
+    public String Name { get; }
+    public Double BatteryCapacity { get; }
+    public NumericEntity BatteryPercentageSensor { get; }
+    public BinarySensor CableConnectedSensor { get; }
+
+    public Car(string name, double batteryCapacity, NumericEntity batteryPercentageSensor, BinarySensor cableConnectedSensor)
+    {
+        Name = name;
+        BatteryCapacity = batteryCapacity;
+        BatteryPercentageSensor = batteryPercentageSensor;
+        CableConnectedSensor = cableConnectedSensor;
+    }
 }
