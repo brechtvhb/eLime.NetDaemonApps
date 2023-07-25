@@ -133,7 +133,6 @@ public class CarChargerEnergyConsumerTests
             .AddConsumer(consumer)
             .Build();
 
-
         _testCtx.TriggerStateChange(consumer.StateSensor, "Occupied");
         _testCtx.TriggerStateChange(consumer.Cars.First().CableConnectedSensor, "on");
         _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "5");
