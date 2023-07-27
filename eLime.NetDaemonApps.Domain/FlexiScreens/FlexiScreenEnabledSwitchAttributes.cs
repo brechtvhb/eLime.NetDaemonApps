@@ -12,4 +12,6 @@ public record FlexiScreenEnabledSwitchAttributes : EnabledSwitchAttributes
 
     [JsonPropertyName("last_state_change_triggered_by")]
     public string? LastStateChangeTriggeredBy { get; init; }
+    [JsonPropertyName("stormy_night")]
+    public bool? StormyNight { get; init; }
 }

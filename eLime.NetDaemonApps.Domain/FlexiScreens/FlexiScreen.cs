@@ -82,12 +82,12 @@ public class FlexiScreen : IDisposable
             ChildrenAreAngryProtector.NightStarted += ChildrenAreAngryProtector_NightStarted;
             ChildrenAreAngryProtector.NightEnded += ChildrenAreAngryProtector_NightEnded;
             ChildrenAreAngryProtector.DesiredStateChanged += Protector_DesiredStateChanged;
-            //Check after handlers have been assigned
-            ChildrenAreAngryProtector.CheckDesiredState();
         }
 
         EnsureEnabledSwitchExists().RunSync();
         RetrieveSateFromHomeAssistant().RunSync();
+
+        ChildrenAreAngryProtector?.CheckDesiredState(); //Check after handlers have been assigned and stormy night parameter has been set
 
         _logger.LogInformation($"{{Screen}}: Desired state for SunProtector is: {SunProtector.DesiredState.State} (enforce: {SunProtector.DesiredState.Enforce}).", Name);
         _logger.LogInformation($"{{Screen}}: Desired state for StormProtector is: {StormProtector?.DesiredState.State} (enforce: {StormProtector?.DesiredState.Enforce}).", Name);
@@ -274,6 +274,9 @@ public class FlexiScreen : IDisposable
         LastAutomatedStateChange = !string.IsNullOrWhiteSpace(EnabledSwitch.Attributes?.LastAutomatedStateChange) ? DateTime.Parse(EnabledSwitch.Attributes.LastAutomatedStateChange) : null;
         LastManualStateChange = !string.IsNullOrWhiteSpace(EnabledSwitch.Attributes?.LastManualStateChange) ? DateTime.Parse(EnabledSwitch.Attributes.LastManualStateChange) : null;
         LastStateChangeTriggeredBy = !string.IsNullOrWhiteSpace(EnabledSwitch.Attributes?.LastStateChangeTriggeredBy) ? Enum<Protectors>.Cast(EnabledSwitch.Attributes.LastStateChangeTriggeredBy) : null;
+        if (EnabledSwitch.Attributes?.StormyNight == true)
+            StormProtector?.SetStormyNight();
+
         _logger.LogDebug("Retrieved flexiscreen state from Home assistant for screen '{screen}'.", Name);
 
         return Task.CompletedTask;
@@ -290,6 +293,7 @@ public class FlexiScreen : IDisposable
             LastManualStateChange = LastManualStateChange?.ToString("O"),
             LastUpdated = DateTime.Now.ToString("O"),
             LastStateChangeTriggeredBy = LastStateChangeTriggeredBy.ToString(),
+            StormyNight = StormProtector?.StormyNight,
             Icon = "mdi:blinds"
         };
         await _mqttEntityManager.SetAttributesAsync(EnabledSwitch.EntityId, attributes);

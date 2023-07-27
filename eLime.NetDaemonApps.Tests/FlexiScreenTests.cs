@@ -623,6 +623,29 @@ public class FlexiScreenTests
         _testCtx.VerifyScreenGoesDown(_cover, Moq.Times.Never);
     }
 
+    [TestMethod]
+    public void Init_With_StormyNight_Does_Not_Open_Screen()
+    {
+        // Arrange
+        _testCtx.TriggerStateChange(_cover, "open");
+        _testCtx.TriggerStateChange(_sleepSensor, new EntityState { State = "on" });
+        var enabledSwitch = new Entity(_testCtx.HaContext, "switch.flexiscreens_office");
+        _testCtx.TriggerStateChangeWithAttributes(enabledSwitch, "on", new FlexiScreenEnabledSwitchAttributes { StormyNight = true});
+
+        //Act
+        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
+            .WithCover(_cover)
+            .WithDesiredActionOnBelowElevation(ScreenAction.None)
+            .WithHourlyWeatherForecast(_hourlyWeather, 3, 40, 1, 0.3)
+            .WithShortTermRainRateSensor(_shortTermRainForecastSensor)
+            .WithSleepSensor(_sleepSensor)
+            .Build();
+
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(2));
+
+        //Assert
+        _testCtx.VerifyScreenGoesDown(_cover, Moq.Times.Never);
+    }
 
     [TestMethod]
     public void KidsNoLongerSleeping_Opens_Screen()

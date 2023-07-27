@@ -28,7 +28,7 @@ public class StormProtector : IDisposable
     public (ScreenState? State, Boolean Enforce) DesiredState { get; private set; }
     private bool StormModeActive { get; set; }
     private bool Night { get; set; }
-    private bool StormyNight { get; set; }
+    public bool StormyNight { get; private set; }
 
     public StormProtector(NumericThresholdSensor? windSpeedSensor, double? windSpeedStormStartThreshold, double? windSpeedStormEndThreshold,
         NumericThresholdSensor? rainRateSensor, double? rainRateStormStartThreshold, double? rainRateStormEndThreshold,
@@ -95,6 +95,14 @@ public class StormProtector : IDisposable
         DesiredStateChanged?.Invoke(this, e);
     }
 
+    //To set stormy night on reboot
+    public void SetStormyNight()
+    {
+        Night = true;
+        StormyNight = true;
+        CheckDesiredState();
+    }
+
     public void CheckForStormyNight()
     {
         Night = true;
@@ -114,7 +122,7 @@ public class StormProtector : IDisposable
         if (HourlyWeather?.Attributes?.Forecast != null && NightlyPredictionHours != null)
             maxPrecipitationRate = HourlyWeather.Attributes.Forecast.Take(NightlyPredictionHours.Value).Max(x => x.Precipitation);
 
-        StormyNight = maxWindSpeed >= NightlyWindSpeedThreshold || totalPrecipitation >= NightlyRainThreshold || maxPrecipitationRate >= NightlyRainRateThreshold;
+        StormyNight = maxWindSpeed >= NightlyWindSpeedThreshold || totalPrecipitation >= NightlyRainThreshold || maxPrecipitationRate >= NightlyRainRateThreshold || StormyNight; //Could already be set from SetStormyNight on init of flexiscreen
 
         CheckDesiredState();
     }
