@@ -102,6 +102,9 @@ public class TriggeredEnergyConsumer : EnergyConsumer
         if (MinimumRuntime != null && StartedAt?.Add(MinimumRuntime.Value) > now)
             return false;
 
+        if (!CanForceShutdown)
+            return false;
+
         return true;
     }
     
