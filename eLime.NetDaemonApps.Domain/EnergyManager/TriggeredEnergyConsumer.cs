@@ -88,12 +88,23 @@ public class TriggeredEnergyConsumer : EnergyConsumer
         if (MinimumRuntime != null && StartedAt?.Add(MinimumRuntime.Value) > now)
             return false;
 
+        if (CriticallyNeeded != null && CriticallyNeeded.IsOn())
+            return false;
+
         if (!CanForceShutdown)
             return false;
 
         return true;
     }
 
+    public override bool CanForceStopOnPeakLoad(DateTimeOffset now)
+    {
+        if (MinimumRuntime != null && StartedAt?.Add(MinimumRuntime.Value) > now)
+            return false;
+
+        return true;
+    }
+    
     public override void TurnOn()
     {
         Socket.TurnOn();

@@ -190,7 +190,7 @@ public class EnergyManager : IDisposable
 
         if (estimatedLoad > GridMonitor.PeakLoad)
         {
-            var consumersThatShouldForceStopped = Consumers.Where(x => x.CanForceStop(_scheduler.Now) && x.Running);
+            var consumersThatShouldForceStopped = Consumers.Where(x => x.CanForceStopOnPeakLoad(_scheduler.Now) && x.Running);
             foreach (var consumer in consumersThatShouldForceStopped)
             {
                 _logger.LogDebug("{Consumer}: Will stop consumer right now because peak load was exceeded.", consumer.Name);

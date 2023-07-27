@@ -89,8 +89,20 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         if (MinimumRuntime != null && StartedAt?.Add(MinimumRuntime.Value) > now)
             return false;
 
+        if (CriticallyNeeded != null && CriticallyNeeded.IsOn())
+            return false;
+
         return true;
     }
+
+    public override bool CanForceStopOnPeakLoad(DateTimeOffset now)
+    {
+        if (MinimumRuntime != null && StartedAt?.Add(MinimumRuntime.Value) > now)
+            return false;
+
+        return true;
+    }
+
 
     public override void TurnOn()
     {

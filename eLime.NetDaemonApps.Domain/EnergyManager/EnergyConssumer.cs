@@ -177,7 +177,7 @@ public abstract class EnergyConsumer : IDisposable
     protected abstract EnergyConsumerState GetDesiredState(DateTimeOffset? now);
     public abstract bool CanStart(DateTimeOffset now);
     public abstract bool CanForceStop(DateTimeOffset now);
-
+    public abstract bool CanForceStopOnPeakLoad(DateTimeOffset now);
     public abstract void TurnOn();
     public abstract void TurnOff();
 
