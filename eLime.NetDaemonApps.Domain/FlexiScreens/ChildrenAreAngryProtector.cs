@@ -21,7 +21,7 @@ public class ChildrenAreAngryProtector : IDisposable
         CheckDesiredState();
     }
 
-    internal void CheckDesiredState()
+    internal void CheckDesiredState(Boolean emitEvent = true)
     {
         if (ForceDownSensor.IsOn())
             OnNightStarted(EventArgs.Empty);
@@ -35,6 +35,10 @@ public class ChildrenAreAngryProtector : IDisposable
             return;
 
         DesiredState = desiredState;
+
+        if (!emitEvent)
+            return;
+
         OnDesiredStateChanged(new DesiredStateEventArgs(Protectors.ChildrenAreAngryProtector, desiredState.State, desiredState.Enforce));
     }
 

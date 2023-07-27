@@ -27,7 +27,7 @@ public class SunProtector : IDisposable
         CheckDesiredState();
     }
 
-    internal void CheckDesiredState()
+    internal void CheckDesiredState(Boolean emitEvent = true)
     {
         var desiredState = GetDesiredState();
 
@@ -35,6 +35,10 @@ public class SunProtector : IDisposable
             return;
 
         DesiredState = desiredState;
+
+        if (!emitEvent)
+            return;
+
         OnDesiredStateChanged(new DesiredStateEventArgs(Protectors.SunProtector, desiredState.State, desiredState.Enforce));
     }
 

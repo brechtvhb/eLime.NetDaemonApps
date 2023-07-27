@@ -77,7 +77,7 @@ public class StormProtector : IDisposable
         CheckDesiredState();
     }
 
-    internal void CheckDesiredState()
+    internal void CheckDesiredState(Boolean emitEvent= true)
     {
         var desiredState = GetDesiredState();
 
@@ -85,6 +85,10 @@ public class StormProtector : IDisposable
             return;
 
         DesiredState = desiredState;
+
+        if (!emitEvent)
+            return;
+
         OnDesiredStateChanged(new DesiredStateEventArgs(Protectors.StormProtector, desiredState.State, desiredState.Enforce));
     }
 

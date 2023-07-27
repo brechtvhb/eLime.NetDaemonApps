@@ -56,7 +56,7 @@ public class TemperatureProtector : IDisposable
     }
 
 
-    internal void CheckDesiredState()
+    internal void CheckDesiredState(Boolean emitEvent = true)
     {
         var desiredState = GetDesiredState();
 
@@ -64,6 +64,10 @@ public class TemperatureProtector : IDisposable
             return;
 
         DesiredState = desiredState;
+
+        if (!emitEvent)
+            return;
+
         OnDesiredStateChanged(new DesiredStateEventArgs(Protectors.TemperatureProtector, desiredState.State, desiredState.Enforce));
     }
 

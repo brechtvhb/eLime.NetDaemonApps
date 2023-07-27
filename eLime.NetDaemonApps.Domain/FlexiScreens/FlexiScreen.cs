@@ -87,7 +87,10 @@ public class FlexiScreen : IDisposable
         EnsureEnabledSwitchExists().RunSync();
         RetrieveSateFromHomeAssistant().RunSync();
 
-        ChildrenAreAngryProtector?.CheckDesiredState(); //Check after handlers have been assigned and stormy night parameter has been set
+        SunProtector.CheckDesiredState(false);
+        stormProtector?.CheckDesiredState(false);
+        TemperatureProtector?.CheckDesiredState(false);
+        ChildrenAreAngryProtector?.CheckDesiredState(false); //Check after handlers have been assigned and stormy night parameter has been set
 
         _logger.LogInformation($"{{Screen}}: Desired state for SunProtector is: {SunProtector.DesiredState.State} (enforce: {SunProtector.DesiredState.Enforce}).", Name);
         _logger.LogInformation($"{{Screen}}: Desired state for StormProtector is: {StormProtector?.DesiredState.State} (enforce: {StormProtector?.DesiredState.Enforce}).", Name);
