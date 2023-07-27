@@ -241,7 +241,7 @@ public class EnergyManager : IDisposable
 
         if (state == null || string.Equals(state, "unavailable", StringComparison.InvariantCultureIgnoreCase))
         {
-            _logger.LogDebug("{Consumer}: Creating energy consumer state sensor in home assistant.", consumer.Name);
+            _logger.LogDebug("{Consumer}: Creating energy consumer state sensor in home assistant. State was '{State}'.", consumer.Name, state);
 
             var entityOptions = new EnumSensorOptions { Icon = "fapro:bolt-auto", Device = GetConsumerDevice(consumer), Options = Enum<EnergyConsumerState>.AllValuesAsStringList() };
 

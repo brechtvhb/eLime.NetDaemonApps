@@ -372,7 +372,7 @@ public class SmartIrrigation : IDisposable
 
         if (state == null || string.Equals(state, "unavailable", StringComparison.InvariantCultureIgnoreCase))
         {
-            _logger.LogDebug("{IrrigationZone}: Creating Zone mode dropdown in home assistant.", zone.Name);
+            _logger.LogDebug("{IrrigationZone}: Creating Zone mode dropdown in home assistant. State was: '{State}'", zone.Name, state);
             var selectOptions = new SelectOptions()
             {
                 Icon = "fapro:sprinkler",
