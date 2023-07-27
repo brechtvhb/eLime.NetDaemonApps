@@ -48,8 +48,6 @@ public class TemperatureProtector : IDisposable
             ConditionalMaxOutdoorTemperaturePrediction = conditionalMaxOutdoorTemperaturePrediction;
             ConditionalOutdoorTemperaturePredictionDays = conditionalOutdoorTemperaturePredictionDays ?? 3;
         }
-
-        CheckDesiredState();
     }
 
     private void CheckDesiredState(Object? o, NumericSensorEventArgs sender)
@@ -58,7 +56,7 @@ public class TemperatureProtector : IDisposable
     }
 
 
-    private void CheckDesiredState()
+    internal void CheckDesiredState()
     {
         var desiredState = GetDesiredState();
 

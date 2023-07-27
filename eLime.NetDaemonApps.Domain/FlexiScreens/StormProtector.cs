@@ -70,8 +70,6 @@ public class StormProtector : IDisposable
             NightlyRainThreshold = nightlyRainThreshold;
             NightlyRainRateThreshold = nightlyRainRateThreshold;
         }
-
-        CheckDesiredState();
     }
 
     private void CheckDesiredState(Object? o, NumericSensorEventArgs sender)
@@ -79,7 +77,7 @@ public class StormProtector : IDisposable
         CheckDesiredState();
     }
 
-    private void CheckDesiredState()
+    internal void CheckDesiredState()
     {
         var desiredState = GetDesiredState();
 

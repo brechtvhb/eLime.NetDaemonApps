@@ -14,8 +14,6 @@ public class ChildrenAreAngryProtector : IDisposable
         ForceDownSensor = forceDownSensor;
         ForceDownSensor.TurnedOn += CheckDesiredState;
         ForceDownSensor.TurnedOff += CheckDesiredState;
-
-        CheckDesiredState();
     }
 
     private void CheckDesiredState(Object? o, BinarySensorEventArgs sender)
@@ -23,7 +21,7 @@ public class ChildrenAreAngryProtector : IDisposable
         CheckDesiredState();
     }
 
-    private void CheckDesiredState()
+    internal void CheckDesiredState()
     {
         if (ForceDownSensor.IsOn())
             OnNightStarted(EventArgs.Empty);

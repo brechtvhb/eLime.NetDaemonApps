@@ -82,6 +82,8 @@ public class FlexiScreen : IDisposable
             ChildrenAreAngryProtector.NightStarted += ChildrenAreAngryProtector_NightStarted;
             ChildrenAreAngryProtector.NightEnded += ChildrenAreAngryProtector_NightEnded;
             ChildrenAreAngryProtector.DesiredStateChanged += Protector_DesiredStateChanged;
+            //Check after handlers have been assigned
+            ChildrenAreAngryProtector.CheckDesiredState();
         }
 
         EnsureEnabledSwitchExists().RunSync();

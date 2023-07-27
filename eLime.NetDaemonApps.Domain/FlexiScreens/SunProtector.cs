@@ -20,8 +20,6 @@ public class SunProtector : IDisposable
         OrientationThreshold = orientationThreshold;
         ElevationThreshold = elevationThreshold;
         DesiredStateBelowElevationThreshold = desiredStateBelowElevationThreshold;
-
-        CheckDesiredState();
     }
 
     private void CheckDesiredState(Object? o, SunEventArgs sender)
@@ -29,7 +27,7 @@ public class SunProtector : IDisposable
         CheckDesiredState();
     }
 
-    private void CheckDesiredState()
+    internal void CheckDesiredState()
     {
         var desiredState = GetDesiredState();
 
