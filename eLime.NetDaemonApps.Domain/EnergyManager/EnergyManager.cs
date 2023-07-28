@@ -184,7 +184,7 @@ public class EnergyManager : IDisposable
         var consumersThatPreferSolar = Consumers.OrderByDescending(x => x.SwitchOffLoad).Where(x => x.CanForceStop(_scheduler.Now) && x is { Running: true } && x.SwitchOffLoad < estimatedLoad).ToList();
         foreach (var consumer in consumersThatPreferSolar.TakeWhile(consumer => consumer.SwitchOffLoad < estimatedLoad))
         {
-            _logger.LogDebug("{Consumer}: Will stop consumer because it went below switch off load", consumer.Name);
+            _logger.LogDebug("{Consumer}: Will stop consumer because current load is above switch off load", consumer.Name);
             consumer.Stop();
             estimatedLoad -= consumer.CurrentLoad;
         }
