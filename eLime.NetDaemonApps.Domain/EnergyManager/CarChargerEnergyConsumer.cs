@@ -33,7 +33,7 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         Cars = cars;
     }
 
-    public Double Rebalance(double netGridUsage)
+    public (Double current, Double netPowerChange) Rebalance(double netGridUsage)
     {
         var currentCurrent = CurrentEntity.State ?? 0;
         var netGridCurrent = Math.Round((double)netGridUsage / 230, 0, MidpointRounding.ToZero);
@@ -49,11 +49,11 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         var netCurrentChange = toBeCurrent - currentCurrent;
 
         if (netCurrentChange == 0)
-            return 0;
+            return (0, 0);
 
         CurrentEntity.Change(toBeCurrent);
 
-        return netCurrentChange * 230;
+        return (toBeCurrent, netCurrentChange * 230);
     }
 
     protected override EnergyConsumerState GetDesiredState(DateTimeOffset? now)

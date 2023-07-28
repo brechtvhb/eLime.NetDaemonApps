@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace eLime.NetDaemonApps.Domain.EnergyManager;
+﻿namespace eLime.NetDaemonApps.Domain.EnergyManager;
 
 internal interface IDynamicLoadConsumer
 {
@@ -12,6 +6,6 @@ internal interface IDynamicLoadConsumer
     public Int32 MinimumCurrent { get; }
     public Int32 MaximumCurrent { get; }
 
-    public Double Rebalance(Double netGridUsage);
+    public (Double current, Double netPowerChange) Rebalance(Double netGridUsage);
 
 }

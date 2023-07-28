@@ -119,8 +119,8 @@ public class EnergyManager : IDisposable
 
         foreach (var dynamicLoadConsumer in dynamicLoadConsumers)
         {
-            var netChange = dynamicLoadConsumer.Rebalance(estimatedLoad);
-            _logger.LogDebug("{Consumer}: Changed Load for consumer,", dynamicLoadConsumer.Name);
+            var (current, netChange) = dynamicLoadConsumer.Rebalance(estimatedLoad);
+            _logger.LogDebug("{Consumer}: Changed current for dynamic consumer, to  {DynamicCurrent} A.", dynamicLoadConsumer.Name, current);
             estimatedLoad += netChange;
         }
 
