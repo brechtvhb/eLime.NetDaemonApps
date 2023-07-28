@@ -120,6 +120,10 @@ public class EnergyManager : IDisposable
         foreach (var dynamicLoadConsumer in dynamicLoadConsumers)
         {
             var (current, netChange) = dynamicLoadConsumer.Rebalance(estimatedLoad);
+
+            if (netChange == 0)
+                continue;
+
             _logger.LogDebug("{Consumer}: Changed current for dynamic consumer, to  {DynamicCurrent} A.", dynamicLoadConsumer.Name, current);
             estimatedLoad += netChange;
         }
