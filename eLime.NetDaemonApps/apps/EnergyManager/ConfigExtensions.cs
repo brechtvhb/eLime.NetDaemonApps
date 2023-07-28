@@ -2,6 +2,7 @@
 using eLime.NetDaemonApps.Config.EnergyManager;
 using eLime.NetDaemonApps.Domain.EnergyManager;
 using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
+using eLime.NetDaemonApps.Domain.Entities.Input;
 using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
 using eLime.NetDaemonApps.Domain.Entities.TextSensors;
 using NetDaemon.Extensions.MqttEntityManager;
@@ -9,7 +10,6 @@ using NetDaemon.HassModel.Entities;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Concurrency;
-using eLime.NetDaemonApps.Domain.Entities.Input;
 
 namespace eLime.NetDaemonApps.apps.EnergyManager;
 
@@ -60,7 +60,7 @@ public static class ConfigExtensions
                     cars.Add(new Car(car.Name, car.BatteryCapacity, batteryPercentageSensor, cableConnectedSensor));
                 }
 
-                var currentEntity = new InputNumberEntity(ha, consumer.CarCharger.CurrentEntity);
+                var currentEntity = InputNumberEntity.Create(ha, consumer.CarCharger.CurrentEntity);
                 var stateSensor = TextSensor.Create(ha, consumer.CarCharger.StateSensor);
 
                 energyConsumer = new CarChargerEnergyConsumer(consumer.Name, powerUsageEntity, criticallyNeededEntity, consumer.SwitchOnLoad, consumer.SwitchOffLoad, consumer.MinimumRuntime, consumer.MaximumRuntime, consumer.MinimumTimeout, consumer.MaximumTimeout, timeWindows, consumer.CarCharger.MinimumCurrent, consumer.CarCharger.MaximumCurrent, consumer.CarCharger.OffCurrent, currentEntity, stateSensor, cars);

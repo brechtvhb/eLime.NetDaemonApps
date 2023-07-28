@@ -2,7 +2,6 @@
 using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 using eLime.NetDaemonApps.Domain.Entities.Input;
 using eLime.NetDaemonApps.Domain.Entities.TextSensors;
-using eLime.NetDaemonApps.Domain.Helper;
 using eLime.NetDaemonApps.Tests.Helpers;
 using NetDaemon.HassModel.Entities;
 
@@ -38,18 +37,18 @@ public class CarChargerEnergyConsumerBuilder
         _testCtx = testCtx;
 
 
-            _name = "Veton";
-            _powerUsage = new NumericEntity(_testCtx.HaContext, "sensor.x");
-            _switchOnLoad = -800;
-            _switchOffLoad = 1000;
+        _name = "Veton";
+        _powerUsage = new NumericEntity(_testCtx.HaContext, "sensor.x");
+        _switchOnLoad = -800;
+        _switchOffLoad = 1000;
 
-            _minimumCurrent = 6;
-            _maximumCurrent = 16;
-            _offCurrent = 5;
+        _minimumCurrent = 6;
+        _maximumCurrent = 16;
+        _offCurrent = 5;
 
-            _currentEntity = new InputNumberEntity(_testCtx.HaContext, "input_number.y");
-            WithStateSensor(TextSensor.Create(_testCtx.HaContext, "sensor.z"));
-            AddCar("Passat GTE", 11.5, new NumericEntity(_testCtx.HaContext, "sensor.a"), new BinarySensor(_testCtx.HaContext, "binary_sensor.b"));
+        _currentEntity = InputNumberEntity.Create(_testCtx.HaContext, "input_number.y");
+        WithStateSensor(TextSensor.Create(_testCtx.HaContext, "sensor.z"));
+        AddCar("Passat GTE", 11.5, new NumericEntity(_testCtx.HaContext, "sensor.a"), new BinarySensor(_testCtx.HaContext, "binary_sensor.b"));
     }
 
     public CarChargerEnergyConsumerBuilder WithName(String name)

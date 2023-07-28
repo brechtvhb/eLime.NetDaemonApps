@@ -108,12 +108,12 @@ public class EnergyManager : IDisposable
     private void ManageConsumersIfNeeded()
     {
         var estimatedLoad = GridMonitor.CurrentLoad;
-        AdjustDynamicLoadsIfNeeded(estimatedLoad);
+        estimatedLoad = AdjustDynamicLoadsIfNeeded(estimatedLoad);
         StartConsumersIfNeeded(estimatedLoad);
         StopConsumersIfNeeded();
     }
 
-    private void AdjustDynamicLoadsIfNeeded(Double estimatedLoad)
+    private Double AdjustDynamicLoadsIfNeeded(Double estimatedLoad)
     {
         var dynamicLoadConsumers = Consumers.Where(x => x.State == EnergyConsumerState.Running && x is IDynamicLoadConsumer).OfType<IDynamicLoadConsumer>().ToList();
 
@@ -123,6 +123,8 @@ public class EnergyManager : IDisposable
             _logger.LogDebug("{Consumer}: Changed Load for consumer,", dynamicLoadConsumer.Name);
             estimatedLoad += netChange;
         }
+
+        return estimatedLoad;
     }
 
 

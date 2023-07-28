@@ -1,8 +1,6 @@
-﻿using eLime.NetDaemonApps.Domain.Entities.Input;
+﻿using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
+using eLime.NetDaemonApps.Domain.Entities.Input;
 using eLime.NetDaemonApps.Domain.Entities.TextSensors;
-using System.Net.Sockets;
-using System.Reflection.PortableExecutable;
-using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 using NetDaemon.HassModel.Entities;
 
 namespace eLime.NetDaemonApps.Domain.EnergyManager;
@@ -30,6 +28,7 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         OffCurrent = offCurrent;
 
         CurrentEntity = currentEntity;
+        CurrentEntity.Changed += CurrentEntity_Changed;
         StateSensor = stateSensor;
         Cars = cars;
     }
@@ -118,5 +117,17 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
     {
         base.Dispose();
         StateSensor.Dispose();
+
+        CurrentEntity.Changed -= CurrentEntity_Changed;
+        CurrentEntity.Dispose();
+    }
+
+    private void CurrentEntity_Changed(object? sender, InputNumberSensorEventArgs e)
+    {
+        if (e.New.State >= MinimumCurrent)
+            CheckDesiredState(new EnergyConsumerStartedEvent(this, EnergyConsumerState.Running));
+        else
+
+            CheckDesiredState(new EnergyConsumerStoppedEvent(this, EnergyConsumerState.Off));
     }
 }
