@@ -175,7 +175,7 @@ public class EnergyManager : IDisposable
 
     private void StopConsumersIfNeeded()
     {
-        var estimatedLoad = GridMonitor.AverageLoadSince(_scheduler.Now, TimeSpan.FromMinutes(4));
+        var estimatedLoad = GridMonitor.AverageLoadSince(_scheduler.Now, TimeSpan.FromMinutes(3));
 
         var consumersThatNoLongerNeedEnergy = Consumers.Where(x => x is { State: EnergyConsumerState.Off, Running: true });
         foreach (var consumer in consumersThatNoLongerNeedEnergy)
