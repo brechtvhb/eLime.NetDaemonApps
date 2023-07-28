@@ -124,7 +124,7 @@ public class EnergyManager : IDisposable
             if (netChange == 0)
                 continue;
 
-            _logger.LogDebug("{Consumer}: Changed current for dynamic consumer, to  {DynamicCurrent} A.", dynamicLoadConsumer.Name, current);
+            _logger.LogDebug("{Consumer}: Changed current for dynamic consumer, to  {DynamicCurrent} A (Net change: {NetLoadChange} W).", dynamicLoadConsumer.Name, current, netChange);
             estimatedLoad += netChange;
         }
 
