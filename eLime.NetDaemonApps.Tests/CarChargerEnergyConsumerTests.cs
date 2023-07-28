@@ -73,7 +73,7 @@ public class CarChargerEnergyConsumerTests
     }
 
     [TestMethod]
-    public void Occupied__ButNoKnownCar_DoesNotTrigger_TurnsOn()
+    public void Occupied_ButNoKnownCar_DoesNotTrigger_TurnsOn()
     {
         // Arrange
         var consumer = new CarChargerEnergyConsumerBuilder(_testCtx)
@@ -94,6 +94,32 @@ public class CarChargerEnergyConsumerTests
         Assert.AreEqual(EnergyConsumerState.Off, energyManager.Consumers.First().State);
         _testCtx.InputNumberChanged(consumer.CurrentEntity, 6, Moq.Times.Never);
     }
+
+
+    [TestMethod]
+    public void Occupied_ButNotEnoughPower_DoesNotTrigger_TurnsOn()
+    {
+        // Arrange
+        var consumer = new CarChargerEnergyConsumerBuilder(_testCtx)
+            .Build();
+
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+            .AddConsumer(consumer)
+            .Build();
+
+        //Act
+        _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_production_watt"), "200");
+        _testCtx.TriggerStateChange(consumer.StateSensor, "Occupied");
+        _testCtx.TriggerStateChange(consumer.Cars.First().CableConnectedSensor, "on");
+        _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "5");
+
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
+
+        //Assert
+        Assert.AreEqual(EnergyConsumerState.NeedsEnergy, energyManager.Consumers.First().State);
+        _testCtx.InputNumberChanged(consumer.CurrentEntity, 6, Moq.Times.Never);
+    }
+
 
     [TestMethod]
     public void ExcessEnergy_Adjusts_Load()
