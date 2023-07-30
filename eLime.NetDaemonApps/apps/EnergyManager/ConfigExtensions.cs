@@ -63,7 +63,7 @@ public static class ConfigExtensions
                 var currentEntity = InputNumberEntity.Create(ha, consumer.CarCharger.CurrentEntity);
                 var stateSensor = TextSensor.Create(ha, consumer.CarCharger.StateSensor);
 
-                energyConsumer = new CarChargerEnergyConsumer(consumer.Name, powerUsageEntity, criticallyNeededEntity, consumer.SwitchOnLoad, consumer.SwitchOffLoad, consumer.MinimumRuntime, consumer.MaximumRuntime, consumer.MinimumTimeout, consumer.MaximumTimeout, timeWindows, consumer.CarCharger.MinimumCurrent, consumer.CarCharger.MaximumCurrent, consumer.CarCharger.OffCurrent, currentEntity, stateSensor, cars);
+                energyConsumer = new CarChargerEnergyConsumer(consumer.Name, powerUsageEntity, criticallyNeededEntity, consumer.SwitchOnLoad, consumer.SwitchOffLoad, consumer.MinimumRuntime, consumer.MaximumRuntime, consumer.MinimumTimeout, consumer.MaximumTimeout, timeWindows, consumer.CarCharger.MinimumCurrent, consumer.CarCharger.MaximumCurrent, consumer.CarCharger.OffCurrent, currentEntity, stateSensor, cars, scheduler);
             }
 
 

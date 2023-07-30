@@ -2,11 +2,13 @@
 using eLime.NetDaemonApps.Domain.Entities.Input;
 using eLime.NetDaemonApps.Domain.Entities.TextSensors;
 using NetDaemon.HassModel.Entities;
+using System.Reactive.Concurrency;
 
 namespace eLime.NetDaemonApps.Domain.EnergyManager;
 
 public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 {
+    private readonly IScheduler _scheduler;
     public Int32 MinimumCurrent { get; set; }
     public Int32 MaximumCurrent { get; set; }
     public Int32 OffCurrent { get; set; }
@@ -19,9 +21,13 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 
     public List<Car> Cars { get; }
 
+
+    public DateTimeOffset? _lastCurrentChange;
+
     public CarChargerEnergyConsumer(String name, NumericEntity powerUsage, BinarySensor? criticallyNeeded, Double switchOnLoad, Double switchOffLoad, TimeSpan? minimumRuntime, TimeSpan? maximumRuntime, TimeSpan? minimumTimeout,
-        TimeSpan? maximumTimeout, List<TimeWindow> timeWindows, Int32 minimumCurrent, Int32 maximumCurrent, Int32 offCurrent, InputNumberEntity currentEntity, TextSensor stateSensor, List<Car> cars)
+        TimeSpan? maximumTimeout, List<TimeWindow> timeWindows, Int32 minimumCurrent, Int32 maximumCurrent, Int32 offCurrent, InputNumberEntity currentEntity, TextSensor stateSensor, List<Car> cars, IScheduler scheduler)
     {
+        _scheduler = scheduler;
         SetCommonFields(name, powerUsage, criticallyNeeded, switchOnLoad, switchOffLoad, minimumRuntime, maximumRuntime, minimumTimeout, maximumTimeout, timeWindows);
         MinimumCurrent = minimumCurrent;
         MaximumCurrent = maximumCurrent;
@@ -51,10 +57,19 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         if (netCurrentChange == 0)
             return (0, 0);
 
-        CurrentEntity.Change(toBeCurrent);
-
+        ChangeCurrent(toBeCurrent);
         return (toBeCurrent, netCurrentChange * 230);
     }
+
+    private void ChangeCurrent(Double toBeCurrent)
+    {
+        if (_lastCurrentChange?.Add(TimeSpan.FromSeconds(5)) > _scheduler.Now)
+            return;
+
+        CurrentEntity.Change(toBeCurrent);
+        _lastCurrentChange = _scheduler.Now;
+    }
+
 
     protected override EnergyConsumerState GetDesiredState(DateTimeOffset? now)
     {
@@ -105,12 +120,12 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 
     public override void TurnOn()
     {
-        CurrentEntity.Change(MinimumCurrent);
+        ChangeCurrent(MinimumCurrent);
     }
 
     public override void TurnOff()
     {
-        CurrentEntity.Change(OffCurrent);
+        ChangeCurrent(OffCurrent);
     }
 
     public new void Dispose()

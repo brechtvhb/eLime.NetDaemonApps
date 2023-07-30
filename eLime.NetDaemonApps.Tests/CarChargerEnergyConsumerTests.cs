@@ -61,11 +61,12 @@ public class CarChargerEnergyConsumerTests
             .Build();
 
         //Act
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
         _testCtx.TriggerStateChange(consumer.StateSensor, "Occupied");
         _testCtx.TriggerStateChange(consumer.Cars.First().CableConnectedSensor, "on");
         _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "5");
 
-        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(30));
 
         //Assert
         Assert.AreEqual(EnergyConsumerState.NeedsEnergy, energyManager.Consumers.First().State);
@@ -187,10 +188,11 @@ public class CarChargerEnergyConsumerTests
             .AddConsumer(consumer)
             .Build();
 
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
         _testCtx.TriggerStateChange(consumer.StateSensor, "Occupied");
         _testCtx.TriggerStateChange(consumer.Cars.First().CableConnectedSensor, "on");
         _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "5");
-        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(30));
 
         //Act
         _testCtx.TriggerStateChange(consumer.CurrentEntity, "6");

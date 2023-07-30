@@ -108,7 +108,7 @@ public class CarChargerEnergyConsumerBuilder
 
     public CarChargerEnergyConsumer Build()
     {
-        var x = new CarChargerEnergyConsumer(_name, _powerUsage, _criticallyNeeded, _switchOnLoad, _switchOffLoad, _minimumRuntime, _maximumRuntime, _minimumTimeout, _maximumTimeout, _timeWindows, _minimumCurrent, _maximumCurrent, _offCurrent, _currentEntity, _stateSensor, _cars);
+        var x = new CarChargerEnergyConsumer(_name, _powerUsage, _criticallyNeeded, _switchOnLoad, _switchOffLoad, _minimumRuntime, _maximumRuntime, _minimumTimeout, _maximumTimeout, _timeWindows, _minimumCurrent, _maximumCurrent, _offCurrent, _currentEntity, _stateSensor, _cars, _testCtx.Scheduler);
         return x;
     }
 }

@@ -6,6 +6,6 @@ internal interface IDynamicLoadConsumer
     public Int32 MinimumCurrent { get; }
     public Int32 MaximumCurrent { get; }
 
-    public (Double current, Double netPowerChange) Rebalance(Double netGridUsage);
+    public (Double current, Double netPowerChange) Rebalance(double netGridUsage);
 
 }
