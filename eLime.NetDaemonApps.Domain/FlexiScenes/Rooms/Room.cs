@@ -3,7 +3,10 @@ using eLime.NetDaemonApps.Domain.Conditions;
 using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
 using eLime.NetDaemonApps.Domain.FlexiScenes.Actions;
+using eLime.NetDaemonApps.Domain.FlexiScreens;
 using eLime.NetDaemonApps.Domain.Helper;
+using eLime.NetDaemonApps.Domain.Mqtt;
+using eLime.NetDaemonApps.Domain.SmartIrrigation;
 using Microsoft.Extensions.Logging;
 using NetDaemon.Extensions.MqttEntityManager;
 using NetDaemon.Extensions.Scheduler;
@@ -23,6 +26,7 @@ public class Room : IAsyncDisposable
     public bool AutoTransitionTurnOffIfNoValidSceneFound { get; }
     private bool FullyAutomated { get; }
     private readonly DebounceDispatcher? AutoTransitionDebounceDispatcher;
+    private readonly DebounceDispatcher? UpdateInHomeAssistantDebounceDispatcher;
 
     public InitialClickAfterMotionBehaviour InitialClickAfterMotionBehaviour { get; }
     public Int32? IlluminanceThreshold { get; }
@@ -34,6 +38,7 @@ public class Room : IAsyncDisposable
     private DateTime? IgnorePresenceUntil { get; set; }
     private IDisposable? ClearIgnorePresenceSchedule { get; set; }
     private IDisposable? GuardTask { get; set; }
+    private IDisposable? DropdownChangedCommandHandler { get; set; }
     public InitiatedBy InitiatedBy { get; private set; } = InitiatedBy.NoOne;
 
     private readonly List<BinarySensor> _offSensors = new();
@@ -150,7 +155,10 @@ public class Room : IAsyncDisposable
         EnsureEnabledSwitchExists();
 
         if (autoTransitionDebounce != TimeSpan.Zero)
+        {
             AutoTransitionDebounceDispatcher = new(autoTransitionDebounce);
+            UpdateInHomeAssistantDebounceDispatcher = new DebounceDispatcher(TimeSpan.FromMilliseconds(200));
+        }
 
         if (!(config.Enabled ?? true))
         {
@@ -305,7 +313,7 @@ public class Room : IAsyncDisposable
                     await RemoveIgnorePresence();
                     FlexiScenes.DeactivateScene();
                     InitiatedBy = InitiatedBy.NoOne;
-                    await UpdateStateInHomeAssistant();
+                    await DebounceUpdateInHomeAssistant();
                 }
                 await _mqttEntityManager.SetStateAsync(switchName, state);
             });
@@ -317,24 +325,83 @@ public class Room : IAsyncDisposable
         TurnOffAt = !String.IsNullOrWhiteSpace(EnabledSwitch.Attributes?.TurnOffAt) ? DateTime.Parse(EnabledSwitch.Attributes.TurnOffAt) : null;
         InitiatedBy = !String.IsNullOrWhiteSpace(EnabledSwitch.Attributes?.InitiatedBy) ? Enum.Parse<InitiatedBy>(EnabledSwitch.Attributes.InitiatedBy) : InitiatedBy.NoOne;
 
-        if (!String.IsNullOrWhiteSpace(EnabledSwitch.Attributes?.CurrentFlexiScene))
-        {
-            var flexiScene = FlexiScenes.GetByName(EnabledSwitch.Attributes.CurrentFlexiScene);
-            if (flexiScene != null)
-                FlexiScenes.SetCurrentScene(flexiScene);
-        }
+        await InitializeDropdown();
 
         if (!String.IsNullOrWhiteSpace(EnabledSwitch.Attributes?.InitialFlexiScene))
         {
             var flexiScene = FlexiScenes.GetByName(EnabledSwitch.Attributes.InitialFlexiScene);
             if (flexiScene != null)
-                FlexiScenes.SetCurrentScene(flexiScene);
+                FlexiScenes.SetInitialFlexiScene(flexiScene);
         }
 
         _logger.LogDebug("Retrieved flexilight state from Home assistant for room '{room}'.", Name);
 
         await ScheduleTurnOffAt();
         await ScheduleClearIgnorePresence();
+    }
+
+
+    private async Task InitializeDropdown()
+    {
+        var selectName = $"select.flexiscenes_{Name.MakeHaFriendly()}_scene";
+        var state = _haContext.Entity(selectName).State;
+
+        if (state == null || string.Equals(state, "unavailable", StringComparison.InvariantCultureIgnoreCase))
+        {
+            _logger.LogDebug("{Room}: Creating Flexi scene dropdown in home assistant. State was: '{State}'", Name, state);
+
+            var scenes = new List<String> { "Off" };
+            scenes.AddRange(FlexiScenes.All.Select(x => x.Name));
+
+            var selectOptions = new SelectOptions()
+            {
+                Icon = "fapro:palette", //TODO
+                Options = scenes,
+                Device = GetRoomDevice()
+            };
+
+            await _mqttEntityManager.CreateAsync(selectName, new EntityCreationOptions(UniqueId: selectName, Name: $"Flexi scenes - {Name}", DeviceClass: "select", Persist: true), selectOptions);
+            await _mqttEntityManager.SetStateAsync(selectName, "Off");
+        }
+        else
+        {
+            _logger.LogDebug("{Room}: Initializing flexi scene room.", Name);
+            var flexiScene = FlexiScenes.GetByName(state);
+            if (flexiScene != null)
+                FlexiScenes.SetCurrentScene(flexiScene);
+        }
+
+        var observer = await _mqttEntityManager.PrepareCommandSubscriptionAsync(selectName);
+        DropdownChangedCommandHandler = observer.SubscribeAsync(DropDownChanged());
+    }
+    private Func<string, Task> DropDownChanged()
+    {
+        return async state =>
+        {
+            var flexiScene = FlexiScenes.GetByName(state);
+            if (flexiScene != null)
+            {
+                FlexiScenes.SetCurrentScene(flexiScene, true);
+                var selectName = $"select.flexiscenes_{Name.MakeHaFriendly()}_scene";
+                await _mqttEntityManager.SetStateAsync(selectName, state);
+            }
+        };
+    }
+
+    public Device GetRoomDevice()
+    {
+        return new Device { Identifiers = new List<string> { $"flexiscene_room.{Name.MakeHaFriendly()}" }, Name = "Flexi scene room: " + Name, Manufacturer = "Me" };
+    }
+
+    private async Task DebounceUpdateInHomeAssistant()
+    {
+        if (UpdateInHomeAssistantDebounceDispatcher == null)
+        {
+            await UpdateStateInHomeAssistant();
+            return;
+        }
+
+        await UpdateInHomeAssistantDebounceDispatcher.DebounceAsync(UpdateStateInHomeAssistant);
     }
 
 
@@ -351,10 +418,13 @@ public class Room : IAsyncDisposable
             CurrentFlexiScene = FlexiScenes.Current?.Name,
             InitialFlexiScene = FlexiScenes.Initial?.Name,
             LastUpdated = DateTime.Now.ToString("O"),
-            Icon = "mdi:palette"
+            Icon = "fapro:palette"
         };
         await _mqttEntityManager.SetAttributesAsync(EnabledSwitch.EntityId, attributes);
         _logger.LogTrace("Updated flexilight state for room '{room}' in Home assistant to {attr}", Name, attributes);
+
+        var selectName = $"select.flexiscenes_{Name.MakeHaFriendly()}_scene";
+        await _mqttEntityManager.SetStateAsync(selectName, FlexiScenes.Current?.Name ?? "Off");
     }
 
 
@@ -387,7 +457,7 @@ public class Room : IAsyncDisposable
 
         await ExecuteActions(OffActions);
         ClearAutoTurnOff();
-        await UpdateStateInHomeAssistant();
+        await DebounceUpdateInHomeAssistant();
     }
 
     private async Task ScheduleClearIgnorePresence()
@@ -532,7 +602,7 @@ public class Room : IAsyncDisposable
                     return;
 
                 await SetTurnOffAt(FlexiSceneThatShouldActivate);
-                await UpdateStateInHomeAssistant();
+                await DebounceUpdateInHomeAssistant();
             }
             else
             {
@@ -558,7 +628,7 @@ public class Room : IAsyncDisposable
             await SetTurnOffAt(nextFlexiScene);
         }
 
-        await UpdateStateInHomeAssistant();
+        await DebounceUpdateInHomeAssistant();
     }
 
     private async void Switch_DoubleClicked(object? sender, SwitchEventArgs e)
@@ -643,7 +713,7 @@ public class Room : IAsyncDisposable
             _logger.LogWarning("{Room}: Motion was detected but found no flexi scenes that could be executed.", Name);
         }
 
-        await UpdateStateInHomeAssistant();
+        await DebounceUpdateInHomeAssistant();
     }
 
     private async void MotionSensor_TurnedOff(object? sender, BinarySensorEventArgs e)
@@ -656,7 +726,7 @@ public class Room : IAsyncDisposable
         if (allMotionSensorsOff && FlexiScenes.Current != null)
         {
             await SetTurnOffAt(FlexiScenes.Current);
-            await UpdateStateInHomeAssistant();
+            await DebounceUpdateInHomeAssistant();
         }
     }
 
@@ -710,13 +780,13 @@ public class Room : IAsyncDisposable
             }
         }
 
-        await UpdateStateInHomeAssistant();
+        await DebounceUpdateInHomeAssistant();
     }
 
     private async Task RemoveIgnorePresence()
     {
         IgnorePresenceUntil = null;
-        await UpdateStateInHomeAssistant();
+        await DebounceUpdateInHomeAssistant();
     }
 
     private async void CheckForMotion()
@@ -782,7 +852,8 @@ public class Room : IAsyncDisposable
         GuardTask?.Dispose();
         ClearIgnorePresenceSchedule?.Dispose();
         TurnOffSchedule?.Dispose();
-
+        DropdownChangedCommandHandler?.Dispose();
+        
         _logger.LogDebug("{Room}: Disposed.", Name);
 
         return ValueTask.CompletedTask;

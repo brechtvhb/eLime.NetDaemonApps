@@ -59,7 +59,7 @@ public class EnergyManager : IDisposable
         if (debounceDuration != TimeSpan.Zero)
         {
             ManageConsumersDebounceDispatcher = new DebounceDispatcher(debounceDuration);
-            UpdateInHomeAssistantDebounceDispatcher = new DebounceDispatcher(TimeSpan.FromSeconds(1));
+            UpdateInHomeAssistantDebounceDispatcher = new DebounceDispatcher(TimeSpan.FromMilliseconds(200));
         }
 
         GuardTask = _scheduler.RunEvery(TimeSpan.FromSeconds(30), _scheduler.Now, () =>

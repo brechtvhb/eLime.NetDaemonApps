@@ -61,6 +61,12 @@ public class FlexiScenes
         return Current;
     }
 
+    internal void SetInitialFlexiScene(FlexiScene scene)
+    {
+        InitialFlexiScene = scene.Name;
+    }
+
+
     internal void DeactivateScene()
     {
         CurrentFlexiScene = null;
