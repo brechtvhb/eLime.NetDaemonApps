@@ -13,6 +13,7 @@ public class TriggeredEnergyConsumer : EnergyConsumer
 
     public TextSensor StateSensor { get; }
     public String StartState { get; }
+    public String CompletedState { get; }
     public String? CriticalState { get; }
     public Boolean CanForceShutdown { get; }
 
@@ -39,7 +40,7 @@ public class TriggeredEnergyConsumer : EnergyConsumer
     }
 
     public TriggeredEnergyConsumer(String name, NumericEntity powerUsage, BinarySensor? criticallyNeeded, Double switchOnLoad, Double switchOffLoad, TimeSpan? minimumRuntime, TimeSpan? maximumRuntime, TimeSpan? minimumTimeout,
-        TimeSpan? maximumTimeout, List<TimeWindow> timeWindows, BinarySwitch socket, List<(String State, Double PeakLoad)> peakLoads, TextSensor stateSensor, String startState, String criticalState, bool canForceShutdown)
+        TimeSpan? maximumTimeout, List<TimeWindow> timeWindows, BinarySwitch socket, List<(String State, Double PeakLoad)> peakLoads, TextSensor stateSensor, String startState, String completedState, String criticalState, bool canForceShutdown)
     {
         SetCommonFields(name, powerUsage, criticallyNeeded, switchOnLoad, switchOffLoad, minimumRuntime, maximumRuntime, minimumTimeout, maximumTimeout, timeWindows);
         Socket = socket;
@@ -50,6 +51,7 @@ public class TriggeredEnergyConsumer : EnergyConsumer
         StateSensor.StateChanged += StateSensor_StateChanged;
 
         StartState = startState;
+        CompletedState = completedState;
         CriticalState = criticalState;
 
         StatePeakLoads = peakLoads;
@@ -60,6 +62,7 @@ public class TriggeredEnergyConsumer : EnergyConsumer
     {
         return Running switch
         {
+            true when StateSensor.State == CompletedState => EnergyConsumerState.Off,
             true => EnergyConsumerState.Running,
             false when StateSensor.State == StartState && CriticallyNeeded != null && CriticallyNeeded.IsOn() => EnergyConsumerState.CriticallyNeedsEnergy,
             false when StateSensor.State == CriticalState && !String.IsNullOrWhiteSpace(CriticalState) => EnergyConsumerState.CriticallyNeedsEnergy,
@@ -107,7 +110,7 @@ public class TriggeredEnergyConsumer : EnergyConsumer
 
         return true;
     }
-    
+
     public override void TurnOn()
     {
         Socket.TurnOn();
@@ -134,6 +137,9 @@ public class TriggeredEnergyConsumer : EnergyConsumer
     {
         if (e.Sensor.State == StartState)
             CheckDesiredState(new EnergyConsumerStartCommand(this, EnergyConsumerState.NeedsEnergy));
+
+        if (e.Sensor.State == CompletedState)
+            CheckDesiredState(new EnergyConsumerStopCommand(this, EnergyConsumerState.Off));
 
         if (e.Sensor.State == CriticalState)
             CheckDesiredState(new EnergyConsumerStartCommand(this, EnergyConsumerState.CriticallyNeedsEnergy));

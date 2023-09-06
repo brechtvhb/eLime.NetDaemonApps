@@ -128,4 +128,28 @@ public class TriggeredEnergyConsumerTests
         //Assert
         Assert.AreEqual(420, energyManager.Consumers.First().PeakLoad);
     }
+
+    [TestMethod]
+    public void StateChange_Triggers_TurnsOff()
+    {
+        // Arrange
+        var consumer = new TriggeredEnergyConsumerBuilder(_testCtx, "washer")
+            .Build();
+
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+            .AddConsumer(consumer)
+            .Build();
+
+        _testCtx.TriggerStateChange(consumer.Socket, "on");
+        _testCtx.TriggerStateChange(consumer.StateSensor, "Spinning");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
+
+        //Act
+        _testCtx.TriggerStateChange(consumer.StateSensor, "Ready");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(20));
+
+        //Assert
+        Assert.AreEqual(EnergyConsumerState.Off, energyManager.Consumers.First().State);
+        _testCtx.VerifySwitchTurnOff(consumer.Socket, Moq.Times.AtLeastOnce);
+    }
 }

@@ -27,6 +27,7 @@ public class TriggeredEnergyConsumerBuilder
 
     private TextSensor _stateSensor;
     private String _startState;
+    private String _completedState;
     private String _criticalState;
     private Boolean _canForceShutdown;
     private List<(String state, Double peakLoad)> _statePeakLoads = new();
@@ -44,7 +45,7 @@ public class TriggeredEnergyConsumerBuilder
 
             _socket = BinarySwitch.Create(_testCtx.HaContext, "switch.irrigation_energy_available");
 
-            WithStateSensor(TextSensor.Create(_testCtx.HaContext, "sensor.irrigation_state"), "Yes", "Critical");
+            WithStateSensor(TextSensor.Create(_testCtx.HaContext, "sensor.irrigation_state"), "Yes", "No", "Critical");
             WithCanForceShutdown();
             AddStatePeakLoad("No", 1);
             AddStatePeakLoad("Yes", 1);
@@ -61,7 +62,7 @@ public class TriggeredEnergyConsumerBuilder
 
             _socket = BinarySwitch.Create(_testCtx.HaContext, "switch.smartwasher_smartwasher_delayed_start_activate");
 
-            WithStateSensor(TextSensor.Create(_testCtx.HaContext, "sensor.smartwasher_smartwasher_state"), "DelayedStart", "Critical");
+            WithStateSensor(TextSensor.Create(_testCtx.HaContext, "sensor.smartwasher_smartwasher_state"), "DelayedStart", "Ready", "Critical");
             WithCanForceShutdown();
             AddStatePeakLoad("Idle", 0);
             AddStatePeakLoad("DelayedStart", 0);
@@ -119,10 +120,11 @@ public class TriggeredEnergyConsumerBuilder
         return this;
     }
 
-    public TriggeredEnergyConsumerBuilder WithStateSensor(TextSensor stateSensor, String startState, String criticalState)
+    public TriggeredEnergyConsumerBuilder WithStateSensor(TextSensor stateSensor, String startState, String completedState, String criticalState)
     {
         _stateSensor = stateSensor;
         _startState = startState;
+        _completedState = completedState;
         _criticalState = criticalState;
         return this;
     }
@@ -141,7 +143,7 @@ public class TriggeredEnergyConsumerBuilder
 
     public TriggeredEnergyConsumer Build()
     {
-        var x = new TriggeredEnergyConsumer(_name, _powerUsage, _criticallyNeeded, _switchOnLoad, _switchOffLoad, _minimumRuntime, _maximumRuntime, _minimumTimeout, _maximumTimeout, _timeWindows, _socket, _statePeakLoads, _stateSensor, _startState, _criticalState, _canForceShutdown);
+        var x = new TriggeredEnergyConsumer(_name, _powerUsage, _criticallyNeeded, _switchOnLoad, _switchOffLoad, _minimumRuntime, _maximumRuntime, _minimumTimeout, _maximumTimeout, _timeWindows, _socket, _statePeakLoads, _stateSensor, _startState, _completedState, _criticalState, _canForceShutdown);
         return x;
     }
 }
