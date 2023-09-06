@@ -106,9 +106,11 @@ public class SmartIrrigation : IDisposable
             {
                 case IrrigationZoneWateringNeededEvent { State: NeedsWatering.Critical } when !String.IsNullOrWhiteSpace(PhoneToNotify) && canSendNotification:
                     Services.NotifyPhone(PhoneToNotify, $"{e.Zone.Name} is in critical need of water but it is set to manual watering.", null, "Water");
+                    e.Zone.NotificationSent(_scheduler.Now);
                     break;
                 case IrrigationZoneWateringNeededEvent when !String.IsNullOrWhiteSpace(PhoneToNotify) && canSendNotification:
                     Services.NotifyPhone(PhoneToNotify, $"{e.Zone.Name} needs water but it is set to manual watering.", null, "Water");
+                    e.Zone.NotificationSent(_scheduler.Now);
                     break;
                 case IrrigationZoneWateringStartedEvent:
                     SetEndWateringTimer(zoneWrapper, _scheduler.Now);
