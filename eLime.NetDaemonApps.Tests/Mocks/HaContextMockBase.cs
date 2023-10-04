@@ -15,6 +15,11 @@ public class HaContextMockBase : IHaContext
     {
     }
 
+    public Task<JsonElement?> CallServiceWithResponseAsync(string domain, string service, ServiceTarget? target = null, object? data = null)
+    {
+        throw new NotImplementedException();
+    }
+
     public IObservable<Event> Events => EventsSubject;
 
     public IReadOnlyList<Entity> GetAllEntities() => _entityStates.Keys.Select(s => new Entity(this, s)).ToList();
