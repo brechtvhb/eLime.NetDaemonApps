@@ -382,7 +382,7 @@ public class SmartIrrigation : IDisposable
                 Device = GetZoneDevice(zone)
             };
 
-            await _mqttEntityManager.CreateAsync(selectName, new EntityCreationOptions(UniqueId: selectName, Name: $"Irrigation zone mode - {zone.Name}", DeviceClass: "select", Persist: tru), selectOptions);
+            await _mqttEntityManager.CreateAsync(selectName, new EntityCreationOptions(UniqueId: selectName, Name: $"Irrigation zone mode - {zone.Name}", DeviceClass: "select", Persist: true), selectOptions);
             await _mqttEntityManager.SetStateAsync(selectName, ZoneMode.Off.ToString());
             zone.SetMode(ZoneMode.Off);
         }
