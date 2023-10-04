@@ -357,7 +357,7 @@ public class SmartIrrigation : IDisposable
         var stateName = $"sensor.irrigation_state";
         var state = _haContext.Entity(stateName).State;
 
-        if (state == null || string.Equals(state, "unavailable", StringComparison.InvariantCultureIgnoreCase))
+        if (state == null)
         {
             _logger.LogDebug("Creating Irrigation state sensor in home assistant.");
             var entityOptions = new EnumSensorOptions() { Icon = "far:sprinkler", Device = GetGlobalDevice(), Options = Enum<NeedsWatering>.AllValuesAsStringList() };
@@ -372,9 +372,9 @@ public class SmartIrrigation : IDisposable
         var selectName = $"select.irrigation_zone_{zone.Name.MakeHaFriendly()}_mode";
         var state = _haContext.Entity(selectName).State;
 
-        if (state == null || string.Equals(state, "unavailable", StringComparison.InvariantCultureIgnoreCase))
+        if (state == null)
         {
-            _logger.LogDebug("{IrrigationZone}: Creating Zone mode dropdown in home assistant. State was: '{State}'", zone.Name, state);
+            _logger.LogDebug("{IrrigationZone}: Creating Zone mode dropdown in home assistant.", zone.Name);
             var selectOptions = new SelectOptions()
             {
                 Icon = "fapro:sprinkler",
@@ -388,6 +388,12 @@ public class SmartIrrigation : IDisposable
         }
         else
         {
+            while (string.Equals(state, "unavailable", StringComparison.InvariantCultureIgnoreCase))
+            {
+                _logger.LogDebug("{IrrigationZone}: Sleeping because {Entity} state is 'unavailable'.", zone.Name, selectName);
+                await Task.Delay(TimeSpan.FromSeconds(1));
+            }
+
             _logger.LogDebug("{IrrigationZone}: Initializing zone.", zone.Name);
             zone.SetMode(Enum<ZoneMode>.Cast(state));
 
@@ -411,7 +417,7 @@ public class SmartIrrigation : IDisposable
         var stateName = $"sensor.irrigation_zone_{zone.Name.MakeHaFriendly()}_state";
         var state = _haContext.Entity(stateName).State;
 
-        if (state == null || string.Equals(state, "unavailable", StringComparison.InvariantCultureIgnoreCase))
+        if (state == null)
         {
             _logger.LogDebug("{IrrigationZone}: Creating Zone state sensor in home assistant.", zone.Name);
 
@@ -421,7 +427,15 @@ public class SmartIrrigation : IDisposable
             await _mqttEntityManager.SetStateAsync(stateName, zone.State.ToString());
         }
         else
+        {
+            while (string.Equals(state, "unavailable", StringComparison.InvariantCultureIgnoreCase))
+            {
+                _logger.LogDebug("{IrrigationZone}: Sleeping because {Entity} state is 'unavailable'.", zone.Name, stateName);
+                await Task.Delay(TimeSpan.FromSeconds(1));
+            }
+
             zone.SetState(Enum<NeedsWatering>.Cast(state));
+        }
     }
 
     public Device GetZoneDevice(IrrigationZone zone)
