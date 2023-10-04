@@ -382,20 +382,14 @@ public class SmartIrrigation : IDisposable
                 Device = GetZoneDevice(zone)
             };
 
-            await _mqttEntityManager.CreateAsync(selectName, new EntityCreationOptions(UniqueId: selectName, Name: $"Irrigation zone mode - {zone.Name}", DeviceClass: "select", Persist: true), selectOptions);
+            await _mqttEntityManager.CreateAsync(selectName, new EntityCreationOptions(UniqueId: selectName, Name: $"Irrigation zone mode - {zone.Name}", DeviceClass: "select", Persist: tru), selectOptions);
             await _mqttEntityManager.SetStateAsync(selectName, ZoneMode.Off.ToString());
             zone.SetMode(ZoneMode.Off);
         }
         else
         {
-            while (string.Equals(state, "unavailable", StringComparison.InvariantCultureIgnoreCase))
-            {
-                _logger.LogDebug("{IrrigationZone}: Sleeping because {Entity} state is 'unavailable'.", zone.Name, selectName);
-                await Task.Delay(TimeSpan.FromSeconds(1));
-            }
-
             _logger.LogDebug("{IrrigationZone}: Initializing zone.", zone.Name);
-            zone.SetMode(Enum<ZoneMode>.Cast(state));
+            zone.SetMode(Enum<ZoneMode>.Cast(state, ZoneMode.Off));
 
             var entity = new Entity<SmartIrrigationZoneAttributes>(_haContext, selectName);
 
@@ -428,13 +422,7 @@ public class SmartIrrigation : IDisposable
         }
         else
         {
-            while (string.Equals(state, "unavailable", StringComparison.InvariantCultureIgnoreCase))
-            {
-                _logger.LogDebug("{IrrigationZone}: Sleeping because {Entity} state is 'unavailable'.", zone.Name, stateName);
-                await Task.Delay(TimeSpan.FromSeconds(1));
-            }
-
-            zone.SetState(Enum<NeedsWatering>.Cast(state));
+            zone.SetState(Enum<NeedsWatering>.Cast(state, zone.State));
         }
     }
 
