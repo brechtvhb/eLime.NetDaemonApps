@@ -51,7 +51,7 @@ public record BinarySensor : Entity<BinarySensor, EntityState<BinarySensorAttrib
     }
 
     public bool IsOn() => State == "on";
-
+    public bool IsOff() => State == "off";
     public void Dispose()
     {
         _subscribeDisposable?.Dispose();

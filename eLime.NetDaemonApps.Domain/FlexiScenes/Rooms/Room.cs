@@ -727,6 +727,9 @@ public class Room : IAsyncDisposable
         if (MotionSensors.All(x => x.IsOff()))
             return;
 
+        if (MotionSensors.Any(x => x.State == "unavailable"))
+            return;
+
         if (FlexiScenes.Current != null)
             return;
 
