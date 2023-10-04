@@ -241,6 +241,7 @@ public class EnergyManager : IDisposable
 
     private async Task InitializeConsumerSensor(EnergyConsumer consumer)
     {
+        _logger.LogDebug("{Consumer}: Initializing", consumer.Name);
         var stateName = $"sensor.energy_consumer_{consumer.Name.MakeHaFriendly()}_state";
 
         var state = _haContext.Entity(stateName).State;
