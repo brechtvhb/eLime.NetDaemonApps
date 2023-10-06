@@ -77,6 +77,7 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 
         return Running switch
         {
+            true when !needsEnergy => EnergyConsumerState.Off,
             true => EnergyConsumerState.Running,
             false when needsEnergy && CriticallyNeeded != null && CriticallyNeeded.IsOn() => EnergyConsumerState.CriticallyNeedsEnergy,
             false when needsEnergy => EnergyConsumerState.NeedsEnergy,
