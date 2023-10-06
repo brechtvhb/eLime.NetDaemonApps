@@ -47,7 +47,7 @@
         startState: "Yes"
         criticalState: "Critical"
         canForceShutdown: true
-        peakLoads:
+        statePeakLoads:
           - state: "No"
             peakLoad: 1
           - state: "Yes"
