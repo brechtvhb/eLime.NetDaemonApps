@@ -8,7 +8,7 @@ public class TriggeredEnergyConsumerConfig
     public String CompletedState { get; set; }
     public String CriticalState { get; set; }
     public Boolean CanForceShutdown { get; set; }
-
+    public Boolean ShutDownOnComplete { get; set; }
     public List<TriggeredStatePeakLoad> PeakLoads { get; set; }
 
 }

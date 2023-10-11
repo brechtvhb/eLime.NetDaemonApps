@@ -16,6 +16,7 @@ public class TriggeredEnergyConsumer : EnergyConsumer
     public String CompletedState { get; }
     public String? CriticalState { get; }
     public Boolean CanForceShutdown { get; }
+    public Boolean ShutDownOnComplete { get; }
 
     public List<(String State, Double PeakLoad)> StatePeakLoads { get; }
 
@@ -40,7 +41,7 @@ public class TriggeredEnergyConsumer : EnergyConsumer
     }
 
     public TriggeredEnergyConsumer(String name, NumericEntity powerUsage, BinarySensor? criticallyNeeded, Double switchOnLoad, Double switchOffLoad, TimeSpan? minimumRuntime, TimeSpan? maximumRuntime, TimeSpan? minimumTimeout,
-        TimeSpan? maximumTimeout, List<TimeWindow> timeWindows, BinarySwitch socket, List<(String State, Double PeakLoad)> peakLoads, TextSensor stateSensor, String startState, String completedState, String criticalState, bool canForceShutdown)
+        TimeSpan? maximumTimeout, List<TimeWindow> timeWindows, BinarySwitch socket, List<(String State, Double PeakLoad)> peakLoads, TextSensor stateSensor, String startState, String completedState, String criticalState, bool canForceShutdown, bool shutDownOnComplete)
     {
         SetCommonFields(name, powerUsage, criticallyNeeded, switchOnLoad, switchOffLoad, minimumRuntime, maximumRuntime, minimumTimeout, maximumTimeout, timeWindows);
         Socket = socket;
@@ -56,6 +57,7 @@ public class TriggeredEnergyConsumer : EnergyConsumer
 
         StatePeakLoads = peakLoads;
         CanForceShutdown = canForceShutdown;
+        ShutDownOnComplete = shutDownOnComplete;
     }
 
     protected override EnergyConsumerState GetDesiredState(DateTimeOffset? now)
@@ -118,7 +120,8 @@ public class TriggeredEnergyConsumer : EnergyConsumer
 
     public override void TurnOff()
     {
-        Socket.TurnOff();
+        if (ShutDownOnComplete)
+            Socket.TurnOff();
     }
 
     public new void Dispose()

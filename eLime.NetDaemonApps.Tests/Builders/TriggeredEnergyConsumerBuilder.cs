@@ -30,6 +30,7 @@ public class TriggeredEnergyConsumerBuilder
     private String _completedState;
     private String _criticalState;
     private Boolean _canForceShutdown;
+    private Boolean _shutDownOnComplete;
     private List<(String state, Double peakLoad)> _statePeakLoads = new();
 
     public TriggeredEnergyConsumerBuilder(AppTestContext testCtx, String baseType)
@@ -73,6 +74,7 @@ public class TriggeredEnergyConsumerBuilder
             AddStatePeakLoad("Spinning", 420);
         }
 
+        WithShutdownOnComplete();
     }
 
     public TriggeredEnergyConsumerBuilder WithName(String name)
@@ -140,10 +142,15 @@ public class TriggeredEnergyConsumerBuilder
         _canForceShutdown = true;
         return this;
     }
+    public TriggeredEnergyConsumerBuilder WithShutdownOnComplete()
+    {
+        _shutDownOnComplete = true;
+        return this;
+    }
 
     public TriggeredEnergyConsumer Build()
     {
-        var x = new TriggeredEnergyConsumer(_name, _powerUsage, _criticallyNeeded, _switchOnLoad, _switchOffLoad, _minimumRuntime, _maximumRuntime, _minimumTimeout, _maximumTimeout, _timeWindows, _socket, _statePeakLoads, _stateSensor, _startState, _completedState, _criticalState, _canForceShutdown);
+        var x = new TriggeredEnergyConsumer(_name, _powerUsage, _criticallyNeeded, _switchOnLoad, _switchOffLoad, _minimumRuntime, _maximumRuntime, _minimumTimeout, _maximumTimeout, _timeWindows, _socket, _statePeakLoads, _stateSensor, _startState, _completedState, _criticalState, _canForceShutdown, _shutDownOnComplete);
         return x;
     }
 }

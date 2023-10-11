@@ -47,7 +47,7 @@ public static class ConfigExtensions
                 var stateSensor = TextSensor.Create(ha, consumer.Triggered.StateSensor);
                 var stateMap = consumer.Triggered.PeakLoads.Select(x => (x.State, x.PeakLoad)).ToList();
 
-                energyConsumer = new TriggeredEnergyConsumer(consumer.Name, powerUsageEntity, criticallyNeededEntity, consumer.SwitchOnLoad, consumer.SwitchOffLoad, consumer.MinimumRuntime, consumer.MaximumRuntime, consumer.MinimumTimeout, consumer.MaximumTimeout, timeWindows, socket, stateMap, stateSensor, consumer.Triggered.StartState, consumer.Triggered.CompletedState, consumer.Triggered.CriticalState, consumer.Triggered.CanForceShutdown);
+                energyConsumer = new TriggeredEnergyConsumer(consumer.Name, powerUsageEntity, criticallyNeededEntity, consumer.SwitchOnLoad, consumer.SwitchOffLoad, consumer.MinimumRuntime, consumer.MaximumRuntime, consumer.MinimumTimeout, consumer.MaximumTimeout, timeWindows, socket, stateMap, stateSensor, consumer.Triggered.StartState, consumer.Triggered.CompletedState, consumer.Triggered.CriticalState, consumer.Triggered.CanForceShutdown, consumer.Triggered.ShutDownOnComplete);
             }
 
             if (consumer.CarCharger != null)
