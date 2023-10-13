@@ -267,7 +267,7 @@ public class EnergyManager : IDisposable
 
             consumer.SetState(storedEnergyConsumerState.State);
 
-            if (storedEnergyConsumerState.StartedAt != null)
+            if (storedEnergyConsumerState.StartedAt != null && storedEnergyConsumerState.State == EnergyConsumerState.Running)
                 consumer.Started(_logger, _scheduler, storedEnergyConsumerState.StartedAt);
 
             if (storedEnergyConsumerState.LastRun != null)
