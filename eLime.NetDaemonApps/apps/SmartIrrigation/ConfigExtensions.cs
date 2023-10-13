@@ -3,6 +3,7 @@ using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
 using eLime.NetDaemonApps.Domain.Entities.Weather;
 using eLime.NetDaemonApps.Domain.SmartIrrigation;
+using eLime.NetDaemonApps.Domain.Storage;
 using NetDaemon.Extensions.MqttEntityManager;
 using System.Collections.Generic;
 using System.Reactive.Concurrency;
@@ -12,7 +13,7 @@ namespace eLime.NetDaemonApps.apps.SmartIrrigation;
 public static class ConfigExtensions
 {
 
-    public static Domain.SmartIrrigation.SmartIrrigation ToEntities(this SmartIrrigationConfig config, IHaContext ha, IScheduler scheduler, IMqttEntityManager mqttEntityManager, ILogger logger)
+    public static Domain.SmartIrrigation.SmartIrrigation ToEntities(this SmartIrrigationConfig config, IHaContext ha, IScheduler scheduler, IMqttEntityManager mqttEntityManager, IFileStorage fileStorage, ILogger logger)
     {
         var availableRainWaterSensor = NumericSensor.Create(ha, config.AvailableRainWaterEntity);
         var minimumAvailableWater = config.MinimumAvailableRainWater;
@@ -40,7 +41,7 @@ public static class ConfigExtensions
         }
 
 
-        var entity = new Domain.SmartIrrigation.SmartIrrigation(ha, logger, scheduler, mqttEntityManager, pumpSocket, pumpFlowRate, availableRainWaterSensor, minimumAvailableWater, weather, predictionDays, predictionLiters, phoneToNotify, zones, TimeSpan.FromSeconds(5));
+        var entity = new Domain.SmartIrrigation.SmartIrrigation(ha, logger, scheduler, mqttEntityManager, fileStorage, pumpSocket, pumpFlowRate, availableRainWaterSensor, minimumAvailableWater, weather, predictionDays, predictionLiters, phoneToNotify, zones, TimeSpan.FromSeconds(5));
         return entity;
     }
 

@@ -14,7 +14,6 @@ try
 {
     await Host.CreateDefaultBuilder(args)
             .RegisterAppSettingsJsonToHost()
-            //Silly NetDaemon
             .ConfigureHostConfiguration(config =>
             {
                 config.AddJsonFile($"appsettings.development.json", optional: true, reloadOnChange: false)

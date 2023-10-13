@@ -18,6 +18,15 @@ public abstract class IrrigationZone : IDisposable
 
     public DateTimeOffset? LastNotification { get; private set; }
 
+    internal IrrigationZoneFileStorage ToFileStorage() => new()
+    {
+        State = State,
+        Mode = Mode,
+        StartedAt = WateringStartedAt,
+        LastRun = LastWatering,
+    };
+
+
     protected void SetCommonFields(String name, Int32 flowRate, BinarySwitch valve)
     {
         Name = name;

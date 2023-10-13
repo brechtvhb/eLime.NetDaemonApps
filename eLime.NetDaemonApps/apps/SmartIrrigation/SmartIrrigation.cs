@@ -2,6 +2,7 @@
 // conflicting names
 
 using eLime.NetDaemonApps.Config;
+using eLime.NetDaemonApps.Domain.Storage;
 using NetDaemon.Extensions.MqttEntityManager;
 using System.Reactive.Concurrency;
 using System.Threading;
@@ -15,6 +16,8 @@ public class SmartIrrigation : IAsyncInitializable, IAsyncDisposable
     private readonly IHaContext _ha;
     private readonly IScheduler _scheduler;
     private readonly IMqttEntityManager _mqttEntityManager;
+    private readonly IFileStorage _fileStorage;
+
     private readonly ILogger _logger;
     private readonly SmartIrrigationConfig _config;
 
@@ -22,11 +25,12 @@ public class SmartIrrigation : IAsyncInitializable, IAsyncDisposable
 
     private CancellationToken _ct;
 
-    public SmartIrrigation(IHaContext ha, IScheduler scheduler, IAppConfig<SmartIrrigationConfig> config, IMqttEntityManager mqttEntityManager, ILogger<SmartIrrigation> logger)
+    public SmartIrrigation(IHaContext ha, IScheduler scheduler, IAppConfig<SmartIrrigationConfig> config, IMqttEntityManager mqttEntityManager, IFileStorage fileStorage, ILogger<SmartIrrigation> logger)
     {
         _ha = ha;
         _scheduler = scheduler;
         _mqttEntityManager = mqttEntityManager;
+        _fileStorage = fileStorage;
         _logger = logger;
         _config = config.Value;
     }
@@ -36,7 +40,7 @@ public class SmartIrrigation : IAsyncInitializable, IAsyncDisposable
         _ct = cancellationToken;
         try
         {
-            _smartIrrigation = _config.ToEntities(_ha, _scheduler, _mqttEntityManager, _logger);
+            _smartIrrigation = _config.ToEntities(_ha, _scheduler, _mqttEntityManager, _fileStorage, _logger);
         }
         catch (Exception ex)
         {
@@ -45,8 +49,6 @@ public class SmartIrrigation : IAsyncInitializable, IAsyncDisposable
 
         return Task.CompletedTask;
     }
-
-
 
     public ValueTask DisposeAsync()
     {

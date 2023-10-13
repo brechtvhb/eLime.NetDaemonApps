@@ -4,11 +4,11 @@ using eLime.NetDaemonApps.Domain.Entities.Services;
 using eLime.NetDaemonApps.Domain.Entities.Weather;
 using eLime.NetDaemonApps.Domain.Helper;
 using eLime.NetDaemonApps.Domain.Mqtt;
+using eLime.NetDaemonApps.Domain.Storage;
 using Microsoft.Extensions.Logging;
 using NetDaemon.Extensions.MqttEntityManager;
 using NetDaemon.Extensions.Scheduler;
 using NetDaemon.HassModel;
-using NetDaemon.HassModel.Entities;
 using System.Reactive.Concurrency;
 
 namespace eLime.NetDaemonApps.Domain.SmartIrrigation;
@@ -45,15 +45,17 @@ public class SmartIrrigation : IDisposable
     private readonly IScheduler _scheduler;
 
     private readonly IMqttEntityManager _mqttEntityManager;
+    private readonly IFileStorage _fileStorage;
     private IDisposable? EnergyAvailableStateCHangedCommandHandler { get; set; }
     private IDisposable? GuardTask { get; set; }
 
-    public SmartIrrigation(IHaContext haContext, ILogger logger, IScheduler scheduler, IMqttEntityManager mqttEntityManager, BinarySwitch pumpSocket, Int32 pumpFlowRate, NumericSensor availableRainWaterSensor, Int32 minimumAvailableRainWater, Weather? weather, Int32? rainPredictionDays, Double? rainPredictionLiters, String? phoneToNotify, List<IrrigationZone> zones, TimeSpan debounceDuration)
+    public SmartIrrigation(IHaContext haContext, ILogger logger, IScheduler scheduler, IMqttEntityManager mqttEntityManager, IFileStorage fileStorage, BinarySwitch pumpSocket, Int32 pumpFlowRate, NumericSensor availableRainWaterSensor, Int32 minimumAvailableRainWater, Weather? weather, Int32? rainPredictionDays, Double? rainPredictionLiters, String? phoneToNotify, List<IrrigationZone> zones, TimeSpan debounceDuration)
     {
         _haContext = haContext;
         _logger = logger;
         _scheduler = scheduler;
         _mqttEntityManager = mqttEntityManager;
+        _fileStorage = fileStorage;
 
         PumpSocket = pumpSocket;
         PumpFlowRate = pumpFlowRate;
@@ -389,15 +391,19 @@ public class SmartIrrigation : IDisposable
         else
         {
             _logger.LogDebug("{IrrigationZone}: Initializing zone.", zone.Name);
-            zone.SetMode(Enum<ZoneMode>.Cast(state, ZoneMode.Off));
+            var storedIrrigationZoneState = _fileStorage.Get<IrrigationZoneFileStorage>("SmartIrrigation", $"{zone.Name.MakeHaFriendly()}");
 
-            var entity = new Entity<SmartIrrigationZoneAttributes>(_haContext, selectName);
+            if (storedIrrigationZoneState == null)
+                return;
 
-            if (!String.IsNullOrWhiteSpace(entity.Attributes?.LastWatering))
-                zone.SetLastWateringDate(DateTime.Parse(entity.Attributes.LastWatering));
+            zone.SetMode(storedIrrigationZoneState.Mode);
+            zone.SetState(storedIrrigationZoneState.State);
 
-            if (!String.IsNullOrWhiteSpace(entity.Attributes?.WateringStartedAt))
-                zone.SetStartWateringDate(DateTime.Parse(entity.Attributes.WateringStartedAt));
+            if (storedIrrigationZoneState.LastRun != null)
+                zone.SetLastWateringDate(storedIrrigationZoneState.LastRun.Value);
+
+            if (storedIrrigationZoneState.StartedAt != null)
+                zone.SetStartWateringDate(storedIrrigationZoneState.StartedAt.Value);
 
             SetEndWateringTimer(wrapper);
         }
@@ -419,10 +425,6 @@ public class SmartIrrigation : IDisposable
 
             await _mqttEntityManager.CreateAsync(stateName, new EntityCreationOptions(UniqueId: stateName, Name: $"Irrigation zone state - {zone.Name}", Persist: true), entityOptions);
             await _mqttEntityManager.SetStateAsync(stateName, zone.State.ToString());
-        }
-        else
-        {
-            zone.SetState(Enum<NeedsWatering>.Cast(state, zone.State));
         }
     }
 
@@ -473,6 +475,8 @@ public class SmartIrrigation : IDisposable
             };
             await _mqttEntityManager.SetAttributesAsync(selectName, attributes);
             await _mqttEntityManager.SetStateAsync(stateName, wrapper.Zone.State.ToString());
+
+            _fileStorage.Save("EnergyManager", $"{wrapper.Zone.Name.MakeHaFriendly()}", wrapper.Zone.ToFileStorage());
 
             _logger.LogTrace("{IrrigationZone}: Update Zone state sensor in home assistant (attributes: {Attributes})", wrapper.Zone.Name, attributes);
         }

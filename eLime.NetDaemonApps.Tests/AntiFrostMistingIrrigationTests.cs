@@ -2,6 +2,7 @@ using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
 using eLime.NetDaemonApps.Domain.FlexiScenes.Rooms;
 using eLime.NetDaemonApps.Domain.SmartIrrigation;
+using eLime.NetDaemonApps.Domain.Storage;
 using eLime.NetDaemonApps.Tests.Builders;
 using eLime.NetDaemonApps.Tests.Helpers;
 using FakeItEasy;
@@ -18,6 +19,7 @@ public class AntiFrostMistingIrrigationTests
     private AppTestContext _testCtx;
     private ILogger _logger;
     private IMqttEntityManager _mqttEntityManager;
+    private IFileStorage _fileStorage;
 
     private BinarySwitch _pumpSocket;
     private NumericSensor _availableRainWaterSensor;
@@ -29,6 +31,7 @@ public class AntiFrostMistingIrrigationTests
 
         _logger = A.Fake<ILogger<Room>>();
         _mqttEntityManager = A.Fake<IMqttEntityManager>();
+        _fileStorage = A.Fake<IFileStorage>();
 
         _pumpSocket = BinarySwitch.Create(_testCtx.HaContext, "switch.rainwater_pump");
         _testCtx.TriggerStateChange(_pumpSocket, "on");
@@ -44,7 +47,7 @@ public class AntiFrostMistingIrrigationTests
         var zone1 = new AntiFrostMistingIrrigationZoneBuilder(_testCtx)
             .Build();
 
-        var irrigation = new SmartIrrigationBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+        var irrigation = new SmartIrrigationBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
             .With(_pumpSocket, 2000)
             .With(_availableRainWaterSensor, 1000)
             .AddZone(zone1)
@@ -68,7 +71,7 @@ public class AntiFrostMistingIrrigationTests
         var zone1 = new AntiFrostMistingIrrigationZoneBuilder(_testCtx)
             .Build();
 
-        var irrigation = new SmartIrrigationBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+        var irrigation = new SmartIrrigationBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
             .With(_pumpSocket, 2000)
             .With(_availableRainWaterSensor, 1000)
             .AddZone(zone1)
@@ -93,7 +96,7 @@ public class AntiFrostMistingIrrigationTests
             .WithMistingDurations(TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5))
             .Build();
 
-        var irrigation = new SmartIrrigationBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+        var irrigation = new SmartIrrigationBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
             .With(_pumpSocket, 2000)
             .With(_availableRainWaterSensor, 2000)
             .AddZone(zone1)
@@ -120,7 +123,7 @@ public class AntiFrostMistingIrrigationTests
             .WithMistingDurations(TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5))
             .Build();
 
-        var irrigation = new SmartIrrigationBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+        var irrigation = new SmartIrrigationBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
             .With(_pumpSocket, 2000)
             .With(_availableRainWaterSensor, 2000)
             .AddZone(zone1)
@@ -150,7 +153,7 @@ public class AntiFrostMistingIrrigationTests
             .WithMistingDurations(TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(1))
             .Build();
 
-        var irrigation = new SmartIrrigationBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+        var irrigation = new SmartIrrigationBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
             .With(_pumpSocket, 2000)
             .With(_availableRainWaterSensor, 2000)
             .AddZone(zone1)

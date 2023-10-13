@@ -2,6 +2,7 @@ using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
 using eLime.NetDaemonApps.Domain.FlexiScenes.Rooms;
 using eLime.NetDaemonApps.Domain.SmartIrrigation;
+using eLime.NetDaemonApps.Domain.Storage;
 using eLime.NetDaemonApps.Tests.Builders;
 using eLime.NetDaemonApps.Tests.Helpers;
 using FakeItEasy;
@@ -18,6 +19,7 @@ public class ContainerIrrigationTests
     private AppTestContext _testCtx;
     private ILogger _logger;
     private IMqttEntityManager _mqttEntityManager;
+    private IFileStorage _fileStorage;
 
     private BinarySwitch _pumpSocket;
     private NumericSensor _availableRainWaterSensor;
@@ -29,6 +31,7 @@ public class ContainerIrrigationTests
 
         _logger = A.Fake<ILogger<Room>>();
         _mqttEntityManager = A.Fake<IMqttEntityManager>();
+        _fileStorage = A.Fake<IFileStorage>();
 
         _pumpSocket = BinarySwitch.Create(_testCtx.HaContext, "switch.rainwater_pump");
         _testCtx.TriggerStateChange(_pumpSocket, "on");
@@ -44,7 +47,7 @@ public class ContainerIrrigationTests
         var zone = new ContainerIrrigationZoneBuilder(_testCtx)
             .Build();
 
-        var irrigation = new SmartIrrigationBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+        var irrigation = new SmartIrrigationBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
             .With(_pumpSocket, 2000)
             .With(_availableRainWaterSensor, 2000)
             .AddZone(zone)
@@ -70,7 +73,7 @@ public class ContainerIrrigationTests
         var zone = new ContainerIrrigationZoneBuilder(_testCtx)
             .Build();
 
-        var irrigation = new SmartIrrigationBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+        var irrigation = new SmartIrrigationBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
             .With(_pumpSocket, 2000)
             .With(_availableRainWaterSensor, 2000)
             .AddZone(zone)
@@ -95,7 +98,7 @@ public class ContainerIrrigationTests
         var zone = new ContainerIrrigationZoneBuilder(_testCtx)
             .Build();
 
-        var irrigation = new SmartIrrigationBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+        var irrigation = new SmartIrrigationBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
             .With(_pumpSocket, 2000)
             .With(_availableRainWaterSensor, 2000)
             .AddZone(zone)
@@ -123,7 +126,7 @@ public class ContainerIrrigationTests
         var zone = new ContainerIrrigationZoneBuilder(_testCtx)
             .Build();
 
-        var irrigation = new SmartIrrigationBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+        var irrigation = new SmartIrrigationBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
             .With(_pumpSocket, 2000)
             .With(_availableRainWaterSensor, 2000)
             .AddZone(zone)
@@ -151,7 +154,7 @@ public class ContainerIrrigationTests
         var zone = new ContainerIrrigationZoneBuilder(_testCtx)
             .Build();
 
-        var irrigation = new SmartIrrigationBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+        var irrigation = new SmartIrrigationBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
             .With(_pumpSocket, 2000)
             .With(_availableRainWaterSensor, 2000)
             .AddZone(zone)
