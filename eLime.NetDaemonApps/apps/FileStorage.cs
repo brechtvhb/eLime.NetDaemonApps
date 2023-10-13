@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Options;
 using System.IO;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace eLime.NetDaemonApps.apps;
 
@@ -14,7 +15,13 @@ public class FileStorage : IFileStorage
     {
         _dataStoragePath = Path.Combine(appConfigurationLocationSettings.Value.ApplicationConfigurationFolder, ".storage");
 
-        _jsonOptions = new JsonSerializerOptions();
+        _jsonOptions = new JsonSerializerOptions
+        {
+            WriteIndented = true,
+            Converters ={
+                new JsonStringEnumConverter()
+            },
+        };
     }
 
     public T? Get<T>(string app, string id) where T : class
