@@ -28,6 +28,13 @@ public abstract class EnergyConsumer : IDisposable
     public DateTimeOffset? LastRun { get; private set; }
     public EnergyConsumerState State { get; private set; }
 
+    internal EnergyConsumerFileStorage ToFileStorage() => new()
+    {
+        State = State,
+        StartedAt = StartedAt,
+        LastRun = LastRun,
+    };
+
     public IDisposable? StopTimer { get; set; }
 
     public event EventHandler<EnergyConsumerStateChangedEvent>? StateChanged;

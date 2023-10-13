@@ -6,4 +6,4 @@ appsettings.development.json
 .idea
 /eLime.NetDaemonApps/Properties/launchSettings.json
 *.user
-/eLime.NetDaemonApps/apps/.storage/EnergyManager
+/eLime.NetDaemonApps/apps/.storage

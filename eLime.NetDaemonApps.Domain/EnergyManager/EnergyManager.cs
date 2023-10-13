@@ -260,19 +260,18 @@ public class EnergyManager : IDisposable
         }
         else
         {
-            var savedConsumer = _fileStorage.Get<EnergyConsumer>("EnergyManager", consumer.Name.MakeHaFriendly());
+            var storedEnergyConsumerState = _fileStorage.Get<EnergyConsumerFileStorage>("EnergyManager", $"{consumer.Name.MakeHaFriendly()}");
 
-            if (savedConsumer != null)
-            {
-                consumer.SetState(Enum<EnergyConsumerState>.Cast(savedConsumer.State));
-                if (savedConsumer.LastRun != null)
-                    consumer.Stopped(_logger, savedConsumer.LastRun.Value);
+            if (storedEnergyConsumerState == null)
+                return;
 
-                if (savedConsumer.StartedAt != null)
-                    consumer.Started(_logger, _scheduler, savedConsumer.StartedAt.Value);
-            }
+            consumer.SetState(storedEnergyConsumerState.State);
+
+            if (storedEnergyConsumerState.LastRun != null)
+                consumer.Stopped(_logger, storedEnergyConsumerState.LastRun.Value);
+
+            consumer.Started(_logger, _scheduler, storedEnergyConsumerState.StartedAt);
         }
-
     }
 
     public Device GetGlobalDevice()
@@ -324,7 +323,7 @@ public class EnergyManager : IDisposable
             await _mqttEntityManager.SetStateAsync(stateName, consumer.State.ToString());
             await _mqttEntityManager.SetAttributesAsync(stateName, attributes);
 
-            _fileStorage.Save("EnergyManager", consumer.Name.MakeHaFriendly(), consumer);
+            _fileStorage.Save("EnergyManager", $"{consumer.Name.MakeHaFriendly()}", consumer.ToFileStorage());
 
             _logger.LogTrace("{Consumer}: Update Consumer state sensor in home assistant (attributes: {Attributes})", consumer.Name, attributes);
         }

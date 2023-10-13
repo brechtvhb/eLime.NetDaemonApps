@@ -37,7 +37,7 @@ public class FileStorage : IFileStorage
         return default;
     }
 
-    public void Save<T>(string app, string id, T data)
+    public void Save<T>(string app, string id, T data) where T : class
     {
         if (data == null)
             throw new ArgumentNullException(nameof(data));
@@ -47,15 +47,21 @@ public class FileStorage : IFileStorage
 
     private void SaveInternal<T>(string app, string id, T data)
     {
-        var storageJsonFile = Path.Combine(_dataStoragePath, app, $"{id}.json");
+        var folder = Path.Combine(_dataStoragePath, app);
+        EnsureDirectoryExists(folder);
 
-        if (!Directory.Exists(_dataStoragePath))
-        {
-            Directory.CreateDirectory(_dataStoragePath);
-        }
+        var storageJsonFile = Path.Combine(folder, $"{id}.json");
 
         using var jsonStream = File.Open(storageJsonFile, FileMode.Create, FileAccess.Write);
 
         JsonSerializer.Serialize(jsonStream, data);
+    }
+
+    private void EnsureDirectoryExists(String directoryPath)
+    {
+        if (!Directory.Exists(directoryPath))
+        {
+            Directory.CreateDirectory(directoryPath ?? throw new InvalidOperationException());
+        }
     }
 }
