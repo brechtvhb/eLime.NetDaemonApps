@@ -1,3 +1,4 @@
+using eLime.NetDaemonApps.apps;
 using Microsoft.Extensions.Hosting;
 using NetDaemon.Extensions.Logging;
 using NetDaemon.Extensions.MqttEntityManager;
@@ -12,6 +13,7 @@ try
 {
     await Host.CreateDefaultBuilder(args)
         .UseNetDaemonAppSettings()
+        .AddFileStorage()
         .UseNetDaemonDefaultLogging()
         .UseNetDaemonRuntime()
         .UseNetDaemonTextToSpeech()

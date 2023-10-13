@@ -1,5 +1,6 @@
 ﻿using eLime.NetDaemonApps.Domain.EnergyManager;
 using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
+using eLime.NetDaemonApps.Domain.Storage;
 using eLime.NetDaemonApps.Tests.Builders;
 using eLime.NetDaemonApps.Tests.Helpers;
 using FakeItEasy;
@@ -16,6 +17,7 @@ public class EnergyManagerTests
     private AppTestContext _testCtx;
     private ILogger _logger;
     private IMqttEntityManager _mqttEntityManager;
+    private IFileStorage _fileStorage;
 
     [TestInitialize]
     public void Init()
@@ -24,6 +26,7 @@ public class EnergyManagerTests
 
         _logger = A.Fake<ILogger<EnergyManager>>();
         _mqttEntityManager = A.Fake<IMqttEntityManager>();
+        _fileStorage = A.Fake<IFileStorage>();
 
         _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.grid_voltage"), "230");
         _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "input_number.peak_consumption"), "4.0");
@@ -37,7 +40,7 @@ public class EnergyManagerTests
         var consumer = new SimpleEnergyConsumerBuilder(_testCtx)
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
             .AddConsumer(consumer)
             .Build();
 
@@ -54,7 +57,7 @@ public class EnergyManagerTests
         var consumer = new SimpleEnergyConsumerBuilder(_testCtx)
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
             .AddConsumer(consumer)
             .Build();
 
@@ -74,7 +77,7 @@ public class EnergyManagerTests
         var consumer = new SimpleEnergyConsumerBuilder(_testCtx)
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
             .AddConsumer(consumer)
             .Build();
 
@@ -97,7 +100,7 @@ public class EnergyManagerTests
         var consumer = new SimpleEnergyConsumerBuilder(_testCtx)
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
             .AddConsumer(consumer)
             .Build();
 
@@ -118,7 +121,7 @@ public class EnergyManagerTests
         var consumer = new SimpleEnergyConsumerBuilder(_testCtx)
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
             .AddConsumer(consumer)
             .Build();
 
@@ -142,7 +145,7 @@ public class EnergyManagerTests
             .WithRuntime(TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(60))
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
             .AddConsumer(consumer)
             .Build();
 
@@ -166,7 +169,7 @@ public class EnergyManagerTests
             .WithRuntime(TimeSpan.FromSeconds(55), TimeSpan.FromMinutes(60))
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
             .AddConsumer(consumer)
             .Build();
 
@@ -191,7 +194,7 @@ public class EnergyManagerTests
             .WithLoad(-50, 200, 100)
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
             .AddConsumer(consumer)
             .Build();
 
@@ -216,7 +219,7 @@ public class EnergyManagerTests
             .WithLoad(-50, 200, 100)
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
             .AddConsumer(consumer)
             .Build();
 
@@ -240,7 +243,7 @@ public class EnergyManagerTests
             .WithRuntime(TimeSpan.FromSeconds(55), TimeSpan.FromSeconds(180))
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
             .AddConsumer(consumer)
             .Build();
 
@@ -265,7 +268,7 @@ public class EnergyManagerTests
             .WithTimeout(TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(300))
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
             .AddConsumer(consumer)
             .Build();
 
@@ -290,7 +293,7 @@ public class EnergyManagerTests
             .WithTimeout(TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(300))
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
             .AddConsumer(consumer)
             .Build();
 
@@ -317,7 +320,7 @@ public class EnergyManagerTests
             .WithName("fridge")
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
             .AddConsumer(consumer1)
             .AddConsumer(consumer2)
             .Build();
@@ -344,7 +347,7 @@ public class EnergyManagerTests
             .WithName("fridge")
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
             .AddConsumer(consumer1)
             .AddConsumer(consumer2)
             .Build();
@@ -372,7 +375,7 @@ public class EnergyManagerTests
             .WithCriticalSensor("boolean_sensor.fridge_too_hot")
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
             .AddConsumer(consumer1)
             .AddConsumer(consumer2)
             .Build();
@@ -399,7 +402,7 @@ public class EnergyManagerTests
             .AddTimeWindow(null, new TimeOnly(09, 00), new TimeOnly(12, 00))
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
             .AddConsumer(consumer)
             .Build();
 
@@ -424,7 +427,7 @@ public class EnergyManagerTests
             .AddTimeWindow(active, new TimeOnly(09, 00), new TimeOnly(12, 00))
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
             .AddConsumer(consumer)
             .Build();
 
@@ -450,7 +453,7 @@ public class EnergyManagerTests
             .AddTimeWindow(null, new TimeOnly(09, 00), new TimeOnly(12, 00))
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
             .AddConsumer(consumer)
             .Build();
 
@@ -475,7 +478,7 @@ public class EnergyManagerTests
             .AddTimeWindow(null, new TimeOnly(09, 00), new TimeOnly(12, 00))
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
             .AddConsumer(consumer)
             .Build();
 
@@ -500,7 +503,7 @@ public class EnergyManagerTests
             .AddTimeWindow(null, new TimeOnly(13, 00), new TimeOnly(16, 00))
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
             .AddConsumer(consumer)
             .Build();
 
@@ -526,7 +529,7 @@ public class EnergyManagerTests
             .AddTimeWindow(null, new TimeOnly(13, 30), new TimeOnly(16, 00))
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
             .AddConsumer(consumer)
             .Build();
 

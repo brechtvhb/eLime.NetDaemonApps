@@ -1,6 +1,7 @@
 ﻿using eLime.NetDaemonApps.Domain.Entities.Services;
 using eLime.NetDaemonApps.Domain.Helper;
 using eLime.NetDaemonApps.Domain.Mqtt;
+using eLime.NetDaemonApps.Domain.Storage;
 using Microsoft.Extensions.Logging;
 using NetDaemon.Extensions.MqttEntityManager;
 using NetDaemon.Extensions.Scheduler;
@@ -23,6 +24,7 @@ public class EnergyManager : IDisposable
     private readonly ILogger _logger;
     private readonly IScheduler _scheduler;
     private readonly IMqttEntityManager _mqttEntityManager;
+    private readonly IFileStorage _fileStorage;
 
     private IDisposable? GuardTask { get; }
 
@@ -34,12 +36,13 @@ public class EnergyManager : IDisposable
                 ? EnergyConsumerState.Running
                 : EnergyConsumerState.Off;
 
-    public EnergyManager(IHaContext haContext, ILogger logger, IScheduler scheduler, IMqttEntityManager mqttEntityManager, GridMonitor gridMonitor, NumericEntity solarProductionRemainingTodaySensor, List<EnergyConsumer> energyConsumers, string? phoneToNotify, TimeSpan debounceDuration)
+    public EnergyManager(IHaContext haContext, ILogger logger, IScheduler scheduler, IMqttEntityManager mqttEntityManager, IFileStorage fileStorage, GridMonitor gridMonitor, NumericEntity solarProductionRemainingTodaySensor, List<EnergyConsumer> energyConsumers, string? phoneToNotify, TimeSpan debounceDuration)
     {
         _haContext = haContext;
         _logger = logger;
         _scheduler = scheduler;
         _mqttEntityManager = mqttEntityManager;
+        _fileStorage = fileStorage;
 
         GridMonitor = gridMonitor;
         SolarProductionRemainingTodaySensor = solarProductionRemainingTodaySensor;
@@ -246,7 +249,7 @@ public class EnergyManager : IDisposable
 
         var state = _haContext.Entity(stateName).State;
 
-        if (state == null || string.Equals(state, "unavailable", StringComparison.InvariantCultureIgnoreCase))
+        if (state == null)
         {
             _logger.LogDebug("{Consumer}: Creating energy consumer state sensor in home assistant. State was '{State}'.", consumer.Name, state);
 
@@ -257,14 +260,17 @@ public class EnergyManager : IDisposable
         }
         else
         {
-            consumer.SetState(Enum<EnergyConsumerState>.Cast(state));
-            var entity = new Entity<EnergyConsumerAttributes>(_haContext, stateName);
+            var savedConsumer = _fileStorage.Get<EnergyConsumer>("EnergyManager", consumer.Name.MakeHaFriendly());
 
-            if (!String.IsNullOrWhiteSpace(entity.Attributes?.LastRun))
-                consumer.Stopped(_logger, DateTime.Parse(entity.Attributes.LastRun));
+            if (savedConsumer != null)
+            {
+                consumer.SetState(Enum<EnergyConsumerState>.Cast(savedConsumer.State));
+                if (savedConsumer.LastRun != null)
+                    consumer.Stopped(_logger, savedConsumer.LastRun.Value);
 
-            if (!String.IsNullOrWhiteSpace(entity.Attributes?.StartedAt))
-                consumer.Started(_logger, _scheduler, DateTime.Parse(entity.Attributes.StartedAt));
+                if (savedConsumer.StartedAt != null)
+                    consumer.Started(_logger, _scheduler, savedConsumer.StartedAt.Value);
+            }
         }
 
     }
@@ -303,6 +309,7 @@ public class EnergyManager : IDisposable
         await _mqttEntityManager.SetStateAsync("sensor.energy_manager_state", State.ToString());
         await _mqttEntityManager.SetAttributesAsync("sensor.energy_manager_state", globalAttributes);
 
+
         foreach (var consumer in Consumers)
         {
             var stateName = $"sensor.energy_consumer_{consumer.Name.MakeHaFriendly()}_state";
@@ -316,6 +323,8 @@ public class EnergyManager : IDisposable
             };
             await _mqttEntityManager.SetStateAsync(stateName, consumer.State.ToString());
             await _mqttEntityManager.SetAttributesAsync(stateName, attributes);
+
+            _fileStorage.Save("EnergyManager", consumer.Name.MakeHaFriendly(), consumer);
 
             _logger.LogTrace("{Consumer}: Update Consumer state sensor in home assistant (attributes: {Attributes})", consumer.Name, attributes);
         }
