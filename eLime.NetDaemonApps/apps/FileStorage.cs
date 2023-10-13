@@ -61,7 +61,7 @@ public class FileStorage : IFileStorage
 
         using var jsonStream = File.Open(storageJsonFile, FileMode.Create, FileAccess.Write);
 
-        JsonSerializer.Serialize(jsonStream, data);
+        JsonSerializer.Serialize(jsonStream, data, _jsonOptions);
     }
 
     private void EnsureDirectoryExists(String directoryPath)
