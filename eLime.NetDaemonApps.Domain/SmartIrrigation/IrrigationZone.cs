@@ -68,10 +68,14 @@ public abstract class IrrigationZone : IDisposable
         CheckDesiredState();
     }
 
+    public void SetLastWatering(DateTimeOffset now)
+    {
+        LastWatering = now;
+    }
     public void SetLastWateringDate(DateTimeOffset now)
     {
         WateringStartedAt = null;
-        LastWatering = now;
+        SetLastWatering(now);
         CheckDesiredState();
     }
 

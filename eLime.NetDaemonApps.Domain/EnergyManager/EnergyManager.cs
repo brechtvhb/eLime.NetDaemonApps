@@ -267,10 +267,11 @@ public class EnergyManager : IDisposable
 
             consumer.SetState(storedEnergyConsumerState.State);
 
-            if (storedEnergyConsumerState.LastRun != null)
-                consumer.Stopped(_logger, storedEnergyConsumerState.LastRun.Value);
+            if (storedEnergyConsumerState.StartedAt != null)
+                consumer.Started(_logger, _scheduler, storedEnergyConsumerState.StartedAt);
 
-            consumer.Started(_logger, _scheduler, storedEnergyConsumerState.StartedAt);
+            if (storedEnergyConsumerState.LastRun != null)
+                consumer.SetLastRun(storedEnergyConsumerState.LastRun.Value);
         }
     }
 

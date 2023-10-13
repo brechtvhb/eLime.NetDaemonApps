@@ -74,10 +74,14 @@ public abstract class EnergyConsumer : IDisposable
         StopTimer = null;
     }
 
+    public void SetLastRun(DateTimeOffset now)
+    {
+        LastRun = now;
+    }
     public void Stopped(ILogger logger, DateTimeOffset now)
     {
         StartedAt = null;
-        LastRun = now;
+        SetLastRun(now);
 
         logger.LogDebug("{EnergyConsumer}: Was stopped.", Name);
 

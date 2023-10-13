@@ -399,11 +399,11 @@ public class SmartIrrigation : IDisposable
             zone.SetMode(storedIrrigationZoneState.Mode);
             zone.SetState(storedIrrigationZoneState.State);
 
-            if (storedIrrigationZoneState.LastRun != null)
-                zone.SetLastWateringDate(storedIrrigationZoneState.LastRun.Value);
-
             if (storedIrrigationZoneState.StartedAt != null)
                 zone.SetStartWateringDate(storedIrrigationZoneState.StartedAt.Value);
+
+            if (storedIrrigationZoneState.LastRun != null)
+                zone.SetLastWatering(storedIrrigationZoneState.LastRun.Value);
 
             SetEndWateringTimer(wrapper);
         }
@@ -476,7 +476,7 @@ public class SmartIrrigation : IDisposable
             await _mqttEntityManager.SetAttributesAsync(selectName, attributes);
             await _mqttEntityManager.SetStateAsync(stateName, wrapper.Zone.State.ToString());
 
-            _fileStorage.Save("EnergyManager", $"{wrapper.Zone.Name.MakeHaFriendly()}", wrapper.Zone.ToFileStorage());
+            _fileStorage.Save("SmartIrrigation", $"{wrapper.Zone.Name.MakeHaFriendly()}", wrapper.Zone.ToFileStorage());
 
             _logger.LogTrace("{IrrigationZone}: Update Zone state sensor in home assistant (attributes: {Attributes})", wrapper.Zone.Name, attributes);
         }
