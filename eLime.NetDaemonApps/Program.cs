@@ -1,4 +1,5 @@
 using eLime.NetDaemonApps.apps;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using NetDaemon.Extensions.Logging;
 using NetDaemon.Extensions.MqttEntityManager;
@@ -12,7 +13,17 @@ using System.Reflection;
 try
 {
     await Host.CreateDefaultBuilder(args)
-        .UseNetDaemonAppSettings()
+            .RegisterAppSettingsJsonToHost()
+            //Silly NetDaemon
+            .ConfigureHostConfiguration(config =>
+            {
+                config.AddJsonFile($"appsettings.development.json", optional: true, reloadOnChange: false)
+                    .AddEnvironmentVariables();
+            })
+            .RegisterYamlSettings()
+            .ConfigureServices((context, services)
+                => services.ConfigureNetDaemonServices(context.Configuration)
+            )
         .AddFileStorage()
         .UseNetDaemonDefaultLogging()
         .UseNetDaemonRuntime()
