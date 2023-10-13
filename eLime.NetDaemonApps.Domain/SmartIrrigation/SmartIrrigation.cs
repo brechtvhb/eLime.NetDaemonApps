@@ -397,13 +397,7 @@ public class SmartIrrigation : IDisposable
                 return;
 
             zone.SetMode(storedIrrigationZoneState.Mode);
-            zone.SetState(storedIrrigationZoneState.State);
-
-            if (storedIrrigationZoneState.StartedAt != null && storedIrrigationZoneState.State == NeedsWatering.Ongoing)
-                zone.SetStartWateringDate(storedIrrigationZoneState.StartedAt.Value);
-
-            if (storedIrrigationZoneState.LastRun != null)
-                zone.SetLastWatering(storedIrrigationZoneState.LastRun.Value);
+            zone.SetState(storedIrrigationZoneState.State, storedIrrigationZoneState.StartedAt, storedIrrigationZoneState.LastRun);
 
             SetEndWateringTimer(wrapper);
         }

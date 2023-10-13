@@ -46,9 +46,17 @@ public abstract class IrrigationZone : IDisposable
         CheckDesiredState(new IrrigationZoneWateringEndedEvent(this, State));
     }
 
-    public void SetState(NeedsWatering state)
+    public void SetState(NeedsWatering state, DateTimeOffset? startedAt, DateTimeOffset? lastRun)
     {
         State = state;
+
+        if (startedAt != null && State == NeedsWatering.Ongoing)
+            WateringStartedAt = startedAt;
+
+        if (lastRun != null)
+            LastWatering = lastRun;
+
+        CheckDesiredState();
     }
 
     public void NotificationSent(DateTimeOffset now)
@@ -68,14 +76,10 @@ public abstract class IrrigationZone : IDisposable
         CheckDesiredState();
     }
 
-    public void SetLastWatering(DateTimeOffset now)
-    {
-        LastWatering = now;
-    }
     public void SetLastWateringDate(DateTimeOffset now)
     {
         WateringStartedAt = null;
-        SetLastWatering(now);
+        LastWatering = now;
         CheckDesiredState();
     }
 

@@ -61,9 +61,15 @@ public abstract class EnergyConsumer : IDisposable
         StateChanged?.Invoke(this, e);
     }
 
-    public void SetState(EnergyConsumerState state)
+    public void SetState(ILogger logger, IScheduler scheduler, EnergyConsumerState state, DateTimeOffset? startedAt, DateTimeOffset? lastRun)
     {
         State = state;
+
+        if (startedAt != null && State == EnergyConsumerState.Running)
+            Started(logger, scheduler, startedAt);
+
+        if (lastRun != null)
+            LastRun = lastRun;
     }
 
 
@@ -74,14 +80,10 @@ public abstract class EnergyConsumer : IDisposable
         StopTimer = null;
     }
 
-    public void SetLastRun(DateTimeOffset now)
-    {
-        LastRun = now;
-    }
     public void Stopped(ILogger logger, DateTimeOffset now)
     {
         StartedAt = null;
-        SetLastRun(now);
+        LastRun = now;
 
         logger.LogDebug("{EnergyConsumer}: Was stopped.", Name);
 
