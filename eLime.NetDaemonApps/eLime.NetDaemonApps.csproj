@@ -45,6 +45,9 @@
     </ItemGroup>
         
     <ItemGroup>
+      <None Update="apps\FlexiLights\FlexiLights.yaml">
+        <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      </None>
       <None Update="apps\FlexiLights\FlexiLights_toilet_0.yaml">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
