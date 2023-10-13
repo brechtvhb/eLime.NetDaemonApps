@@ -17,8 +17,8 @@
           <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </None>
         <None Update="$(MSBuildProjectDir)**\*.yaml">
-            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-            <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+            <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+            <CopyToPublishDirectory>Never</CopyToPublishDirectory>
         </None>
     </ItemGroup>
     <Target Name="AfterPublishMessage" AfterTargets="Publish">
@@ -42,19 +42,5 @@
     <ItemGroup>
       <ProjectReference Include="..\eLime.NetDaemonApps.Config\eLime.NetDaemonApps.Config.csproj" />
       <ProjectReference Include="..\eLime.NetDaemonApps.Domain\eLime.NetDaemonApps.Domain.csproj" />
-    </ItemGroup>
-        
-    <ItemGroup>
-      <None Update="apps\FlexiLights\FlexiLights.yaml">
-        <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-      </None>
-      <None Update="apps\FlexiLights\FlexiLights_toilet_0.yaml">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-      </None>
-      <None Update="apps\SmartWasher\SmartWasher.yaml">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-      </None>
     </ItemGroup>
 </Project>
