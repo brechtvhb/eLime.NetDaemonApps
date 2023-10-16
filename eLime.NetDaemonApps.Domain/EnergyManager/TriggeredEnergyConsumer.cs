@@ -120,7 +120,7 @@ public class TriggeredEnergyConsumer : EnergyConsumer
 
     public override void TurnOff()
     {
-        if (ShutDownOnComplete)
+        if (CanForceShutdown || (ShutDownOnComplete && StateSensor.State == CompletedState))
             Socket.TurnOff();
     }
 
