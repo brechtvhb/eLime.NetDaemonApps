@@ -1,4 +1,7 @@
 ﻿using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
+using eLime.NetDaemonApps.Domain.Helper;
+using Microsoft.Extensions.Logging;
+using System.Reactive.Concurrency;
 
 namespace eLime.NetDaemonApps.Domain.SmartIrrigation;
 
@@ -17,6 +20,9 @@ public abstract class IrrigationZone : IDisposable
     public ZoneMode Mode { get; private set; }
 
     public DateTimeOffset? LastNotification { get; private set; }
+
+    public IDisposable? ModeChangedCommandHandler { get; set; }
+    public IDisposable? StopTimer { get; set; }
 
     internal IrrigationZoneFileStorage ToFileStorage() => new()
     {
@@ -70,10 +76,45 @@ public abstract class IrrigationZone : IDisposable
         Mode = mode;
     }
 
-    public void SetStartWateringDate(DateTimeOffset now)
+    public void Started(ILogger logger, IScheduler scheduler, DateTimeOffset? startTime = null)
     {
-        WateringStartedAt = now;
+        WateringStartedAt = startTime;
+
+
+        if (WateringStartedAt == null)
+            return;
+
+        if (this is not IZoneWithLimitedRuntime limitedRunTimeZone)
+            return;
+
+        //Disable automatic turning off of watering for this zone type when mode is off. For other zones automatic turn off is enabled when mode is off because I forget tend to forget that I turned it on manually.
+        if (this is AntiFrostMistingIrrigationZone && Mode == ZoneMode.Off)
+            return;
+
+        var timespan = limitedRunTimeZone.GetRunTime(scheduler.Now);
+
+        switch (timespan)
+        {
+            case null:
+                return;
+            case not null when timespan <= TimeSpan.Zero:
+                logger.LogDebug("{IrrigationZone}: Will stop irrigation for this zone right now.", Name);
+                Valve.TurnOff();
+                return;
+            case not null when timespan > TimeSpan.Zero:
+                logger.LogDebug("{IrrigationZone}: Will stop irrigation for this zone in '{TimeSpan}'", Name, timespan.Round().ToString());
+                StopTimer = scheduler.Schedule(timespan.Value, Valve.TurnOff);
+                return;
+        }
+
         CheckDesiredState();
+    }
+
+    public void Stop()
+    {
+        Valve.TurnOff();
+        StopTimer?.Dispose();
+        StopTimer = null;
     }
 
     public void SetLastWateringDate(DateTimeOffset now)
@@ -134,6 +175,9 @@ public abstract class IrrigationZone : IDisposable
 
     public void Dispose()
     {
+        ModeChangedCommandHandler?.Dispose();
+        StopTimer?.Dispose();
+
         Valve.TurnedOn -= Valve_TurnedOn;
         Valve.TurnedOn -= Valve_TurnedOff;
         Valve.Dispose();

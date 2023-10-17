@@ -60,7 +60,7 @@ public class ClassicIrrigationTests
 
 
         //Assert
-        Assert.AreEqual(NeedsWatering.Yes, irrigation.Zones.First().Zone.State);
+        Assert.AreEqual(NeedsWatering.Yes, irrigation.Zones.First().State);
         _testCtx.VerifySwitchTurnOn(new BinarySwitch(_testCtx.HaContext, "switch.front_yard_valve"), Moq.Times.Once);
     }
 
@@ -84,7 +84,7 @@ public class ClassicIrrigationTests
 
 
         //Assert
-        Assert.AreEqual(NeedsWatering.Critical, irrigation.Zones.First().Zone.State);
+        Assert.AreEqual(NeedsWatering.Critical, irrigation.Zones.First().State);
         _testCtx.VerifySwitchTurnOn(new BinarySwitch(_testCtx.HaContext, "switch.front_yard_valve"), Moq.Times.Once);
     }
 
@@ -111,7 +111,7 @@ public class ClassicIrrigationTests
 
 
         //Assert
-        Assert.AreEqual(NeedsWatering.No, irrigation.Zones.First().Zone.State);
+        Assert.AreEqual(NeedsWatering.No, irrigation.Zones.First().State);
         _testCtx.VerifySwitchTurnOff(new BinarySwitch(_testCtx.HaContext, "switch.front_yard_valve"), Moq.Times.Once);
     }
 
@@ -228,7 +228,7 @@ public class ClassicIrrigationTests
 
 
         //Assert
-        Assert.AreEqual(NeedsWatering.Yes, irrigation.Zones.First().Zone.State);
+        Assert.AreEqual(NeedsWatering.Yes, irrigation.Zones.First().State);
         _testCtx.VerifySwitchTurnOn(new BinarySwitch(_testCtx.HaContext, "switch.front_yard_valve"), Moq.Times.Once);
     }
 
@@ -256,7 +256,7 @@ public class ClassicIrrigationTests
 
 
         //Assert
-        Assert.AreEqual(NeedsWatering.Yes, irrigation.Zones.First().Zone.State);
+        Assert.AreEqual(NeedsWatering.Yes, irrigation.Zones.First().State);
         _testCtx.VerifySwitchTurnOn(new BinarySwitch(_testCtx.HaContext, "switch.front_yard_valve"), Moq.Times.Never);
     }
 
@@ -287,7 +287,7 @@ public class ClassicIrrigationTests
 
 
         //Assert
-        Assert.AreEqual(NeedsWatering.Ongoing, irrigation.Zones.First().Zone.State);
+        Assert.AreEqual(NeedsWatering.Ongoing, irrigation.Zones.First().State);
         _testCtx.VerifySwitchTurnOff(new BinarySwitch(_testCtx.HaContext, "switch.front_yard_valve"), Moq.Times.Once);
     }
 
@@ -315,7 +315,7 @@ public class ClassicIrrigationTests
 
 
         //Assert
-        Assert.AreEqual(NeedsWatering.Yes, irrigation.Zones.First().Zone.State);
+        Assert.AreEqual(NeedsWatering.Yes, irrigation.Zones.First().State);
         _testCtx.VerifySwitchTurnOn(new BinarySwitch(_testCtx.HaContext, "switch.front_yard_valve"), Moq.Times.Once);
     }
 
@@ -345,8 +345,8 @@ public class ClassicIrrigationTests
         _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(121));
 
 
-        //Assert
-        Assert.AreEqual(NeedsWatering.Ongoing, irrigation.Zones.First().Zone.State);
+        //Assert    
+        Assert.AreEqual(NeedsWatering.Ongoing, irrigation.Zones.First().State);
         _testCtx.VerifySwitchTurnOff(new BinarySwitch(_testCtx.HaContext, "switch.front_yard_valve"), Moq.Times.Once);
     }
 
@@ -379,7 +379,7 @@ public class ClassicIrrigationTests
 
 
         //Assert
-        Assert.AreEqual(NeedsWatering.Ongoing, irrigation.Zones.First().Zone.State);
+        Assert.AreEqual(NeedsWatering.Ongoing, irrigation.Zones.First().State);
         _testCtx.VerifySwitchTurnOff(new BinarySwitch(_testCtx.HaContext, "switch.front_yard_valve"), Moq.Times.Once);
     }
 
@@ -411,7 +411,7 @@ public class ClassicIrrigationTests
 
 
         //Assert
-        Assert.AreEqual(NeedsWatering.Ongoing, irrigation.Zones.First().Zone.State);
+        Assert.AreEqual(NeedsWatering.Ongoing, irrigation.Zones.First().State);
         _testCtx.VerifySwitchTurnOff(new BinarySwitch(_testCtx.HaContext, "switch.front_yard_valve"), Moq.Times.Once);
     }
 }

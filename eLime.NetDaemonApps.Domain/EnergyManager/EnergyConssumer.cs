@@ -27,6 +27,9 @@ public abstract class EnergyConsumer : IDisposable
     public DateTimeOffset? StartedAt { get; private set; }
     public DateTimeOffset? LastRun { get; private set; }
     public EnergyConsumerState State { get; private set; }
+    public IDisposable? StopTimer { get; set; }
+
+    public event EventHandler<EnergyConsumerStateChangedEvent>? StateChanged;
 
     internal EnergyConsumerFileStorage ToFileStorage() => new()
     {
@@ -34,10 +37,6 @@ public abstract class EnergyConsumer : IDisposable
         StartedAt = StartedAt,
         LastRun = LastRun,
     };
-
-    public IDisposable? StopTimer { get; set; }
-
-    public event EventHandler<EnergyConsumerStateChangedEvent>? StateChanged;
 
     protected void SetCommonFields(String name, NumericEntity powerUsage, BinarySensor? criticallyNeeded, Double switchOnLoad, Double switchOffLoad, TimeSpan? minimumRuntime, TimeSpan? maximumRuntime, TimeSpan? minimumTimeout, TimeSpan? maximumTimeout, List<TimeWindow> timeWindows)
     {

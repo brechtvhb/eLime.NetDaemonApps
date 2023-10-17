@@ -62,7 +62,7 @@ public class ContainerIrrigationTests
 
 
         //Assert
-        Assert.AreEqual(NeedsWatering.Yes, irrigation.Zones.First().Zone.State);
+        Assert.AreEqual(NeedsWatering.Yes, irrigation.Zones.First().State);
         _testCtx.VerifySwitchTurnOn(new BinarySwitch(_testCtx.HaContext, "switch.pond_valve"), Moq.Times.Once);
     }
 
@@ -88,7 +88,7 @@ public class ContainerIrrigationTests
 
 
         //Assert
-        Assert.AreEqual(NeedsWatering.Critical, irrigation.Zones.First().Zone.State);
+        Assert.AreEqual(NeedsWatering.Critical, irrigation.Zones.First().State);
     }
 
     [TestMethod]
@@ -115,7 +115,7 @@ public class ContainerIrrigationTests
 
 
         //Assert
-        Assert.AreEqual(NeedsWatering.No, irrigation.Zones.First().Zone.State);
+        Assert.AreEqual(NeedsWatering.No, irrigation.Zones.First().State);
         _testCtx.VerifySwitchTurnOff(new BinarySwitch(_testCtx.HaContext, "switch.pond_valve"), Moq.Times.Once);
     }
 
@@ -143,7 +143,7 @@ public class ContainerIrrigationTests
 
 
         //Assert
-        Assert.AreEqual(NeedsWatering.No, irrigation.Zones.First().Zone.State);
+        Assert.AreEqual(NeedsWatering.No, irrigation.Zones.First().State);
         _testCtx.VerifySwitchTurnOff(new BinarySwitch(_testCtx.HaContext, "switch.pond_valve"), Moq.Times.Once);
     }
 
@@ -169,6 +169,6 @@ public class ContainerIrrigationTests
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("switch.pond_valve"), "on");
 
         //Assert
-        Assert.AreEqual(NeedsWatering.Ongoing, irrigation.Zones.First().Zone.State);
+        Assert.AreEqual(NeedsWatering.Ongoing, irrigation.Zones.First().State);
     }
 }

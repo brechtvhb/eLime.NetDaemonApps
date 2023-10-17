@@ -91,7 +91,7 @@ public class SmartWateringTests
         Assert.AreEqual(_availableRainWaterSensor.EntityId, irrigation.AvailableRainWaterSensor.EntityId);
         Assert.AreEqual(1000, irrigation.MinimumAvailableRainWater);
 
-        Assert.AreEqual("pond", irrigation.Zones.First().Zone.Name);
+        Assert.AreEqual("pond", irrigation.Zones.First().Name);
     }
 
     //General
@@ -116,9 +116,9 @@ public class SmartWateringTests
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("switch.pond_valve"), "on");
 
         //Assert
-        Assert.AreEqual(NeedsWatering.Ongoing, irrigation.Zones.First().Zone.State);
-        Assert.AreEqual(_testCtx.Scheduler.Now, irrigation.Zones.First().Zone.WateringStartedAt);
-        Assert.AreEqual(true, irrigation.Zones.First().Zone.CurrentlyWatering);
+        Assert.AreEqual(NeedsWatering.Ongoing, irrigation.Zones.First().State);
+        Assert.AreEqual(_testCtx.Scheduler.Now, irrigation.Zones.First().WateringStartedAt);
+        Assert.AreEqual(true, irrigation.Zones.First().CurrentlyWatering);
     }
 
 
@@ -150,8 +150,8 @@ public class SmartWateringTests
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.front_yard_soil_moisture"), "34");
 
         //Assert
-        Assert.AreEqual(NeedsWatering.Ongoing, irrigation.Zones.Single(x => x.Zone.Name == "pond").Zone.State);
-        Assert.AreEqual(NeedsWatering.Yes, irrigation.Zones.Single(x => x.Zone.Name == "front yard").Zone.State);
+        Assert.AreEqual(NeedsWatering.Ongoing, irrigation.Zones.Single(x => x.Name == "pond").State);
+        Assert.AreEqual(NeedsWatering.Yes, irrigation.Zones.Single(x => x.Name == "front yard").State);
 
         _testCtx.VerifySwitchTurnOn(new BinarySwitch(_testCtx.HaContext, "switch.front_yard_valve"), Moq.Times.Once);
     }
@@ -186,8 +186,8 @@ public class SmartWateringTests
 
 
         //Assert
-        Assert.AreEqual(NeedsWatering.Ongoing, irrigation.Zones.Single(x => x.Zone.Name == "pond").Zone.State);
-        Assert.AreEqual(NeedsWatering.Yes, irrigation.Zones.Single(x => x.Zone.Name == "front yard").Zone.State);
+        Assert.AreEqual(NeedsWatering.Ongoing, irrigation.Zones.Single(x => x.Name == "pond").State);
+        Assert.AreEqual(NeedsWatering.Yes, irrigation.Zones.Single(x => x.Name == "front yard").State);
 
         _testCtx.VerifySwitchTurnOn(new BinarySwitch(_testCtx.HaContext, "switch.front_yard_valve"), Moq.Times.Never);
     }

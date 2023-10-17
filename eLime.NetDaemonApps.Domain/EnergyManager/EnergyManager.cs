@@ -56,6 +56,7 @@ public class EnergyManager : IDisposable
         foreach (var energyConsumer in Consumers)
         {
             InitializeConsumerSensor(energyConsumer).RunSync();
+            InitializeState(energyConsumer);
             energyConsumer.StateChanged += EnergyConsumer_StateChanged;
         }
 
@@ -231,10 +232,10 @@ public class EnergyManager : IDisposable
         var stateName = $"sensor.energy_manager_state";
         var state = _haContext.Entity(stateName).State;
 
-        if (state == null || string.Equals(state, "unavailable", StringComparison.InvariantCultureIgnoreCase))
+        if (state == null)
         {
             _logger.LogDebug("Creating Energy manager state sensor in home assistant.");
-            var entityOptions = new EnumSensorOptions() { Icon = "fapro:square-bolt", Device = GetGlobalDevice(), Options = Enum<EnergyConsumerState>.AllValuesAsStringList() };
+            var entityOptions = new EnumSensorOptions { Icon = "fapro:square-bolt", Device = GetGlobalDevice(), Options = Enum<EnergyConsumerState>.AllValuesAsStringList() };
 
             await _mqttEntityManager.CreateAsync(stateName, new EntityCreationOptions(DeviceClass: "enum", UniqueId: stateName, Name: $"Energy manager state", Persist: true), entityOptions);
             await _mqttEntityManager.SetStateAsync(stateName, State.ToString());
@@ -246,7 +247,6 @@ public class EnergyManager : IDisposable
     {
         _logger.LogDebug("{Consumer}: Initializing", consumer.Name);
         var stateName = $"sensor.energy_consumer_{consumer.Name.MakeHaFriendly()}_state";
-
         var state = _haContext.Entity(stateName).State;
 
         if (state == null)
@@ -258,15 +258,16 @@ public class EnergyManager : IDisposable
             await _mqttEntityManager.CreateAsync(stateName, new EntityCreationOptions(DeviceClass: "enum", UniqueId: stateName, Name: $"Consumer state - {consumer.Name}", Persist: true), entityOptions);
             await _mqttEntityManager.SetStateAsync(stateName, consumer.State.ToString());
         }
-        else
-        {
-            var storedEnergyConsumerState = _fileStorage.Get<EnergyConsumerFileStorage>("EnergyManager", $"{consumer.Name.MakeHaFriendly()}");
+    }
 
-            if (storedEnergyConsumerState == null)
-                return;
+    private void InitializeState(EnergyConsumer consumer)
+    {
+        var storedEnergyConsumerState = _fileStorage.Get<EnergyConsumerFileStorage>("EnergyManager", $"{consumer.Name.MakeHaFriendly()}");
 
-            consumer.SetState(_logger, _scheduler, storedEnergyConsumerState.State, storedEnergyConsumerState.StartedAt, storedEnergyConsumerState.LastRun);
-        }
+        if (storedEnergyConsumerState == null)
+            return;
+
+        consumer.SetState(_logger, _scheduler, storedEnergyConsumerState.State, storedEnergyConsumerState.StartedAt, storedEnergyConsumerState.LastRun);
     }
 
     public Device GetGlobalDevice()

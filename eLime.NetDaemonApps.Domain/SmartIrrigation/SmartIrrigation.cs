@@ -15,7 +15,7 @@ namespace eLime.NetDaemonApps.Domain.SmartIrrigation;
 
 public class SmartIrrigation : IDisposable
 {
-    public List<ZoneWrapper> Zones { get; }
+    public List<IrrigationZone> Zones { get; }
 
     public BinarySwitch PumpSocket { get; }
     public Int32 PumpFlowRate { get; }
@@ -32,11 +32,11 @@ public class SmartIrrigation : IDisposable
 
     public Boolean EnergyAvailable { get; internal set; }
 
-    public NeedsWatering State => Zones.Any(x => x.Zone.State == NeedsWatering.Critical)
+    public NeedsWatering State => Zones.Any(x => x.State == NeedsWatering.Critical)
         ? NeedsWatering.Critical
-        : Zones.Any(x => x.Zone.State == NeedsWatering.Yes)
+        : Zones.Any(x => x.State == NeedsWatering.Yes)
             ? NeedsWatering.Yes
-            : Zones.Any(x => x.Zone.State == NeedsWatering.Ongoing)
+            : Zones.Any(x => x.State == NeedsWatering.Ongoing)
                 ? NeedsWatering.Ongoing
                 : NeedsWatering.No;
 
@@ -69,17 +69,18 @@ public class SmartIrrigation : IDisposable
         Services = new Service(_haContext);
         PhoneToNotify = phoneToNotify;
 
-        Zones = zones.Select(x => new ZoneWrapper { Zone = x }).ToList();
+        Zones = zones;
 
         InitializeStateSensor().RunSync();
         InitializeSolarEnergyAvailableSwitch().RunSync();
 
-        foreach (var wrapper in Zones)
+        foreach (var zone in Zones)
         {
-            InitializeModeDropdown(wrapper).RunSync();
-            InitializeZoneStateSensor(wrapper).RunSync();
-            wrapper.Zone.StateChanged += Zone_StateChanged;
-            wrapper.Zone.CheckDesiredState();
+            InitializeModeDropdown(zone).RunSync();
+            InitializeZoneStateSensor(zone).RunSync();
+            InitializeState(zone);
+            zone.StateChanged += Zone_StateChanged;
+            zone.CheckDesiredState();
         }
 
         if (debounceDuration != TimeSpan.Zero)
@@ -99,11 +100,11 @@ public class SmartIrrigation : IDisposable
 
     private void Zone_StateChanged(object? sender, IrrigationZoneStateChangedEvent e)
     {
-        var zoneWrapper = Zones.Single(x => x.Zone.Name == e.Zone.Name);
+        var zone = Zones.Single(x => x.Name == e.Zone.Name);
 
         if (e.Zone.Mode == ZoneMode.Off)
         {
-            var canSendNotification = zoneWrapper.Zone.LastNotification == null || zoneWrapper.Zone.LastNotification.Value.AddHours(4) < _scheduler.Now;
+            var canSendNotification = zone.LastNotification == null || zone.LastNotification.Value.AddHours(4) < _scheduler.Now;
             switch (e)
             {
                 case IrrigationZoneWateringNeededEvent { State: NeedsWatering.Critical } when !String.IsNullOrWhiteSpace(PhoneToNotify) && canSendNotification:
@@ -115,10 +116,10 @@ public class SmartIrrigation : IDisposable
                     e.Zone.NotificationSent(_scheduler.Now);
                     break;
                 case IrrigationZoneWateringStartedEvent:
-                    SetEndWateringTimer(zoneWrapper, _scheduler.Now);
+                    zone.Started(_logger, _scheduler, _scheduler.Now);
                     break;
                 case IrrigationZoneWateringEndedEvent:
-                    zoneWrapper.Zone.SetLastWateringDate(_scheduler.Now);
+                    zone.SetLastWateringDate(_scheduler.Now);
                     break;
             }
             UpdateStateInHomeAssistant().RunSync();
@@ -133,53 +134,20 @@ public class SmartIrrigation : IDisposable
                 DebounceStartWatering();
                 break;
             case IrrigationZoneWateringStartedEvent:
-                SetEndWateringTimer(zoneWrapper, _scheduler.Now);
+                zone.Started(_logger,_scheduler, _scheduler.Now);
                 break;
             case IrrigationZoneEndWateringEvent:
-                zoneWrapper.Zone.Valve.TurnOff();
-                zoneWrapper.EndWateringtimer?.Dispose();
-
+                zone.Stop();
                 DebounceStartWatering();
                 break;
             case IrrigationZoneWateringEndedEvent:
-                zoneWrapper.Zone.SetLastWateringDate(_scheduler.Now);
+                zone.SetLastWateringDate(_scheduler.Now);
                 break;
         }
 
         UpdateStateInHomeAssistant().RunSync();
     }
 
-    private void SetEndWateringTimer(ZoneWrapper zoneWrapper, DateTimeOffset? startTime = null)
-    {
-        if (startTime != null)
-            zoneWrapper.Zone.SetStartWateringDate(startTime.Value);
-
-        if (zoneWrapper.Zone.WateringStartedAt == null)
-            return;
-
-        if (zoneWrapper.Zone is not IZoneWithLimitedRuntime limitedRunTimeZone)
-            return;
-
-        //Disable automatic turning off of watering for this zone type when mode is off. For other zones automatic turn off is enabled when mode is off because I forget tend to forget that I turned it on manually.
-        if (zoneWrapper.Zone is AntiFrostMistingIrrigationZone && zoneWrapper.Zone.Mode == ZoneMode.Off)
-            return;
-
-        var timespan = limitedRunTimeZone.GetRunTime(_scheduler.Now);
-
-        switch (timespan)
-        {
-            case null:
-                return;
-            case not null when timespan <= TimeSpan.Zero:
-                _logger.LogDebug("{IrrigationZone}: Will stop irrigation for this zone right now.", zoneWrapper.Zone.Name);
-                zoneWrapper.Zone.Valve.TurnOff();
-                return;
-            case not null when timespan > TimeSpan.Zero:
-                _logger.LogDebug("{IrrigationZone}: Will stop irrigation for this zone in '{TimeSpan}'", zoneWrapper.Zone.Name, timespan.Round().ToString());
-                zoneWrapper.EndWateringtimer = _scheduler.Schedule(timespan.Value, zoneWrapper.Zone.Valve.TurnOff);
-                return;
-        }
-    }
 
     private readonly DebounceDispatcher? StartWateringDebounceDispatcher;
     internal void DebounceStartWatering()
@@ -206,10 +174,10 @@ public class SmartIrrigation : IDisposable
         if (predictedRain > RainPredictionLiters)
             return;
 
-        var totalFlowRate = Zones.Where(x => x.Zone.CurrentlyWatering).Sum(x => x.Zone.FlowRate);
+        var totalFlowRate = Zones.Where(x => x.CurrentlyWatering).Sum(x => x.FlowRate);
         var remainingFlowRate = PumpFlowRate - totalFlowRate;
 
-        var criticalZonesThatNeedWatering = Zones.Where(x => x.Zone is { State: NeedsWatering.Critical, CurrentlyWatering: false });
+        var criticalZonesThatNeedWatering = Zones.Where(x => x is { State: NeedsWatering.Critical, CurrentlyWatering: false });
 
         foreach (var criticalZone in criticalZonesThatNeedWatering)
         {
@@ -217,19 +185,19 @@ public class SmartIrrigation : IDisposable
             if (!started)
                 continue;
 
-            _logger.LogDebug("{IrrigationZone}: Will start irrigation, zone is in critical need of water.", criticalZone.Zone.Name);
-            remainingFlowRate -= criticalZone.Zone.FlowRate;
+            _logger.LogDebug("{IrrigationZone}: Will start irrigation, zone is in critical need of water.", criticalZone.Name);
+            remainingFlowRate -= criticalZone.FlowRate;
         }
 
-        var zonesThatNeedWatering = Zones.Where(x => x.Zone is { State: NeedsWatering.Yes, CurrentlyWatering: false });
+        var zonesThatNeedWatering = Zones.Where(x => x is { State: NeedsWatering.Yes, CurrentlyWatering: false });
         foreach (var zone in zonesThatNeedWatering)
         {
             var started = StartWateringIfNeeded(zone, remainingFlowRate);
             if (!started)
                 continue;
 
-            _logger.LogDebug("{IrrigationZone}: Will start irrigation.", zone.Zone.Name);
-            remainingFlowRate -= zone.Zone.FlowRate;
+            _logger.LogDebug("{IrrigationZone}: Will start irrigation.", zone.Name);
+            remainingFlowRate -= zone.FlowRate;
         }
     }
 
@@ -249,68 +217,66 @@ public class SmartIrrigation : IDisposable
     {
         if (AvailableRainWaterSensor.State < MinimumAvailableRainWater)
         {
-            var zonesThatAreWatering = Zones.Where(x => x.Zone.State == NeedsWatering.Ongoing).ToList();
+            var zonesThatAreWatering = Zones.Where(x => x.State == NeedsWatering.Ongoing).ToList();
             if (!zonesThatAreWatering.Any())
                 return;
 
-            foreach (var wrapper in zonesThatAreWatering)
-                wrapper.Zone.Valve.TurnOff();
+            foreach (var zone in zonesThatAreWatering)
+                zone.Valve.TurnOff();
 
             _logger.LogInformation("Stopping watering because available rain water ({AvailableRainWater}) went below minimum available rain water needed ({MinimumAvailableRainWater}).", AvailableRainWaterSensor.State, MinimumAvailableRainWater);
 
             return;
         }
 
-        var zonesThatShouldForceStopped = Zones.Where(x => x.Zone.CheckForForceStop(_scheduler.Now) && x.Zone.CurrentlyWatering);
-        foreach (var wrapper in zonesThatShouldForceStopped)
+        var zonesThatShouldForceStopped = Zones.Where(x => x.CheckForForceStop(_scheduler.Now) && x.CurrentlyWatering);
+        foreach (var zone in zonesThatShouldForceStopped)
         {
-            _logger.LogDebug("{IrrigationZone}: Will stop irrigation for this zone right now.", wrapper.Zone.Name);
-            wrapper.Zone.Valve.TurnOff();
+            _logger.LogDebug("{IrrigationZone}: Will stop irrigation for this zone right now.", zone.Name);
+            zone.Valve.TurnOff();
         }
 
-        var zonesThatNoLongerNeedWatering = Zones.Where(x => x.Zone is { State: NeedsWatering.No, CurrentlyWatering: true });
-        foreach (var wrapper in zonesThatNoLongerNeedWatering)
+        var zonesThatNoLongerNeedWatering = Zones.Where(x => x is { State: NeedsWatering.No, CurrentlyWatering: true });
+        foreach (var zone in zonesThatNoLongerNeedWatering)
         {
-            _logger.LogDebug("{IrrigationZone}: Will stop irrigation for this zone because it no longer needs watering.", wrapper.Zone.Name);
-            wrapper.Zone.Valve.TurnOff();
+            _logger.LogDebug("{IrrigationZone}: Will stop irrigation for this zone because it no longer needs watering.", zone.Name);
+            zone.Valve.TurnOff();
         }
 
         if (EnergyAvailable)
             return;
 
-        var zonesWorkingOnAvailableEnergy = Zones.Where(x => x.Zone is { Mode: ZoneMode.EnergyManaged, CurrentlyWatering: true });
-        foreach (var wrapper in zonesWorkingOnAvailableEnergy)
+        var zonesWorkingOnAvailableEnergy = Zones.Where(x => x is { Mode: ZoneMode.EnergyManaged, CurrentlyWatering: true });
+        foreach (var zone in zonesWorkingOnAvailableEnergy)
         {
-            _logger.LogDebug("{IrrigationZone}: Will stop irrigation for this zone because not enough power is available", wrapper.Zone.Name);
-            wrapper.Zone.Valve.TurnOff();
+            _logger.LogDebug("{IrrigationZone}: Will stop irrigation for this zone because not enough power is available", zone.Name);
+            zone.Valve.TurnOff();
         }
     }
 
-    private bool StartWateringIfNeeded(ZoneWrapper wrapper, int remainingFlowRate)
+    private bool StartWateringIfNeeded(IrrigationZone zone, int remainingFlowRate)
     {
-        if (wrapper.Zone.FlowRate > remainingFlowRate)
+        if (zone.FlowRate > remainingFlowRate)
         {
             return false;
         }
 
-        if (wrapper.Zone.Mode == ZoneMode.Off)
+        if (zone.Mode == ZoneMode.Off)
             return false;
 
-        if (!wrapper.Zone.CanStartWatering(_scheduler.Now, EnergyAvailable))
+        if (!zone.CanStartWatering(_scheduler.Now, EnergyAvailable))
             return false;
 
-        wrapper.Zone.Valve.TurnOn();
+        zone.Valve.TurnOn();
         return true;
     }
 
     public void Dispose()
     {
-        foreach (var wrapper in Zones)
+        foreach (var zone in Zones)
         {
-            _logger.LogInformation("Disposing irrigation zone: {IrrigationZone}", wrapper.Zone.Name);
-            wrapper.Zone.Dispose();
-            wrapper.ModeChangedCommandHandler?.Dispose();
-            wrapper.EndWateringtimer?.Dispose();
+            _logger.LogInformation("Disposing irrigation zone: {IrrigationZone}", zone.Name);
+            zone.Dispose();
         }
 
         PumpSocket.Dispose();
@@ -368,9 +334,8 @@ public class SmartIrrigation : IDisposable
             await _mqttEntityManager.SetStateAsync(stateName, State.ToString());
         }
     }
-    private async Task InitializeModeDropdown(ZoneWrapper wrapper)
+    private async Task InitializeModeDropdown(IrrigationZone zone)
     {
-        var zone = wrapper.Zone;
         var selectName = $"select.irrigation_zone_{zone.Name.MakeHaFriendly()}_mode";
         var state = _haContext.Entity(selectName).State;
 
@@ -388,26 +353,12 @@ public class SmartIrrigation : IDisposable
             await _mqttEntityManager.SetStateAsync(selectName, ZoneMode.Off.ToString());
             zone.SetMode(ZoneMode.Off);
         }
-        else
-        {
-            _logger.LogDebug("{IrrigationZone}: Initializing zone.", zone.Name);
-            var storedIrrigationZoneState = _fileStorage.Get<IrrigationZoneFileStorage>("SmartIrrigation", $"{zone.Name.MakeHaFriendly()}");
-
-            if (storedIrrigationZoneState == null)
-                return;
-
-            zone.SetMode(storedIrrigationZoneState.Mode);
-            zone.SetState(storedIrrigationZoneState.State, storedIrrigationZoneState.StartedAt, storedIrrigationZoneState.LastRun);
-
-            SetEndWateringTimer(wrapper);
-        }
 
         var observer = await _mqttEntityManager.PrepareCommandSubscriptionAsync(selectName);
-        wrapper.ModeChangedCommandHandler = observer.SubscribeAsync(SetZoneModeHandler(zone, selectName));
+        zone.ModeChangedCommandHandler = observer.SubscribeAsync(SetZoneModeHandler(zone, selectName));
     }
-    private async Task InitializeZoneStateSensor(ZoneWrapper wrapper)
+    private async Task InitializeZoneStateSensor(IrrigationZone zone)
     {
-        var zone = wrapper.Zone;
         var stateName = $"sensor.irrigation_zone_{zone.Name.MakeHaFriendly()}_state";
         var state = _haContext.Entity(stateName).State;
 
@@ -420,6 +371,21 @@ public class SmartIrrigation : IDisposable
             await _mqttEntityManager.CreateAsync(stateName, new EntityCreationOptions(UniqueId: stateName, Name: $"Irrigation zone state - {zone.Name}", Persist: true), entityOptions);
             await _mqttEntityManager.SetStateAsync(stateName, zone.State.ToString());
         }
+    }
+
+
+    private void InitializeState(IrrigationZone zone)
+    {
+        _logger.LogDebug("{IrrigationZone}: Initializing zone.", zone.Name);
+        var storedIrrigationZoneState = _fileStorage.Get<IrrigationZoneFileStorage>("SmartIrrigation", $"{zone.Name.MakeHaFriendly()}");
+
+        if (storedIrrigationZoneState == null)
+            return;
+
+        zone.SetMode(storedIrrigationZoneState.Mode);
+        zone.SetState(storedIrrigationZoneState.State, storedIrrigationZoneState.StartedAt, storedIrrigationZoneState.LastRun);
+
+        zone.Started(_logger, _scheduler);
     }
 
     public Device GetZoneDevice(IrrigationZone zone)
@@ -449,30 +415,30 @@ public class SmartIrrigation : IDisposable
         var globalAttributes = new SmartIrrigationStateAttributes()
         {
             LastUpdated = DateTime.Now.ToString("O"),
-            WateringOngoingZones = Zones.Where(x => x.Zone.State == NeedsWatering.Ongoing).Select(x => x.Zone.Name).ToList(),
-            NeedWaterZones = Zones.Where(x => x.Zone.State == NeedsWatering.Yes).Select(x => x.Zone.Name).ToList(),
-            CriticalNeedWaterZones = Zones.Where(x => x.Zone.State == NeedsWatering.Critical).Select(x => x.Zone.Name).ToList()
+            WateringOngoingZones = Zones.Where(x => x.State == NeedsWatering.Ongoing).Select(x => x.Name).ToList(),
+            NeedWaterZones = Zones.Where(x => x.State == NeedsWatering.Yes).Select(x => x.Name).ToList(),
+            CriticalNeedWaterZones = Zones.Where(x => x.State == NeedsWatering.Critical).Select(x => x.Name).ToList()
         };
         await _mqttEntityManager.SetAttributesAsync("sensor.irrigation_state", globalAttributes);
 
         foreach (var wrapper in Zones)
         {
-            var selectName = $"select.irrigation_zone_{wrapper.Zone.Name.MakeHaFriendly()}_mode";
-            var stateName = $"sensor.irrigation_zone_{wrapper.Zone.Name.MakeHaFriendly()}_state";
+            var selectName = $"select.irrigation_zone_{wrapper.Name.MakeHaFriendly()}_mode";
+            var stateName = $"sensor.irrigation_zone_{wrapper.Name.MakeHaFriendly()}_state";
 
             var attributes = new SmartIrrigationZoneAttributes()
             {
                 LastUpdated = DateTime.Now.ToString("O"),
-                WateringStartedAt = wrapper.Zone.WateringStartedAt?.ToString("O"),
-                LastWatering = wrapper.Zone.LastWatering?.ToString("O"),
+                WateringStartedAt = wrapper.WateringStartedAt?.ToString("O"),
+                LastWatering = wrapper.LastWatering?.ToString("O"),
                 Icon = "far:sprinkler"
             };
             await _mqttEntityManager.SetAttributesAsync(selectName, attributes);
-            await _mqttEntityManager.SetStateAsync(stateName, wrapper.Zone.State.ToString());
+            await _mqttEntityManager.SetStateAsync(stateName, wrapper.State.ToString());
 
-            _fileStorage.Save("SmartIrrigation", $"{wrapper.Zone.Name.MakeHaFriendly()}", wrapper.Zone.ToFileStorage());
+            _fileStorage.Save("SmartIrrigation", $"{wrapper.Name.MakeHaFriendly()}", wrapper.ToFileStorage());
 
-            _logger.LogTrace("{IrrigationZone}: Update Zone state sensor in home assistant (attributes: {Attributes})", wrapper.Zone.Name, attributes);
+            _logger.LogTrace("{IrrigationZone}: Update Zone state sensor in home assistant (attributes: {Attributes})", wrapper.Name, attributes);
         }
     }
 }
