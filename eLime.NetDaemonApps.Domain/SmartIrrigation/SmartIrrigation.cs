@@ -367,10 +367,10 @@ public class SmartIrrigation : IDisposable
             //await _mqttEntityManager.CreateAsync($"{baseName}_state", new EntityCreationOptions(UniqueId: $"{baseName}_state", Name: $"Irrigation zone {zone.Name} - State", Persist: true), stateOptions);
 
             var startedAtOptions = new EntityOptions { Icon = "mdi:calendar-start-outline", Device = GetZoneDevice(zone) };
-            await _mqttEntityManager.CreateAsync($"{baseName}_started_at", new EntityCreationOptions(UniqueId: $"{baseName}_started_at", Name: $"Irrigation zone {zone.Name} - Started at", Persist: true), startedAtOptions);
+            await _mqttEntityManager.CreateAsync($"{baseName}_started_at", new EntityCreationOptions(UniqueId: $"{baseName}_started_at", Name: $"Irrigation zone {zone.Name} - Started at", DeviceClass: "timestamp", Persist: true), startedAtOptions);
 
             var lastWateringOptions = new EntityOptions { Icon = "fapro:calendar-day", Device = GetZoneDevice(zone) };
-            await _mqttEntityManager.CreateAsync($"{baseName}_last_watering", new EntityCreationOptions(UniqueId: $"{baseName}_last_watering", Name: $"Irrigation zone {zone.Name} - Last watering", Persist: true), lastWateringOptions);
+            await _mqttEntityManager.CreateAsync($"{baseName}_last_watering", new EntityCreationOptions(UniqueId: $"{baseName}_last_watering", Name: $"Irrigation zone {zone.Name} - Last watering", DeviceClass: "timestamp", Persist: true), lastWateringOptions);
         }
     }
 
