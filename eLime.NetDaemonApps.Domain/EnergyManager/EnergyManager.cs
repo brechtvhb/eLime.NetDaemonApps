@@ -250,12 +250,12 @@ public class EnergyManager : IDisposable
         var baseName = $"sensor.energy_consumer_{consumer.Name.MakeHaFriendly()}";
         var state = _haContext.Entity($"{baseName}_state").State;
 
-        if (state != null)
+        if (state == null)
         {
-            _logger.LogDebug("{Consumer}: Creating energy consumer state sensor in home assistant. State was '{State}'.", consumer.Name, state);
+            _logger.LogDebug("{Consumer}: Creating energy consumer sensors in home assistant.", consumer.Name);
 
-            //var stateOptions = new EnumSensorOptions { Icon = "fapro:bolt-auto", Device = GetConsumerDevice(consumer), Options = Enum<EnergyConsumerState>.AllValuesAsStringList() };
-            //await _mqttEntityManager.CreateAsync($"{baseName}_state", new EntityCreationOptions(DeviceClass: "enum", UniqueId: $"{baseName}_state", Name: $"Consumer {consumer.Name} - state", Persist: true), stateOptions);
+            var stateOptions = new EnumSensorOptions { Icon = "fapro:bolt-auto", Device = GetConsumerDevice(consumer), Options = Enum<EnergyConsumerState>.AllValuesAsStringList() };
+            await _mqttEntityManager.CreateAsync($"{baseName}_state", new EntityCreationOptions(DeviceClass: "enum", UniqueId: $"{baseName}_state", Name: $"Consumer {consumer.Name} - state", Persist: true), stateOptions);
 
             var startedAtOptions = new EntityOptions { Icon = "mdi:calendar-start-outline", Device = GetConsumerDevice(consumer) };
             await _mqttEntityManager.CreateAsync($"{baseName}_started_at", new EntityCreationOptions(UniqueId: $"{baseName}_started_at", Name: $"Consumer {consumer.Name} - Started at", DeviceClass: "timestamp", Persist: true), startedAtOptions);

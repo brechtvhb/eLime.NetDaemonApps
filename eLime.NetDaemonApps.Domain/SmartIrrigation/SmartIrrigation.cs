@@ -359,12 +359,12 @@ public class SmartIrrigation : IDisposable
         var baseName = $"sensor.irrigation_zone_{zone.Name.MakeHaFriendly()}";
         var state = _haContext.Entity($"{baseName}_state").State;
 
-        if (state != null)
+        if (state == null)
         {
             _logger.LogDebug("{IrrigationZone}: Creating Zone sensors in home assistant.", zone.Name);
 
-            //var stateOptions = new EnumSensorOptions { Icon = "fapro:sprinkler", Device = GetZoneDevice(zone), Options = Enum<NeedsWatering>.AllValuesAsStringList() };
-            //await _mqttEntityManager.CreateAsync($"{baseName}_state", new EntityCreationOptions(UniqueId: $"{baseName}_state", Name: $"Irrigation zone {zone.Name} - State", Persist: true), stateOptions);
+            var stateOptions = new EnumSensorOptions { Icon = "fapro:sprinkler", Device = GetZoneDevice(zone), Options = Enum<NeedsWatering>.AllValuesAsStringList() };
+            await _mqttEntityManager.CreateAsync($"{baseName}_state", new EntityCreationOptions(UniqueId: $"{baseName}_state", Name: $"Irrigation zone {zone.Name} - State", Persist: true), stateOptions);
 
             var startedAtOptions = new EntityOptions { Icon = "mdi:calendar-start-outline", Device = GetZoneDevice(zone) };
             await _mqttEntityManager.CreateAsync($"{baseName}_started_at", new EntityCreationOptions(UniqueId: $"{baseName}_started_at", Name: $"Irrigation zone {zone.Name} - Started at", DeviceClass: "timestamp", Persist: true), startedAtOptions);
