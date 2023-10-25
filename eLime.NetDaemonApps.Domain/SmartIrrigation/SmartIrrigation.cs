@@ -134,7 +134,7 @@ public class SmartIrrigation : IDisposable
                 DebounceStartWatering();
                 break;
             case IrrigationZoneWateringStartedEvent:
-                zone.Started(_logger,_scheduler, _scheduler.Now);
+                zone.Started(_logger, _scheduler, _scheduler.Now);
                 break;
             case IrrigationZoneEndWateringEvent:
                 zone.Stop();
@@ -293,7 +293,7 @@ public class SmartIrrigation : IDisposable
         if (state == null || string.Equals(state, "unavailable", StringComparison.InvariantCultureIgnoreCase))
         {
             _logger.LogDebug("Creating solar energy available switch.");
-            var entityOptions = new EntityOptions() { Icon = "mdi:solar-power", Device = GetGlobalDevice() };
+            var entityOptions = new EntityOptions { Icon = "mdi:solar-power", Device = GetGlobalDevice() };
             await _mqttEntityManager.CreateAsync(switchName, new EntityCreationOptions(DeviceClass: "switch", UniqueId: switchName, Name: $"Irrigation - Energy available", Persist: true), entityOptions);
             await _mqttEntityManager.SetStateAsync(switchName, "OFF");
         }
@@ -359,8 +359,8 @@ public class SmartIrrigation : IDisposable
     }
     private async Task InitializeZoneStateSensor(IrrigationZone zone)
     {
-        var stateName = $"sensor.irrigation_zone_{zone.Name.MakeHaFriendly()}_state";
-        var state = _haContext.Entity(stateName).State;
+        var baseName = $"sensor.irrigation_zone_{zone.Name.MakeHaFriendly()}";
+        var state = _haContext.Entity($"{baseName}_state").State;
 
         if (state == null)
         {
@@ -368,8 +368,14 @@ public class SmartIrrigation : IDisposable
 
             var entityOptions = new EntityOptions { Icon = "fapro:sprinkler", Device = GetZoneDevice(zone) };
 
-            await _mqttEntityManager.CreateAsync(stateName, new EntityCreationOptions(UniqueId: stateName, Name: $"Irrigation zone state - {zone.Name}", Persist: true), entityOptions);
-            await _mqttEntityManager.SetStateAsync(stateName, zone.State.ToString());
+            await _mqttEntityManager.CreateAsync($"{baseName}_state", new EntityCreationOptions(UniqueId: $"{baseName}_state", Name: $"Irrigation zone {zone.Name} - State", Persist: true), entityOptions);
+            await _mqttEntityManager.SetStateAsync($"{baseName}_state", zone.State.ToString());
+
+            await _mqttEntityManager.CreateAsync($"{baseName}_started_at", new EntityCreationOptions(UniqueId: $"{baseName}_started_at", Name: $"Irrigation zone {zone.Name} - Started at", DeviceClass: "date", Persist: true), entityOptions);
+            await _mqttEntityManager.SetStateAsync($"{baseName}_started_at", zone.WateringStartedAt?.ToString("O") ?? string.Empty);
+
+            await _mqttEntityManager.CreateAsync($"{baseName}_last_run", new EntityCreationOptions(UniqueId: $"{baseName}_last_run", Name: $"Irrigation zone {zone.Name} - Last watering", DeviceClass: "date", Persist: true), entityOptions);
+            await _mqttEntityManager.SetStateAsync($"{baseName}_last_run", zone.LastWatering?.ToString("O") ?? string.Empty);
         }
     }
 
@@ -421,24 +427,17 @@ public class SmartIrrigation : IDisposable
         };
         await _mqttEntityManager.SetAttributesAsync("sensor.irrigation_state", globalAttributes);
 
-        foreach (var wrapper in Zones)
+        foreach (var zone in Zones)
         {
-            var selectName = $"select.irrigation_zone_{wrapper.Name.MakeHaFriendly()}_mode";
-            var stateName = $"sensor.irrigation_zone_{wrapper.Name.MakeHaFriendly()}_state";
+            var baseName = $"sensor.irrigation_zone_{zone.Name.MakeHaFriendly()}";
 
-            var attributes = new SmartIrrigationZoneAttributes()
-            {
-                LastUpdated = DateTime.Now.ToString("O"),
-                WateringStartedAt = wrapper.WateringStartedAt?.ToString("O"),
-                LastWatering = wrapper.LastWatering?.ToString("O"),
-                Icon = "far:sprinkler"
-            };
-            await _mqttEntityManager.SetAttributesAsync(selectName, attributes);
-            await _mqttEntityManager.SetStateAsync(stateName, wrapper.State.ToString());
+            await _mqttEntityManager.SetStateAsync($"{baseName}_state", zone.State.ToString());
+            await _mqttEntityManager.SetStateAsync($"{baseName}_started_at", zone.WateringStartedAt?.ToString("O") ?? string.Empty);
+            await _mqttEntityManager.SetStateAsync($"{baseName}_last_run", zone.LastWatering?.ToString("O") ?? string.Empty);
 
-            _fileStorage.Save("SmartIrrigation", $"{wrapper.Name.MakeHaFriendly()}", wrapper.ToFileStorage());
+            _fileStorage.Save("SmartIrrigation", $"{zone.Name.MakeHaFriendly()}", zone.ToFileStorage());
 
-            _logger.LogTrace("{IrrigationZone}: Update Zone state sensor in home assistant (attributes: {Attributes})", wrapper.Name, attributes);
+            _logger.LogTrace("{IrrigationZone}: Updated sensors in home assistant.", zone.Name);
         }
     }
 }
