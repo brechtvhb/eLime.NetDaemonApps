@@ -250,18 +250,18 @@ public class EnergyManager : IDisposable
         var baseName = $"sensor.energy_consumer_{consumer.Name.MakeHaFriendly()}";
         var state = _haContext.Entity($"{baseName}_state").State;
 
-        if (state == null)
+        if (state != null)
         {
             _logger.LogDebug("{Consumer}: Creating energy consumer state sensor in home assistant. State was '{State}'.", consumer.Name, state);
 
-            var stateOptions = new EnumSensorOptions { Icon = "fapro:bolt-auto", Device = GetConsumerDevice(consumer), Options = Enum<EnergyConsumerState>.AllValuesAsStringList() };
-            await _mqttEntityManager.CreateAsync($"{baseName}_state", new EntityCreationOptions(DeviceClass: "enum", UniqueId: $"{baseName}_state", Name: $"Consumer {consumer.Name} - state", Persist: true), stateOptions);
+            //var stateOptions = new EnumSensorOptions { Icon = "fapro:bolt-auto", Device = GetConsumerDevice(consumer), Options = Enum<EnergyConsumerState>.AllValuesAsStringList() };
+            //await _mqttEntityManager.CreateAsync($"{baseName}_state", new EntityCreationOptions(DeviceClass: "enum", UniqueId: $"{baseName}_state", Name: $"Consumer {consumer.Name} - state", Persist: true), stateOptions);
 
             var startedAtOptions = new EntityOptions { Icon = "mdi:calendar-start-outline", Device = GetConsumerDevice(consumer) };
-            await _mqttEntityManager.CreateAsync($"{baseName}_started_at", new EntityCreationOptions(UniqueId: $"{baseName}_started_at", Name: $"Consumer {consumer.Name} - Started at", DeviceClass: "date", Persist: true), startedAtOptions);
+            await _mqttEntityManager.CreateAsync($"{baseName}_started_at", new EntityCreationOptions(UniqueId: $"{baseName}_started_at", Name: $"Consumer {consumer.Name} - Started at", Persist: true), startedAtOptions);
 
             var lastRunOptions = new EntityOptions { Icon = "fapro:calendar-day", Device = GetConsumerDevice(consumer) };
-            await _mqttEntityManager.CreateAsync($"{baseName}_last_run", new EntityCreationOptions(UniqueId: $"{baseName}_last_run", Name: $"Consumer {consumer.Name} - Last run", DeviceClass: "date", Persist: true), lastRunOptions);
+            await _mqttEntityManager.CreateAsync($"{baseName}_last_run", new EntityCreationOptions(UniqueId: $"{baseName}_last_run", Name: $"Consumer {consumer.Name} - Last run", Persist: true), lastRunOptions);
         }
     }
 
