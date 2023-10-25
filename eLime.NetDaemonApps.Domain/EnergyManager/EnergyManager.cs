@@ -55,7 +55,7 @@ public class EnergyManager : IDisposable
         InitializeStateSensor().RunSync();
         foreach (var energyConsumer in Consumers)
         {
-            InitializeConsumerSensor(energyConsumer).RunSync();
+            InitializeConsumerSensors(energyConsumer).RunSync();
             InitializeState(energyConsumer);
             energyConsumer.StateChanged += EnergyConsumer_StateChanged;
         }
@@ -72,7 +72,6 @@ public class EnergyManager : IDisposable
                 consumer.CheckDesiredState(_scheduler.Now);
 
             DebounceManageConsumers();
-            DebounceUpdateInHomeAssistant().RunSync();
         });
 
         foreach (var consumer in Consumers)
@@ -106,7 +105,7 @@ public class EnergyManager : IDisposable
                 break;
         }
 
-        DebounceUpdateInHomeAssistant().RunSync();
+        UpdateStateInHomeAssistant(energyConsumer).RunSync();
     }
 
     private void ManageConsumersIfNeeded()
@@ -239,24 +238,33 @@ public class EnergyManager : IDisposable
 
             await _mqttEntityManager.CreateAsync(stateName, new EntityCreationOptions(DeviceClass: "enum", UniqueId: stateName, Name: $"Energy manager state", Persist: true), entityOptions);
             await _mqttEntityManager.SetStateAsync(stateName, State.ToString());
+
         }
     }
 
 
-    private async Task InitializeConsumerSensor(EnergyConsumer consumer)
+    private async Task InitializeConsumerSensors(EnergyConsumer consumer)
     {
         _logger.LogDebug("{Consumer}: Initializing", consumer.Name);
-        var stateName = $"sensor.energy_consumer_{consumer.Name.MakeHaFriendly()}_state";
-        var state = _haContext.Entity(stateName).State;
+
+        var baseName = $"sensor.energy_consumer_{consumer.Name.MakeHaFriendly()}";
+        var state = _haContext.Entity($"{baseName}_started_at").State; //Revert to state if all sensors have been added
 
         if (state == null)
         {
             _logger.LogDebug("{Consumer}: Creating energy consumer state sensor in home assistant. State was '{State}'.", consumer.Name, state);
 
-            var entityOptions = new EnumSensorOptions { Icon = "fapro:bolt-auto", Device = GetConsumerDevice(consumer), Options = Enum<EnergyConsumerState>.AllValuesAsStringList() };
+            //var stateOptions = new EnumSensorOptions { Icon = "fapro:bolt-auto", Device = GetConsumerDevice(consumer), Options = Enum<EnergyConsumerState>.AllValuesAsStringList() };
+            //await _mqttEntityManager.CreateAsync($"{baseName}_state", new EntityCreationOptions(DeviceClass: "enum", UniqueId: $"{baseName}_state", Name: $"Consumer {consumer.Name} - state", Persist: true), stateOptions);
+            //await _mqttEntityManager.SetStateAsync($"{baseName}_state", consumer.State.ToString());
 
-            await _mqttEntityManager.CreateAsync(stateName, new EntityCreationOptions(DeviceClass: "enum", UniqueId: stateName, Name: $"Consumer state - {consumer.Name}", Persist: true), entityOptions);
-            await _mqttEntityManager.SetStateAsync(stateName, consumer.State.ToString());
+            var startedAtOptions = new EntityOptions { Icon = "mdi:calendar-start-outline", Device = GetConsumerDevice(consumer) };
+            await _mqttEntityManager.CreateAsync($"{baseName}_started_at", new EntityCreationOptions(UniqueId: $"{baseName}_started_at", Name: $"Consumer {consumer.Name} - Started at", DeviceClass: "date", Persist: true), startedAtOptions);
+            await _mqttEntityManager.SetStateAsync($"{baseName}_started_at", consumer.StartedAt?.ToString("O") ?? string.Empty);
+
+            var lastRunOptions = new EntityOptions { Icon = "fapro:calendar-day", Device = GetConsumerDevice(consumer) };
+            await _mqttEntityManager.CreateAsync($"{baseName}_last_run", new EntityCreationOptions(UniqueId: $"{baseName}_last_run", Name: $"Consumer {consumer.Name} - Last run", DeviceClass: "date", Persist: true), lastRunOptions);
+            await _mqttEntityManager.SetStateAsync($"{baseName}_last_run", consumer.LastRun?.ToString("O") ?? string.Empty);
         }
     }
 
@@ -280,18 +288,8 @@ public class EnergyManager : IDisposable
         return new Device { Identifiers = new List<string> { $"energy_consumer_{consumer.Name.MakeHaFriendly()}" }, Name = "Energy consumer: " + consumer.Name, Manufacturer = "Me" };
     }
 
-    private async Task DebounceUpdateInHomeAssistant()
-    {
-        if (UpdateInHomeAssistantDebounceDispatcher == null)
-        {
-            await UpdateStateInHomeAssistant();
-            return;
-        }
 
-        await UpdateInHomeAssistantDebounceDispatcher.DebounceAsync(UpdateStateInHomeAssistant);
-    }
-
-    private async Task UpdateStateInHomeAssistant()
+    private async Task UpdateStateInHomeAssistant(EnergyConsumer? changedConsumer = null)
     {
         var globalAttributes = new EnergyManagerAttributes()
         {
@@ -307,21 +305,18 @@ public class EnergyManager : IDisposable
 
         foreach (var consumer in Consumers)
         {
-            var stateName = $"sensor.energy_consumer_{consumer.Name.MakeHaFriendly()}_state";
+            if (changedConsumer != null && consumer.Name != changedConsumer.Name)
+                continue;
 
-            var attributes = new EnergyConsumerAttributes()
-            {
-                LastUpdated = DateTime.Now.ToString("O"),
-                StartedAt = consumer.StartedAt?.ToString("O"),
-                LastRun = consumer.LastRun?.ToString("O"),
-                Icon = "fapro:bolt-auto"
-            };
-            await _mqttEntityManager.SetStateAsync(stateName, consumer.State.ToString());
-            await _mqttEntityManager.SetAttributesAsync(stateName, attributes);
+            var baseName = $"sensor.energy_consumer_{consumer.Name.MakeHaFriendly()}";
+
+            await _mqttEntityManager.SetStateAsync($"{baseName}_state", consumer.State.ToString());
+            await _mqttEntityManager.SetStateAsync($"{baseName}_started_at", consumer.StartedAt?.ToString("O") ?? string.Empty);
+            await _mqttEntityManager.SetStateAsync($"{baseName}_last_run", consumer.LastRun?.ToString("O") ?? string.Empty);
 
             _fileStorage.Save("EnergyManager", $"{consumer.Name.MakeHaFriendly()}", consumer.ToFileStorage());
 
-            _logger.LogTrace("{Consumer}: Update Consumer state sensor in home assistant (attributes: {Attributes})", consumer.Name, attributes);
+            _logger.LogTrace("{Consumer}: Updated Consumer state sensors in home assistant.", consumer.Name);
         }
     }
 
