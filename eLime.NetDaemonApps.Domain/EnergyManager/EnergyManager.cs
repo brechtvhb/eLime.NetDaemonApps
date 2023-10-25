@@ -256,15 +256,12 @@ public class EnergyManager : IDisposable
 
             var stateOptions = new EnumSensorOptions { Icon = "fapro:bolt-auto", Device = GetConsumerDevice(consumer), Options = Enum<EnergyConsumerState>.AllValuesAsStringList() };
             await _mqttEntityManager.CreateAsync($"{baseName}_state", new EntityCreationOptions(DeviceClass: "enum", UniqueId: $"{baseName}_state", Name: $"Consumer {consumer.Name} - state", Persist: true), stateOptions);
-            await _mqttEntityManager.SetStateAsync($"{baseName}_state", consumer.State.ToString());
 
             var startedAtOptions = new EntityOptions { Icon = "mdi:calendar-start-outline", Device = GetConsumerDevice(consumer) };
             await _mqttEntityManager.CreateAsync($"{baseName}_started_at", new EntityCreationOptions(UniqueId: $"{baseName}_started_at", Name: $"Consumer {consumer.Name} - Started at", DeviceClass: "date", Persist: true), startedAtOptions);
-            await _mqttEntityManager.SetStateAsync($"{baseName}_started_at", consumer.StartedAt?.ToString("O") ?? string.Empty);
 
             var lastRunOptions = new EntityOptions { Icon = "fapro:calendar-day", Device = GetConsumerDevice(consumer) };
             await _mqttEntityManager.CreateAsync($"{baseName}_last_run", new EntityCreationOptions(UniqueId: $"{baseName}_last_run", Name: $"Consumer {consumer.Name} - Last run", DeviceClass: "date", Persist: true), lastRunOptions);
-            await _mqttEntityManager.SetStateAsync($"{baseName}_last_run", consumer.LastRun?.ToString("O") ?? string.Empty);
         }
     }
 

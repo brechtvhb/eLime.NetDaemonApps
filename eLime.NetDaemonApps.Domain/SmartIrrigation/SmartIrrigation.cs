@@ -365,15 +365,12 @@ public class SmartIrrigation : IDisposable
 
             var stateOptions = new EnumSensorOptions { Icon = "fapro:sprinkler", Device = GetZoneDevice(zone), Options = Enum<NeedsWatering>.AllValuesAsStringList() };
             await _mqttEntityManager.CreateAsync($"{baseName}_state", new EntityCreationOptions(UniqueId: $"{baseName}_state", Name: $"Irrigation zone {zone.Name} - State", Persist: true), stateOptions);
-            await _mqttEntityManager.SetStateAsync($"{baseName}_state", zone.State.ToString());
 
             var startedAtOptions = new EntityOptions { Icon = "mdi:calendar-start-outline", Device = GetZoneDevice(zone) };
             await _mqttEntityManager.CreateAsync($"{baseName}_started_at", new EntityCreationOptions(UniqueId: $"{baseName}_started_at", Name: $"Irrigation zone {zone.Name} - Started at", DeviceClass: "date", Persist: true), startedAtOptions);
-            await _mqttEntityManager.SetStateAsync($"{baseName}_started_at", zone.WateringStartedAt?.ToString("O") ?? string.Empty);
 
             var lastWateringOptions = new EntityOptions { Icon = "fapro:calendar-day", Device = GetZoneDevice(zone) };
             await _mqttEntityManager.CreateAsync($"{baseName}_last_watering", new EntityCreationOptions(UniqueId: $"{baseName}_last_watering", Name: $"Irrigation zone {zone.Name} - Last watering", DeviceClass: "date", Persist: true), lastWateringOptions);
-            await _mqttEntityManager.SetStateAsync($"{baseName}_last_watering", zone.LastWatering?.ToString("O") ?? string.Empty);
         }
     }
 
