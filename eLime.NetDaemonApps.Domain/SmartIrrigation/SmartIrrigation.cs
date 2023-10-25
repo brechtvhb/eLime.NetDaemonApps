@@ -93,7 +93,6 @@ public class SmartIrrigation : IDisposable
         {
             DebounceStartWatering();
             DebounceStopWatering();
-            UpdateStateInHomeAssistant().RunSync();
         });
     }
 
@@ -122,7 +121,7 @@ public class SmartIrrigation : IDisposable
                     zone.SetLastWateringDate(_scheduler.Now);
                     break;
             }
-            UpdateStateInHomeAssistant().RunSync();
+            UpdateStateInHomeAssistant(zone).RunSync();
             return;
         }
 
@@ -145,7 +144,7 @@ public class SmartIrrigation : IDisposable
                 break;
         }
 
-        UpdateStateInHomeAssistant().RunSync();
+        UpdateStateInHomeAssistant(zone).RunSync();
     }
 
 
@@ -222,7 +221,7 @@ public class SmartIrrigation : IDisposable
                 return;
 
             foreach (var zone in zonesThatAreWatering)
-                zone.Valve.TurnOff();
+                zone.Stop();
 
             _logger.LogInformation("Stopping watering because available rain water ({AvailableRainWater}) went below minimum available rain water needed ({MinimumAvailableRainWater}).", AvailableRainWaterSensor.State, MinimumAvailableRainWater);
 
@@ -233,14 +232,14 @@ public class SmartIrrigation : IDisposable
         foreach (var zone in zonesThatShouldForceStopped)
         {
             _logger.LogDebug("{IrrigationZone}: Will stop irrigation for this zone right now.", zone.Name);
-            zone.Valve.TurnOff();
+            zone.Stop();
         }
 
         var zonesThatNoLongerNeedWatering = Zones.Where(x => x is { State: NeedsWatering.No, CurrentlyWatering: true });
         foreach (var zone in zonesThatNoLongerNeedWatering)
         {
             _logger.LogDebug("{IrrigationZone}: Will stop irrigation for this zone because it no longer needs watering.", zone.Name);
-            zone.Valve.TurnOff();
+            zone.Stop();
         }
 
         if (EnergyAvailable)
@@ -250,7 +249,7 @@ public class SmartIrrigation : IDisposable
         foreach (var zone in zonesWorkingOnAvailableEnergy)
         {
             _logger.LogDebug("{IrrigationZone}: Will stop irrigation for this zone because not enough power is available", zone.Name);
-            zone.Valve.TurnOff();
+            zone.Stop();
         }
     }
 
@@ -267,7 +266,7 @@ public class SmartIrrigation : IDisposable
         if (!zone.CanStartWatering(_scheduler.Now, EnergyAvailable))
             return false;
 
-        zone.Valve.TurnOn();
+        zone.Start();
         return true;
     }
 
@@ -316,8 +315,6 @@ public class SmartIrrigation : IDisposable
             else
                 DebounceStopWatering();
 
-
-            UpdateStateInHomeAssistant().RunSync();
         };
     }
     private async Task InitializeStateSensor()
@@ -415,7 +412,7 @@ public class SmartIrrigation : IDisposable
         };
     }
 
-    private async Task UpdateStateInHomeAssistant()
+    private async Task UpdateStateInHomeAssistant(IrrigationZone? changedZone = null)
     {
         await _mqttEntityManager.SetStateAsync("sensor.irrigation_state", State.ToString());
         var globalAttributes = new SmartIrrigationStateAttributes()
@@ -427,8 +424,12 @@ public class SmartIrrigation : IDisposable
         };
         await _mqttEntityManager.SetAttributesAsync("sensor.irrigation_state", globalAttributes);
 
+
         foreach (var zone in Zones)
         {
+            if (changedZone != null && changedZone.Name != zone.Name)
+                continue;
+
             var baseName = $"sensor.irrigation_zone_{zone.Name.MakeHaFriendly()}";
 
             await _mqttEntityManager.SetStateAsync($"{baseName}_state", zone.State.ToString());

@@ -76,6 +76,11 @@ public abstract class IrrigationZone : IDisposable
         Mode = mode;
     }
 
+    public void Start()
+    {
+        Valve.TurnOn();
+    }
+
     public void Started(ILogger logger, IScheduler scheduler, DateTimeOffset? startTime = null)
     {
         WateringStartedAt = startTime;
@@ -99,11 +104,11 @@ public abstract class IrrigationZone : IDisposable
                 return;
             case not null when timespan <= TimeSpan.Zero:
                 logger.LogDebug("{IrrigationZone}: Will stop irrigation for this zone right now.", Name);
-                Valve.TurnOff();
+                Stop();
                 return;
             case not null when timespan > TimeSpan.Zero:
                 logger.LogDebug("{IrrigationZone}: Will stop irrigation for this zone in '{TimeSpan}'", Name, timespan.Round().ToString());
-                StopTimer = scheduler.Schedule(timespan.Value, Valve.TurnOff);
+                StopTimer = scheduler.Schedule(timespan.Value, Stop);
                 return;
         }
 
@@ -115,6 +120,8 @@ public abstract class IrrigationZone : IDisposable
         Valve.TurnOff();
         StopTimer?.Dispose();
         StopTimer = null;
+
+
     }
 
     public void SetLastWateringDate(DateTimeOffset now)
