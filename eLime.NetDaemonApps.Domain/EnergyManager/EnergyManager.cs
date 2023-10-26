@@ -105,7 +105,7 @@ public class EnergyManager : IDisposable
                 break;
         }
 
-        UpdateStateInHomeAssistant(energyConsumer).RunSync();
+        DebounceUpdateInHomeAssistant(energyConsumer).RunSync();
     }
 
     private void ManageConsumersIfNeeded()
@@ -285,6 +285,16 @@ public class EnergyManager : IDisposable
         return new Device { Identifiers = new List<string> { $"energy_consumer_{consumer.Name.MakeHaFriendly()}" }, Name = "Energy consumer: " + consumer.Name, Manufacturer = "Me" };
     }
 
+    private async Task DebounceUpdateInHomeAssistant(EnergyConsumer? changedConsumer = null)
+    {
+        if (UpdateInHomeAssistantDebounceDispatcher == null)
+        {
+            await UpdateStateInHomeAssistant(changedConsumer);
+            return;
+        }
+
+        await UpdateInHomeAssistantDebounceDispatcher.DebounceAsync(() => UpdateStateInHomeAssistant(changedConsumer));
+    }
 
     private async Task UpdateStateInHomeAssistant(EnergyConsumer? changedConsumer = null)
     {

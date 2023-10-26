@@ -59,7 +59,7 @@ public class FileStorage : IFileStorage
 
         var storageJsonFile = Path.Combine(folder, $"{id}.json");
 
-        using var jsonStream = File.Open(storageJsonFile, FileMode.Create, FileAccess.Write);
+        using var jsonStream = File.Open(storageJsonFile, FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
 
         JsonSerializer.Serialize(jsonStream, data, _jsonOptions);
     }
