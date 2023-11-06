@@ -431,8 +431,8 @@ public class SmartIrrigation : IDisposable
             var baseName = $"sensor.irrigation_zone_{zone.Name.MakeHaFriendly()}";
 
             await _mqttEntityManager.SetStateAsync($"{baseName}_state", zone.State.ToString());
-            await _mqttEntityManager.SetStateAsync($"{baseName}_started_at", zone.WateringStartedAt?.ToString("O") ?? string.Empty);
-            await _mqttEntityManager.SetStateAsync($"{baseName}_last_watering", zone.LastWatering?.ToString("O") ?? string.Empty);
+            await _mqttEntityManager.SetStateAsync($"{baseName}_started_at", zone.WateringStartedAt?.ToString("O")!);
+            await _mqttEntityManager.SetStateAsync($"{baseName}_last_watering", zone.LastWatering?.ToString("O")!);
 
             _fileStorage.Save("SmartIrrigation", $"{zone.Name.MakeHaFriendly()}", zone.ToFileStorage());
 
