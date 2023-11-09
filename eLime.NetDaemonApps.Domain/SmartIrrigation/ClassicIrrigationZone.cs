@@ -80,7 +80,7 @@ public class ClassicIrrigationZone : IrrigationZone, IZoneWithLimitedRuntime
         if (now > endWindow)
             endWindow = endWindow.AddDays(1);
 
-        var timeUntilEndOfWindow = now - endWindow;
+        var timeUntilEndOfWindow = endWindow - now;
         logger.LogInformation($"Time until end of window is: {timeUntilEndOfWindow:g}.");
 
         if (MaxDuration == null)
