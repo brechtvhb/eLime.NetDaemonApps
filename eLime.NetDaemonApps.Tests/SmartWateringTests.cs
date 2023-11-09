@@ -344,7 +344,7 @@ public class SmartWateringTests
             .AddZone(zone1)
             .Build();
 
-        zone1.SetMode(ZoneMode.Off);
+        zone1.SetMode(ZoneMode.Manual);
 
         //Act
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.pond_volume"), "5500");

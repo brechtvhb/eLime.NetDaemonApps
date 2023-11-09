@@ -101,7 +101,7 @@ public class SmartIrrigation : IDisposable
     {
         var zone = Zones.Single(x => x.Name == e.Zone.Name);
 
-        if (e.Zone.Mode == ZoneMode.Off)
+        if (e.Zone.Mode == ZoneMode.Manual)
         {
             var canSendNotification = zone.LastNotification == null || zone.LastNotification.Value.AddHours(4) < _scheduler.Now;
             switch (e)
@@ -260,7 +260,7 @@ public class SmartIrrigation : IDisposable
             return false;
         }
 
-        if (zone.Mode == ZoneMode.Off)
+        if (zone.Mode == ZoneMode.Manual)
             return false;
 
         if (!zone.CanStartWatering(_scheduler.Now, EnergyAvailable))
@@ -347,8 +347,8 @@ public class SmartIrrigation : IDisposable
             };
 
             await _mqttEntityManager.CreateAsync(selectName, new EntityCreationOptions(UniqueId: selectName, Name: $"Irrigation zone mode - {zone.Name}", DeviceClass: "select", Persist: true), selectOptions);
-            await _mqttEntityManager.SetStateAsync(selectName, ZoneMode.Off.ToString());
-            zone.SetMode(ZoneMode.Off);
+            await _mqttEntityManager.SetStateAsync(selectName, ZoneMode.Manual.ToString());
+            zone.SetMode(ZoneMode.Manual);
         }
 
         var observer = await _mqttEntityManager.PrepareCommandSubscriptionAsync(selectName);

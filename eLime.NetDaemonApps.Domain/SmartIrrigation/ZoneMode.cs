@@ -3,6 +3,7 @@
 public enum ZoneMode
 {
     Off,
+    Manual,
     Automatic,
     EnergyManaged
 }

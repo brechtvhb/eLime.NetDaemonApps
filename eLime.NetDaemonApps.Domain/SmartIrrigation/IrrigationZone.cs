@@ -92,8 +92,8 @@ public abstract class IrrigationZone : IDisposable
         if (this is not IZoneWithLimitedRuntime limitedRunTimeZone)
             return;
 
-        //Disable automatic turning off of watering for this zone type when mode is off. For other zones automatic turn off is enabled when mode is off because I forget tend to forget that I turned it on manually.
-        if (this is AntiFrostMistingIrrigationZone && Mode == ZoneMode.Off)
+        //Disable automatic turning off of watering for this zone type when mode is Manual. For other zones automatic turn off is enabled when mode is off because I forget tend to forget that I turned it on manually.
+        if (this is AntiFrostMistingIrrigationZone && Mode == ZoneMode.Manual)
             return;
 
         var timespan = limitedRunTimeZone.GetRunTime(scheduler.Now);

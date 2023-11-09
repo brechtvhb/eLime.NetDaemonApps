@@ -160,7 +160,7 @@ public class ContainerIrrigationTests
             .AddZone(zone)
             .Build();
 
-        zone.SetMode(ZoneMode.Off);
+        zone.SetMode(ZoneMode.Manual);
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.pond_volume"), "7000");
         _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("binary_sensor.pond_overflow"), "off");
 
