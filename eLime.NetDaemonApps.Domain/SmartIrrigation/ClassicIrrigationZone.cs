@@ -70,9 +70,6 @@ public class ClassicIrrigationZone : IrrigationZone, IZoneWithLimitedRuntime
 
     public TimeSpan? GetRunTime(ILogger logger, DateTimeOffset now)
     {
-        logger.LogInformation($"Irrigation End window is: {IrrigationEndWindow?.ToString("O")}.");
-        logger.LogInformation($"Max duration is: {MaxDuration:g}.");
-
         if (IrrigationEndWindow == null)
             return GetRemainingRunTime(MaxDuration, now);
 
@@ -81,7 +78,6 @@ public class ClassicIrrigationZone : IrrigationZone, IZoneWithLimitedRuntime
             endWindow = endWindow.AddDays(1);
 
         var timeUntilEndOfWindow = endWindow - now;
-        logger.LogInformation($"Time until end of window is: {timeUntilEndOfWindow:g}.");
 
         if (MaxDuration == null)
             return GetRemainingRunTime(timeUntilEndOfWindow, now);
