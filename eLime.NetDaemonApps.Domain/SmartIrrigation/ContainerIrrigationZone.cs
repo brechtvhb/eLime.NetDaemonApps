@@ -43,16 +43,16 @@ public class ContainerIrrigationZone : IrrigationZone
         if (OverflowSensor.IsOn())
             return NeedsWatering.No;
 
-        if (CurrentlyWatering)
-            return VolumeSensor.State >= TargetVolume
-                ? NeedsWatering.No
-                : NeedsWatering.Ongoing;
-
-        return VolumeSensor.State <= CriticallyLowVolume
-            ? NeedsWatering.Critical
-            : VolumeSensor.State <= LowVolume
-                ? NeedsWatering.Yes
-                : NeedsWatering.No;
+        return CurrentlyWatering switch
+        {
+            true when Mode == ZoneMode.Off => NeedsWatering.Ongoing,
+            true => VolumeSensor.State >= TargetVolume ? NeedsWatering.No : NeedsWatering.Ongoing,
+            _ => VolumeSensor.State <= CriticallyLowVolume
+                ? NeedsWatering.Critical
+                : VolumeSensor.State <= LowVolume
+                    ? NeedsWatering.Yes 
+                    : NeedsWatering.No
+        };
     }
 
     public override bool CanStartWatering(DateTimeOffset now, bool energyAvailable)

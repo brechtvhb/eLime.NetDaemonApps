@@ -39,16 +39,16 @@ public class ClassicIrrigationZone : IrrigationZone, IZoneWithLimitedRuntime
 
     protected override NeedsWatering GetDesiredState()
     {
-        if (CurrentlyWatering)
-            return SoilMoistureSensor.State >= TargetSoilMoisture
-                ? NeedsWatering.No
-                : NeedsWatering.Ongoing;
-
-        return SoilMoistureSensor.State <= CriticallyLowSoilMoisture
-            ? NeedsWatering.Critical
-            : SoilMoistureSensor.State <= LowSoilMoisture
-                ? NeedsWatering.Yes
-                : NeedsWatering.No;
+        return CurrentlyWatering switch
+        {
+            true when Mode == ZoneMode.Off => NeedsWatering.Ongoing,
+            true => SoilMoistureSensor.State >= TargetSoilMoisture ? NeedsWatering.No : NeedsWatering.Ongoing,
+            _ => SoilMoistureSensor.State <= CriticallyLowSoilMoisture
+                ? NeedsWatering.Critical 
+                : SoilMoistureSensor.State <= LowSoilMoisture 
+                    ? NeedsWatering.Yes 
+                    : NeedsWatering.No
+        };
     }
 
     public override bool CanStartWatering(DateTimeOffset now, bool energyAvailable)
