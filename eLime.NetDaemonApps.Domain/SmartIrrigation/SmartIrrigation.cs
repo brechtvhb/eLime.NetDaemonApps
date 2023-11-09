@@ -230,7 +230,7 @@ public class SmartIrrigation : IDisposable
         var zonesThatShouldForceStopped = Zones.Where(x => x.CheckForForceStop(_scheduler.Now) && x.CurrentlyWatering);
         foreach (var zone in zonesThatShouldForceStopped)
         {
-            _logger.LogDebug("{IrrigationZone}: Will stop irrigation for this zone right now.", zone.Name);
+            _logger.LogDebug("{IrrigationZone}: Will force stop irrigation for this zone right now.", zone.Name);
             zone.Stop();
         }
 
