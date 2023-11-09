@@ -1,6 +1,5 @@
 ﻿using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
-using NetDaemon.HassModel.Entities;
 
 namespace eLime.NetDaemonApps.Domain.SmartIrrigation;
 
@@ -45,12 +44,12 @@ public class ContainerIrrigationZone : IrrigationZone
 
         return CurrentlyWatering switch
         {
-            true when Mode == ZoneMode.Off => NeedsWatering.Ongoing,
+            true when Mode == ZoneMode.Manual => NeedsWatering.Ongoing,
             true => VolumeSensor.State >= TargetVolume ? NeedsWatering.No : NeedsWatering.Ongoing,
             _ => VolumeSensor.State <= CriticallyLowVolume
                 ? NeedsWatering.Critical
                 : VolumeSensor.State <= LowVolume
-                    ? NeedsWatering.Yes 
+                    ? NeedsWatering.Yes
                     : NeedsWatering.No
         };
     }

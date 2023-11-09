@@ -41,12 +41,12 @@ public class ClassicIrrigationZone : IrrigationZone, IZoneWithLimitedRuntime
     {
         return CurrentlyWatering switch
         {
-            true when Mode == ZoneMode.Off => NeedsWatering.Ongoing,
+            true when Mode == ZoneMode.Manual => NeedsWatering.Ongoing,
             true => SoilMoistureSensor.State >= TargetSoilMoisture ? NeedsWatering.No : NeedsWatering.Ongoing,
             _ => SoilMoistureSensor.State <= CriticallyLowSoilMoisture
-                ? NeedsWatering.Critical 
-                : SoilMoistureSensor.State <= LowSoilMoisture 
-                    ? NeedsWatering.Yes 
+                ? NeedsWatering.Critical
+                : SoilMoistureSensor.State <= LowSoilMoisture
+                    ? NeedsWatering.Yes
                     : NeedsWatering.No
         };
     }
