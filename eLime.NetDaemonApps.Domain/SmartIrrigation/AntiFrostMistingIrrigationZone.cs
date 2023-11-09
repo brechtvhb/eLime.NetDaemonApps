@@ -1,5 +1,6 @@
 ﻿using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
+using Microsoft.Extensions.Logging;
 
 namespace eLime.NetDaemonApps.Domain.SmartIrrigation;
 
@@ -55,9 +56,9 @@ public class AntiFrostMistingIrrigationZone : IrrigationZone, IZoneWithLimitedRu
         return !(LastWatering?.Add(MistingTimeout) > now);
     }
 
-    public TimeSpan? GetRunTime(DateTimeOffset now)
+    public TimeSpan? GetRunTime(ILogger logger, DateTimeOffset now)
     {
-        return GetRemainingRrunTime(MistingDuration, now);
+        return GetRemainingRunTime(MistingDuration, now);
     }
 
     public override bool CheckForForceStop(DateTimeOffset now)

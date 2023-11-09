@@ -1,6 +1,8 @@
-﻿namespace eLime.NetDaemonApps.Domain.SmartIrrigation;
+﻿using Microsoft.Extensions.Logging;
+
+namespace eLime.NetDaemonApps.Domain.SmartIrrigation;
 
 public interface IZoneWithLimitedRuntime
 {
-    TimeSpan? GetRunTime(DateTimeOffset now);
+    TimeSpan? GetRunTime(ILogger logger, DateTimeOffset now);
 }

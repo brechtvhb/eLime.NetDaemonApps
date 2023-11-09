@@ -96,7 +96,7 @@ public abstract class IrrigationZone : IDisposable
         if (this is AntiFrostMistingIrrigationZone && Mode == ZoneMode.Manual)
             return;
 
-        var timespan = limitedRunTimeZone.GetRunTime(scheduler.Now);
+        var timespan = limitedRunTimeZone.GetRunTime(logger, scheduler.Now);
 
         switch (timespan)
         {
@@ -173,7 +173,7 @@ public abstract class IrrigationZone : IDisposable
     public abstract bool CanStartWatering(DateTimeOffset now, bool energyAvailable);
     public abstract bool CheckForForceStop(DateTimeOffset now);
 
-    protected TimeSpan? GetRemainingRrunTime(TimeSpan? suggestedRunTime, DateTimeOffset now)
+    protected TimeSpan? GetRemainingRunTime(TimeSpan? suggestedRunTime, DateTimeOffset now)
     {
         var currentRuntime = now - WateringStartedAt;
         var remainingDuration = suggestedRunTime - currentRuntime;

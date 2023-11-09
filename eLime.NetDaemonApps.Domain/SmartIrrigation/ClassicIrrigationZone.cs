@@ -1,5 +1,6 @@
 ﻿using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
+using Microsoft.Extensions.Logging;
 
 namespace eLime.NetDaemonApps.Domain.SmartIrrigation;
 
@@ -67,24 +68,27 @@ public class ClassicIrrigationZone : IrrigationZone, IZoneWithLimitedRuntime
         return !(LastWatering?.Add(MinimumTimeout.Value) > now);
     }
 
-    public TimeSpan? GetRunTime(DateTimeOffset now)
+    public TimeSpan? GetRunTime(ILogger logger, DateTimeOffset now)
     {
+        logger.LogInformation($"Irrigation End window is: {IrrigationEndWindow?.ToString("O")}.");
+        logger.LogInformation($"Max duration is: {MaxDuration:g}.");
 
         if (IrrigationEndWindow == null)
-            return GetRemainingRrunTime(MaxDuration, now);
+            return GetRemainingRunTime(MaxDuration, now);
 
         var endWindow = now.Add(-now.TimeOfDay).Add(IrrigationEndWindow.Value.ToTimeSpan());
         if (now > endWindow)
             endWindow = endWindow.AddDays(1);
 
         var timeUntilEndOfWindow = now - endWindow;
+        logger.LogInformation($"Time until end of window is: {timeUntilEndOfWindow:g}.");
 
         if (MaxDuration == null)
-            return GetRemainingRrunTime(timeUntilEndOfWindow, now);
+            return GetRemainingRunTime(timeUntilEndOfWindow, now);
 
         return MaxDuration < timeUntilEndOfWindow
-            ? GetRemainingRrunTime(MaxDuration, now)
-            : GetRemainingRrunTime(timeUntilEndOfWindow, now);
+            ? GetRemainingRunTime(MaxDuration, now)
+            : GetRemainingRunTime(timeUntilEndOfWindow, now);
     }
 
     public bool CheckIfWithinWindow(DateTimeOffset now)
