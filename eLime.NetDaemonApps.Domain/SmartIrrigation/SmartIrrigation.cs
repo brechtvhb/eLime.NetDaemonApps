@@ -336,20 +336,20 @@ public class SmartIrrigation : IDisposable
         var selectName = $"select.irrigation_zone_{zone.Name.MakeHaFriendly()}_mode";
         var state = _haContext.Entity(selectName).State;
 
-        //if (state == null)
-        //{
-        _logger.LogDebug("{IrrigationZone}: Creating Zone mode dropdown in home assistant.", zone.Name);
-        var selectOptions = new SelectOptions()
+        if (state == null)
         {
-            Icon = "fapro:sprinkler",
-            Options = Enum<ZoneMode>.AllValuesAsStringList(),
-            Device = GetZoneDevice(zone)
-        };
+            _logger.LogDebug("{IrrigationZone}: Creating Zone mode dropdown in home assistant.", zone.Name);
+            var selectOptions = new SelectOptions()
+            {
+                Icon = "fapro:sprinkler",
+                Options = Enum<ZoneMode>.AllValuesAsStringList(),
+                Device = GetZoneDevice(zone)
+            };
 
-        await _mqttEntityManager.CreateAsync(selectName, new EntityCreationOptions(UniqueId: selectName, Name: $"Irrigation zone mode - {zone.Name}", DeviceClass: "select", Persist: true), selectOptions);
-        await _mqttEntityManager.SetStateAsync(selectName, ZoneMode.Manual.ToString());
-        zone.SetMode(ZoneMode.Manual);
-        //}
+            await _mqttEntityManager.CreateAsync(selectName, new EntityCreationOptions(UniqueId: selectName, Name: $"Irrigation zone mode - {zone.Name}", DeviceClass: "select", Persist: true), selectOptions);
+            await _mqttEntityManager.SetStateAsync(selectName, ZoneMode.Manual.ToString());
+            zone.SetMode(ZoneMode.Manual);
+        }
 
         var observer = await _mqttEntityManager.PrepareCommandSubscriptionAsync(selectName);
         zone.ModeChangedCommandHandler = observer.SubscribeAsync(SetZoneModeHandler(zone, selectName));
