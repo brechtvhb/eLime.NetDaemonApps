@@ -130,7 +130,7 @@ public class ClassicIrrigationZone : IrrigationZone, IZoneWithLimitedRuntime
         if (MaxDuration != null && WateringStartedAt?.Add(MaxDuration.Value) < now)
             return true;
 
-        if (!CheckIfWithinWindow(now))
+        if (!CheckIfWithinWindow(now) && Mode != ZoneMode.Manual)
             return true;
 
         if (State == NeedsWatering.No & Valve.IsOn())

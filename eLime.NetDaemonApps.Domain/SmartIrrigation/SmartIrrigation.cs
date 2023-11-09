@@ -100,6 +100,7 @@ public class SmartIrrigation : IDisposable
     private void Zone_StateChanged(object? sender, IrrigationZoneStateChangedEvent e)
     {
         var zone = Zones.Single(x => x.Name == e.Zone.Name);
+        _logger.LogInformation("{IrrigationZone}: Needs watering changed to: {State}.", e.Zone.Name, e.State);
 
         if (e.Zone.Mode == ZoneMode.Manual)
         {
@@ -124,8 +125,6 @@ public class SmartIrrigation : IDisposable
             UpdateStateInHomeAssistant(zone).RunSync();
             return;
         }
-
-        _logger.LogInformation("{IrrigationZone}: Needs watering changed to: {State}.", e.Zone.Name, e.State);
 
         switch (e)
         {
