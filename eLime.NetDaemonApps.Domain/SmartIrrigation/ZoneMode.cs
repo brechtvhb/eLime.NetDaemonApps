@@ -2,8 +2,6 @@
 
 public enum ZoneMode
 {
-    //TODO: Rename to manual
-    Off,
     Manual,
     Automatic,
     EnergyManaged
