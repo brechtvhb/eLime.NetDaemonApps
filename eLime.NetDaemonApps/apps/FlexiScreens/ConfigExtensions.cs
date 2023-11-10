@@ -5,6 +5,7 @@ using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
 using eLime.NetDaemonApps.Domain.Entities.Sun;
 using eLime.NetDaemonApps.Domain.Entities.Weather;
 using eLime.NetDaemonApps.Domain.FlexiScreens;
+using eLime.NetDaemonApps.Domain.Storage;
 using NetDaemon.Extensions.MqttEntityManager;
 using System.Reactive.Concurrency;
 
@@ -13,7 +14,7 @@ namespace eLime.NetDaemonApps.apps.FlexiScreens;
 public static class ConfigExtensions
 {
 
-    public static FlexiScreen ToEntities(this FlexiScreenConfig config, IHaContext ha, IScheduler scheduler, IMqttEntityManager mqttEntityManager, ILogger logger, String netDaemonUserId, string name)
+    public static FlexiScreen ToEntities(this FlexiScreenConfig config, IHaContext ha, IScheduler scheduler, IMqttEntityManager mqttEntityManager, IFileStorage storage, ILogger logger, String netDaemonUserId, string name)
     {
         var screen = new Cover(ha, config.ScreenEntity);
         var sun = new Sun(ha, config.SunProtection.SunEntity);
@@ -38,7 +39,7 @@ public static class ConfigExtensions
 
         var childrenAreAngryProtector = config.SleepSensor != null ? new ChildrenAreAngryProtector(BinarySensor.Create(ha, config.SleepSensor)) : null;
 
-        var flexiScreen = new FlexiScreen(ha, logger, scheduler, mqttEntityManager, config.Enabled ?? true, name, screen, netDaemonUserId, sunProtector, stormProtector,
+        var flexiScreen = new FlexiScreen(ha, logger, scheduler, mqttEntityManager, storage, config.Enabled ?? true, name, screen, netDaemonUserId, sunProtector, stormProtector,
             temperatureProtector, manIsAngryProtector, womanIsAngryProtector, childrenAreAngryProtector, TimeSpan.FromSeconds(3));
         return flexiScreen;
     }

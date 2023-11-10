@@ -6,6 +6,7 @@ using eLime.NetDaemonApps.Domain.Entities.Sun;
 using eLime.NetDaemonApps.Domain.Entities.Weather;
 using eLime.NetDaemonApps.Domain.FlexiScenes.Rooms;
 using eLime.NetDaemonApps.Domain.FlexiScreens;
+using eLime.NetDaemonApps.Domain.Storage;
 using eLime.NetDaemonApps.Tests.Builders;
 using eLime.NetDaemonApps.Tests.Helpers;
 using FakeItEasy;
@@ -22,6 +23,7 @@ public class FlexiScreenTests
     private AppTestContext _testCtx;
     private ILogger _logger;
     private IMqttEntityManager _mqttEntityManager;
+    private IFileStorage _fileStorage;
 
     private Cover _cover;
     private Sun _sun;
@@ -46,10 +48,10 @@ public class FlexiScreenTests
     public void Init()
     {
         _testCtx = AppTestContext.Create(DateTime.Now);
-        _testCtx.TriggerStateChange(new FlexiScreenEnabledSwitch(_testCtx.HaContext, "switch.flexiscreens_office"), "on");
 
         _logger = A.Fake<ILogger<Room>>();
         _mqttEntityManager = A.Fake<IMqttEntityManager>();
+        _fileStorage = A.Fake<IFileStorage>();
 
         _cover = new Cover(_testCtx.HaContext, "cover.office");
         _testCtx.TriggerStateChange(_cover, "open");
@@ -132,7 +134,7 @@ public class FlexiScreenTests
         // Arrange
         _testCtx.TriggerStateChange(_cover, "open");
         _testCtx.TriggerStateChangeWithAttributes(_sun, "below_horizon", new SunAttributes { Azimuth = 0, Elevation = -20 });
-        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
+        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage)
             .WithCover(_cover)
             .WithSun(_sun)
             .Build();
@@ -149,7 +151,7 @@ public class FlexiScreenTests
     {
         // Arrange
         _testCtx.TriggerStateChangeWithAttributes(_sun, "below_horizon", new SunAttributes { Azimuth = 240, Elevation = 20 });
-        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
+        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage)
             .WithCover(_cover)
             .WithSun(_sun)
             .Build();
@@ -166,7 +168,7 @@ public class FlexiScreenTests
     {
         // Arrange
         _testCtx.TriggerStateChange(_cover, "closed");
-        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
+        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage)
             .WithCover(_cover)
             .WithSun(_sun)
             .Build();
@@ -189,7 +191,7 @@ public class FlexiScreenTests
     {
         // Arrange
         _testCtx.TriggerStateChange(_cover, "closed");
-        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
+        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage)
             .WithCover(_cover)
             .WithSun(_sun)
             .WithWindSpeedSensor(_windSpeedSensor)
@@ -207,7 +209,7 @@ public class FlexiScreenTests
     public void NoWind_Lets_SunProtectorDecide()
     {
         // Arrange
-        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
+        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage)
             .WithCover(_cover)
             .WithSun(_sun)
             .WithWindSpeedSensor(_windSpeedSensor)
@@ -227,7 +229,7 @@ public class FlexiScreenTests
         _testCtx.TriggerStateChange(_windSpeedSensor, new EntityState { State = "80" });
         _testCtx.TriggerStateChange(_cover, "closed");
 
-        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
+        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage)
             .WithCover(_cover)
             .WithSun(_sun)
             .WithWindSpeedSensor(_windSpeedSensor)
@@ -249,7 +251,7 @@ public class FlexiScreenTests
         // Arrange
         _testCtx.TriggerStateChange(_cover, "closed");
 
-        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
+        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage)
             .WithCover(_cover)
             .WithSun(_sun)
             .WithRainRateSensor(_rainRateSensor)
@@ -267,7 +269,7 @@ public class FlexiScreenTests
     public void NoRain_Lets_SunProtectorDecide()
     {
         // Arrange
-        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
+        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage)
             .WithCover(_cover)
             .WithSun(_sun)
             .WithRainRateSensor(_rainRateSensor)
@@ -287,7 +289,7 @@ public class FlexiScreenTests
         _testCtx.TriggerStateChange(_rainRateSensor, new EntityState { State = "3" });
         _testCtx.TriggerStateChange(_cover, "closed");
 
-        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
+        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage)
             .WithCover(_cover)
             .WithSun(_sun)
             .WithRainRateSensor(_rainRateSensor)
@@ -307,7 +309,7 @@ public class FlexiScreenTests
     {
         // Arrange
         _testCtx.TriggerStateChange(_cover, "closed");
-        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
+        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage)
             .WithCover(_cover)
             .WithSun(_sun)
             .WithShortTermRainRateSensor(_shortTermRainForecastSensor)
@@ -325,7 +327,7 @@ public class FlexiScreenTests
     public void NoRainForecast_Lets_SunProtectorDecide()
     {
         // Arrange
-        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
+        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage)
             .WithCover(_cover)
             .WithSun(_sun)
             .WithShortTermRainRateSensor(_shortTermRainForecastSensor)
@@ -345,7 +347,7 @@ public class FlexiScreenTests
         _testCtx.TriggerStateChange(_cover, "open");
 
         // Arrange
-        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
+        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage)
             .WithCover(_cover)
             .WithSun(_sun)
             .WithShortTermRainRateSensor(_shortTermRainForecastSensor)
@@ -364,7 +366,7 @@ public class FlexiScreenTests
     {
         // Arrange
         _testCtx.TriggerStateChange(_cover, "open");
-        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
+        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage)
             .WithCover(_cover)
             .WithSun(_sun)
             .WithRainRateSensor(_rainRateSensor)
@@ -387,7 +389,7 @@ public class FlexiScreenTests
         // Arrange
         _testCtx.TriggerStateChange(_cover, "open");
         _testCtx.TriggerStateChangeWithAttributes(_sun, "above_Horizon", new SunAttributes { Azimuth = 240, Elevation = 20 });
-        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
+        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage)
             .WithCover(_cover)
             .WithSun(_sun)
             .WithSolarLuxSensor(_solarLuxSensor)
@@ -407,7 +409,7 @@ public class FlexiScreenTests
         // Arrange
         _testCtx.TriggerStateChange(_cover, "open");
         _testCtx.TriggerStateChangeWithAttributes(_sun, "above_Horizon", new SunAttributes { Azimuth = 240, Elevation = 20 });
-        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
+        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage)
             .WithCover(_cover)
             .WithSun(_sun)
             .WithSolarLuxSensor(_solarLuxSensor)
@@ -429,7 +431,7 @@ public class FlexiScreenTests
         _testCtx.TriggerStateChangeWithAttributes(_sun, "above_Horizon", new SunAttributes { Azimuth = 240, Elevation = 20 });
         _testCtx.TriggerStateChange(_solarLuxSensor, "20000");
 
-        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
+        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage)
             .WithCover(_cover)
             .WithSun(_sun)
             .WithSolarLuxSensor(_solarLuxSensor)
@@ -452,7 +454,7 @@ public class FlexiScreenTests
         _testCtx.TriggerStateChange(_solarLuxSensor, "20000");
         _testCtx.TriggerStateChange(_indoorTemperatureSensor, "25");
 
-        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
+        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage)
             .WithCover(_cover)
             .WithSun(_sun)
             .WithSolarLuxSensor(_solarLuxSensor)
@@ -475,7 +477,7 @@ public class FlexiScreenTests
         _testCtx.TriggerStateChangeWithAttributes(_sun, "above_Horizon", new SunAttributes { Azimuth = 240, Elevation = 20 });
         _testCtx.TriggerStateChange(_solarLuxSensor, "20000");
         _testCtx.TriggerStateChangeWithAttributes(_weather, "sunny", _hotForecast);
-        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
+        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage)
             .WithCover(_cover)
             .WithSun(_sun)
             .WithSolarLuxSensor(_solarLuxSensor)
@@ -498,7 +500,7 @@ public class FlexiScreenTests
         _testCtx.TriggerStateChangeWithAttributes(_sun, "above_Horizon", new SunAttributes { Azimuth = 240, Elevation = 20 });
         _testCtx.TriggerStateChange(_solarLuxSensor, "20000");
         _testCtx.TriggerStateChangeWithAttributes(_weather, "sunny", _averageForeast);
-        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
+        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage)
             .WithCover(_cover)
             .WithSun(_sun)
             .WithSolarLuxSensor(_solarLuxSensor)
@@ -519,7 +521,7 @@ public class FlexiScreenTests
         // Arrange
         _testCtx.TriggerStateChangeWithAttributes(_sun, "below_horizon", new SunAttributes { Azimuth = 0, Elevation = 20 });
         _testCtx.TriggerStateChange(_cover, "open");
-        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
+        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage)
             .WithCover(_cover)
             .WithSun(_sun)
             .WithSleepSensor(_sleepSensor)
@@ -539,7 +541,7 @@ public class FlexiScreenTests
         _testCtx.TriggerStateChange(_cover, "closed");
         _testCtx.TriggerStateChangeWithAttributes(_hourlyWeather, "windy", _windyForecast);
 
-        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
+        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage)
             .WithCover(_cover)
             .WithHourlyWeatherForecast(_hourlyWeather, 3, 40, 1, 0.3)
             .WithSleepSensor(_sleepSensor)
@@ -561,7 +563,7 @@ public class FlexiScreenTests
         _testCtx.TriggerStateChange(_cover, "open");
         _testCtx.TriggerStateChangeWithAttributes(_hourlyWeather, "rainy", _rainyForecast);
 
-        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
+        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage)
             .WithCover(_cover)
             .WithDesiredActionOnBelowElevation(ScreenAction.None)
             .WithHourlyWeatherForecast(_hourlyWeather, 3, 40, 1, 0.3)
@@ -581,7 +583,7 @@ public class FlexiScreenTests
         // Arrange
         _testCtx.TriggerStateChange(_cover, "closed");
 
-        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
+        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage)
             .WithCover(_cover)
             .WithDesiredActionOnBelowElevation(ScreenAction.None)
             .WithHourlyWeatherForecast(_hourlyWeather, 3, 40, 1, 0.3)
@@ -605,7 +607,7 @@ public class FlexiScreenTests
         // Arrange
         _testCtx.TriggerStateChange(_cover, "closed");
 
-        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
+        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage)
             .WithCover(_cover)
             .WithDesiredActionOnBelowElevation(ScreenAction.None)
             .WithHourlyWeatherForecast(_hourlyWeather, 3, 40, 1, 0.3)
@@ -629,11 +631,11 @@ public class FlexiScreenTests
         // Arrange
         _testCtx.TriggerStateChange(_cover, "open");
         _testCtx.TriggerStateChange(_sleepSensor, new EntityState { State = "on" });
-        var enabledSwitch = new Entity(_testCtx.HaContext, "switch.flexiscreens_office");
-        _testCtx.TriggerStateChangeWithAttributes(enabledSwitch, "on", new FlexiScreenEnabledSwitchAttributes { StormyNight = true});
+
+        A.CallTo(() => _fileStorage.Get<FlexiScreenFileStorage>("FlexiScreens", "office")).Returns(new FlexiScreenFileStorage() { StormyNight = true });
 
         //Act
-        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
+        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage)
             .WithCover(_cover)
             .WithDesiredActionOnBelowElevation(ScreenAction.None)
             .WithHourlyWeatherForecast(_hourlyWeather, 3, 40, 1, 0.3)
@@ -654,7 +656,7 @@ public class FlexiScreenTests
         _testCtx.TriggerStateChangeWithAttributes(_sun, "below_horizon", new SunAttributes { Azimuth = 0, Elevation = 20 });
         _testCtx.TriggerStateChange(_cover, "closed");
         _testCtx.TriggerStateChange(_sleepSensor, new EntityState { State = "on" });
-        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
+        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage)
             .WithCover(_cover)
             .WithSun(_sun)
             .WithSleepSensor(_sleepSensor)
@@ -675,7 +677,7 @@ public class FlexiScreenTests
         _testCtx.TriggerStateChange(_cover, "closed");
         _testCtx.TriggerStateChange(_sleepSensor, new EntityState { State = "on" });
 
-        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
+        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage)
             .WithCover(_cover)
             .WithSun(_sun)
             .WithWindSpeedSensor(_windSpeedSensor)
@@ -696,7 +698,7 @@ public class FlexiScreenTests
         _testCtx.TriggerStateChangeWithAttributes(_sun, "below_horizon", new SunAttributes { Azimuth = 250, Elevation = 20 });
         _testCtx.TriggerStateChange(_cover, "closed");
 
-        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
+        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage)
             .WithCover(_cover)
             .WithSun(_sun)
             .WithWindSpeedSensor(_windSpeedSensor)
@@ -721,7 +723,7 @@ public class FlexiScreenTests
         _testCtx.TriggerStateChangeWithAttributes(_sun, "below_horizon", new SunAttributes { Azimuth = 250, Elevation = 20 });
         _testCtx.TriggerStateChange(_cover, "closed");
 
-        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
+        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage)
             .WithCover(_cover)
             .WithSun(_sun)
             .WithWindSpeedSensor(_windSpeedSensor)
@@ -747,7 +749,7 @@ public class FlexiScreenTests
         _testCtx.TriggerStateChangeWithAttributes(_sun, "below_horizon", new SunAttributes { Azimuth = 250, Elevation = 20 });
         _testCtx.TriggerStateChange(_cover, "closed");
 
-        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
+        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage)
             .WithCover(_cover)
             .WithSun(_sun)
             .WithWindSpeedSensor(_windSpeedSensor)
@@ -771,7 +773,7 @@ public class FlexiScreenTests
         _testCtx.TriggerStateChangeWithAttributes(_sun, "below_horizon", new SunAttributes { Azimuth = 250, Elevation = 20 });
         _testCtx.TriggerStateChange(_cover, "closed");
 
-        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
+        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage)
             .WithCover(_cover)
             .WithSun(_sun)
             .WithDesiredActionOnBelowElevation(ScreenAction.Up)
@@ -796,7 +798,7 @@ public class FlexiScreenTests
         _testCtx.TriggerStateChangeWithAttributes(_sun, "below_horizon", new SunAttributes { Azimuth = 250, Elevation = 20 });
         _testCtx.TriggerStateChange(_cover, "closed");
 
-        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager)
+        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage)
             .WithCover(_cover)
             .WithSun(_sun)
             .WithDesiredActionOnBelowElevation(ScreenAction.Up)

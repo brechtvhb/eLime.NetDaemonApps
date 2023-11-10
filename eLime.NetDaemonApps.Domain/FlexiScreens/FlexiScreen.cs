@@ -1,5 +1,8 @@
-﻿using eLime.NetDaemonApps.Domain.Entities.Covers;
+﻿using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
+using eLime.NetDaemonApps.Domain.Entities.Covers;
 using eLime.NetDaemonApps.Domain.Helper;
+using eLime.NetDaemonApps.Domain.Mqtt;
+using eLime.NetDaemonApps.Domain.Storage;
 using Microsoft.Extensions.Logging;
 using NetDaemon.Extensions.MqttEntityManager;
 using NetDaemon.Extensions.Scheduler;
@@ -11,7 +14,7 @@ namespace eLime.NetDaemonApps.Domain.FlexiScreens;
 public class FlexiScreen : IDisposable
 {
     public string? Name { get; }
-    private FlexiScreenEnabledSwitch EnabledSwitch { get; set; }
+    private Boolean IsEnabled { get; set; }
     public Cover Screen { get; }
     private string NetDaemonUserId { get; }
 
@@ -26,6 +29,7 @@ public class FlexiScreen : IDisposable
     private readonly ILogger _logger;
     private readonly IScheduler _scheduler;
     private readonly IMqttEntityManager _mqttEntityManager;
+    private readonly IFileStorage _fileStorage;
 
     private DateTimeOffset? LastAutomatedStateChange { get; set; }
     private DateTimeOffset? LastManualStateChange { get; set; }
@@ -44,7 +48,7 @@ public class FlexiScreen : IDisposable
 
     private readonly DebounceDispatcher? GuardScreenDebounceDispatcher;
 
-    public FlexiScreen(IHaContext haContext, ILogger logger, IScheduler scheduler, IMqttEntityManager mqttEntityManager, Boolean enabled, String name, Cover screen, String ndUserId,
+    public FlexiScreen(IHaContext haContext, ILogger logger, IScheduler scheduler, IMqttEntityManager mqttEntityManager, IFileStorage fileStorage, Boolean enabled, String name, Cover screen, String ndUserId,
         SunProtector sunProtector, StormProtector? stormProtector, TemperatureProtector? temperatureProtector, ManIsAngryProtector? manIsAngryProtector, WomanIsAngryProtector? womanIsAngryProtector, ChildrenAreAngryProtector? childrenAreAngryProtector,
         TimeSpan debounceDuration)
     {
@@ -52,6 +56,7 @@ public class FlexiScreen : IDisposable
         _logger = logger;
         _scheduler = scheduler;
         _mqttEntityManager = mqttEntityManager;
+        _fileStorage = fileStorage;
 
         if (!enabled)
             return;
@@ -84,8 +89,8 @@ public class FlexiScreen : IDisposable
             ChildrenAreAngryProtector.DesiredStateChanged += Protector_DesiredStateChanged;
         }
 
-        EnsureEnabledSwitchExists().RunSync();
-        RetrieveSateFromHomeAssistant().RunSync();
+        EnsureSensorsExist().RunSync();
+        InitializeState();
 
         SunProtector.CheckDesiredState(false);
         stormProtector?.CheckDesiredState(false);
@@ -128,7 +133,7 @@ public class FlexiScreen : IDisposable
 
     private async void Screen_StateChanged(object? sender, CoverEventArgs e)
     {
-        //NetDaemon user ID is no longer passed a long when state transitions from closing to closed or from opening to opened :/
+        //NetDaemon user ID is no longer passed along when state transitions from closing to closed or from opening to opened :/
         if (e.New?.Context?.UserId != NetDaemonUserId && e.New?.State is "closing" or "opening")
         {
             LastManualStateChange = _scheduler.Now;
@@ -153,7 +158,7 @@ public class FlexiScreen : IDisposable
 
     private async Task GuardScreen()
     {
-        if (!IsScreenEnabled())
+        if (IsEnabled)
             return;
 
         //State is transitioning
@@ -234,24 +239,30 @@ public class FlexiScreen : IDisposable
         }
     }
 
-    private async Task EnsureEnabledSwitchExists()
+    private async Task EnsureSensorsExist()
     {
+        var baseName = $"sensor.flexiscreens_{Name.MakeHaFriendly()}";
         var switchName = $"switch.flexiscreens_{Name.MakeHaFriendly()}";
 
-        var created = false;
-        if (_haContext.Entity(switchName).State == null || string.Equals(_haContext.Entity(switchName).State, "unavailable", StringComparison.InvariantCultureIgnoreCase))
+        if (_haContext.Entity(switchName).State == null)
         {
             _logger.LogDebug("{Screen}: Creating Enabled switch in home assistant.", Name);
-            _mqttEntityManager.CreateAsync(switchName, new EntityCreationOptions(Name: $"Flexi screen - {Name}", DeviceClass: "switch", Persist: true)).RunSync();
-            created = true;
-        }
-
-        EnabledSwitch = new FlexiScreenEnabledSwitch(_haContext, switchName);
-
-        if (created)
-        {
+            var enabledSwitchOptions = new EnabledSwitchAttributes { Icon = "mdi:blinds", Device = GetDevice() };
+            _mqttEntityManager.CreateAsync(switchName, new EntityCreationOptions(Name: $"Flexi screen - {Name}", DeviceClass: "switch", Persist: true), enabledSwitchOptions).RunSync();
+            IsEnabled = true;
             _mqttEntityManager.SetStateAsync(switchName, "ON").RunSync();
-            UpdateStateInHomeAssistant().RunSync();
+
+            var lastAutomatedStateChangeOptions = new EntityOptions { Icon = "fapro:calendar-day", Device = GetDevice() };
+            await _mqttEntityManager.CreateAsync($"{baseName}_last_automated_state_change", new EntityCreationOptions(UniqueId: $"{baseName}_last_automated_state_change", Name: $"Flexi screen {Name} - Last automated state change", DeviceClass: "timestamp", Persist: true), lastAutomatedStateChangeOptions);
+
+            var lastManualStateChangeOptions = new EntityOptions { Icon = "fapro:calendar-day", Device = GetDevice() };
+            await _mqttEntityManager.CreateAsync($"{baseName}_last_manual_state_change", new EntityCreationOptions(UniqueId: $"{baseName}_last_manual_state_change", Name: $"Flexi screen {Name} - Last manual state change", DeviceClass: "timestamp", Persist: true), lastManualStateChangeOptions);
+
+            var lastStateChangeTriggeredBy = new EnumSensorOptions { Icon = "mdi:state-machine", Device = GetDevice(), Options = Enum<Protectors>.AllValuesAsStringList() };
+            await _mqttEntityManager.CreateAsync($"{baseName}_last_state_change_triggered_by", new EntityCreationOptions(UniqueId: $"{baseName}_last_state_change_triggered_by", Name: $"Flexi screen {Name} - Last state change triggered by", Persist: true), lastStateChangeTriggeredBy);
+
+            var stormyNight = new EntityOptions { Icon = "fapro:poo-storm", Device = GetDevice() };
+            await _mqttEntityManager.CreateAsync($"{baseName}_stormy_night", new EntityCreationOptions(UniqueId: $"boolean_{baseName}_stormy_night", Name: $"Flexi screen {Name} - Is stormy night", Persist: true), stormyNight);
         }
 
         var observer = await _mqttEntityManager.PrepareCommandSubscriptionAsync(switchName);
@@ -266,47 +277,65 @@ public class FlexiScreen : IDisposable
             if (state == "OFF")
             {
                 _logger.LogDebug("{Screen}: Clearing flexi screen state because it was disabled.", Name);
-                await UpdateStateInHomeAssistant();
             }
+
+            IsEnabled = state == "ON";
             await _mqttEntityManager.SetStateAsync(switchName, state);
         };
     }
 
-    private Task RetrieveSateFromHomeAssistant()
+    public Device GetDevice()
     {
-        LastAutomatedStateChange = !string.IsNullOrWhiteSpace(EnabledSwitch.Attributes?.LastAutomatedStateChange) ? DateTime.Parse(EnabledSwitch.Attributes.LastAutomatedStateChange) : null;
-        LastManualStateChange = !string.IsNullOrWhiteSpace(EnabledSwitch.Attributes?.LastManualStateChange) ? DateTime.Parse(EnabledSwitch.Attributes.LastManualStateChange) : null;
-        LastStateChangeTriggeredBy = !string.IsNullOrWhiteSpace(EnabledSwitch.Attributes?.LastStateChangeTriggeredBy) ? Enum<Protectors>.Cast(EnabledSwitch.Attributes.LastStateChangeTriggeredBy) : null;
-        if (EnabledSwitch.Attributes?.StormyNight == true)
+        return new Device { Identifiers = new List<string> { $"flexiscreen.{Name.MakeHaFriendly()}" }, Name = "Flexi screen: " + Name, Manufacturer = "Me" };
+    }
+
+    private void InitializeState()
+    {
+        var storedState = _fileStorage.Get<FlexiScreenFileStorage>("FlexiScreens", Name.MakeHaFriendly());
+
+        if (storedState == null)
+            return;
+
+        LastAutomatedStateChange = storedState.LastAutomatedStateChange;
+        LastManualStateChange = storedState.LastManualStateChange;
+        LastStateChangeTriggeredBy = storedState.LastStateChangeTriggeredBy;
+        if (storedState.StormyNight)
             StormProtector?.SetStormyNight();
 
-        _logger.LogDebug("Retrieved flexiscreen state from Home assistant for screen '{screen}'.", Name);
+        IsEnabled = storedState.Enabled;
 
-        return Task.CompletedTask;
+        _logger.LogDebug("Retrieved flexiscreen state for screen '{screen}'.", Name);
     }
 
     private async Task UpdateStateInHomeAssistant()
     {
-        if (!IsScreenEnabled())
-            return;
+        var baseName = $"sensor.flexiscreens_{Name.MakeHaFriendly()}";
 
-        var attributes = new FlexiScreenEnabledSwitchAttributes
+        var attributes = new EnabledSwitchAttributes
         {
-            LastAutomatedStateChange = LastAutomatedStateChange?.ToString("O"),
-            LastManualStateChange = LastManualStateChange?.ToString("O"),
-            LastUpdated = DateTime.Now.ToString("O"),
-            LastStateChangeTriggeredBy = LastStateChangeTriggeredBy.ToString(),
-            StormyNight = StormProtector?.StormyNight,
-            Icon = "mdi:blinds"
+            LastUpdated = DateTime.Now.ToString("O")
         };
-        await _mqttEntityManager.SetAttributesAsync(EnabledSwitch.EntityId, attributes);
-        _logger.LogTrace("{Screen}: Updated flexiscreen state in Home assistant to {Attributes}", Name, attributes);
+        await _mqttEntityManager.SetAttributesAsync($"switch.flexiscreens_{Name.MakeHaFriendly()}", attributes);
+
+        await _mqttEntityManager.SetStateAsync($"{baseName}_last_state_change_triggered_by", LastStateChangeTriggeredBy?.ToString()!);
+        await _mqttEntityManager.SetStateAsync($"{baseName}_last_automated_state_change", LastAutomatedStateChange?.ToString("O")!);
+        await _mqttEntityManager.SetStateAsync($"{baseName}_last_manual_state_change", LastManualStateChange?.ToString("O")!);
+        await _mqttEntityManager.SetStateAsync($"boolean_{baseName}_stormy_night", (StormProtector?.StormyNight ?? false).ToString());
+
+        _logger.LogTrace("{Screen}: Updated flexiscreen in Home assistant to {Attributes}", Name, attributes);
+
+
+        _fileStorage.Save("FlexiScreens", Name.MakeHaFriendly(), ToFileStorage());
     }
 
-    private bool IsScreenEnabled()
+    internal FlexiScreenFileStorage ToFileStorage() => new()
     {
-        return EnabledSwitch.IsOn();
-    }
+        Enabled = IsEnabled,
+        LastAutomatedStateChange = LastAutomatedStateChange,
+        LastManualStateChange = LastManualStateChange,
+        LastStateChangeTriggeredBy = LastStateChangeTriggeredBy,
+        StormyNight = StormProtector?.StormyNight ?? false
+    };
 
     public void Dispose()
     {

@@ -6,6 +6,7 @@ using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
 using eLime.NetDaemonApps.Domain.Entities.Sun;
 using eLime.NetDaemonApps.Domain.Entities.Weather;
 using eLime.NetDaemonApps.Domain.FlexiScreens;
+using eLime.NetDaemonApps.Domain.Storage;
 using eLime.NetDaemonApps.Tests.Helpers;
 using Microsoft.Extensions.Logging;
 using NetDaemon.Extensions.MqttEntityManager;
@@ -17,6 +18,7 @@ public class ScreenBuilder
     private readonly AppTestContext _testCtx;
     private readonly ILogger _logger;
     private readonly IMqttEntityManager _mqttEntityManager;
+    private readonly IFileStorage _fileStorage;
 
     private FlexiScreenConfig _config;
     private Cover? _cover;
@@ -32,11 +34,12 @@ public class ScreenBuilder
     private Weather? _hourluWeather;
     private BinarySensor? _sleepSensor;
 
-    public ScreenBuilder(AppTestContext testCtx, ILogger logger, IMqttEntityManager mqttEntityManager)
+    public ScreenBuilder(AppTestContext testCtx, ILogger logger, IMqttEntityManager mqttEntityManager, IFileStorage fileStorage)
     {
         _testCtx = testCtx;
         _logger = logger;
         _mqttEntityManager = mqttEntityManager;
+        _fileStorage = fileStorage;
         _config = new FlexiScreenConfig
         {
             Name = "Office",
@@ -175,7 +178,7 @@ public class ScreenBuilder
 
         var childrenAreAngryProtector = sleepSensor != null ? new ChildrenAreAngryProtector(sleepSensor) : null;
 
-        var flexiScreen = new FlexiScreen(_testCtx.HaContext, _logger, _testCtx.Scheduler, _mqttEntityManager, _config.Enabled ?? true, _config.Name, screen, "somecoolid", sunProtector, stormProtector, temperatureProtector, manIsAngryProtector, womanIsAngryProtector, childrenAreAngryProtector, TimeSpan.Zero);
+        var flexiScreen = new FlexiScreen(_testCtx.HaContext, _logger, _testCtx.Scheduler, _mqttEntityManager, _fileStorage, _config.Enabled ?? true, _config.Name, screen, "somecoolid", sunProtector, stormProtector, temperatureProtector, manIsAngryProtector, womanIsAngryProtector, childrenAreAngryProtector, TimeSpan.Zero);
         return flexiScreen;
     }
 }

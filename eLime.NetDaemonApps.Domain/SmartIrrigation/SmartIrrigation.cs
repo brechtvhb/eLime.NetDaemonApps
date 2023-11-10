@@ -73,6 +73,7 @@ public class SmartIrrigation : IDisposable
 
         InitializeStateSensor().RunSync();
         InitializeSolarEnergyAvailableSwitch().RunSync();
+        InitializeState();
 
         foreach (var zone in Zones)
         {
@@ -288,15 +289,15 @@ public class SmartIrrigation : IDisposable
         var switchName = $"switch.irrigation_energy_available";
         var state = _haContext.Entity(switchName).State;
 
-        if (state == null || string.Equals(state, "unavailable", StringComparison.InvariantCultureIgnoreCase))
+        if (state == null)
         {
             _logger.LogDebug("Creating solar energy available switch.");
             var entityOptions = new EntityOptions { Icon = "mdi:solar-power", Device = GetGlobalDevice() };
+
             await _mqttEntityManager.CreateAsync(switchName, new EntityCreationOptions(DeviceClass: "switch", UniqueId: switchName, Name: $"Irrigation - Energy available", Persist: true), entityOptions);
             await _mqttEntityManager.SetStateAsync(switchName, "OFF");
+            EnergyAvailable = false;
         }
-        else
-            EnergyAvailable = state == "ON";
 
         var observer = await _mqttEntityManager.PrepareCommandSubscriptionAsync(switchName);
         EnergyAvailableStateCHangedCommandHandler = observer.SubscribeAsync(SetEnergyAvailableHandler(switchName));
@@ -373,6 +374,16 @@ public class SmartIrrigation : IDisposable
         }
     }
 
+    private void InitializeState()
+    {
+        _logger.LogDebug("Initializing global properties.");
+        var storedSmartIrrigationSettings = _fileStorage.Get<SmartIrrigationFileStorage>("SmartIrrigation", "Global");
+
+        if (storedSmartIrrigationSettings == null)
+            return;
+
+        EnergyAvailable = storedSmartIrrigationSettings.EnergyAvailable;
+    }
 
     private void InitializeState(IrrigationZone zone)
     {
@@ -421,6 +432,7 @@ public class SmartIrrigation : IDisposable
         };
         await _mqttEntityManager.SetAttributesAsync("sensor.irrigation_state", globalAttributes);
 
+        _fileStorage.Save("SmartIrrigation", "Global", new SmartIrrigationFileStorage { EnergyAvailable = EnergyAvailable });
 
         foreach (var zone in Zones)
         {
