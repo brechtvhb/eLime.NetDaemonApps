@@ -244,24 +244,26 @@ public class FlexiScreen : IDisposable
         var baseName = $"sensor.flexiscreens_{Name.MakeHaFriendly()}";
         var switchName = $"switch.flexiscreens_{Name.MakeHaFriendly()}";
 
-        _logger.LogDebug("{Screen}: Creating entities in home assistant.", Name);
-        var enabledSwitchOptions = new EnabledSwitchAttributes { Icon = "mdi:blinds", Device = GetDevice() };
-        _mqttEntityManager.CreateAsync(switchName, new EntityCreationOptions(Name: $"Flexi screen - {Name}", DeviceClass: "switch", Persist: true), enabledSwitchOptions).RunSync();
-        IsEnabled = true;
-        _mqttEntityManager.SetStateAsync(switchName, "ON").RunSync();
+        if (_haContext.Entity(switchName).State == null)
+        {
+            _logger.LogDebug("{Screen}: Creating entities in home assistant.", Name);
+            var enabledSwitchOptions = new EnabledSwitchAttributes { Icon = "mdi:blinds", Device = GetDevice() };
+            _mqttEntityManager.CreateAsync(switchName, new EntityCreationOptions(Name: $"Flexi screen - {Name}", DeviceClass: "switch", Persist: true), enabledSwitchOptions).RunSync();
+            IsEnabled = true;
+            _mqttEntityManager.SetStateAsync(switchName, "ON").RunSync();
 
-        var lastAutomatedStateChangeOptions = new EntityOptions { Icon = "fapro:calendar-day", Device = GetDevice() };
-        await _mqttEntityManager.CreateAsync($"{baseName}_last_automated_state_change", new EntityCreationOptions(UniqueId: $"{baseName}_last_automated_state_change", Name: $"Flexi screen {Name} - Last automated state change", DeviceClass: "timestamp", Persist: true), lastAutomatedStateChangeOptions);
+            var lastAutomatedStateChangeOptions = new EntityOptions { Icon = "fapro:calendar-day", Device = GetDevice() };
+            await _mqttEntityManager.CreateAsync($"{baseName}_last_automated_state_change", new EntityCreationOptions(UniqueId: $"{baseName}_last_automated_state_change", Name: $"Flexi screen {Name} - Last automated state change", DeviceClass: "timestamp", Persist: true), lastAutomatedStateChangeOptions);
 
-        var lastManualStateChangeOptions = new EntityOptions { Icon = "fapro:calendar-day", Device = GetDevice() };
-        await _mqttEntityManager.CreateAsync($"{baseName}_last_manual_state_change", new EntityCreationOptions(UniqueId: $"{baseName}_last_manual_state_change", Name: $"Flexi screen {Name} - Last manual state change", DeviceClass: "timestamp", Persist: true), lastManualStateChangeOptions);
+            var lastManualStateChangeOptions = new EntityOptions { Icon = "fapro:calendar-day", Device = GetDevice() };
+            await _mqttEntityManager.CreateAsync($"{baseName}_last_manual_state_change", new EntityCreationOptions(UniqueId: $"{baseName}_last_manual_state_change", Name: $"Flexi screen {Name} - Last manual state change", DeviceClass: "timestamp", Persist: true), lastManualStateChangeOptions);
 
-        var lastStateChangeTriggeredBy = new EnumSensorOptions { Icon = "mdi:state-machine", Device = GetDevice(), Options = Enum<Protectors>.AllValuesAsStringList() };
-        await _mqttEntityManager.CreateAsync($"{baseName}_last_state_change_triggered_by", new EntityCreationOptions(UniqueId: $"{baseName}_last_state_change_triggered_by", Name: $"Flexi screen {Name} - Last state change triggered by", Persist: true), lastStateChangeTriggeredBy);
+            var lastStateChangeTriggeredBy = new EnumSensorOptions { Icon = "mdi:state-machine", Device = GetDevice(), Options = Enum<Protectors>.AllValuesAsStringList() };
+            await _mqttEntityManager.CreateAsync($"{baseName}_last_state_change_triggered_by", new EntityCreationOptions(UniqueId: $"{baseName}_last_state_change_triggered_by", Name: $"Flexi screen {Name} - Last state change triggered by", Persist: true), lastStateChangeTriggeredBy);
 
-        var stormyNight = new EntityOptions { Icon = "fapro:poo-storm", Device = GetDevice() };
-        await _mqttEntityManager.CreateAsync($"{baseName}_stormy_night", new EntityCreationOptions(UniqueId: $"boolean_{baseName}_stormy_night", Name: $"Flexi screen {Name} - Is stormy night", Persist: true), stormyNight);
-        //}
+            var stormyNight = new EntityOptions { Icon = "fapro:poo-storm", Device = GetDevice() };
+            await _mqttEntityManager.CreateAsync($"{baseName}_stormy_night", new EntityCreationOptions(UniqueId: $"boolean_{baseName}_stormy_night", Name: $"Flexi screen {Name} - Is stormy night", Persist: true), stormyNight);
+        }
 
         var observer = await _mqttEntityManager.PrepareCommandSubscriptionAsync(switchName);
         SwitchDisposable = observer.SubscribeAsync(EnabledSwitchHandler(switchName));
