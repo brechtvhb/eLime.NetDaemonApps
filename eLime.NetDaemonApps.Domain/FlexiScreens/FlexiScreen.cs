@@ -280,8 +280,7 @@ public class FlexiScreen : IDisposable
             }
 
             IsEnabled = state == "ON";
-            await _mqttEntityManager.SetStateAsync(switchName, state);
-            _fileStorage.Save("FlexiScreens", Name.MakeHaFriendly(), ToFileStorage());
+            await UpdateStateInHomeAssistant();
         };
     }
 
@@ -311,13 +310,15 @@ public class FlexiScreen : IDisposable
     private async Task UpdateStateInHomeAssistant()
     {
         var baseName = $"sensor.flexiscreens_{Name.MakeHaFriendly()}";
+        var switchName = $"switch.flexiscreens_{Name.MakeHaFriendly()}";
 
         var attributes = new EnabledSwitchAttributes
         {
             LastUpdated = DateTime.Now.ToString("O")
         };
-        await _mqttEntityManager.SetAttributesAsync($"switch.flexiscreens_{Name.MakeHaFriendly()}", attributes);
 
+        await _mqttEntityManager.SetStateAsync(switchName, IsEnabled ? "ON" : "OFF");
+        await _mqttEntityManager.SetAttributesAsync(switchName, attributes);
         await _mqttEntityManager.SetStateAsync($"{baseName}_last_state_change_triggered_by", LastStateChangeTriggeredBy?.ToString()!);
         await _mqttEntityManager.SetStateAsync($"{baseName}_last_automated_state_change", LastAutomatedStateChange?.ToString("O")!);
         await _mqttEntityManager.SetStateAsync($"{baseName}_last_manual_state_change", LastManualStateChange?.ToString("O")!);
