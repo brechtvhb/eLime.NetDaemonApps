@@ -321,7 +321,7 @@ public class FlexiScreen : IDisposable
         await _mqttEntityManager.SetStateAsync($"{baseName}_last_automated_state_change", LastAutomatedStateChange?.ToString("O")!);
         await _mqttEntityManager.SetStateAsync($"{baseName}_last_manual_state_change", LastManualStateChange?.ToString("O")!);
         await _mqttEntityManager.SetStateAsync($"binary_{baseName}_stormy_night", (StormProtector?.StormyNight ?? false).ToString());
-
+        await _mqttEntityManager.RemoveAsync($"{baseName}_stormy_night");
         _logger.LogTrace("{Screen}: Updated flexiscreen in Home assistant to {Attributes}", Name, attributes);
 
 
