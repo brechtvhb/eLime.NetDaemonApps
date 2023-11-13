@@ -263,6 +263,8 @@ public class FlexiScreen : IDisposable
 
         var stormyNight = new EntityOptions { Icon = "fapro:poo-storm", Device = GetDevice() };
         await _mqttEntityManager.CreateAsync($"binary_{baseName}_stormy_night", new EntityCreationOptions(UniqueId: $"boolean_{baseName}_stormy_night", Name: $"Flexi screen {Name} - Is stormy night", Persist: true), stormyNight);
+
+        await _mqttEntityManager.RemoveAsync($"{baseName}_stormy_night");
         //}
 
         var observer = await _mqttEntityManager.PrepareCommandSubscriptionAsync(switchName);
@@ -321,7 +323,7 @@ public class FlexiScreen : IDisposable
         await _mqttEntityManager.SetStateAsync($"{baseName}_last_automated_state_change", LastAutomatedStateChange?.ToString("O")!);
         await _mqttEntityManager.SetStateAsync($"{baseName}_last_manual_state_change", LastManualStateChange?.ToString("O")!);
         await _mqttEntityManager.SetStateAsync($"binary_{baseName}_stormy_night", (StormProtector?.StormyNight ?? false).ToString());
-        await _mqttEntityManager.RemoveAsync($"{baseName}_stormy_night");
+
         _logger.LogTrace("{Screen}: Updated flexiscreen in Home assistant to {Attributes}", Name, attributes);
 
 
