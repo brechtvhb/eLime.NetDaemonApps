@@ -244,7 +244,7 @@ public class FlexiScreen : IDisposable
         var baseName = $"sensor.flexiscreens_{Name.MakeHaFriendly()}";
         var switchName = $"switch.flexiscreens_{Name.MakeHaFriendly()}";
 
-        _logger.LogDebug("{Screen}: Creating Enabled switch in home assistant.", Name);
+        _logger.LogDebug("{Screen}: Creating entities in home assistant.", Name);
         var enabledSwitchOptions = new EnabledSwitchAttributes { Icon = "mdi:blinds", Device = GetDevice() };
         _mqttEntityManager.CreateAsync(switchName, new EntityCreationOptions(Name: $"Flexi screen - {Name}", DeviceClass: "switch", Persist: true), enabledSwitchOptions).RunSync();
         IsEnabled = true;
