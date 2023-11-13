@@ -281,6 +281,7 @@ public class FlexiScreen : IDisposable
 
             IsEnabled = state == "ON";
             await _mqttEntityManager.SetStateAsync(switchName, state);
+            _fileStorage.Save("FlexiScreens", Name.MakeHaFriendly(), ToFileStorage());
         };
     }
 

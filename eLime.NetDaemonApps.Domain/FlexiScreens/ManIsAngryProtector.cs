@@ -11,7 +11,7 @@ public class ManIsAngryProtector
 
     public (ScreenState? State, Boolean Enforce) GetDesiredState(DateTimeOffset now, DateTimeOffset? lastUpdate)
     {
-        lastUpdate ??= DateTimeOffset.MinValue; ;
+        lastUpdate ??= DateTimeOffset.MinValue;
 
         if (lastUpdate.Value.Add(MinimumIntervalSinceLastAutomatedAction) > now)
             return (null, true);
