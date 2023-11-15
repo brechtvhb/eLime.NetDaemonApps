@@ -52,6 +52,7 @@ public class FlexiScreenTests
         _logger = A.Fake<ILogger<Room>>();
         _mqttEntityManager = A.Fake<IMqttEntityManager>();
         _fileStorage = A.Fake<IFileStorage>();
+        A.CallTo(() => _fileStorage.Get<FlexiScreenFileStorage>("FlexiScreens", "office")).Returns(new FlexiScreenFileStorage() { Enabled = true });
 
         _cover = new Cover(_testCtx.HaContext, "cover.office");
         _testCtx.TriggerStateChange(_cover, "open");
@@ -632,7 +633,7 @@ public class FlexiScreenTests
         _testCtx.TriggerStateChange(_cover, "open");
         _testCtx.TriggerStateChange(_sleepSensor, new EntityState { State = "on" });
 
-        A.CallTo(() => _fileStorage.Get<FlexiScreenFileStorage>("FlexiScreens", "office")).Returns(new FlexiScreenFileStorage() { StormyNight = true });
+        A.CallTo(() => _fileStorage.Get<FlexiScreenFileStorage>("FlexiScreens", "office")).Returns(new FlexiScreenFileStorage() { Enabled = true, StormyNight = true });
 
         //Act
         var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage)
