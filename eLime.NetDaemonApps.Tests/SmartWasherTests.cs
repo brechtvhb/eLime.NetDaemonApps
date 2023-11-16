@@ -3,6 +3,7 @@ using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
 using eLime.NetDaemonApps.Domain.FlexiScenes.Rooms;
 using eLime.NetDaemonApps.Domain.FlexiScreens;
 using eLime.NetDaemonApps.Domain.SmartWashers;
+using eLime.NetDaemonApps.Domain.Storage;
 using eLime.NetDaemonApps.Tests.Builders;
 using eLime.NetDaemonApps.Tests.Helpers;
 using FakeItEasy;
@@ -18,6 +19,7 @@ public class SmartWasherTests
     private AppTestContext _testCtx;
     private ILogger _logger;
     private IMqttEntityManager _mqttEntityManager;
+    private IFileStorage _fileStorage;
 
     private BinarySwitch _powerSocket;
     private NumericSensor _powerSensor;
@@ -31,6 +33,10 @@ public class SmartWasherTests
         _logger = A.Fake<ILogger<Room>>();
         _mqttEntityManager = A.Fake<IMqttEntityManager>();
 
+        _fileStorage = A.Fake<IFileStorage>();
+        A.CallTo(() => _fileStorage.Get<SmartWasherFileStorage>("Smartwashers", "smartwasher")).Returns(new SmartWasherFileStorage() { Enabled = true });
+
+
         _powerSocket = BinarySwitch.Create(_testCtx.HaContext, "switch.socket_washer");
         _testCtx.TriggerStateChange(_powerSocket, "off");
 
@@ -42,7 +48,7 @@ public class SmartWasherTests
     public void Transitions_To_Prewashing_HappyFlow()
     {
         // Arrange
-        var washer = new SmartWasherBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+        var washer = new SmartWasherBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler, _fileStorage)
             .WithPowerSocket(_powerSocket)
             .WithPowerSensor(_powerSensor)
             .Build();
@@ -61,7 +67,7 @@ public class SmartWasherTests
     public void Resets_After_5_Minutes()
     {
         // Arrange
-        var washer = new SmartWasherBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+        var washer = new SmartWasherBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler, _fileStorage)
             .WithPowerSocket(_powerSocket)
             .WithPowerSensor(_powerSensor)
             .Build();
@@ -82,7 +88,7 @@ public class SmartWasherTests
     public void Transitions_To_Heating_HappyFlow()
     {
         // Arrange
-        var washer = new SmartWasherBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+        var washer = new SmartWasherBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler, _fileStorage)
             .WithPowerSocket(_powerSocket)
             .WithPowerSensor(_powerSensor)
             .Build();
@@ -103,7 +109,7 @@ public class SmartWasherTests
     public void Transitions_To_Washing_HappyFlow()
     {
         // Arrange
-        var washer = new SmartWasherBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+        var washer = new SmartWasherBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler, _fileStorage)
             .WithPowerSocket(_powerSocket)
             .WithPowerSensor(_powerSensor)
             .Build();
@@ -126,7 +132,7 @@ public class SmartWasherTests
     public void Transitions_To_Rinsing_HappyFlow()
     {
         // Arrange
-        var washer = new SmartWasherBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+        var washer = new SmartWasherBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler, _fileStorage)
             .WithPowerSocket(_powerSocket)
             .WithPowerSensor(_powerSensor)
             .Build();
@@ -153,7 +159,7 @@ public class SmartWasherTests
     public void Transitions_To_Spinning_HappyFlow()
     {
         // Arrange
-        var washer = new SmartWasherBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+        var washer = new SmartWasherBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler, _fileStorage)
             .WithPowerSocket(_powerSocket)
             .WithPowerSensor(_powerSensor)
             .Build();
@@ -182,7 +188,7 @@ public class SmartWasherTests
     public void Transitions_To_Ready_HappyFlow()
     {
         // Arrange
-        var washer = new SmartWasherBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+        var washer = new SmartWasherBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler, _fileStorage)
             .WithPowerSocket(_powerSocket)
             .WithPowerSensor(_powerSensor)
             .Build();
@@ -215,7 +221,7 @@ public class SmartWasherTests
     public void Transitions_To_Idle_HappyFlow()
     {
         // Arrange
-        var washer = new SmartWasherBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+        var washer = new SmartWasherBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler, _fileStorage)
             .WithPowerSocket(_powerSocket)
             .WithPowerSensor(_powerSensor)
             .Build();
@@ -249,7 +255,7 @@ public class SmartWasherTests
     public void Transitions_To_PreWashing_From_Ready()
     {
         // Arrange
-        var washer = new SmartWasherBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+        var washer = new SmartWasherBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler, _fileStorage)
             .WithPowerSocket(_powerSocket)
             .WithPowerSensor(_powerSensor)
             .Build();
@@ -285,7 +291,7 @@ public class SmartWasherTests
     public void Transitions_To_DelayedStart_If_Switch_On()
     {
         // Arrange
-        var washer = new SmartWasherBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+        var washer = new SmartWasherBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler, _fileStorage)
             .WithPowerSocket(_powerSocket)
             .WithPowerSensor(_powerSensor)
             .Build();
@@ -305,7 +311,7 @@ public class SmartWasherTests
     public void Does_Not_Transition_To_DelayedStart_Instantly()
     {
         // Arrange
-        var washer = new SmartWasherBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+        var washer = new SmartWasherBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler, _fileStorage)
             .WithPowerSocket(_powerSocket)
             .WithPowerSensor(_powerSensor)
             .Build();
@@ -322,7 +328,7 @@ public class SmartWasherTests
     public void Awakens_From_Delayed_Start_By_Turning_Socket_On_On_Trigger()
     {
         // Arrange
-        var washer = new SmartWasherBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+        var washer = new SmartWasherBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler, _fileStorage)
             .WithPowerSocket(_powerSocket)
             .WithPowerSensor(_powerSensor)
             .Build();
@@ -343,7 +349,7 @@ public class SmartWasherTests
     public void Transitions_From_DelayedStart_To_PreWashing_If_Socket_Turns_On()
     {
         // Arrange
-        var washer = new SmartWasherBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+        var washer = new SmartWasherBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler, _fileStorage)
             .WithPowerSocket(_powerSocket)
             .WithPowerSensor(_powerSensor)
             .Build();
@@ -365,7 +371,7 @@ public class SmartWasherTests
     public void Does_Nothing_If_Socket_Turns_On_In_Wrong_State()
     {
         // Arrange
-        var washer = new SmartWasherBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler)
+        var washer = new SmartWasherBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler, _fileStorage)
             .WithPowerSocket(_powerSocket)
             .WithPowerSensor(_powerSensor)
             .Build();

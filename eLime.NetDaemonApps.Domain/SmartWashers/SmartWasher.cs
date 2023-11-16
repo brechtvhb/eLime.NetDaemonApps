@@ -3,6 +3,7 @@ using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
 using eLime.NetDaemonApps.Domain.FlexiScreens;
 using eLime.NetDaemonApps.Domain.Helper;
 using eLime.NetDaemonApps.Domain.SmartWashers.States;
+using eLime.NetDaemonApps.Domain.Storage;
 using Microsoft.Extensions.Logging;
 using NetDaemon.Extensions.MqttEntityManager;
 using NetDaemon.HassModel;
@@ -23,6 +24,7 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers
         private readonly IHaContext _haContext;
         private readonly ILogger _logger;
         private readonly IScheduler _scheduler;
+        private readonly IFileStorage _fileStorage;
         private readonly IMqttEntityManager _mqttEntityManager;
 
         private SmartWasherState? _state;
@@ -49,12 +51,13 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers
             _ => WasherStates.Idle
         };
 
-        public SmartWasher(ILogger logger, IHaContext haContext, IMqttEntityManager mqttEntityManager, IScheduler scheduler, bool enabled, string name, BinarySwitch powerSocket, NumericSensor powerSensor)
+        public SmartWasher(ILogger logger, IHaContext haContext, IMqttEntityManager mqttEntityManager, IScheduler scheduler, IFileStorage fileStorage, bool enabled, string name, BinarySwitch powerSocket, NumericSensor powerSensor)
         {
             _logger = logger;
             _haContext = haContext;
             _mqttEntityManager = mqttEntityManager;
             _scheduler = scheduler;
+            _fileStorage = fileStorage;
 
             if (!enabled)
                 return;
@@ -182,6 +185,8 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers
             await _mqttEntityManager.SetAttributesAsync(EnabledSwitch.EntityId, attributes);
             await _mqttEntityManager.SetStateAsync($"sensor.smartwasher_{Name.MakeHaFriendly()}_state", State.ToString());
             _logger.LogTrace("{SmartWasher}: Updated smartwasher state in Home assistant to {Attributes}", Name, attributes);
+
+            _fileStorage.Save("FlexiScreens", Name.MakeHaFriendly(), ToFileStorage());
         }
 
         private WasherStates? RetrieveSateFromHomeAssistant()
@@ -193,6 +198,17 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers
 
             return state;
         }
+
+        internal SmartWasherFileStorage ToFileStorage() => new()
+        {
+            Enabled = EnabledSwitch.IsOn(),
+            CanDelayStart = DelayedStart.IsOn(),
+            DelayedStartTriggered = DelayedStartTrigger.IsOn(),
+            State = _state,
+            Program = Program,
+            Eta = Eta
+        };
+
 
         private bool IsEnabled()
         {
@@ -212,7 +228,7 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers
             if (e.New?.State == 0 && NoPowerResetter == null && State != WasherStates.Idle && State != WasherStates.DelayedStart && State != WasherStates.Ready)
             {
                 _logger.LogInformation("Wonky washer detected! Will reset washer to Idle in 5 minutes if socket power usage remains 0.");
-                NoPowerResetter = _scheduler.Schedule(TimeSpan.FromMinutes(5), () => TransitionTo(_logger, new IdleState()));
+                NoPowerResetter = _scheduler.Schedule(TimeSpan.FromMinutes(10), () => TransitionTo(_logger, new IdleState()));
             }
 
             if (e.New?.State != 0 && NoPowerResetter != null)

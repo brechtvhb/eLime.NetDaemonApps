@@ -1,6 +1,7 @@
 using eLime.NetDaemonApps.Config.SmartWasher;
 using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
+using eLime.NetDaemonApps.Domain.Storage;
 using NetDaemon.Extensions.MqttEntityManager;
 using System.Reactive.Concurrency;
 using System.Threading;
@@ -22,15 +23,17 @@ public class SmartWasher : IAsyncInitializable, IAsyncDisposable
 {
     private readonly IHaContext _ha;
     private readonly IScheduler _scheduler;
+    private readonly IFileStorage _fileStorage;
     private readonly IMqttEntityManager _mqttEntityManager;
     private readonly ILogger _logger;
     private readonly SmartWasherConfig _config;
     private CancellationToken _ct;
     public Domain.SmartWashers.SmartWasher Washer { get; set; }
-    public SmartWasher(IHaContext ha, IScheduler scheduler, IAppConfig<SmartWasherConfig> config, IMqttEntityManager mqttEntityManager, ILogger<SmartWasher> logger)
+    public SmartWasher(IHaContext ha, IScheduler scheduler, IFileStorage fileStorage, IAppConfig<SmartWasherConfig> config, IMqttEntityManager mqttEntityManager, ILogger<SmartWasher> logger)
     {
         _ha = ha;
         _scheduler = scheduler;
+        _fileStorage = fileStorage;
         _mqttEntityManager = mqttEntityManager;
         _logger = logger;
         _config = config.Value;
@@ -44,7 +47,7 @@ public class SmartWasher : IAsyncInitializable, IAsyncDisposable
             var powerSocket = BinarySwitch.Create(_ha, _config.PowerSocket);
             var powerSensor = NumericSensor.Create(_ha, _config.PowerSensor);
 
-            Washer = new Domain.SmartWashers.SmartWasher(_logger, _ha, _mqttEntityManager, _scheduler, _config.Enabled ?? true, _config.Name, powerSocket, powerSensor);
+            Washer = new Domain.SmartWashers.SmartWasher(_logger, _ha, _mqttEntityManager, _scheduler, _fileStorage, _config.Enabled ?? true, _config.Name, powerSocket, powerSensor);
         }
         catch (Exception ex)
         {
