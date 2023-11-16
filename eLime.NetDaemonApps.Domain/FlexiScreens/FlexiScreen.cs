@@ -236,6 +236,9 @@ public class FlexiScreen : IDisposable
                 LastStateChangeTriggeredBy = triggeredBy;
                 await UpdateStateInHomeAssistant();
                 break;
+            default:
+                await UpdateStateInHomeAssistant();
+                break;
         }
     }
 

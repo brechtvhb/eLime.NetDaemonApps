@@ -64,7 +64,7 @@ public class SmartWasherTests
 
 
     [TestMethod]
-    public void Resets_After_5_Minutes()
+    public void Resets_After_10_Minutes()
     {
         // Arrange
         var washer = new SmartWasherBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler, _fileStorage)
@@ -78,7 +78,7 @@ public class SmartWasherTests
 
         //Act
         _testCtx.TriggerStateChange(_powerSensor, "0");
-        _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(6));
+        _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(11));
 
         //Assert
         Assert.AreEqual(WasherStates.Idle, washer.State);
