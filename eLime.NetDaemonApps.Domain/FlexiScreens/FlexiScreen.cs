@@ -30,6 +30,7 @@ public class FlexiScreen : IDisposable
     private readonly IScheduler _scheduler;
     private readonly IMqttEntityManager _mqttEntityManager;
     private readonly IFileStorage _fileStorage;
+    private FlexiScreenFileStorage _lastState;
 
     private DateTimeOffset? LastAutomatedStateChange { get; set; }
     private DateTimeOffset? LastManualStateChange { get; set; }
@@ -47,6 +48,7 @@ public class FlexiScreen : IDisposable
             : null;
 
     private readonly DebounceDispatcher? GuardScreenDebounceDispatcher;
+
 
     public FlexiScreen(IHaContext haContext, ILogger logger, IScheduler scheduler, IMqttEntityManager mqttEntityManager, IFileStorage fileStorage, Boolean enabled, String name, Cover screen, String ndUserId,
         SunProtector sunProtector, StormProtector? stormProtector, TemperatureProtector? temperatureProtector, ManIsAngryProtector? manIsAngryProtector, WomanIsAngryProtector? womanIsAngryProtector, ChildrenAreAngryProtector? childrenAreAngryProtector,
@@ -312,6 +314,11 @@ public class FlexiScreen : IDisposable
 
     private async Task UpdateStateInHomeAssistant()
     {
+        var fileStorage = ToFileStorage();
+
+        if (fileStorage.Equals(_lastState))
+            return;
+
         var baseName = $"sensor.flexiscreens_{Name.MakeHaFriendly()}";
         var switchName = $"switch.flexiscreens_{Name.MakeHaFriendly()}";
 
@@ -322,15 +329,16 @@ public class FlexiScreen : IDisposable
 
         await _mqttEntityManager.SetStateAsync(switchName, IsEnabled ? "ON" : "OFF");
         await _mqttEntityManager.SetAttributesAsync(switchName, attributes);
-        await _mqttEntityManager.SetStateAsync($"{baseName}_last_state_change_triggered_by", LastStateChangeTriggeredBy?.ToString()!);
-        await _mqttEntityManager.SetStateAsync($"{baseName}_last_automated_state_change", LastAutomatedStateChange?.ToString("O")!);
-        await _mqttEntityManager.SetStateAsync($"{baseName}_last_manual_state_change", LastManualStateChange?.ToString("O")!);
-        await _mqttEntityManager.SetStateAsync($"binary_{baseName}_stormy_night", (StormProtector?.StormyNight ?? false).ToString());
+        await _mqttEntityManager.SetStateAsync($"{baseName}_last_state_change_triggered_by", LastStateChangeTriggeredBy?.ToString());
+        await _mqttEntityManager.SetStateAsync($"{baseName}_last_automated_state_change", LastAutomatedStateChange?.ToString("O"));
+        await _mqttEntityManager.SetStateAsync($"{baseName}_last_manual_state_change", LastManualStateChange?.ToString("O"));
+        await _mqttEntityManager.SetStateAsync($"binary_{baseName}_stormy_night", (StormProtector?.StormyNight ?? false) ? "ON" : "OFF");
 
         _logger.LogTrace("{Screen}: Updated flexiscreen in Home assistant to {Attributes}", Name, attributes);
 
 
         _fileStorage.Save("FlexiScreens", Name.MakeHaFriendly(), ToFileStorage());
+        _lastState = fileStorage;
     }
 
     internal FlexiScreenFileStorage ToFileStorage() => new()
