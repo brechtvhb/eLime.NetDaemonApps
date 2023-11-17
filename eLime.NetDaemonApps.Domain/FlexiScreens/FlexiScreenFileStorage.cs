@@ -8,8 +8,11 @@ internal class FlexiScreenFileStorage
     public Protectors? LastStateChangeTriggeredBy { get; set; }
     public Boolean StormyNight { get; set; }
 
-    public bool Equals(FlexiScreenFileStorage r)
+    public bool Equals(FlexiScreenFileStorage? r)
     {
+        if (r == null)
+            return false;
+
         return Enabled == r.Enabled && LastAutomatedStateChange == r.LastAutomatedStateChange && LastManualStateChange == r.LastManualStateChange && LastStateChangeTriggeredBy == r.LastStateChangeTriggeredBy && StormyNight == r.StormyNight;
     }
 }
