@@ -30,7 +30,7 @@ public class FlexiScreen : IDisposable
     private readonly IScheduler _scheduler;
     private readonly IMqttEntityManager _mqttEntityManager;
     private readonly IFileStorage _fileStorage;
-    private FlexiScreenFileStorage _lastState;
+    private FlexiScreenFileStorage? _lastState;
 
     private DateTimeOffset? LastAutomatedStateChange { get; set; }
     private DateTimeOffset? LastManualStateChange { get; set; }
@@ -316,7 +316,7 @@ public class FlexiScreen : IDisposable
     {
         var fileStorage = ToFileStorage();
 
-        if (fileStorage.Equals(_lastState))
+        if (_lastState != null && fileStorage.Equals(_lastState))
             return;
 
         var baseName = $"sensor.flexiscreens_{Name.MakeHaFriendly()}";
