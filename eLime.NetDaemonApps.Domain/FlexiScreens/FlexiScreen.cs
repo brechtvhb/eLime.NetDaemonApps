@@ -316,7 +316,7 @@ public class FlexiScreen : IDisposable
     {
         var fileStorage = ToFileStorage();
 
-        if (_lastState != null && fileStorage.Equals(_lastState))
+        if (fileStorage.Equals(_lastState))
             return;
 
         var baseName = $"sensor.flexiscreens_{Name.MakeHaFriendly()}";
