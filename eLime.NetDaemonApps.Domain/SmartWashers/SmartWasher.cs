@@ -186,7 +186,7 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers
             await _mqttEntityManager.SetStateAsync($"sensor.smartwasher_{Name.MakeHaFriendly()}_state", State.ToString());
             _logger.LogTrace("{SmartWasher}: Updated smartwasher state in Home assistant to {Attributes}", Name, attributes);
 
-            _fileStorage.Save("FlexiScreens", Name.MakeHaFriendly(), ToFileStorage());
+            _fileStorage.Save("Smartwasher", Name.MakeHaFriendly(), ToFileStorage());
         }
 
         private WasherStates? RetrieveSateFromHomeAssistant()
@@ -204,7 +204,7 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers
             Enabled = EnabledSwitch.IsOn(),
             CanDelayStart = DelayedStart.IsOn(),
             DelayedStartTriggered = DelayedStartTrigger.IsOn(),
-            State = _state,
+            State = State,
             Program = Program,
             Eta = Eta
         };

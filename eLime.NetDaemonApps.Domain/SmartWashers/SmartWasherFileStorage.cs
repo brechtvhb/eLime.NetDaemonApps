@@ -6,7 +6,7 @@ internal class SmartWasherFileStorage
     public Boolean CanDelayStart { get; set; }
     public Boolean DelayedStartTriggered { get; set; }
 
-    public SmartWasherState? State { get; set; }
+    public WasherStates State { get; set; }
     public WasherProgram? Program { get; set; }
     public DateTimeOffset? Eta { get; set; }
 }
