@@ -16,6 +16,7 @@ public class CarConfig
 {
     public String Name { get; set; }
     public Double BatteryCapacity { get; set; }
+    public Boolean IgnoreStateOnForceCharge { get; set; }
     public String BatteryPercentageSensor { get; set; }
     public String CableConnectedSensor { get; set; }
 }

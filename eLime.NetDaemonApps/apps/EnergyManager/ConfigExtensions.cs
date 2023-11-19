@@ -58,7 +58,7 @@ public static class ConfigExtensions
                 {
                     var batteryPercentageSensor = new NumericEntity(ha, car.BatteryPercentageSensor);
                     var cableConnectedSensor = new BinarySensor(ha, car.CableConnectedSensor);
-                    cars.Add(new Car(car.Name, car.BatteryCapacity, batteryPercentageSensor, cableConnectedSensor));
+                    cars.Add(new Car(car.Name, car.BatteryCapacity, car.IgnoreStateOnForceCharge, batteryPercentageSensor, cableConnectedSensor));
                 }
 
                 var currentEntity = InputNumberEntity.Create(ha, consumer.CarCharger.CurrentEntity);
