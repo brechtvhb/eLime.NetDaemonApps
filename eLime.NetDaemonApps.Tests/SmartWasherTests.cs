@@ -1,7 +1,6 @@
 using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
 using eLime.NetDaemonApps.Domain.FlexiScenes.Rooms;
-using eLime.NetDaemonApps.Domain.FlexiScreens;
 using eLime.NetDaemonApps.Domain.SmartWashers;
 using eLime.NetDaemonApps.Domain.Storage;
 using eLime.NetDaemonApps.Tests.Builders;
@@ -28,14 +27,12 @@ public class SmartWasherTests
     public void Init()
     {
         _testCtx = AppTestContext.Create(DateTime.Now);
-        _testCtx.TriggerStateChange(new SmartWasherSwitch(_testCtx.HaContext, "switch.smartwasher_smartwasher"), "on");
 
         _logger = A.Fake<ILogger<Room>>();
         _mqttEntityManager = A.Fake<IMqttEntityManager>();
 
         _fileStorage = A.Fake<IFileStorage>();
-        A.CallTo(() => _fileStorage.Get<SmartWasherFileStorage>("Smartwashers", "smartwasher")).Returns(new SmartWasherFileStorage() { Enabled = true });
-
+        A.CallTo(() => _fileStorage.Get<SmartWasherFileStorage>("Smartwasher", "smartwasher")).Returns(new SmartWasherFileStorage { Enabled = true });
 
         _powerSocket = BinarySwitch.Create(_testCtx.HaContext, "switch.socket_washer");
         _testCtx.TriggerStateChange(_powerSocket, "off");
@@ -291,13 +288,15 @@ public class SmartWasherTests
     public void Transitions_To_DelayedStart_If_Switch_On()
     {
         // Arrange
+        _fileStorage = A.Fake<IFileStorage>();
+        A.CallTo(() => _fileStorage.Get<SmartWasherFileStorage>("Smartwasher", "smartwasher")).Returns(new SmartWasherFileStorage { Enabled = true, CanDelayStart = true });
+
         var washer = new SmartWasherBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler, _fileStorage)
             .WithPowerSocket(_powerSocket)
             .WithPowerSensor(_powerSensor)
             .Build();
 
         //Act
-        _testCtx.TriggerStateChange(new SmartWasherSwitch(_testCtx.HaContext, "switch.smartwasher_smartwasher_delayed_start"), "on");
         _testCtx.TriggerStateChange(_powerSensor, "10");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(20));
         _testCtx.TriggerStateChange(_powerSensor, "50");
@@ -311,13 +310,15 @@ public class SmartWasherTests
     public void Does_Not_Transition_To_DelayedStart_Instantly()
     {
         // Arrange
+        _fileStorage = A.Fake<IFileStorage>();
+        A.CallTo(() => _fileStorage.Get<SmartWasherFileStorage>("Smartwasher", "smartwasher")).Returns(new SmartWasherFileStorage { Enabled = true, CanDelayStart = true });
+
         var washer = new SmartWasherBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler, _fileStorage)
             .WithPowerSocket(_powerSocket)
             .WithPowerSensor(_powerSensor)
             .Build();
 
         //Act
-        _testCtx.TriggerStateChange(new SmartWasherSwitch(_testCtx.HaContext, "switch.smartwasher_smartwasher_delayed_start"), "on");
         _testCtx.TriggerStateChange(_powerSensor, "10");
 
         //Assert
@@ -328,18 +329,20 @@ public class SmartWasherTests
     public void Awakens_From_Delayed_Start_By_Turning_Socket_On_On_Trigger()
     {
         // Arrange
+        _fileStorage = A.Fake<IFileStorage>();
+        A.CallTo(() => _fileStorage.Get<SmartWasherFileStorage>("Smartwasher", "smartwasher")).Returns(new SmartWasherFileStorage { Enabled = true, CanDelayStart = true });
+
         var washer = new SmartWasherBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler, _fileStorage)
             .WithPowerSocket(_powerSocket)
             .WithPowerSensor(_powerSensor)
             .Build();
 
-        _testCtx.TriggerStateChange(new SmartWasherDelayedStartSwitch(_testCtx.HaContext, "switch.smartwasher_smartwasher_delayed_start"), "on");
         _testCtx.TriggerStateChange(_powerSensor, "10");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(20));
         _testCtx.TriggerStateChange(_powerSensor, "50");
 
         //Act
-        _testCtx.TriggerStateChange(new SmartWasherDelayedStartTrigger(_testCtx.HaContext, "switch.smartwasher_smartwasher_delayed_start_activate"), "on");
+        washer.DelayedStartTriggerHandler().Invoke("ON");
 
         //Assert
         _testCtx.VerifySwitchTurnOn(_powerSocket, Moq.Times.Once);
@@ -349,16 +352,17 @@ public class SmartWasherTests
     public void Transitions_From_DelayedStart_To_PreWashing_If_Socket_Turns_On()
     {
         // Arrange
+        _fileStorage = A.Fake<IFileStorage>();
+        A.CallTo(() => _fileStorage.Get<SmartWasherFileStorage>("Smartwasher", "smartwasher")).Returns(new SmartWasherFileStorage { Enabled = true, CanDelayStart = true, DelayedStartTriggered = true });
+
         var washer = new SmartWasherBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler, _fileStorage)
             .WithPowerSocket(_powerSocket)
             .WithPowerSensor(_powerSensor)
             .Build();
 
-        _testCtx.TriggerStateChange(new SmartWasherDelayedStartSwitch(_testCtx.HaContext, "switch.smartwasher_smartwasher_delayed_start"), "on");
         _testCtx.TriggerStateChange(_powerSensor, "10");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(20));
         _testCtx.TriggerStateChange(_powerSensor, "50");
-        _testCtx.TriggerStateChange(new SmartWasherDelayedStartTrigger(_testCtx.HaContext, "switch.smartwasher_smartwasher_delayed_start_activate"), "on");
 
         //Act
         _testCtx.TriggerStateChange(_powerSocket, "on");
@@ -371,12 +375,13 @@ public class SmartWasherTests
     public void Does_Nothing_If_Socket_Turns_On_In_Wrong_State()
     {
         // Arrange
+        _fileStorage = A.Fake<IFileStorage>();
+        A.CallTo(() => _fileStorage.Get<SmartWasherFileStorage>("Smartwasher", "smartwasher")).Returns(new SmartWasherFileStorage { Enabled = true, CanDelayStart = true });
+
         var washer = new SmartWasherBuilder(_testCtx, _logger, _mqttEntityManager, _testCtx.Scheduler, _fileStorage)
             .WithPowerSocket(_powerSocket)
             .WithPowerSensor(_powerSensor)
             .Build();
-
-        _testCtx.TriggerStateChange(new SmartWasherDelayedStartSwitch(_testCtx.HaContext, "switch.smartwasher_smartwasher_delayed_start"), "on");
 
         //Act
         _testCtx.TriggerStateChange(_powerSocket, "on");

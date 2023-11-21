@@ -1,22 +1,25 @@
 ﻿using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
-using eLime.NetDaemonApps.Domain.FlexiScreens;
 using eLime.NetDaemonApps.Domain.Helper;
+using eLime.NetDaemonApps.Domain.Mqtt;
 using eLime.NetDaemonApps.Domain.SmartWashers.States;
 using eLime.NetDaemonApps.Domain.Storage;
 using Microsoft.Extensions.Logging;
 using NetDaemon.Extensions.MqttEntityManager;
 using NetDaemon.HassModel;
 using System.Reactive.Concurrency;
+using System.Runtime.CompilerServices;
 
+[assembly: InternalsVisibleTo("eLime.NetDaemonApps.Tests")]
 namespace eLime.NetDaemonApps.Domain.SmartWashers
 {
     public class SmartWasher : IDisposable
     {
         public string? Name { get; }
-        private SmartWasherSwitch EnabledSwitch { get; set; }
-        private SmartWasherDelayedStartSwitch DelayedStart { get; set; }
-        private SmartWasherDelayedStartTrigger DelayedStartTrigger { get; set; }
+
+        public Boolean Enabled { get; private set; }
+        public Boolean CanDelayStart { get; private set; }
+        public Boolean DelayedStartTriggered { get; private set; }
 
         public NumericSensor PowerSensor { get; set; }
         public BinarySwitch PowerSocket { get; set; }
@@ -70,7 +73,7 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers
             PowerSocket.TurnedOff += PowerSocket_TurnedOff;
 
             EnsureSensorsExist().RunSync();
-            var state = RetrieveSateFromHomeAssistant();
+            var state = RetrieveState();
 
             SmartWasherState initState = state switch
             {
@@ -93,68 +96,85 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers
             var switchName = $"switch.smartwasher_{Name.MakeHaFriendly()}";
             var delayedStartName = $"switch.smartwasher_{Name.MakeHaFriendly()}_delayed_start";
             var delayedStartTriggerName = $"switch.smartwasher_{Name.MakeHaFriendly()}_delayed_start_activate";
-            var stateName = $"sensor.smartwasher_{Name.MakeHaFriendly()}_state";
+            var baseName = $"sensor.smartwasher_{Name.MakeHaFriendly()}";
 
-            var created = false;
-            if (_haContext.Entity(switchName).State == null || string.Equals(_haContext.Entity(switchName).State, "unavailable", StringComparison.InvariantCultureIgnoreCase))
+            if (_haContext.Entity(switchName).State == null)
             {
-                _logger.LogDebug("{SmartWasher}: Creating Enabled switch in home assistant.", Name);
-                await _mqttEntityManager.CreateAsync(switchName, new EntityCreationOptions(Name: $"Smart washer - {Name}", DeviceClass: "switch", Persist: true));
-                await _mqttEntityManager.CreateAsync(delayedStartName, new EntityCreationOptions(Name: $"Smart washer - {Name} - Delayed start", DeviceClass: "switch", Persist: true));
-                await _mqttEntityManager.CreateAsync(delayedStartTriggerName, new EntityCreationOptions(Name: $"Smart washer - {Name} - Delayed start - Activate", DeviceClass: "switch", Persist: true));
-                await _mqttEntityManager.CreateAsync(stateName, new EntityCreationOptions(Name: $"Smart washer - {Name} - state", UniqueId: $"smartwasher_{Name}_state", Persist: true));
-                await _mqttEntityManager.SetStateAsync(stateName, State.ToString());
-                created = true;
-            }
+                _logger.LogDebug("{SmartWasher}: Creating Sensors and switches in home assistant.", Name);
 
-            EnabledSwitch = new SmartWasherSwitch(_haContext, switchName);
-            DelayedStart = new SmartWasherDelayedStartSwitch(_haContext, delayedStartName);
-            DelayedStartTrigger = new SmartWasherDelayedStartTrigger(_haContext, delayedStartTriggerName);
-            DelayedStartTrigger.Initialize();
-            DelayedStartTrigger.TurnedOn += DelayedStartTrigger_TurnedOn;
-            if (created)
-            {
-                await _mqttEntityManager.SetStateAsync(switchName, "ON");
+                var enabledOptions = new EntityOptions { Icon = "mdi:washing-machine", Device = GetDevice() };
+                await _mqttEntityManager.CreateAsync(switchName, new EntityCreationOptions(Name: $"{Name}", DeviceClass: "switch", Persist: true), enabledOptions);
+                Enabled = true;
+
+                var delayedStartOptions = new EntityOptions { Icon = "mdi:timer-pause-outline", Device = GetDevice() };
+                await _mqttEntityManager.CreateAsync(delayedStartName, new EntityCreationOptions(Name: $"{Name} - Delayed start", DeviceClass: "switch", Persist: true), delayedStartOptions);
+
+                var delayedStartTriggerOptions = new EntityOptions { Icon = "mdi:timer-play-outline", Device = GetDevice() };
+                await _mqttEntityManager.CreateAsync(delayedStartTriggerName, new EntityCreationOptions(Name: $"{Name} - Delayed start - Activate", DeviceClass: "switch", Persist: true), delayedStartTriggerOptions);
+
+                var stateOptions = new EntityOptions { Icon = "mdi:progress-helper", Device = GetDevice() };
+                await _mqttEntityManager.CreateAsync($"{baseName}_state", new EntityCreationOptions(Name: $"{Name} - state", UniqueId: $"smartwasher_{Name}_state", Persist: true), stateOptions);
+                await _mqttEntityManager.SetStateAsync($"{baseName}_state", State.ToString());
+
+                var etaOptions = new EntityOptions { Icon = "fapro:calendar-day", Device = GetDevice() };
+                await _mqttEntityManager.CreateAsync($"{baseName}_eta", new EntityCreationOptions(Name: $"{Name} - state", UniqueId: $"smartwasher_{Name}_eta", Persist: true), etaOptions);
+
+                var lastStateChangeOptions = new EntityOptions { Icon = "fapro:calendar-day", Device = GetDevice() };
+                await _mqttEntityManager.CreateAsync($"{baseName}_last_state_change", new EntityCreationOptions(Name: $"{Name} - state", UniqueId: $"smartwasher_{Name}_last_state_change", Persist: true), lastStateChangeOptions);
+
+                var programOptions = new EntityOptions { Icon = "fapro:dial-med", Device = GetDevice() };
+                await _mqttEntityManager.CreateAsync($"{baseName}_program", new EntityCreationOptions(UniqueId: $"{baseName}_program", Name: $"{Name} - Program", Persist: true), programOptions);
             }
 
             var switchObserver = await _mqttEntityManager.PrepareCommandSubscriptionAsync(switchName);
-            SwitchDisposable = switchObserver.SubscribeAsync(EnabledSwitchHandler(switchName));
+            SwitchDisposable = switchObserver.SubscribeAsync(EnabledSwitchHandler());
 
             var delayedStartObserver = await _mqttEntityManager.PrepareCommandSubscriptionAsync(delayedStartName);
-            DelayedStartDisposable = delayedStartObserver.SubscribeAsync(DelayedStartSwitchHandler(delayedStartName));
+            DelayedStartDisposable = delayedStartObserver.SubscribeAsync(DelayedStartSwitchHandler());
 
             var delayedStartTriggerObserver = await _mqttEntityManager.PrepareCommandSubscriptionAsync(delayedStartTriggerName);
-            DelayedStartTriggerDisposable = delayedStartTriggerObserver.SubscribeAsync(DelayedStartTriggerHandler(delayedStartTriggerName));
+            DelayedStartTriggerDisposable = delayedStartTriggerObserver.SubscribeAsync(DelayedStartTriggerHandler());
         }
 
-        private void DelayedStartTrigger_TurnedOn(object? sender, EnabledSwitchEventArgs<EnabledSwitchAttributes> e)
+        public Device GetDevice()
         {
-            if (!DelayedStart.IsOn() || _state is not DelayedStartState)
+            return new Device { Identifiers = new List<string> { $"smartwasher.{Name.MakeHaFriendly()}" }, Name = "Smartwasher: " + Name, Manufacturer = "Me" };
+        }
+
+        private void DelayedStartAwaken()
+        {
+            if (!CanDelayStart || _state is not DelayedStartState)
                 return;
 
             TurnPowerSocketOn();
             _logger.LogDebug("{SmartWasher}: Awakening from delayed start.", Name);
         }
 
-        private Func<string, Task> DelayedStartTriggerHandler(string delayedStartTriggerName)
+        internal Func<string, Task> DelayedStartTriggerHandler()
         {
             return async state =>
             {
                 _logger.LogDebug("{SmartWasher}: Setting delayed start trigger to {state}.", Name, state);
-                await _mqttEntityManager.SetStateAsync(delayedStartTriggerName, state);
+                DelayedStartTriggered = state == "ON";
+
+                if (DelayedStartTriggered)
+                    DelayedStartAwaken();
+
+                await UpdateStateInHomeAssistant();
             };
         }
 
-        private Func<string, Task> DelayedStartSwitchHandler(string delayedStartName)
+        private Func<string, Task> DelayedStartSwitchHandler()
         {
             return async state =>
             {
                 _logger.LogDebug("{SmartWasher}: Setting delayed start to {state}.", Name, state);
-                await _mqttEntityManager.SetStateAsync(delayedStartName, state);
+                CanDelayStart = state == "ON";
+                await UpdateStateInHomeAssistant();
             };
         }
 
-        private Func<string, Task> EnabledSwitchHandler(string switchName)
+        private Func<string, Task> EnabledSwitchHandler()
         {
             return async state =>
             {
@@ -162,16 +182,16 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers
                 if (state == "OFF")
                 {
                     _logger.LogDebug("{SmartWasher}: Clearing smart washer switch state because it was disabled.", Name);
-                    await UpdateStateInHomeAssistant();
                 }
-                await _mqttEntityManager.SetStateAsync(switchName, state);
+                Enabled = state == "ON";
+                await UpdateStateInHomeAssistant();
             };
         }
 
         private async Task UpdateStateInHomeAssistant()
         {
-            if (!IsEnabled())
-                return;
+            var switchName = $"switch.smartwasher_{Name.MakeHaFriendly()}";
+            var baseName = $"sensor.smartwasher_{Name.MakeHaFriendly()}";
 
             var attributes = new SmartWasherSwitchAttributes
             {
@@ -182,18 +202,33 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers
                 Program = Program?.ToString(),
                 Icon = "mdi:washing-machine"
             };
-            await _mqttEntityManager.SetAttributesAsync(EnabledSwitch.EntityId, attributes);
-            await _mqttEntityManager.SetStateAsync($"sensor.smartwasher_{Name.MakeHaFriendly()}_state", State.ToString());
-            _logger.LogTrace("{SmartWasher}: Updated smartwasher state in Home assistant to {Attributes}", Name, attributes);
+
+            await _mqttEntityManager.SetAttributesAsync(switchName, attributes);
+            await _mqttEntityManager.SetStateAsync(switchName, Enabled ? "ON" : "OFF");
+            await _mqttEntityManager.SetStateAsync($"{switchName}_delayed_start", CanDelayStart ? "ON" : "OFF");
+            await _mqttEntityManager.SetStateAsync($"{switchName}_delayed_start_activate", DelayedStartTriggered ? "ON" : "OFF");
+
+            await _mqttEntityManager.SetStateAsync($"{baseName}_state", State.ToString());
+            await _mqttEntityManager.SetStateAsync($"{baseName}_eta", Eta?.ToString("O"));
+            await _mqttEntityManager.SetStateAsync($"{baseName}_program", Program?.ToString());
+            await _mqttEntityManager.SetStateAsync($"{baseName}_last_state_change", LastStateChange?.ToString("O"));
+
+            _logger.LogTrace("{SmartWasher}: Updated smartwasher sensors in Home assistant.", Name);
 
             _fileStorage.Save("Smartwasher", Name.MakeHaFriendly(), ToFileStorage());
         }
 
-        private WasherStates? RetrieveSateFromHomeAssistant()
+        private WasherStates? RetrieveState()
         {
-            Eta = !string.IsNullOrWhiteSpace(EnabledSwitch.Attributes?.Eta) ? DateTime.Parse(EnabledSwitch.Attributes.Eta) : null;
-            WasherStates? state = !string.IsNullOrWhiteSpace(EnabledSwitch.Attributes?.WasherState) ? Enum<WasherStates>.Cast(EnabledSwitch.Attributes.WasherState) : null;
-            Program = !string.IsNullOrWhiteSpace(EnabledSwitch.Attributes?.Program) ? Enum<WasherProgram>.Cast(EnabledSwitch.Attributes.Program) : null;
+            var fileStorage = _fileStorage.Get<SmartWasherFileStorage>("Smartwasher", Name.MakeHaFriendly());
+
+            Enabled = fileStorage?.Enabled ?? false;
+            CanDelayStart = fileStorage?.CanDelayStart ?? false;
+            DelayedStartTriggered = fileStorage?.DelayedStartTriggered ?? false;
+            Eta = fileStorage?.Eta;
+            var state = fileStorage?.State;
+            Program = fileStorage?.Program;
+
             _logger.LogDebug("{SmartWasher}: Retrieved smart washer state state from Home assistant'.", Name);
 
             return state;
@@ -201,28 +236,17 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers
 
         internal SmartWasherFileStorage ToFileStorage() => new()
         {
-            Enabled = EnabledSwitch.IsOn(),
-            CanDelayStart = DelayedStart.IsOn(),
-            DelayedStartTriggered = DelayedStartTrigger.IsOn(),
+            Enabled = Enabled,
+            CanDelayStart = CanDelayStart,
+            DelayedStartTriggered = DelayedStartTriggered,
             State = State,
             Program = Program,
             Eta = Eta
         };
 
-
-        private bool IsEnabled()
-        {
-            return EnabledSwitch.IsOn();
-        }
-
-        internal bool IsDelayedStartEnabled()
-        {
-            return DelayedStart.IsOn();
-        }
-
         private void PowerSensor_Changed(object? sender, NumericSensorEventArgs e)
         {
-            if (!IsEnabled())
+            if (!Enabled)
                 return;
 
             if (e.New?.State == 0 && NoPowerResetter == null && State != WasherStates.Idle && State != WasherStates.DelayedStart && State != WasherStates.Ready)
@@ -239,7 +263,7 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers
 
         private void PowerSocket_TurnedOn(object? sender, BinarySensorEventArgs e)
         {
-            if (!IsEnabled())
+            if (!Enabled)
                 return;
 
             if (_state is not DelayedStartState delayedStartState)
@@ -265,10 +289,10 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers
 
         internal void TransitionTo(ILogger logger, SmartWasherState state)
         {
-            if (_state != null)
-                logger.LogDebug($"{{SmartWasher}}: Transitioning from state {_state.GetType().Name.Replace("State", "")} to {state.GetType().Name.Replace("State", "")}", Name);
-            else
-                logger.LogDebug($"{{SmartWasher}}: Initialized in {state.GetType().Name.Replace("State", "")} state.", Name);
+            logger.LogDebug(
+                _state != null
+                    ? $"{{SmartWasher}}: Transitioning from state {_state.GetType().Name.Replace("State", "")} to {state.GetType().Name.Replace("State", "")}"
+                    : $"{{SmartWasher}}: Initialized in {state.GetType().Name.Replace("State", "")} state.", Name);
 
             LastStateChange = _scheduler.Now;
             _state = state;

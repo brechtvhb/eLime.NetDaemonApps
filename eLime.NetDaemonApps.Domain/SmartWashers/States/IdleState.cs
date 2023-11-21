@@ -27,7 +27,7 @@ public class IdleState : SmartWasherState
         if (!aboveThresholdSince.HasValue || aboveThresholdSince.Value.Add(TimeSpan.FromSeconds(10)) >= scheduler.Now)
             return;
 
-        if (context.IsDelayedStartEnabled())
+        if (context.CanDelayStart)
         {
             logger.LogDebug("{SmartWasher}: Will transition to delayed start state because delayed start switch is on.", context.Name);
             context.TransitionTo(logger, new DelayedStartState());
