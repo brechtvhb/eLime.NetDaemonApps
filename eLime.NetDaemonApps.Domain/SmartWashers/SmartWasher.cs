@@ -232,7 +232,7 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers
             var state = fileStorage?.State;
             Program = fileStorage?.Program;
 
-            _logger.LogDebug("{SmartWasher}: Retrieved smart washer state state from Home assistant'.", Name);
+            _logger.LogDebug("{SmartWasher}: Retrieved smart washer state state.", Name);
 
             return state;
         }
