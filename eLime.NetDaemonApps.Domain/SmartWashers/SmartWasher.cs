@@ -98,33 +98,33 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers
             var delayedStartTriggerName = $"switch.smartwasher_{Name.MakeHaFriendly()}_delayed_start_activate";
             var baseName = $"sensor.smartwasher_{Name.MakeHaFriendly()}";
 
-            if (_haContext.Entity(switchName).State == null)
-            {
-                _logger.LogDebug("{SmartWasher}: Creating Sensors and switches in home assistant.", Name);
+            //if (_haContext.Entity(switchName).State == null)
+            //{
+            _logger.LogDebug("{SmartWasher}: Creating Sensors and switches in home assistant.", Name);
 
-                var enabledOptions = new EntityOptions { Icon = "mdi:washing-machine", Device = GetDevice() };
-                await _mqttEntityManager.CreateAsync(switchName, new EntityCreationOptions(Name: $"{Name}", DeviceClass: "switch", Persist: true), enabledOptions);
-                Enabled = true;
+            var enabledOptions = new EntityOptions { Icon = "mdi:washing-machine", Device = GetDevice() };
+            await _mqttEntityManager.CreateAsync(switchName, new EntityCreationOptions(Name: $"{Name}", DeviceClass: "switch", Persist: true), enabledOptions);
+            Enabled = true;
 
-                var delayedStartOptions = new EntityOptions { Icon = "mdi:timer-pause-outline", Device = GetDevice() };
-                await _mqttEntityManager.CreateAsync(delayedStartName, new EntityCreationOptions(Name: $"{Name} - Delayed start", DeviceClass: "switch", Persist: true), delayedStartOptions);
+            var delayedStartOptions = new EntityOptions { Icon = "mdi:timer-pause-outline", Device = GetDevice() };
+            await _mqttEntityManager.CreateAsync(delayedStartName, new EntityCreationOptions(Name: $"{Name} - Delayed start", DeviceClass: "switch", Persist: true), delayedStartOptions);
 
-                var delayedStartTriggerOptions = new EntityOptions { Icon = "mdi:timer-play-outline", Device = GetDevice() };
-                await _mqttEntityManager.CreateAsync(delayedStartTriggerName, new EntityCreationOptions(Name: $"{Name} - Delayed start - Activate", DeviceClass: "switch", Persist: true), delayedStartTriggerOptions);
+            var delayedStartTriggerOptions = new EntityOptions { Icon = "mdi:timer-play-outline", Device = GetDevice() };
+            await _mqttEntityManager.CreateAsync(delayedStartTriggerName, new EntityCreationOptions(Name: $"{Name} - Delayed start - Activate", DeviceClass: "switch", Persist: true), delayedStartTriggerOptions);
 
-                var stateOptions = new EntityOptions { Icon = "mdi:progress-helper", Device = GetDevice() };
-                await _mqttEntityManager.CreateAsync($"{baseName}_state", new EntityCreationOptions(Name: $"{Name} - state", UniqueId: $"smartwasher_{Name}_state", Persist: true), stateOptions);
-                await _mqttEntityManager.SetStateAsync($"{baseName}_state", State.ToString());
+            var stateOptions = new EntityOptions { Icon = "mdi:progress-helper", Device = GetDevice() };
+            await _mqttEntityManager.CreateAsync($"{baseName}_state", new EntityCreationOptions(Name: $"{Name} - state", UniqueId: $"smartwasher_{Name}_state", Persist: true), stateOptions);
+            await _mqttEntityManager.SetStateAsync($"{baseName}_state", State.ToString());
 
-                var etaOptions = new EntityOptions { Icon = "fapro:calendar-day", Device = GetDevice() };
-                await _mqttEntityManager.CreateAsync($"{baseName}_eta", new EntityCreationOptions(Name: $"{Name} - state", UniqueId: $"smartwasher_{Name}_eta", Persist: true), etaOptions);
+            var etaOptions = new EntityOptions { Icon = "fapro:calendar-day", Device = GetDevice() };
+            await _mqttEntityManager.CreateAsync($"{baseName}_eta", new EntityCreationOptions(Name: $"{Name} - state", UniqueId: $"smartwasher_{Name}_eta", Persist: true), etaOptions);
 
-                var lastStateChangeOptions = new EntityOptions { Icon = "fapro:calendar-day", Device = GetDevice() };
-                await _mqttEntityManager.CreateAsync($"{baseName}_last_state_change", new EntityCreationOptions(Name: $"{Name} - state", UniqueId: $"smartwasher_{Name}_last_state_change", Persist: true), lastStateChangeOptions);
+            var lastStateChangeOptions = new EntityOptions { Icon = "fapro:calendar-day", Device = GetDevice() };
+            await _mqttEntityManager.CreateAsync($"{baseName}_last_state_change", new EntityCreationOptions(Name: $"{Name} - state", UniqueId: $"smartwasher_{Name}_last_state_change", Persist: true), lastStateChangeOptions);
 
-                var programOptions = new EntityOptions { Icon = "fapro:dial-med", Device = GetDevice() };
-                await _mqttEntityManager.CreateAsync($"{baseName}_program", new EntityCreationOptions(UniqueId: $"{baseName}_program", Name: $"{Name} - Program", Persist: true), programOptions);
-            }
+            var programOptions = new EntityOptions { Icon = "fapro:dial-med", Device = GetDevice() };
+            await _mqttEntityManager.CreateAsync($"{baseName}_program", new EntityCreationOptions(UniqueId: $"{baseName}_program", Name: $"{Name} - Program", Persist: true), programOptions);
+            //}
 
             var switchObserver = await _mqttEntityManager.PrepareCommandSubscriptionAsync(switchName);
             SwitchDisposable = switchObserver.SubscribeAsync(EnabledSwitchHandler());
@@ -221,6 +221,9 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers
         private WasherStates? RetrieveState()
         {
             var fileStorage = _fileStorage.Get<SmartWasherFileStorage>("Smartwasher", Name.MakeHaFriendly());
+
+            if (fileStorage == null)
+                return null;
 
             Enabled = fileStorage?.Enabled ?? false;
             CanDelayStart = fileStorage?.CanDelayStart ?? false;
