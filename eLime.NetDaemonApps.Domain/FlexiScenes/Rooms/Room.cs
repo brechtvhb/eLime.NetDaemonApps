@@ -17,7 +17,7 @@ namespace eLime.NetDaemonApps.Domain.FlexiScenes.Rooms;
 
 public class Room : IAsyncDisposable
 {
-    public string? Name { get; }
+    public string Name { get; }
     private FlexiScenesEnabledSwitch EnabledSwitch { get; set; }
 
     public bool AutoTransition { get; }
@@ -357,6 +357,7 @@ public class Room : IAsyncDisposable
             Icon = "mdi:palette"
         };
         await _mqttEntityManager.SetAttributesAsync(EnabledSwitch.EntityId, attributes);
+        _fileStorage.Save("flexiscenes", Name, ToFileStorage());
         _logger.LogTrace("Updated flexilight state for room '{room}' in Home assistant to {attr}", Name, attributes);
     }
 
