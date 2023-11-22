@@ -193,13 +193,9 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers
             var switchName = $"switch.smartwasher_{Name.MakeHaFriendly()}";
             var baseName = $"sensor.smartwasher_{Name.MakeHaFriendly()}";
 
-            var attributes = new SmartWasherSwitchAttributes
+            var attributes = new EnabledSwitchAttributes
             {
                 LastUpdated = DateTime.Now.ToString("O"),
-                LasStateChange = LastStateChange?.ToString("O"),
-                Eta = Eta?.ToString("O"),
-                WasherState = State.ToString(),
-                Program = Program?.ToString(),
                 Icon = "mdi:washing-machine"
             };
 

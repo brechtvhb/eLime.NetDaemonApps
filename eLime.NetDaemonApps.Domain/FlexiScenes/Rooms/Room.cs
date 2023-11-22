@@ -4,6 +4,7 @@ using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
 using eLime.NetDaemonApps.Domain.FlexiScenes.Actions;
 using eLime.NetDaemonApps.Domain.Helper;
+using eLime.NetDaemonApps.Domain.Storage;
 using Microsoft.Extensions.Logging;
 using NetDaemon.Extensions.MqttEntityManager;
 using NetDaemon.Extensions.Scheduler;
@@ -137,14 +138,16 @@ public class Room : IAsyncDisposable
     private readonly ILogger _logger;
     private readonly IScheduler _scheduler;
     private readonly IMqttEntityManager _mqttEntityManager;
+    private readonly IFileStorage _fileStorage;
 
 
-    public Room(IHaContext haContext, ILogger logger, IScheduler scheduler, IMqttEntityManager mqttEntityManager, RoomConfig config, TimeSpan autoTransitionDebounce)
+    public Room(IHaContext haContext, ILogger logger, IScheduler scheduler, IMqttEntityManager mqttEntityManager, IFileStorage fileStorage, RoomConfig config, TimeSpan autoTransitionDebounce)
     {
         _haContext = haContext;
         _logger = logger;
         _scheduler = scheduler;
         _mqttEntityManager = mqttEntityManager;
+        _fileStorage = fileStorage;
 
         Name = config.Name;
         EnsureEnabledSwitchExists();
@@ -357,6 +360,16 @@ public class Room : IAsyncDisposable
         _logger.LogTrace("Updated flexilight state for room '{room}' in Home assistant to {attr}", Name, attributes);
     }
 
+    internal FlexiSceneFileStorage ToFileStorage() =>
+        new()
+        {
+            Enabled = EnabledSwitch.IsOn(),
+            IgnorePresenceUntil = IgnorePresenceUntil,
+            TurnOffAt = TurnOffAt,
+            InitiatedBy = InitiatedBy,
+            ActiveFlexiScene = FlexiScenes.Current?.Name,
+            InitialFlexiScene = FlexiScenes.Initial?.Name
+        };
 
     private bool IsRoomEnabled()
     {
