@@ -306,7 +306,7 @@ public class Room : IAsyncDisposable
                     _logger.LogDebug("Clearing flexi light state because it was disabled for room '{room}'.", Name);
                     ClearAutoTurnOff();
                     await RemoveIgnorePresence();
-                    FlexiScenes.DeactivateScene();
+                    FlexiScenes.DeactivateScene(_scheduler.Now);
                     InitiatedBy = InitiatedBy.NoOne;
                     await UpdateStateInHomeAssistant();
                 }
@@ -322,16 +322,12 @@ public class Room : IAsyncDisposable
 
         if (!String.IsNullOrWhiteSpace(EnabledSwitch.Attributes?.CurrentFlexiScene))
         {
-            var flexiScene = FlexiScenes.GetByName(EnabledSwitch.Attributes.CurrentFlexiScene);
-            if (flexiScene != null)
-                FlexiScenes.SetCurrentScene(flexiScene);
-        }
-
-        if (!String.IsNullOrWhiteSpace(EnabledSwitch.Attributes?.InitialFlexiScene))
-        {
-            var flexiScene = FlexiScenes.GetByName(EnabledSwitch.Attributes.InitialFlexiScene);
-            if (flexiScene != null)
-                FlexiScenes.SetCurrentScene(flexiScene);
+            var activeScene = FlexiScenes.GetByName(EnabledSwitch.Attributes.CurrentFlexiScene);
+            if (activeScene != null)
+            {
+                var initialScene = EnabledSwitch.Attributes.InitialFlexiScene != null ? FlexiScenes.GetByName(EnabledSwitch.Attributes.InitialFlexiScene) : null;
+                FlexiScenes.Initialize(activeScene, initialScene);
+            }
         }
 
         _logger.LogDebug("Retrieved flexilight state from Home assistant for room '{room}'.", Name);
@@ -361,16 +357,19 @@ public class Room : IAsyncDisposable
         _logger.LogTrace("Updated flexilight state for room '{room}' in Home assistant to {attr}", Name, attributes);
     }
 
-    internal FlexiSceneFileStorage ToFileStorage() =>
-        new()
+    internal FlexiSceneFileStorage ToFileStorage()
+    {
+        return new()
         {
             Enabled = EnabledSwitch.IsOn(),
             IgnorePresenceUntil = IgnorePresenceUntil,
             TurnOffAt = TurnOffAt,
             InitiatedBy = InitiatedBy,
             ActiveFlexiScene = FlexiScenes.Current?.Name,
-            InitialFlexiScene = FlexiScenes.Initial?.Name
+            InitialFlexiScene = FlexiScenes.Initial?.Name,
+            Changes = FlexiScenes.Changes
         };
+    }
 
     private bool IsRoomEnabled()
     {
@@ -380,7 +379,7 @@ public class Room : IAsyncDisposable
     private async Task<bool> ExecuteFlexiScene(FlexiScene flexiScene, InitiatedBy initiatedBy, Boolean autoTransition = false, Boolean overwriteInitialScene = true)
     {
         _logger.LogInformation("{Room}: Will execute flexi scene {flexiScene}. Triggered by {InitiatedBy}.", Name, flexiScene.Name, initiatedBy);
-        FlexiScenes.SetCurrentScene(flexiScene, overwriteInitialScene);
+        FlexiScenes.SetCurrentScene(_scheduler.Now, flexiScene, overwriteInitialScene);
         InitiatedBy = initiatedBy;
 
         return await ExecuteActions(flexiScene.Actions, autoTransition);
@@ -390,7 +389,7 @@ public class Room : IAsyncDisposable
     {
         _logger.LogDebug("{Room}: Executed off actions.", Name);
 
-        FlexiScenes.DeactivateScene();
+        FlexiScenes.DeactivateScene(_scheduler.Now);
         InitiatedBy = InitiatedBy.NoOne;
 
         //Only ignore presence if triggered by manual action
@@ -804,4 +803,10 @@ public class Room : IAsyncDisposable
 
         return ValueTask.CompletedTask;
     }
+}
+
+internal class FlexiSceneChange
+{
+    public DateTimeOffset ChangedAt { get; set; }
+    public String? Scene { get; set; }
 }

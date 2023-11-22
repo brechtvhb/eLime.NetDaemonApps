@@ -5,6 +5,9 @@ namespace eLime.NetDaemonApps.Domain.FlexiScenes.Rooms;
 
 public class FlexiScenes
 {
+    internal List<FlexiSceneChange> Changes { get; set; } = new();
+    public TimeSpan SaveChangesFor = TimeSpan.FromDays(7);
+
     private string? CurrentFlexiScene { get; set; }
 
     //used when cycling through scenes
@@ -50,9 +53,23 @@ public class FlexiScenes
         }
     }
 
-
-    internal FlexiScene SetCurrentScene(FlexiScene scene, bool overwriteInitialScene = false)
+    internal void Initialize(FlexiScene activeScene, FlexiScene? initialScene)
     {
+        CurrentFlexiScene = activeScene.Name;
+
+        if (initialScene != null)
+            InitialFlexiScene = initialScene.Name;
+    }
+
+
+    internal FlexiScene SetCurrentScene(DateTimeOffset? now, FlexiScene scene, bool overwriteInitialScene = false)
+    {
+        if (now != null)
+        {
+            Changes.Add(new FlexiSceneChange { ChangedAt = now.Value, Scene = scene.Name });
+            CleanUpOldChanges(now.Value);
+        }
+
         CurrentFlexiScene = scene.Name;
 
         if (overwriteInitialScene)
@@ -61,9 +78,19 @@ public class FlexiScenes
         return Current;
     }
 
-    internal void DeactivateScene()
+    internal void DeactivateScene(DateTimeOffset now)
     {
+        Changes.Add(new FlexiSceneChange { ChangedAt = now, Scene = "off" });
+        CleanUpOldChanges(now);
+
         CurrentFlexiScene = null;
         InitialFlexiScene = null;
+    }
+
+    private void CleanUpOldChanges(DateTimeOffset now)
+    {
+        var changesToRemove = Changes.Where(x => x.ChangedAt < now - SaveChangesFor);
+        foreach (var change in changesToRemove)
+            Changes.Remove(change);
     }
 }
