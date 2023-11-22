@@ -80,8 +80,11 @@ public class FlexiScenes
 
     internal void DeactivateScene(DateTimeOffset now)
     {
-        Changes.Add(new FlexiSceneChange { ChangedAt = now, Scene = "off" });
-        CleanUpOldChanges(now);
+        if (CurrentFlexiScene != null)
+        {
+            Changes.Add(new FlexiSceneChange { ChangedAt = now, Scene = "off" });
+            CleanUpOldChanges(now);
+        }
 
         CurrentFlexiScene = null;
         InitialFlexiScene = null;
