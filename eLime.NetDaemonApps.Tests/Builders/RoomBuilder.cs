@@ -1,5 +1,6 @@
 ﻿using eLime.NetDaemonApps.Config.FlexiLights;
 using eLime.NetDaemonApps.Domain.FlexiScenes.Rooms;
+using eLime.NetDaemonApps.Domain.Storage;
 using eLime.NetDaemonApps.Tests.Helpers;
 using Microsoft.Extensions.Logging;
 using NetDaemon.Extensions.MqttEntityManager;
@@ -12,14 +13,16 @@ namespace eLime.NetDaemonApps.Tests.Builders
         private readonly AppTestContext _testCtx;
         private readonly ILogger _logger;
         private readonly IMqttEntityManager _mqttEntityManager;
+        private readonly IFileStorage _fileStorage;
 
         private RoomConfig _config;
 
-        public RoomBuilder(AppTestContext testCtx, ILogger logger, IMqttEntityManager mqttEntityManager)
+        public RoomBuilder(AppTestContext testCtx, ILogger logger, IMqttEntityManager mqttEntityManager, IFileStorage fileStorage)
         {
             _testCtx = testCtx;
             _logger = logger;
             _mqttEntityManager = mqttEntityManager;
+            _fileStorage = fileStorage;
             _config = new RoomConfig
             {
                 Name = "Toilet +1",
@@ -602,7 +605,7 @@ namespace eLime.NetDaemonApps.Tests.Builders
 
         public Room Build()
         {
-            return new Room(_testCtx.HaContext, _logger, _testCtx.Scheduler, _mqttEntityManager, _config, TimeSpan.Zero);
+            return new Room(_testCtx.HaContext, _logger, _testCtx.Scheduler, _mqttEntityManager, _fileStorage, _config, TimeSpan.Zero);
         }
     }
 

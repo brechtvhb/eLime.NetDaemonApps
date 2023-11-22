@@ -357,7 +357,7 @@ public class Room : IAsyncDisposable
             Icon = "mdi:palette"
         };
         await _mqttEntityManager.SetAttributesAsync(EnabledSwitch.EntityId, attributes);
-        _fileStorage.Save("flexiscenes", Name, ToFileStorage());
+        _fileStorage.Save("FlexiScenes", Name.MakeHaFriendly(), ToFileStorage());
         _logger.LogTrace("Updated flexilight state for room '{room}' in Home assistant to {attr}", Name, attributes);
     }
 

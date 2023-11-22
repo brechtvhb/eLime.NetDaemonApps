@@ -5,6 +5,7 @@ using eLime.NetDaemonApps.Domain.Entities.TextSensors;
 using eLime.NetDaemonApps.Domain.FlexiScenes;
 using eLime.NetDaemonApps.Domain.FlexiScenes.Rooms;
 using eLime.NetDaemonApps.Domain.Scenes;
+using eLime.NetDaemonApps.Domain.Storage;
 using eLime.NetDaemonApps.Tests.Builders;
 using eLime.NetDaemonApps.Tests.Helpers;
 using FakeItEasy;
@@ -22,6 +23,7 @@ public class FlexiLightTests
     private AppTestContext _testCtx;
     private ILogger _logger;
     private IMqttEntityManager _mqttEntityManager;
+    private IFileStorage _fileStorage;
 
     [TestInitialize]
     public void Init()
@@ -31,13 +33,16 @@ public class FlexiLightTests
 
         _logger = A.Fake<ILogger<Room>>();
         _mqttEntityManager = A.Fake<IMqttEntityManager>();
+
+        _fileStorage = A.Fake<IFileStorage>();
+        A.CallTo(() => _fileStorage.Get<FlexiSceneFileStorage>("FlexiScenes", "toilet_1")).Returns(new FlexiSceneFileStorage() { Enabled = true });
     }
 
     [TestMethod]
     public void Motion_TurnsOn_Light()
     {
         // Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).Build();
 
         //Act
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
@@ -50,7 +55,7 @@ public class FlexiLightTests
     public void NoMotion_TurnsOff_Light()
     {
         // Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).Build();
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "off");
 
@@ -65,7 +70,7 @@ public class FlexiLightTests
     public void Motion_Not_IsIgnored_If_Auto_Off()
     {
         // Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).Build();
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "off");
         _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(5) + TimeSpan.FromSeconds(3));
@@ -81,7 +86,7 @@ public class FlexiLightTests
     public void Motion_IsIgnored_If_Manual_Turned_Off()
     {
         // Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithExecuteOffActionsSwitch().Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).WithExecuteOffActionsSwitch().Build();
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "off");
         _testCtx.SimulateDoubleClick(new StateSwitch(_testCtx.HaContext, "sensor.switch"));
@@ -98,7 +103,7 @@ public class FlexiLightTests
     public void Motion_IsNotIgnored_AfterOffDuration()
     {
         // Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).Build();
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "off");
         _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(5) + TimeSpan.FromSeconds(10));
@@ -113,7 +118,7 @@ public class FlexiLightTests
     [TestMethod]
     public void Motion_IsNotIgnored_AfterOffDuration_WhileThereIsStillMotion()
     {
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).Build();
 
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "off");
@@ -131,7 +136,7 @@ public class FlexiLightTests
     public void TurnsOn_Correct_FlexiScene()
     {
         // Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithMultipleFlexiScenes().Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).WithMultipleFlexiScenes().Build();
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
 
         //Act
@@ -146,7 +151,7 @@ public class FlexiLightTests
     public void TurnsOn_Correct_FlexiScene_2()
     {
         // Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithMultipleFlexiScenes().Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).WithMultipleFlexiScenes().Build();
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_evening"), "on");
 
         //Act
@@ -161,7 +166,7 @@ public class FlexiLightTests
     public void TurnsOn_Nothing_IfAllEvaluationsFailed()
     {
         // Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithMultipleFlexiScenes().Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).WithMultipleFlexiScenes().Build();
         //Act
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
 
@@ -175,7 +180,7 @@ public class FlexiLightTests
     public void AutoTurnOff_WithCorrectDuration()
     {
         // Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithMultipleFlexiScenes().Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).WithMultipleFlexiScenes().Build();
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "off");
@@ -191,7 +196,7 @@ public class FlexiLightTests
     public void DoNotAutoTurnOff_WhenTooEarly()
     {
         // Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithMultipleFlexiScenes().Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).WithMultipleFlexiScenes().Build();
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "off");
@@ -208,7 +213,7 @@ public class FlexiLightTests
     public void AutoTransition_WithCorrectDuration()
     {
         // Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithMultipleFlexiScenes().WithAutoTransition().Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).WithMultipleFlexiScenes().WithAutoTransition().Build();
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "off");
@@ -226,7 +231,7 @@ public class FlexiLightTests
     public void AutoTransition_TurnOffIfNoValidSceneFound()
     {
         // Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithMultipleFlexiScenes().WithAutoTransition().WithAutoTransitionTurnOfIfNoValidSceneFound().Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).WithMultipleFlexiScenes().WithAutoTransition().WithAutoTransitionTurnOfIfNoValidSceneFound().Build();
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "off");
@@ -244,7 +249,7 @@ public class FlexiLightTests
     public void AutoTransition_DoNotTurnOffIfNoValidSceneFoundWhenNotConfigured()
     {
         // Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithMultipleFlexiScenes().WithAutoTransition().Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).WithMultipleFlexiScenes().WithAutoTransition().Build();
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "off");
@@ -261,7 +266,7 @@ public class FlexiLightTests
     public void FullyAutomated_Turns_on()
     {
         //Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).FullyAutomated().WithMultipleFlexiScenes().Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).FullyAutomated().WithMultipleFlexiScenes().Build();
 
         //Act
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
@@ -281,7 +286,7 @@ public class FlexiLightTests
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
 
         //Act
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).FullyAutomated().WithMultipleFlexiScenes().Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).FullyAutomated().WithMultipleFlexiScenes().Build();
 
         //Assert
         Assert.IsNotNull(room.FlexiScenes.Current);
@@ -296,7 +301,7 @@ public class FlexiLightTests
     public void FullyAutomated_Transitions()
     {
         //Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).FullyAutomated().WithMultipleFlexiScenes().Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).FullyAutomated().WithMultipleFlexiScenes().Build();
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
 
         //Act
@@ -313,7 +318,7 @@ public class FlexiLightTests
     public void FullyAutomated_Turns_Off_IfConfigured()
     {
         //Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).FullyAutomated().WithAutoTransitionTurnOfIfNoValidSceneFound().WithMultipleFlexiScenes().Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).FullyAutomated().WithAutoTransitionTurnOfIfNoValidSceneFound().WithMultipleFlexiScenes().Build();
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
 
         //Act
@@ -328,7 +333,7 @@ public class FlexiLightTests
     public void FullyAutomated_Does_Not_Turn_Off_If_Not_Configured()
     {
         //Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).FullyAutomated().WithMultipleFlexiScenes().Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).FullyAutomated().WithMultipleFlexiScenes().Build();
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
 
         //Act
@@ -349,7 +354,7 @@ public class FlexiLightTests
         // Act
         try
         {
-            var _ = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).FullyAutomated().Build();
+            var _ = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).FullyAutomated().Build();
         }
         catch (Exception ex) { exception = ex; }
 
@@ -362,7 +367,7 @@ public class FlexiLightTests
     public void Motion_RunsAllActions()
     {
         // Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithMultipleActions().Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).WithMultipleActions().Build();
 
         //Act
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
@@ -378,7 +383,7 @@ public class FlexiLightTests
     public void Service_Calls_WithCorrectLightColorParameters()
     {
         // Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithLightColors().Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).WithLightColors().Build();
 
         //Act
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
@@ -398,7 +403,7 @@ public class FlexiLightTests
     public void Service_Calls_WithCorrectLightBrightnessParameters()
     {
         // Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithLightBrightness().Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).WithLightBrightness().Build();
 
         //Act
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
@@ -416,7 +421,7 @@ public class FlexiLightTests
     public void Service_Calls_WithCorrectFancyLightParameters()
     {
         // Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WitFancyLightOptions().Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).WitFancyLightOptions().Build();
 
         //Act
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
@@ -430,7 +435,7 @@ public class FlexiLightTests
     public async Task Service_Calls_CorrectSwitchActions()
     {
         // Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithSwitchActions().Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).WithSwitchActions().Build();
 
         //Act
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
@@ -448,7 +453,7 @@ public class FlexiLightTests
     public void Service_Calls_CorrectScene()
     {
         // Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithSceneActions().Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).WithSceneActions().Build();
 
         //Act
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
@@ -461,7 +466,7 @@ public class FlexiLightTests
     public void Service_Calls_CorrectScript()
     {
         // Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithScriptActions().Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).WithScriptActions().Build();
 
         //Act
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
@@ -475,7 +480,7 @@ public class FlexiLightTests
     public void Complex_Conditions_NotSoComplex()
     {
         // Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithComplexConditions().Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).WithComplexConditions().Build();
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_evening"), "on");
 
         //Act
@@ -489,7 +494,7 @@ public class FlexiLightTests
     public void Complex_Conditions_And()
     {
         // Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithComplexConditions().Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).WithComplexConditions().Build();
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_evening"), "on");
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.watching_tv"), "on");
 
@@ -504,7 +509,7 @@ public class FlexiLightTests
     public void Complex_Conditions_And_FirstTakesPrecedence()
     {
         // Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithComplexConditions().Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).WithComplexConditions().Build();
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_evening"), "on");
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.watching_tv"), "on");
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_party"), "on");
@@ -520,7 +525,7 @@ public class FlexiLightTests
     public void Complex_Conditions_NoAdvent_DoesNotTurnOnChristmasTree()
     {
         // Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithComplexConditions().Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).WithComplexConditions().Build();
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_morning"), "on");
 
         //Act
@@ -534,7 +539,7 @@ public class FlexiLightTests
     public void Complex_Conditions_Advent_TurnsOnChristmasTree()
     {
         // Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithComplexConditions().Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).WithComplexConditions().Build();
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_morning"), "on");
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_advent"), "on");
 
@@ -550,7 +555,7 @@ public class FlexiLightTests
     public void Complex_Conditions_Advent_Morning_Vacation_MccallisterizesHouse()
     {
         // Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithComplexConditions().Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).WithComplexConditions().Build();
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_morning"), "on");
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_advent"), "on");
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_vacation"), "on");
@@ -566,7 +571,7 @@ public class FlexiLightTests
     public void Complex_Conditions_Advent_Evening_Vacation_MccallisterizesHouse()
     {
         // Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithComplexConditions().Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).WithComplexConditions().Build();
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_evening"), "on");
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_advent"), "on");
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_vacation"), "on");
@@ -583,7 +588,7 @@ public class FlexiLightTests
     public void Complex_Conditions_Advent_Day_Vacation_DoesNotMccallisterizesHouse()
     {
         // Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithComplexConditions().Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).WithComplexConditions().Build();
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_advent"), "on");
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_vacation"), "on");
@@ -600,7 +605,7 @@ public class FlexiLightTests
     public void Complex_Conditions_Negative()
     {
         // Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithNegativeCondition().Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).WithNegativeCondition().Build();
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_morning"), "off");
 
         //Act
@@ -614,7 +619,7 @@ public class FlexiLightTests
     public void Complex_And_Or_Binary()
     {
         // Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithAllKindsOfConditions().Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).WithAllKindsOfConditions().Build();
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_night"), "off");
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_evening"), "on");
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_peak_hour_morning"), "off");
@@ -631,7 +636,7 @@ public class FlexiLightTests
     public void DoesNotActivateLight_If_IlluminanceAboveUpperThreshold()
     {
         // Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithIlluminanceSensor().Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).WithIlluminanceSensor().Build();
         _testCtx.TriggerStateChange(new IlluminanceSensor(_testCtx.HaContext, "sensor.illuminance"), "50");
 
         //Act
@@ -645,7 +650,7 @@ public class FlexiLightTests
     public void DoesActivateLight_If_IlluminanceBelowLowerThreshold()
     {
         // Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithIlluminanceSensor().Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).WithIlluminanceSensor().Build();
         _testCtx.TriggerStateChange(new IlluminanceSensor(_testCtx.HaContext, "sensor.illuminance"), "5");
 
         //Act
@@ -660,7 +665,7 @@ public class FlexiLightTests
     public void DoesNotActivateLight_If_IlluminanceBetweenThresholds()
     {
         // Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithIlluminanceSensor().Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).WithIlluminanceSensor().Build();
         _testCtx.TriggerStateChange(new IlluminanceSensor(_testCtx.HaContext, "sensor.illuminance"), "30");
 
         //Act
@@ -675,7 +680,7 @@ public class FlexiLightTests
     public void DoesActivateLight_If_OneOfIlluminanceOk()
     {
         // Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithIlluminanceSensors().Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).WithIlluminanceSensors().Build();
         _testCtx.TriggerStateChange(new IlluminanceSensor(_testCtx.HaContext, "sensor.illuminance1"), "50");
         _testCtx.TriggerStateChange(new IlluminanceSensor(_testCtx.HaContext, "sensor.illuminance2"), "5");
 
@@ -690,7 +695,7 @@ public class FlexiLightTests
     public void DoesAutoSwitchOff_If_BothAboveIlluminance()
     {
         // Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithIlluminanceSensors().Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).WithIlluminanceSensors().Build();
         _testCtx.TriggerStateChange(new IlluminanceSensor(_testCtx.HaContext, "sensor.illuminance1"), "50");
         _testCtx.TriggerStateChange(new IlluminanceSensor(_testCtx.HaContext, "sensor.illuminance2"), "5");
 
@@ -706,7 +711,7 @@ public class FlexiLightTests
     public void DoesNotAutoSwitchOff_If_NotBothAboveIlluminance()
     {
         // Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithIlluminanceSensors().Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).WithIlluminanceSensors().Build();
         _testCtx.TriggerStateChange(new IlluminanceSensor(_testCtx.HaContext, "sensor.illuminance1"), "50");
         _testCtx.TriggerStateChange(new IlluminanceSensor(_testCtx.HaContext, "sensor.illuminance2"), "5");
 
@@ -723,7 +728,7 @@ public class FlexiLightTests
     public void DoesNotAutoSwitchOff_If_BetweenThresholds()
     {
         // Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithIlluminanceSensor().Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).WithIlluminanceSensor().Build();
         _testCtx.TriggerStateChange(new IlluminanceSensor(_testCtx.HaContext, "sensor.illuminance1"), "10");
 
         //Act
@@ -738,7 +743,7 @@ public class FlexiLightTests
     public void Click_Triggers_FlexiScene()
     {
         // Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithSwitch().WithMultipleFlexiScenes().Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).WithSwitch().WithMultipleFlexiScenes().Build();
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
 
@@ -754,7 +759,7 @@ public class FlexiLightTests
     public void Click_Extends_AutoTurnOff_Duration()
     {
         // Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithSwitch().WithMultipleFlexiScenes().Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).WithSwitch().WithMultipleFlexiScenes().Build();
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
 
@@ -770,7 +775,7 @@ public class FlexiLightTests
     public void Click_DoesNotTrigger_NextScene()
     {
         // Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithSwitch().WithMultipleFlexiScenes().Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).WithSwitch().WithMultipleFlexiScenes().Build();
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
 
@@ -786,7 +791,7 @@ public class FlexiLightTests
     public void Click_DoesTrigger_NextScene_After_Two_Clicks()
     {
         // Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithSwitch().WithMultipleFlexiScenes().Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).WithSwitch().WithMultipleFlexiScenes().Build();
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
 
@@ -804,7 +809,7 @@ public class FlexiLightTests
     public void Click_DoesTrigger_NextScene_IfBehaviourSet()
     {
         // Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithSwitch().WithSwitchChangeOFfDurationAndGoToNextAutomationAtInitialOnClickAfterMotion().WithMultipleFlexiScenes().Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).WithSwitch().WithSwitchChangeOFfDurationAndGoToNextAutomationAtInitialOnClickAfterMotion().WithMultipleFlexiScenes().Build();
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
 
@@ -820,7 +825,7 @@ public class FlexiLightTests
     public void Click_DoesTrigger_NextScene_WithLimitedOptions()
     {
         // Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithSwitch().WithSwitchChangeOFfDurationAndGoToNextAutomationAtInitialOnClickAfterMotion().WithMultipleFlexiScenesLimitedNext().Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).WithSwitch().WithSwitchChangeOFfDurationAndGoToNextAutomationAtInitialOnClickAfterMotion().WithMultipleFlexiScenesLimitedNext().Build();
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
 
@@ -837,7 +842,7 @@ public class FlexiLightTests
     public void Click_DoesTrigger_NextScene_WithLimitedOptions_KeepsWorkingAfterMultipleClicks()
     {
         // Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithSwitch().WithSwitchChangeOFfDurationAndGoToNextAutomationAtInitialOnClickAfterMotion().WithMultipleFlexiScenesLimitedNext().Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).WithSwitch().WithSwitchChangeOFfDurationAndGoToNextAutomationAtInitialOnClickAfterMotion().WithMultipleFlexiScenesLimitedNext().Build();
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
 
@@ -855,7 +860,7 @@ public class FlexiLightTests
     public void Click_DoesTrigger_NextScene_WithLimitedOptions_KeepsWorkingAfterManyClicks()
     {
         // Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithSwitch().WithSwitchChangeOFfDurationAndGoToNextAutomationAtInitialOnClickAfterMotion().WithMultipleFlexiScenesLimitedNext().Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).WithSwitch().WithSwitchChangeOFfDurationAndGoToNextAutomationAtInitialOnClickAfterMotion().WithMultipleFlexiScenesLimitedNext().Build();
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
 
@@ -875,7 +880,7 @@ public class FlexiLightTests
     public void Click_DoesTrigger_CyclesTo_FirstScene_IfLast()
     {
         // Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithSwitch().WithSwitchChangeOFfDurationAndGoToNextAutomationAtInitialOnClickAfterMotion().WithMultipleFlexiScenes().Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).WithSwitch().WithSwitchChangeOFfDurationAndGoToNextAutomationAtInitialOnClickAfterMotion().WithMultipleFlexiScenes().Build();
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_evening"), "on");
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
 
@@ -891,7 +896,7 @@ public class FlexiLightTests
     public void DoubleClick_Triggers_DoubleClickActions()
     {
         // Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithSwitch().WithMultipleFlexiScenes().Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).WithSwitch().WithMultipleFlexiScenes().Build();
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
 
         //Act
@@ -905,7 +910,7 @@ public class FlexiLightTests
     public void TripleClick_Triggers_TripleClickActions()
     {
         // Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithSwitch().WithMultipleFlexiScenes().Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).WithSwitch().WithMultipleFlexiScenes().Build();
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
 
         //Act
@@ -918,7 +923,7 @@ public class FlexiLightTests
     public void LongClick_Triggers_LongClickActions()
     {
         // Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithSwitch().WithMultipleFlexiScenes().Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).WithSwitch().WithMultipleFlexiScenes().Build();
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
 
         //Act
@@ -932,7 +937,7 @@ public class FlexiLightTests
     public void UberLongClick_Triggers_LongClickActions_IfNoUberLongClickActionsDefined()
     {
         // Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithSwitch().WithMultipleFlexiScenes().Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).WithSwitch().WithMultipleFlexiScenes().Build();
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
 
         //Act
@@ -946,7 +951,7 @@ public class FlexiLightTests
     public void UberLongClick_Triggers_UberLongClickActions()
     {
         // Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithSwitch().WithUberLongClickActions().WithMultipleFlexiScenes().Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).WithSwitch().WithUberLongClickActions().WithMultipleFlexiScenes().Build();
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
 
         //Act
@@ -962,7 +967,7 @@ public class FlexiLightTests
     public void OffInput_Triggers_OffActions()
     {
         // Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithMultipleFlexiScenes().WithOffSensor().Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).WithMultipleFlexiScenes().WithOffSensor().Build();
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
 
         //Act
@@ -978,7 +983,7 @@ public class FlexiLightTests
     public void OffAction_InFlexiScene_Triggers_OffActions()
     {
         // Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager).WithOffActionInFlexiScene().WithSwitch().Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).WithOffActionInFlexiScene().WithSwitch().Build();
         _testCtx.SimulateClick(new StateSwitch(_testCtx.HaContext, "sensor.switch"));
 
         //Act
