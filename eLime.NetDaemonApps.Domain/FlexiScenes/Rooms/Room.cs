@@ -301,6 +301,9 @@ public class Room : IAsyncDisposable
             await _mqttEntityManager.CreateAsync($"{baseName}_initiated_by", new EntityCreationOptions(UniqueId: $"{baseName}_initiated_by", Name: $"Initiated by", DeviceClass: "enum", Persist: true), initiatedByOptions);
         }
 
+        var lastChangeOptions = new EntityOptions { Icon = "mdi:calendar-end", Device = GetDevice() };
+        await _mqttEntityManager.CreateAsync($"{baseName}_last_changed_at", new EntityCreationOptions(UniqueId: $"{baseName}_last_changed_at", Name: $"Last changed at", Persist: true), lastChangeOptions);
+
         var scenes = new List<String> { "Off" };
         scenes.AddRange(FlexiScenes.All.Select(x => x.Name));
 
@@ -409,6 +412,7 @@ public class Room : IAsyncDisposable
         await _mqttEntityManager.SetAttributesAsync($"switch.flexilights_{Name.MakeHaFriendly()}", attributes);
         await _mqttEntityManager.SetStateAsync($"switch.flexilights_{Name.MakeHaFriendly()}", Enabled ? "ON" : "OFF");
         await _mqttEntityManager.SetStateAsync($"{baseName}_initiated_by", InitiatedBy.ToString());
+        await _mqttEntityManager.SetStateAsync($"{baseName}_last_changed_at", FlexiScenes.Changes.LastOrDefault()?.ChangedAt.ToString("O"));
         await _mqttEntityManager.SetStateAsync($"select.flexilights_{Name.MakeHaFriendly()}_scene", FlexiScenes.Current?.Name ?? "Off");
 
         _fileStorage.Save("FlexiScenes", Name.MakeHaFriendly(), ToFileStorage());
