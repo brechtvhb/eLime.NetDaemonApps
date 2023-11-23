@@ -10,7 +10,7 @@ namespace eLime.NetDaemonApps.Domain.FlexiScenes.Rooms;
 
 public class FlexiScene
 {
-    public string? Name { get; private init; }
+    public string Name { get; private init; }
 
     private List<ICondition> _conditions = new();
     public IReadOnlyCollection<ICondition> Conditions => _conditions.AsReadOnly();

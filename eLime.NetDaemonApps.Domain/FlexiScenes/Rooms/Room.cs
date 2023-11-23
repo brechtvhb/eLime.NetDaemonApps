@@ -37,6 +37,7 @@ public class Room : IAsyncDisposable
     private IDisposable? ClearIgnorePresenceSchedule { get; set; }
     private IDisposable? GuardTask { get; set; }
     private IDisposable SwitchDisposable { get; set; }
+    private IDisposable DropdownChangedCommandHandler { get; set; }
 
     public InitiatedBy InitiatedBy { get; private set; } = InitiatedBy.NoOne;
 
@@ -270,10 +271,10 @@ public class Room : IAsyncDisposable
         if (FullyAutomated && FlexiScenes.All.All(x => !x.Conditions.Any()))
             throw new Exception("Define at least one flexi scene with conditions when running in full automation mode (no switches & motion sensors defined & auto transition: true)");
 
-        _logger.LogInformation("{Room}: Initialized with scenes: {Scenes}.", Name, String.Join(", ", FlexiScenes.All.Select(x => x.Name)));
-
         RetrieveSate().RunSync();
         EnsureSensorsExist().RunSync();
+
+        _logger.LogInformation("{Room}: Initialized with scenes: {Scenes}.", Name, String.Join(", ", FlexiScenes.All.Select(x => x.Name)));
 
         if (FullyAutomated)
             ExecuteFlexiSceneOnAutoTransition().RunSync();
@@ -286,6 +287,7 @@ public class Room : IAsyncDisposable
     {
         var baseName = $"sensor.flexilights_{Name.MakeHaFriendly()}";
         var switchName = $"switch.flexilights_{Name.MakeHaFriendly()}";
+        var selectName = $"select.flexilights_{Name.MakeHaFriendly()}_scene";
 
         if (_haContext.Entity(switchName).State == null)
         {
@@ -299,9 +301,18 @@ public class Room : IAsyncDisposable
             await _mqttEntityManager.CreateAsync($"{baseName}_initiated_by", new EntityCreationOptions(UniqueId: $"{baseName}_initiated_by", Name: $"Initiated by", DeviceClass: "enum", Persist: true), initiatedByOptions);
         }
 
+        var scenes = new List<String> { "Off" };
+        scenes.AddRange(FlexiScenes.All.Select(x => x.Name));
+
+        var selectOptions = new SelectOptions { Icon = "fapro:palette", Options = scenes, Device = GetDevice() };
+        await _mqttEntityManager.CreateAsync(selectName, new EntityCreationOptions(UniqueId: selectName, Name: "Scene", DeviceClass: "select", Persist: true), selectOptions);
+        await _mqttEntityManager.SetStateAsync($"select.flexilights_{Name.MakeHaFriendly()}_scene", FlexiScenes.Current?.Name ?? "Off");
 
         var observer = await _mqttEntityManager.PrepareCommandSubscriptionAsync(switchName);
         SwitchDisposable = observer.SubscribeAsync(EnabledSwitchHandler());
+
+        var selectObserver = await _mqttEntityManager.PrepareCommandSubscriptionAsync(selectName);
+        DropdownChangedCommandHandler = selectObserver.SubscribeAsync(DropDownChanged());
     }
 
     private Func<string, Task> EnabledSwitchHandler()
@@ -322,6 +333,29 @@ public class Room : IAsyncDisposable
             await UpdateStateInHomeAssistant();
         };
     }
+
+    private Func<string, Task> DropDownChanged()
+    {
+        return async state =>
+        {
+            if (state == "Off")
+                await ExecuteOffActions();
+
+            var flexiScene = FlexiScenes.GetByName(state);
+
+            if (flexiScene == null)
+                return;
+
+            var offActionsExecuted = await ExecuteFlexiScene(flexiScene, InitiatedBy.Switch);
+
+            if (offActionsExecuted)
+                return;
+
+            await SetTurnOffAt(flexiScene);
+            await UpdateStateInHomeAssistant();
+        };
+    }
+
 
     public Device GetDevice()
     {
@@ -372,9 +406,10 @@ public class Room : IAsyncDisposable
             Icon = "fapro:palette"
         };
 
-        await _mqttEntityManager.SetStateAsync($"switch.flexilights_{Name.MakeHaFriendly()}", Enabled ? "ON" : "OFF");
         await _mqttEntityManager.SetAttributesAsync($"switch.flexilights_{Name.MakeHaFriendly()}", attributes);
+        await _mqttEntityManager.SetStateAsync($"switch.flexilights_{Name.MakeHaFriendly()}", Enabled ? "ON" : "OFF");
         await _mqttEntityManager.SetStateAsync($"{baseName}_initiated_by", InitiatedBy.ToString());
+        await _mqttEntityManager.SetStateAsync($"select.flexilights_{Name.MakeHaFriendly()}_scene", FlexiScenes.Current?.Name ?? "Off");
 
         _fileStorage.Save("FlexiScenes", Name.MakeHaFriendly(), ToFileStorage());
         _logger.LogTrace("Updated flexilight state for room '{room}' in Home assistant to {attr}", Name, attributes);
@@ -816,6 +851,7 @@ public class Room : IAsyncDisposable
         GuardTask?.Dispose();
         ClearIgnorePresenceSchedule?.Dispose();
         TurnOffSchedule?.Dispose();
+        DropdownChangedCommandHandler?.Dispose();
         SwitchDisposable?.Dispose();
 
         _logger.LogDebug("{Room}: Disposed.", Name);
