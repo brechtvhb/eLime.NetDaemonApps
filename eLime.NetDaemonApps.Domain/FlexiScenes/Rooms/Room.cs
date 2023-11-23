@@ -154,9 +154,6 @@ public class Room : IAsyncDisposable
 
         Name = config.Name;
 
-        RetrieveSate().RunSync();
-        EnsureSensorsExist().RunSync();
-
         if (autoTransitionDebounce != TimeSpan.Zero)
             AutoTransitionDebounceDispatcher = new(autoTransitionDebounce);
 
@@ -274,6 +271,9 @@ public class Room : IAsyncDisposable
             throw new Exception("Define at least one flexi scene with conditions when running in full automation mode (no switches & motion sensors defined & auto transition: true)");
 
         _logger.LogInformation("{Room}: Initialized with scenes: {Scenes}.", Name, String.Join(", ", FlexiScenes.All.Select(x => x.Name)));
+
+        RetrieveSate().RunSync();
+        EnsureSensorsExist().RunSync();
 
         if (FullyAutomated)
             ExecuteFlexiSceneOnAutoTransition().RunSync();
