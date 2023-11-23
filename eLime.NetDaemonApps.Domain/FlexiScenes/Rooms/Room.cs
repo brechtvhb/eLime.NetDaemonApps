@@ -4,6 +4,7 @@ using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
 using eLime.NetDaemonApps.Domain.FlexiScenes.Actions;
 using eLime.NetDaemonApps.Domain.Helper;
+using eLime.NetDaemonApps.Domain.Mqtt;
 using eLime.NetDaemonApps.Domain.Storage;
 using Microsoft.Extensions.Logging;
 using NetDaemon.Extensions.MqttEntityManager;
@@ -18,7 +19,7 @@ namespace eLime.NetDaemonApps.Domain.FlexiScenes.Rooms;
 public class Room : IAsyncDisposable
 {
     public string Name { get; }
-    private FlexiScenesEnabledSwitch EnabledSwitch { get; set; }
+    private bool Enabled { get; set; }
 
     public bool AutoTransition { get; }
     public bool AutoTransitionTurnOffIfNoValidSceneFound { get; }
@@ -30,11 +31,13 @@ public class Room : IAsyncDisposable
     public Int32? IlluminanceLowerThreshold { get; }
     public bool AutoSwitchOffAboveIlluminance { get; }
     public TimeSpan IgnorePresenceAfterOffDuration { get; }
-    public DateTime? TurnOffAt { get; private set; }
+    public DateTimeOffset? TurnOffAt { get; private set; }
     private IDisposable? TurnOffSchedule { get; set; }
-    private DateTime? IgnorePresenceUntil { get; set; }
+    private DateTimeOffset? IgnorePresenceUntil { get; set; }
     private IDisposable? ClearIgnorePresenceSchedule { get; set; }
     private IDisposable? GuardTask { get; set; }
+    private IDisposable SwitchDisposable { get; set; }
+
     public InitiatedBy InitiatedBy { get; private set; } = InitiatedBy.NoOne;
 
     private readonly List<BinarySensor> _offSensors = new();
@@ -150,7 +153,7 @@ public class Room : IAsyncDisposable
         _fileStorage = fileStorage;
 
         Name = config.Name;
-        EnsureEnabledSwitchExists();
+        EnsureEnabledSwitchExists().RunSync();
 
         if (autoTransitionDebounce != TimeSpan.Zero)
             AutoTransitionDebounceDispatcher = new(autoTransitionDebounce);
@@ -268,7 +271,7 @@ public class Room : IAsyncDisposable
         if (FullyAutomated && FlexiScenes.All.All(x => !x.Conditions.Any()))
             throw new Exception("Define at least one flexi scene with conditions when running in full automation mode (no switches & motion sensors defined & auto transition: true)");
 
-        RetrieveSateFromHomeAssistant().RunSync();
+        RetrieveSate().RunSync();
 
         _logger.LogInformation("{Room}: Initialized with scenes: {Scenes}.", Name, String.Join(", ", FlexiScenes.All.Select(x => x.Name)));
 
@@ -279,53 +282,70 @@ public class Room : IAsyncDisposable
         GuardTask = _scheduler.RunEvery(TimeSpan.FromSeconds(5), _scheduler.Now, CheckForMotion);
     }
 
-    private void EnsureEnabledSwitchExists()
+    private async Task EnsureEnabledSwitchExists()
     {
+        var baseName = $"sensor.flexilights_{Name.MakeHaFriendly()}";
         var switchName = $"switch.flexilights_{Name.MakeHaFriendly()}";
 
-        var created = false;
-        if (_haContext.Entity(switchName).State == null || string.Equals(_haContext.Entity(switchName).State, "unavailable", StringComparison.InvariantCultureIgnoreCase))
+        if (_haContext.Entity(switchName).State == null)
         {
-            _logger.LogDebug("Creating Enabled switch for room '{room}' in home assistant.", Name);
-            _mqttEntityManager.CreateAsync(switchName, new EntityCreationOptions(Name: $"Flexi lights - {Name}", DeviceClass: "switch", Persist: true)).RunSync();
-            created = true;
+            _logger.LogDebug("Creating Entities for room '{room}' in home assistant.", Name);
+            var enabledSwitchOptions = new EnabledSwitchAttributes { Icon = "fapro:palette", Device = GetDevice() };
+            await _mqttEntityManager.CreateAsync(switchName, new EntityCreationOptions(Name: $"Flexi lights - {Name}", DeviceClass: "switch", Persist: true), enabledSwitchOptions);
+            Enabled = true;
+            await _mqttEntityManager.SetStateAsync(switchName, "ON");
+
+            var initiatedByOptions = new EnumSensorOptions { Icon = "hue:motion-sensor-movement", Device = GetDevice(), Options = Enum<InitiatedBy>.AllValuesAsStringList() };
+            await _mqttEntityManager.CreateAsync($"{baseName}_initiated_by", new EntityCreationOptions(UniqueId: $"{baseName}_initiated_by", Name: $"Flex scene {Name} - Initiated by", DeviceClass: "enum", Persist: true), initiatedByOptions);
         }
 
-        EnabledSwitch = new FlexiScenesEnabledSwitch(_haContext, switchName);
 
-        if (created)
-            _mqttEntityManager.SetStateAsync(switchName, "ON").RunSync();
-
-        _mqttEntityManager.PrepareCommandSubscriptionAsync(switchName)
-            .RunSync()
-            .SubscribeAsync(async state =>
-            {
-                _logger.LogDebug("Setting flexi lights state for room '{room}' to {state}.", Name, state);
-                if (state == "OFF")
-                {
-                    _logger.LogDebug("Clearing flexi light state because it was disabled for room '{room}'.", Name);
-                    ClearAutoTurnOff();
-                    await RemoveIgnorePresence();
-                    FlexiScenes.DeactivateScene(_scheduler.Now);
-                    InitiatedBy = InitiatedBy.NoOne;
-                    await UpdateStateInHomeAssistant();
-                }
-                await _mqttEntityManager.SetStateAsync(switchName, state);
-            });
+        var observer = await _mqttEntityManager.PrepareCommandSubscriptionAsync(switchName);
+        SwitchDisposable = observer.SubscribeAsync(EnabledSwitchHandler());
     }
 
-    private async Task RetrieveSateFromHomeAssistant()
+    private Func<string, Task> EnabledSwitchHandler()
     {
-        IgnorePresenceUntil = !String.IsNullOrWhiteSpace(EnabledSwitch.Attributes?.IgnorePresenceUntil) ? DateTime.Parse(EnabledSwitch.Attributes.IgnorePresenceUntil) : null;
-        TurnOffAt = !String.IsNullOrWhiteSpace(EnabledSwitch.Attributes?.TurnOffAt) ? DateTime.Parse(EnabledSwitch.Attributes.TurnOffAt) : null;
-        InitiatedBy = !String.IsNullOrWhiteSpace(EnabledSwitch.Attributes?.InitiatedBy) ? Enum.Parse<InitiatedBy>(EnabledSwitch.Attributes.InitiatedBy) : InitiatedBy.NoOne;
-
-        if (!String.IsNullOrWhiteSpace(EnabledSwitch.Attributes?.CurrentFlexiScene))
+        return async state =>
         {
-            var activeScene = FlexiScenes.GetByName(EnabledSwitch.Attributes.CurrentFlexiScene);
+            _logger.LogDebug("Setting flexi lights state for room '{room}' to {state}.", Name, state);
+
+            if (state == "OFF")
+            {
+                _logger.LogDebug("Clearing flexi light state because it was disabled for room '{room}'.", Name);
+                ClearAutoTurnOff();
+                await RemoveIgnorePresence();
+                FlexiScenes.DeactivateScene(_scheduler.Now);
+                InitiatedBy = InitiatedBy.NoOne;
+            }
+            Enabled = state == "ON";
+            await UpdateStateInHomeAssistant();
+        };
+    }
+
+    public Device GetDevice()
+    {
+        return new Device { Identifiers = new List<string> { $"flexiscene.{Name.MakeHaFriendly()}" }, Name = "Flexi scene: " + Name, Manufacturer = "Me" };
+    }
+
+
+    private async Task RetrieveSate()
+    {
+        var flexiSceneFileStorage = _fileStorage.Get<FlexiSceneFileStorage>("FlexiScenes", Name.MakeHaFriendly());
+
+        Enabled = flexiSceneFileStorage?.Enabled ?? false;
+
+        IgnorePresenceUntil = flexiSceneFileStorage?.IgnorePresenceUntil;
+        TurnOffAt = flexiSceneFileStorage?.TurnOffAt;
+        InitiatedBy = flexiSceneFileStorage?.InitiatedBy ?? InitiatedBy.NoOne;
+        FlexiScenes.Changes = flexiSceneFileStorage?.Changes.ToList() ?? new List<FlexiSceneChange>();
+
+        if (!String.IsNullOrWhiteSpace(flexiSceneFileStorage?.ActiveFlexiScene))
+        {
+            var activeScene = FlexiScenes.GetByName(flexiSceneFileStorage.ActiveFlexiScene);
             if (activeScene != null)
             {
-                var initialScene = EnabledSwitch.Attributes.InitialFlexiScene != null ? FlexiScenes.GetByName(EnabledSwitch.Attributes.InitialFlexiScene) : null;
+                var initialScene = flexiSceneFileStorage.InitialFlexiScene != null ? FlexiScenes.GetByName(flexiSceneFileStorage.InitialFlexiScene) : null;
                 FlexiScenes.Initialize(activeScene, initialScene);
             }
         }
@@ -339,8 +359,7 @@ public class Room : IAsyncDisposable
 
     private async Task UpdateStateInHomeAssistant()
     {
-        if (!IsRoomEnabled())
-            return;
+        var baseName = $"sensor.flexilights_{Name.MakeHaFriendly()}";
 
         var attributes = new FlexiScenesEnabledSwitchAttributes
         {
@@ -350,9 +369,13 @@ public class Room : IAsyncDisposable
             CurrentFlexiScene = FlexiScenes.Current?.Name,
             InitialFlexiScene = FlexiScenes.Initial?.Name,
             LastUpdated = DateTime.Now.ToString("O"),
-            Icon = "mdi:palette"
+            Icon = "fapro:palette"
         };
-        await _mqttEntityManager.SetAttributesAsync(EnabledSwitch.EntityId, attributes);
+
+        await _mqttEntityManager.SetStateAsync($"switch.flexilights_{Name.MakeHaFriendly()}", Enabled ? "ON" : "OFF");
+        await _mqttEntityManager.SetAttributesAsync($"switch.flexilights_{Name.MakeHaFriendly()}", attributes);
+        await _mqttEntityManager.SetStateAsync($"{baseName}_initiated_by", InitiatedBy.ToString());
+
         _fileStorage.Save("FlexiScenes", Name.MakeHaFriendly(), ToFileStorage());
         _logger.LogTrace("Updated flexilight state for room '{room}' in Home assistant to {attr}", Name, attributes);
     }
@@ -361,7 +384,7 @@ public class Room : IAsyncDisposable
     {
         return new()
         {
-            Enabled = EnabledSwitch.IsOn(),
+            Enabled = Enabled,
             IgnorePresenceUntil = IgnorePresenceUntil,
             TurnOffAt = TurnOffAt,
             InitiatedBy = InitiatedBy,
@@ -369,11 +392,6 @@ public class Room : IAsyncDisposable
             InitialFlexiScene = FlexiScenes.Initial?.Name,
             Changes = FlexiScenes.Changes
         };
-    }
-
-    private bool IsRoomEnabled()
-    {
-        return EnabledSwitch.IsOn();
     }
 
     private async Task<bool> ExecuteFlexiScene(FlexiScene flexiScene, InitiatedBy initiatedBy, Boolean autoTransition = false, Boolean overwriteInitialScene = true)
@@ -508,7 +526,7 @@ public class Room : IAsyncDisposable
     }
     private async void OffSensor_TurnedOn(object? sender, BinarySensorEventArgs e)
     {
-        if (!IsRoomEnabled())
+        if (!Enabled)
             return;
 
         await ExecuteOffActions(triggeredByManualAction: true);
@@ -516,7 +534,7 @@ public class Room : IAsyncDisposable
 
     private async void MotionSensor_TurnedOn(object? sender, BinarySensorEventArgs e)
     {
-        if (!IsRoomEnabled())
+        if (!Enabled)
             return;
 
         //If motion / presence is detected and there is an active scene do nothing but cancel auto turn off
@@ -531,7 +549,7 @@ public class Room : IAsyncDisposable
 
     private async void Switch_Clicked(object? sender, SwitchEventArgs e)
     {
-        if (!IsRoomEnabled())
+        if (!Enabled)
             return;
 
         _logger.LogDebug("{Room}: Click triggered for switch {EntityId}", Name, e.Sensor.EntityId);
@@ -576,7 +594,7 @@ public class Room : IAsyncDisposable
 
     private async void Switch_DoubleClicked(object? sender, SwitchEventArgs e)
     {
-        if (!IsRoomEnabled())
+        if (!Enabled)
             return;
 
         _logger.LogDebug("{Room}: Double click triggered for switch {EntityId}", Name, e.Sensor.EntityId);
@@ -589,7 +607,7 @@ public class Room : IAsyncDisposable
 
     private async void Switch_TripleClicked(object? sender, SwitchEventArgs e)
     {
-        if (!IsRoomEnabled())
+        if (!Enabled)
             return;
 
         _logger.LogDebug("{Room}: Triple click triggered for switch {EntityId}", Name, e.Sensor.EntityId);
@@ -601,7 +619,7 @@ public class Room : IAsyncDisposable
     }
     private async void Switch_LongClicked(object? sender, SwitchEventArgs e)
     {
-        if (!IsRoomEnabled())
+        if (!Enabled)
             return;
 
         _logger.LogDebug("{Room}: Long click triggered for switch {EntityId}", Name, e.Sensor.EntityId);
@@ -613,7 +631,7 @@ public class Room : IAsyncDisposable
     }
     private async void Switch_UberLongClicked(object? sender, SwitchEventArgs e)
     {
-        if (!IsRoomEnabled())
+        if (!Enabled)
             return;
 
         _logger.LogDebug("{Room}: Uber long click triggered for switch {EntityId}", Name, e.Sensor.EntityId);
@@ -661,7 +679,7 @@ public class Room : IAsyncDisposable
 
     private async void MotionSensor_TurnedOff(object? sender, BinarySensorEventArgs e)
     {
-        if (!IsRoomEnabled())
+        if (!Enabled)
             return;
 
         var allMotionSensorsOff = MotionSensors.All(x => x.IsOff());
@@ -675,7 +693,7 @@ public class Room : IAsyncDisposable
 
     private async void Sensor_WentAboveThreshold(object? sender, NumericSensorEventArgs e)
     {
-        if (!IsRoomEnabled())
+        if (!Enabled)
             return;
 
         if (AutoSwitchOffAboveIlluminance && IlluminanceSensors.All(x => x.State > IlluminanceThreshold) && FlexiScenes.Current != null)
@@ -687,7 +705,7 @@ public class Room : IAsyncDisposable
 
     private async Task ExecuteFlexiSceneOnAutoTransition()
     {
-        if (!IsRoomEnabled())
+        if (!Enabled)
             return;
 
         if (!AutoTransition)
@@ -734,7 +752,7 @@ public class Room : IAsyncDisposable
 
     private async void CheckForMotion()
     {
-        if (!IsRoomEnabled())
+        if (!Enabled)
             return;
 
         if (MotionSensors.All(x => x.IsOff()))
@@ -798,6 +816,7 @@ public class Room : IAsyncDisposable
         GuardTask?.Dispose();
         ClearIgnorePresenceSchedule?.Dispose();
         TurnOffSchedule?.Dispose();
+        SwitchDisposable?.Dispose();
 
         _logger.LogDebug("{Room}: Disposed.", Name);
 

@@ -271,10 +271,10 @@ public class FlexiScreen : IDisposable
         }
 
         var observer = await _mqttEntityManager.PrepareCommandSubscriptionAsync(switchName);
-        SwitchDisposable = observer.SubscribeAsync(EnabledSwitchHandler(switchName));
+        SwitchDisposable = observer.SubscribeAsync(EnabledSwitchHandler());
     }
 
-    private Func<string, Task> EnabledSwitchHandler(string switchName)
+    private Func<string, Task> EnabledSwitchHandler()
     {
         return async state =>
         {
