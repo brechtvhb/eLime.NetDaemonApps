@@ -82,7 +82,7 @@ public class FlexiScenes
     {
         if (CurrentFlexiScene != null)
         {
-            Changes.Add(new FlexiSceneChange { ChangedAt = now, Scene = "off" });
+            Changes.Add(new FlexiSceneChange { ChangedAt = now, Scene = "Off" });
             CleanUpOldChanges(now);
         }
 
