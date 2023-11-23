@@ -153,6 +153,8 @@ public class Room : IAsyncDisposable
         _fileStorage = fileStorage;
 
         Name = config.Name;
+
+        RetrieveSate().RunSync();
         EnsureSensorsExist().RunSync();
 
         if (autoTransitionDebounce != TimeSpan.Zero)
@@ -271,8 +273,6 @@ public class Room : IAsyncDisposable
         if (FullyAutomated && FlexiScenes.All.All(x => !x.Conditions.Any()))
             throw new Exception("Define at least one flexi scene with conditions when running in full automation mode (no switches & motion sensors defined & auto transition: true)");
 
-        RetrieveSate().RunSync();
-
         _logger.LogInformation("{Room}: Initialized with scenes: {Scenes}.", Name, String.Join(", ", FlexiScenes.All.Select(x => x.Name)));
 
         if (FullyAutomated)
@@ -287,17 +287,17 @@ public class Room : IAsyncDisposable
         var baseName = $"sensor.flexilights_{Name.MakeHaFriendly()}";
         var switchName = $"switch.flexilights_{Name.MakeHaFriendly()}";
 
-        //if (_haContext.Entity(switchName).State == null)
-        //{
-        _logger.LogDebug("Creating Entities for room '{room}' in home assistant.", Name);
-        var enabledSwitchOptions = new EnabledSwitchAttributes { Icon = "fapro:palette", Device = GetDevice() };
-        await _mqttEntityManager.CreateAsync(switchName, new EntityCreationOptions(Name: $"Flexi lights - {Name}", DeviceClass: "switch", Persist: true), enabledSwitchOptions);
-        Enabled = true;
-        await _mqttEntityManager.SetStateAsync(switchName, "ON");
+        if (_haContext.Entity(switchName).State == null)
+        {
+            _logger.LogDebug("Creating Entities for room '{room}' in home assistant.", Name);
+            var enabledSwitchOptions = new EnabledSwitchAttributes { Icon = "fapro:palette", Device = GetDevice() };
+            await _mqttEntityManager.CreateAsync(switchName, new EntityCreationOptions(Name: $"Flexi lights - {Name}", DeviceClass: "switch", Persist: true), enabledSwitchOptions);
+            Enabled = true;
+            await _mqttEntityManager.SetStateAsync(switchName, "ON");
 
-        var initiatedByOptions = new EnumSensorOptions { Icon = "hue:motion-sensor-movement", Device = GetDevice(), Options = Enum<InitiatedBy>.AllValuesAsStringList() };
-        await _mqttEntityManager.CreateAsync($"{baseName}_initiated_by", new EntityCreationOptions(UniqueId: $"{baseName}_initiated_by", Name: $"Initiated by", DeviceClass: "enum", Persist: true), initiatedByOptions);
-        //}
+            var initiatedByOptions = new EnumSensorOptions { Icon = "hue:motion-sensor-movement", Device = GetDevice(), Options = Enum<InitiatedBy>.AllValuesAsStringList() };
+            await _mqttEntityManager.CreateAsync($"{baseName}_initiated_by", new EntityCreationOptions(UniqueId: $"{baseName}_initiated_by", Name: $"Initiated by", DeviceClass: "enum", Persist: true), initiatedByOptions);
+        }
 
 
         var observer = await _mqttEntityManager.PrepareCommandSubscriptionAsync(switchName);
