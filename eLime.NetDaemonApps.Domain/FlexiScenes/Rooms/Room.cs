@@ -296,7 +296,7 @@ public class Room : IAsyncDisposable
         await _mqttEntityManager.SetStateAsync(switchName, "ON");
 
         var initiatedByOptions = new EnumSensorOptions { Icon = "hue:motion-sensor-movement", Device = GetDevice(), Options = Enum<InitiatedBy>.AllValuesAsStringList() };
-        await _mqttEntityManager.CreateAsync($"{baseName}_initiated_by", new EntityCreationOptions(UniqueId: $"{baseName}_initiated_by", Name: $"Flex scene {Name} - Initiated by", DeviceClass: "enum", Persist: true), initiatedByOptions);
+        await _mqttEntityManager.CreateAsync($"{baseName}_initiated_by", new EntityCreationOptions(UniqueId: $"{baseName}_initiated_by", Name: $"Initiated by", DeviceClass: "enum", Persist: true), initiatedByOptions);
         //}
 
 
