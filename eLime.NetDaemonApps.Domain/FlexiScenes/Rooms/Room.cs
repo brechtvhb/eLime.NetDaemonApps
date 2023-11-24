@@ -403,7 +403,8 @@ public class Room : IAsyncDisposable
 
         var attributes = new EnabledSwitchAttributes
         {
-            LastUpdated = DateTime.Now.ToString("O")
+            LastUpdated = DateTime.Now.ToString("O"),
+            Device = GetDevice()
         };
 
         await _mqttEntityManager.SetAttributesAsync($"switch.flexilights_{Name.MakeHaFriendly()}", attributes);
