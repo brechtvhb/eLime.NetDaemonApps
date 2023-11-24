@@ -401,25 +401,14 @@ public class Room : IAsyncDisposable
     {
         var baseName = $"sensor.flexilights_{Name.MakeHaFriendly()}";
 
-        var attributes = new FlexiScenesEnabledSwitchAttributes
-        {
-            IgnorePresenceUntil = IgnorePresenceUntil?.ToString("O"),
-            TurnOffAt = TurnOffAt?.ToString("O"),
-            InitiatedBy = InitiatedBy.ToString(),
-            CurrentFlexiScene = FlexiScenes.Current?.Name,
-            InitialFlexiScene = FlexiScenes.Initial?.Name,
-            LastUpdated = DateTime.Now.ToString("O"),
-            Icon = "fapro:palette"
-        };
-
-        await _mqttEntityManager.SetAttributesAsync($"switch.flexilights_{Name.MakeHaFriendly()}", attributes);
+        await _mqttEntityManager.SetAttributesAsync($"switch.flexilights_{Name.MakeHaFriendly()}", new EnabledSwitchAttributes { LastUpdated = DateTime.Now.ToString("0"), Device = GetDevice() });
         await _mqttEntityManager.SetStateAsync($"switch.flexilights_{Name.MakeHaFriendly()}", Enabled ? "ON" : "OFF");
         await _mqttEntityManager.SetStateAsync($"{baseName}_initiated_by", InitiatedBy.ToString());
         await _mqttEntityManager.SetStateAsync($"{baseName}_last_changed_at", FlexiScenes.Changes.LastOrDefault()?.ChangedAt.ToString("O"));
         await _mqttEntityManager.SetStateAsync($"select.flexilights_{Name.MakeHaFriendly()}_scene", FlexiScenes.Current?.Name ?? "Off");
 
         _fileStorage.Save("FlexiScenes", Name.MakeHaFriendly(), ToFileStorage());
-        _logger.LogTrace("Updated flexilight state for room '{room}' in Home assistant to {attr}", Name, attributes);
+        _logger.LogTrace("Updated flexilight state for room '{room}' in Home assistant.", Name);
     }
 
     internal FlexiSceneFileStorage ToFileStorage()

@@ -29,7 +29,6 @@ public class FlexiLightTests
     public void Init()
     {
         _testCtx = AppTestContext.Create(DateTime.Now);
-        _testCtx.TriggerStateChange(new FlexiScenesEnabledSwitch(_testCtx.HaContext, "switch.flexilights_toilet_1"), "on");
 
         _logger = A.Fake<ILogger<Room>>();
         _mqttEntityManager = A.Fake<IMqttEntityManager>();
