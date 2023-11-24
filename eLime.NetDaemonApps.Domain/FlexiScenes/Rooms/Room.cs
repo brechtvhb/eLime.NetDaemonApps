@@ -401,7 +401,7 @@ public class Room : IAsyncDisposable
     {
         var baseName = $"sensor.flexilights_{Name.MakeHaFriendly()}";
 
-        await _mqttEntityManager.SetAttributesAsync($"switch.flexilights_{Name.MakeHaFriendly()}", new EnabledSwitchAttributes { LastUpdated = _scheduler.Now.ToString("0"), Device = GetDevice() });
+        await _mqttEntityManager.SetAttributesAsync($"switch.flexilights_{Name.MakeHaFriendly()}", new EnabledSwitchAttributes { LastUpdated = _scheduler.Now.ToString("0") });
         await _mqttEntityManager.SetStateAsync($"switch.flexilights_{Name.MakeHaFriendly()}", Enabled ? "ON" : "OFF");
         await _mqttEntityManager.SetStateAsync($"{baseName}_initiated_by", InitiatedBy.ToString());
         await _mqttEntityManager.SetStateAsync($"{baseName}_last_changed_at", FlexiScenes.Changes.LastOrDefault()?.ChangedAt.ToString("O"));
