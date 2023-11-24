@@ -342,7 +342,10 @@ public class Room : IAsyncDisposable
         return async state =>
         {
             if (state == "Off")
+            {
                 await ExecuteOffActions();
+                return;
+            }
 
             var flexiScene = FlexiScenes.GetByName(state);
 
@@ -545,6 +548,7 @@ public class Room : IAsyncDisposable
         _logger.LogTrace("{Room}: Off actions will no longer be executed. Probably because the OFF actions were just executed or a motion sensor is active.", Name);
         TurnOffAt = null;
         TurnOffSchedule?.Dispose();
+        TurnOffSchedule = null;
     }
 
     private async Task<Boolean> ExecuteActions(IReadOnlyCollection<Action> actions, Boolean autoTransition = false)
@@ -580,6 +584,7 @@ public class Room : IAsyncDisposable
         if (FlexiScenes.Current != null)
         {
             ClearAutoTurnOff();
+            await UpdateStateInHomeAssistant();
             return;
         }
 
