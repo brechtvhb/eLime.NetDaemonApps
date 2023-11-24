@@ -138,7 +138,7 @@ public class EnergyManagerTests
     }
 
     [TestMethod]
-    public void Above_Peak_Energy_WithMinimumRuntime_DoesNotSwitchOffLoad()
+    public void Above_Peak_Energy_WithMinimumRuntime_DoesSwitchOffLoad()
     {
         // Arrange
         var consumer = new SimpleEnergyConsumerBuilder(_testCtx)
@@ -158,7 +158,7 @@ public class EnergyManagerTests
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(31));
 
         //Assert
-        _testCtx.VerifySwitchTurnOff(consumer.Socket, Moq.Times.Never);
+        _testCtx.VerifySwitchTurnOff(consumer.Socket, Moq.Times.Once);
     }
 
     [TestMethod]
