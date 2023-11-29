@@ -92,8 +92,13 @@ public class FlexiScenes
 
     private void CleanUpOldChanges(DateTimeOffset now)
     {
-        var changesToRemove = Changes.Where(x => x.ChangedAt < now - SaveChangesFor);
-        foreach (var change in changesToRemove)
+        var changesToRemove = Changes.Where(x => x.ChangedAt < now - SaveChangesFor).ToList();
+        var lastChange = changesToRemove.LastOrDefault();
+
+        //keep last change before our interval as it is needed to know the state of x ago.
+        foreach (var change in changesToRemove.Where(change => change != lastChange))
+        {
             Changes.Remove(change);
+        }
     }
 }
