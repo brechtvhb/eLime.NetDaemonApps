@@ -407,11 +407,13 @@ public class Room : IAsyncDisposable
             Device = GetDevice()
         };
 
-        await _mqttEntityManager.SetAttributesAsync($"switch.flexilights_{Name.MakeHaFriendly()}", attributes);
-        await _mqttEntityManager.SetStateAsync($"switch.flexilights_{Name.MakeHaFriendly()}", Enabled ? "ON" : "OFF");
-        await _mqttEntityManager.SetStateAsync($"{baseName}_initiated_by", InitiatedBy.ToString());
-        await _mqttEntityManager.SetStateAsync($"{baseName}_last_changed_at", FlexiScenes.Changes.LastOrDefault()?.ChangedAt.ToString("O"));
-        await _mqttEntityManager.SetStateAsync($"select.flexilights_{Name.MakeHaFriendly()}_scene", FlexiScenes.Current?.Name ?? "Off");
+        var task1 = _mqttEntityManager.SetAttributesAsync($"switch.flexilights_{Name.MakeHaFriendly()}", attributes);
+        var task2 = _mqttEntityManager.SetStateAsync($"switch.flexilights_{Name.MakeHaFriendly()}", Enabled ? "ON" : "OFF");
+        var task3 = _mqttEntityManager.SetStateAsync($"{baseName}_initiated_by", InitiatedBy.ToString());
+        var task4 = _mqttEntityManager.SetStateAsync($"{baseName}_last_changed_at", FlexiScenes.Changes.LastOrDefault()?.ChangedAt.ToString("O"));
+        var task5 = _mqttEntityManager.SetStateAsync($"select.flexilights_{Name.MakeHaFriendly()}_scene", FlexiScenes.Current?.Name ?? "Off");
+
+        await Task.WhenAll(task1, task2, task3, task4, task5);
 
         _fileStorage.Save("FlexiScenes", Name.MakeHaFriendly(), ToFileStorage());
         _logger.LogTrace("Updated flexilight state for room '{room}' in Home assistant.", Name);

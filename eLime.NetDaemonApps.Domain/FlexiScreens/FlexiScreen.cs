@@ -337,7 +337,7 @@ public class FlexiScreen : IDisposable
         _logger.LogTrace("{Screen}: Updated flexiscreen in Home assistant to {Attributes}", Name, attributes);
 
 
-        _fileStorage.Save("FlexiScreens", Name.MakeHaFriendly(), ToFileStorage());
+        _fileStorage.Save("FlexiScreens", Name.MakeHaFriendly(), fileStorage);
         _lastState = fileStorage;
     }
 
