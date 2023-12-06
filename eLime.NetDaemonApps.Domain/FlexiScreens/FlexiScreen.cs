@@ -23,6 +23,7 @@ public class FlexiScreen : IDisposable
     public TemperatureProtector? TemperatureProtector { get; }
     public ManIsAngryProtector? ManIsAngryProtector { get; }
     public WomanIsAngryProtector? WomanIsAngryProtector { get; }
+    public FrostProtector FrostProtector { get; }
     public ChildrenAreAngryProtector? ChildrenAreAngryProtector { get; }
 
     private readonly IHaContext _haContext;
@@ -51,7 +52,7 @@ public class FlexiScreen : IDisposable
 
 
     public FlexiScreen(IHaContext haContext, ILogger logger, IScheduler scheduler, IMqttEntityManager mqttEntityManager, IFileStorage fileStorage, Boolean enabled, String name, Cover screen, String ndUserId,
-        SunProtector sunProtector, StormProtector? stormProtector, TemperatureProtector? temperatureProtector, ManIsAngryProtector? manIsAngryProtector, WomanIsAngryProtector? womanIsAngryProtector, ChildrenAreAngryProtector? childrenAreAngryProtector,
+        SunProtector sunProtector, StormProtector? stormProtector, TemperatureProtector? temperatureProtector, ManIsAngryProtector? manIsAngryProtector, WomanIsAngryProtector? womanIsAngryProtector, FrostProtector frostProtector, ChildrenAreAngryProtector? childrenAreAngryProtector,
         TimeSpan debounceDuration)
     {
         _haContext = haContext;
@@ -82,6 +83,7 @@ public class FlexiScreen : IDisposable
 
         ManIsAngryProtector = manIsAngryProtector;
         WomanIsAngryProtector = womanIsAngryProtector;
+        FrostProtector = frostProtector;
         ChildrenAreAngryProtector = childrenAreAngryProtector;
 
         if (ChildrenAreAngryProtector != null)
@@ -180,6 +182,13 @@ public class FlexiScreen : IDisposable
             return;
         }
 
+        var desiredFrostProtectorState = FrostProtector?.GetDesiredState();
+        if (desiredFrostProtectorState is { Enforce: true })
+        {
+            await ChangeScreenState(desiredFrostProtectorState.Value.State, Protectors.FrostProtector);
+            return;
+        }
+
         if (SunProtector.DesiredState is { Enforce: true })
         {
             await ChangeScreenState(SunProtector.DesiredState.State, Protectors.SunProtector);
@@ -263,12 +272,12 @@ public class FlexiScreen : IDisposable
             var lastManualStateChangeOptions = new EntityOptions { Icon = "fapro:calendar-day", Device = GetDevice() };
             await _mqttEntityManager.CreateAsync($"{baseName}_last_manual_state_change", new EntityCreationOptions(UniqueId: $"{baseName}_last_manual_state_change", Name: $"Flexi screen {Name} - Last manual state change", DeviceClass: "timestamp", Persist: true), lastManualStateChangeOptions);
 
-            var lastStateChangeTriggeredBy = new EnumSensorOptions { Icon = "mdi:state-machine", Device = GetDevice(), Options = Enum<Protectors>.AllValuesAsStringList() };
-            await _mqttEntityManager.CreateAsync($"{baseName}_last_state_change_triggered_by", new EntityCreationOptions(UniqueId: $"{baseName}_last_state_change_triggered_by", Name: $"Flexi screen {Name} - Last state change triggered by", Persist: true), lastStateChangeTriggeredBy);
-
             var stormyNight = new EntityOptions { Icon = "fapro:poo-storm", Device = GetDevice() };
             await _mqttEntityManager.CreateAsync($"binary_{baseName}_stormy_night", new EntityCreationOptions(UniqueId: $"boolean_{baseName}_stormy_night", Name: $"Flexi screen {Name} - Is stormy night", Persist: true), stormyNight);
         }
+
+        var lastStateChangeTriggeredBy = new EnumSensorOptions { Icon = "mdi:state-machine", Device = GetDevice(), Options = Enum<Protectors>.AllValuesAsStringList() };
+        await _mqttEntityManager.CreateAsync($"{baseName}_last_state_change_triggered_by", new EntityCreationOptions(UniqueId: $"{baseName}_last_state_change_triggered_by", Name: $"Flexi screen {Name} - Last state change triggered by", Persist: true), lastStateChangeTriggeredBy);
 
         var observer = await _mqttEntityManager.PrepareCommandSubscriptionAsync(switchName);
         SwitchDisposable = observer.SubscribeAsync(EnabledSwitchHandler());

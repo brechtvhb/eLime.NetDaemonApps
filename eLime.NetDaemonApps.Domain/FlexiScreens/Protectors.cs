@@ -4,6 +4,7 @@ public enum Protectors
 {
     SunProtector,
     StormProtector,
+    FrostProtector,
     TemperatureProtector,
     ManIsAngryProtector,
     WomanIsAngryProtector,

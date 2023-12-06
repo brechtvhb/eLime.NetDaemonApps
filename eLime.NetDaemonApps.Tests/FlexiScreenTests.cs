@@ -671,6 +671,29 @@ public class FlexiScreenTests
     }
 
     [TestMethod]
+    public void Freezing_DoesNot_Move_Screen()
+    {
+        // Arrange
+        _testCtx.TriggerStateChangeWithAttributes(_sun, "below_horizon", new SunAttributes { Azimuth = 0, Elevation = 20 });
+        _testCtx.TriggerStateChange(_cover, "closed");
+        _testCtx.TriggerStateChange(_sleepSensor, new EntityState { State = "on" });
+        _testCtx.TriggerStateChangeWithAttributes(_weather, "Snowy", new WeatherAttributes { Temperature = 0 });
+
+        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage)
+            .WithCover(_cover)
+            .WithSun(_sun)
+            .WithSleepSensor(_sleepSensor)
+            .WithWeatherForecast(_weather, 25, 25, 2)
+            .Build();
+
+        //Act
+        _testCtx.TriggerStateChange(_sleepSensor, new EntityState { State = "off" });
+
+        //Assert
+        _testCtx.VerifyScreenGoesUp(_cover, Moq.Times.Never);
+    }
+
+    [TestMethod]
     public void StormProtector_Ignores_AngryKids()
     {
         // Arrange

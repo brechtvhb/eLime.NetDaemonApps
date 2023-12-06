@@ -38,9 +38,10 @@ public static class ConfigExtensions
             : new WomanIsAngryProtector(TimeSpan.FromHours(1));
 
         var childrenAreAngryProtector = config.SleepSensor != null ? new ChildrenAreAngryProtector(BinarySensor.Create(ha, config.SleepSensor)) : null;
+        var frostProtector = new FrostProtector(weather);
 
         var flexiScreen = new FlexiScreen(ha, logger, scheduler, mqttEntityManager, storage, config.Enabled ?? true, name, screen, netDaemonUserId, sunProtector, stormProtector,
-            temperatureProtector, manIsAngryProtector, womanIsAngryProtector, childrenAreAngryProtector, TimeSpan.FromSeconds(3));
+            temperatureProtector, manIsAngryProtector, womanIsAngryProtector, frostProtector, childrenAreAngryProtector, TimeSpan.FromSeconds(3));
         return flexiScreen;
     }
 
