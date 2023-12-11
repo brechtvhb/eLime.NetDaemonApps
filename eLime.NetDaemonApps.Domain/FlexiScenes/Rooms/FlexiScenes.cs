@@ -90,6 +90,13 @@ public class FlexiScenes
         InitialFlexiScene = null;
     }
 
+    internal FlexiScene? GetFlexiSceneToSimulate(DateTimeOffset? now)
+    {
+        var change = Changes.LastOrDefault(x => x.ChangedAt < now - SaveChangesFor);
+
+        return change?.Scene == null ? null : GetByName(change.Scene);
+    }
+
     private void CleanUpOldChanges(DateTimeOffset now)
     {
         var changesToRemove = Changes.Where(x => x.ChangedAt < now - SaveChangesFor).ToList();

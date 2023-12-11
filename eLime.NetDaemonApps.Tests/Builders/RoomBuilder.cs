@@ -17,7 +17,7 @@ namespace eLime.NetDaemonApps.Tests.Builders
 
         private RoomConfig _config;
 
-        public RoomBuilder(AppTestContext testCtx, ILogger logger, IMqttEntityManager mqttEntityManager, IFileStorage fileStorage)
+        public RoomBuilder(AppTestContext testCtx, ILogger logger, IMqttEntityManager mqttEntityManager, IFileStorage fileStorage, String? name = null)
         {
             _testCtx = testCtx;
             _logger = logger;
@@ -25,7 +25,7 @@ namespace eLime.NetDaemonApps.Tests.Builders
             _fileStorage = fileStorage;
             _config = new RoomConfig
             {
-                Name = "Toilet +1",
+                Name = name ?? "Toilet +1",
                 Enabled = true,
                 MotionSensors = new List<string> { "binary_sensor.motion" },
                 OffActions = new List<ActionConfig> { new() { LightAction = LightAction.TurnOff, Light = "light.test" } },
@@ -558,6 +558,12 @@ namespace eLime.NetDaemonApps.Tests.Builders
             {
                 new() {Light = "light.evening", LightAction = LightAction.TurnOff},
             };
+            return this;
+        }
+
+        public RoomBuilder WithSimulatePresenceSensor()
+        {
+            _config.SimulatePresenceSensor = "input_boolean.away";
             return this;
         }
 

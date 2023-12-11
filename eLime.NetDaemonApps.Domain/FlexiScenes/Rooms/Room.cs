@@ -36,6 +36,7 @@ public class Room : IAsyncDisposable
     private DateTimeOffset? IgnorePresenceUntil { get; set; }
     private IDisposable? ClearIgnorePresenceSchedule { get; set; }
     private IDisposable? GuardTask { get; set; }
+    private IDisposable? SimulateTask { get; set; }
     private IDisposable SwitchDisposable { get; set; }
     private IDisposable DropdownChangedCommandHandler { get; set; }
 
@@ -85,6 +86,7 @@ public class Room : IAsyncDisposable
         }
     }
 
+    public BinarySensor? SimulatePresenceSensor;
 
     private readonly List<Action> _offActions = new();
     public IReadOnlyCollection<Action> OffActions => _offActions.AsReadOnly();
@@ -166,6 +168,7 @@ public class Room : IAsyncDisposable
 
         AutoTransition = config.AutoTransition;
         AutoTransitionTurnOffIfNoValidSceneFound = config.AutoTransitionTurnOffIfNoValidSceneFound;
+        SimulatePresenceSensor = !String.IsNullOrWhiteSpace(config.SimulatePresenceSensor) ? new BinarySensor(_haContext, config.SimulatePresenceSensor) : null;
         InitialClickAfterMotionBehaviour = config.InitialClickAfterMotionBehaviour == Config.FlexiLights.InitialClickAfterMotionBehaviour.ChangeOffDurationOnly ? InitialClickAfterMotionBehaviour.ChangeOffDurationOnly : InitialClickAfterMotionBehaviour.ChangeOFfDurationAndGoToNextFlexiScene;
         IlluminanceThreshold = config.IlluminanceThreshold;
         IlluminanceLowerThreshold = config.IlluminanceLowerThreshold ?? IlluminanceThreshold;
@@ -281,6 +284,7 @@ public class Room : IAsyncDisposable
 
         //Should this still be a periodic task? Can only happen on startup, otherwise we receive a motion detected event.
         GuardTask = _scheduler.RunEvery(TimeSpan.FromSeconds(5), _scheduler.Now, CheckForMotion);
+        SimulateTask = _scheduler.RunEvery(TimeSpan.FromSeconds(15), _scheduler.Now, SimulatePresenceIfNeeded);
     }
 
     private async Task EnsureSensorsExist()
@@ -512,6 +516,7 @@ public class Room : IAsyncDisposable
         {
             InitiatedBy.Motion => flexiScene.TurnOffAfterIfTriggeredByMotionSensor,
             InitiatedBy.Switch => flexiScene.TurnOffAfterIfTriggeredBySwitch,
+            InitiatedBy.FullyAutomated => flexiScene.TurnOffAfterIfTriggeredBySwitch,
             _ => throw new ArgumentOutOfRangeException()
         };
 
@@ -811,6 +816,37 @@ public class Room : IAsyncDisposable
         await ExecuteFlexiSceneOnMotion();
     }
 
+    private async void SimulatePresenceIfNeeded()
+    {
+        if (!Enabled)
+            return;
+
+        if (SimulatePresenceSensor == null || SimulatePresenceSensor.State == "unavailable" || SimulatePresenceSensor.IsOff())
+            return;
+
+        var flexiSceneToSimulate = FlexiScenes.GetFlexiSceneToSimulate(_scheduler.Now);
+
+        if (FlexiScenes.Current == flexiSceneToSimulate)
+            return;
+
+        if (flexiSceneToSimulate == null)
+        {
+            _logger.LogDebug("{Room}: Simulating off actions", Name);
+            await ExecuteOffActions();
+            return;
+        }
+
+        _logger.LogDebug("{Room}: Simulating presence.", Name);
+        var offActionsExecuted = await ExecuteFlexiScene(flexiSceneToSimulate, InitiatedBy.FullyAutomated);
+
+        if (offActionsExecuted)
+            return;
+
+        await SetTurnOffAt(flexiSceneToSimulate);
+        await UpdateStateInHomeAssistant();
+    }
+
+
     public ValueTask DisposeAsync()
     {
         _logger.LogDebug("{Room}: Disposing.", Name);
@@ -855,6 +891,10 @@ public class Room : IAsyncDisposable
         }
 
         GuardTask?.Dispose();
+
+        SimulatePresenceSensor?.Dispose();
+        SimulateTask?.Dispose();
+
         ClearIgnorePresenceSchedule?.Dispose();
         TurnOffSchedule?.Dispose();
         DropdownChangedCommandHandler?.Dispose();

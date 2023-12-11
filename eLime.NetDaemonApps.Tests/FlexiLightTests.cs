@@ -34,7 +34,7 @@ public class FlexiLightTests
         _mqttEntityManager = A.Fake<IMqttEntityManager>();
 
         _fileStorage = A.Fake<IFileStorage>();
-        A.CallTo(() => _fileStorage.Get<FlexiSceneFileStorage>("FlexiScenes", "toilet_1")).Returns(new FlexiSceneFileStorage() { Enabled = true });
+        A.CallTo(() => _fileStorage.Get<FlexiSceneFileStorage>("FlexiScenes", "toilet_1")).Returns(new FlexiSceneFileStorage { Enabled = true });
     }
 
     [TestMethod]
@@ -991,5 +991,111 @@ public class FlexiLightTests
         _testCtx.VerifyLightTurnOff(new Light(_testCtx.HaContext, "light.light1"), Moq.Times.Once);
         Assert.IsNull(room.FlexiScenes.Current);
         Assert.AreEqual(InitiatedBy.NoOne, room.InitiatedBy);
+    }
+
+    [TestMethod]
+    public void PresenceSensor_Simulates_Presence()
+    {
+        // Arrange
+        _testCtx.TriggerStateChange(new BinarySensor(_testCtx.HaContext, "input_boolean.away"), "on");
+        A.CallTo(() => _fileStorage.Get<FlexiSceneFileStorage>("FlexiScenes", "office")).Returns(new FlexiSceneFileStorage
+        {
+            Enabled = true,
+            Changes = new List<FlexiSceneChange>
+            {
+                new() { ChangedAt = _testCtx.Scheduler.Now.AddDays(-7).AddHours(-1), Scene = "morning"},
+                new() { ChangedAt = _testCtx.Scheduler.Now.AddDays(-7).AddHours(1), Scene = "day"}
+            }
+        });
+
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, "office").WithSimulatePresenceSensor().WithMultipleFlexiScenes().Build();
+
+        //Act
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(20));
+
+        //Assert
+        Assert.IsNotNull(room.FlexiScenes.Current);
+        Assert.AreEqual("morning", room.FlexiScenes.Current.Name);
+        Assert.AreEqual(InitiatedBy.FullyAutomated, room.InitiatedBy);
+        _testCtx.VerifyLightTurnOn(new Light(_testCtx.HaContext, "light.morning"), Moq.Times.Once);
+    }
+
+    [TestMethod]
+    public void PresenceSensor_Simulates_OffActions()
+    {
+        // Arrange
+        _testCtx.TriggerStateChange(new BinarySensor(_testCtx.HaContext, "input_boolean.away"), "on");
+        A.CallTo(() => _fileStorage.Get<FlexiSceneFileStorage>("FlexiScenes", "office")).Returns(new FlexiSceneFileStorage
+        {
+            Enabled = true,
+            Changes = new List<FlexiSceneChange>
+            {
+                new() { ChangedAt = _testCtx.Scheduler.Now.AddDays(-7).AddHours(-1), Scene = "morning"},
+                new() { ChangedAt = _testCtx.Scheduler.Now.AddDays(-7).AddHours(1), Scene = "off"},
+                new() { ChangedAt = _testCtx.Scheduler.Now.AddDays(-7).AddHours(2), Scene = "day"}
+            }
+        });
+
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, "office").WithSimulatePresenceSensor().WithMultipleFlexiScenes().Build();
+
+        //Act
+        _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(70));
+
+        //Assert
+        Assert.IsNull(room.FlexiScenes.Current);
+        _testCtx.VerifyLightTurnOff(new Light(_testCtx.HaContext, "light.morning"), Moq.Times.Once);
+        _testCtx.VerifyLightTurnOff(new Light(_testCtx.HaContext, "light.day"), Moq.Times.Once);
+        _testCtx.VerifyLightTurnOff(new Light(_testCtx.HaContext, "light.evening"), Moq.Times.Once);
+    }
+
+
+    [TestMethod]
+    public void PresenceSensor_DoesNotSimulate_Presence_IfOff()
+    {
+        // Arrange
+        _testCtx.TriggerStateChange(new BinarySensor(_testCtx.HaContext, "input_boolean.away"), "off");
+        A.CallTo(() => _fileStorage.Get<FlexiSceneFileStorage>("FlexiScenes", "office")).Returns(new FlexiSceneFileStorage
+        {
+            Enabled = true,
+            Changes = new List<FlexiSceneChange>
+            {
+                new() { ChangedAt = _testCtx.Scheduler.Now.AddDays(-7).AddHours(-1), Scene = "morning"},
+                new() { ChangedAt = _testCtx.Scheduler.Now.AddDays(-7).AddHours(1), Scene = "day"}
+            }
+        });
+
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, "office").WithSimulatePresenceSensor().WithMultipleFlexiScenes().Build();
+
+        //Act
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(20));
+
+        //Assert
+        Assert.IsNull(room.FlexiScenes.Current);
+        _testCtx.VerifyLightTurnOn(new Light(_testCtx.HaContext, "light.morning"), Moq.Times.Never);
+    }
+
+
+    [TestMethod]
+    public void NoPresenceSensor_DoesNotSimulate_Presence()
+    {
+        // Arrange
+        A.CallTo(() => _fileStorage.Get<FlexiSceneFileStorage>("FlexiScenes", "office")).Returns(new FlexiSceneFileStorage
+        {
+            Enabled = true,
+            Changes = new List<FlexiSceneChange>
+            {
+                new() { ChangedAt = _testCtx.Scheduler.Now.AddDays(-7).AddHours(-1), Scene = "morning"},
+                new() { ChangedAt = _testCtx.Scheduler.Now.AddDays(-7).AddHours(1), Scene = "day"}
+            }
+        });
+
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, "office").WithMultipleFlexiScenes().Build();
+
+        //Act
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(20));
+
+        //Assert
+        Assert.IsNull(room.FlexiScenes.Current);
+        _testCtx.VerifyLightTurnOn(new Light(_testCtx.HaContext, "light.morning"), Moq.Times.Never);
     }
 }
