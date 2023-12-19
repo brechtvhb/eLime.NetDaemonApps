@@ -77,7 +77,7 @@ public class StormProtector : IDisposable
         CheckDesiredState();
     }
 
-    internal void CheckDesiredState(Boolean emitEvent= true)
+    internal void CheckDesiredState(Boolean emitEvent = true)
     {
         var desiredState = GetDesiredState();
 
@@ -142,27 +142,27 @@ public class StormProtector : IDisposable
     public (ScreenState? State, Boolean Enforce) GetDesiredState()
     {
 
-        bool? windSpeedIsAboveStormThreshold = WindSpeedSensor == null || WindSpeedStormStartThreshold == null
+        bool? windSpeedIsAboveStormThreshold = WindSpeedSensor?.State == null || WindSpeedStormStartThreshold == null
             ? null
             : WindSpeedSensor.State > WindSpeedStormStartThreshold;
 
-        bool? rainRateIsAboveStormThreshold = RainRateSensor == null || RainRateStormStartThreshold == null
+        bool? rainRateIsAboveStormThreshold = RainRateSensor?.State == null || RainRateStormStartThreshold == null
             ? null
             : RainRateSensor.State > RainRateStormStartThreshold;
 
-        bool? shortTermRainForecastIsAboveStormThreshold = ShortTermRainForecastSensor == null || ShortTermRainForecastSensorStormStartThreshold == null
+        bool? shortTermRainForecastIsAboveStormThreshold = ShortTermRainForecastSensor?.State == null || ShortTermRainForecastSensorStormStartThreshold == null
             ? null
             : ShortTermRainForecastSensor.State > ShortTermRainForecastSensorStormStartThreshold;
 
-        bool? windSpeedIsBelowStormThreshold = WindSpeedSensor == null || WindSpeedStormEndThreshold == null
+        bool? windSpeedIsBelowStormThreshold = WindSpeedSensor?.State == null || WindSpeedStormEndThreshold == null
             ? null
             : WindSpeedSensor.State <= WindSpeedStormStartThreshold;
 
-        bool? rainRateIsBelowStormThreshold = RainRateSensor == null || RainRateStormEndThreshold == null
+        bool? rainRateIsBelowStormThreshold = RainRateSensor?.State == null || RainRateStormEndThreshold == null
             ? null
             : RainRateSensor.State <= RainRateStormStartThreshold;
 
-        bool? shortTermRainForecastIsBelowStormThreshold = ShortTermRainForecastSensor == null || ShortTermRainForecastSensorStormEndThreshold == null
+        bool? shortTermRainForecastIsBelowStormThreshold = ShortTermRainForecastSensor?.State == null || ShortTermRainForecastSensorStormEndThreshold == null
             ? null
             : ShortTermRainForecastSensor.State <= ShortTermRainForecastSensorStormEndThreshold;
 
