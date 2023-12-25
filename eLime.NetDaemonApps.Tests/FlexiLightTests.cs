@@ -1021,6 +1021,37 @@ public class FlexiLightTests
     }
 
     [TestMethod]
+    public void PresenceSensor_DoesNotTurnOffImmediatelyAfterManualTrigger()
+    {
+        // Arrange
+        _testCtx.TriggerStateChange(new BinarySensor(_testCtx.HaContext, "input_boolean.away"), "on");
+        A.CallTo(() => _fileStorage.Get<FlexiSceneFileStorage>("FlexiScenes", "office")).Returns(new FlexiSceneFileStorage
+        {
+            Enabled = true,
+            Changes = new List<FlexiSceneChange>
+            {
+                new() { ChangedAt = _testCtx.Scheduler.Now.AddDays(-7).AddHours(-1), Scene = "morning"},
+                new() { ChangedAt = _testCtx.Scheduler.Now.AddDays(-7).AddHours(1), Scene = "off"},
+                new() { ChangedAt = _testCtx.Scheduler.Now.AddDays(-7).AddHours(2), Scene = "day"}
+            }
+        });
+
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, "office").WithSimulatePresenceSensor().WithMultipleFlexiScenes().Build();
+        _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(70));
+
+
+        //Ac
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(30));
+
+        //Assert
+        Assert.IsNull(room.FlexiScenes.Current);
+        _testCtx.VerifyLightTurnOff(new Light(_testCtx.HaContext, "light.morning"), Moq.Times.Once);
+        _testCtx.VerifyLightTurnOff(new Light(_testCtx.HaContext, "light.day"), Moq.Times.Once);
+        _testCtx.VerifyLightTurnOff(new Light(_testCtx.HaContext, "light.evening"), Moq.Times.Once);
+    }
+
+    [TestMethod]
     public void PresenceSensor_Simulates_OffActions()
     {
         // Arrange
@@ -1037,9 +1068,10 @@ public class FlexiLightTests
         });
 
         var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, "office").WithSimulatePresenceSensor().WithMultipleFlexiScenes().Build();
+        _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(1));
 
         //Act
-        _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(70));
+        _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(60));
 
         //Assert
         Assert.IsNull(room.FlexiScenes.Current);

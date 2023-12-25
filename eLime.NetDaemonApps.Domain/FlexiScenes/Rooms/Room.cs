@@ -20,6 +20,7 @@ public class Room : IAsyncDisposable
 {
     public string Name { get; }
     private bool Enabled { get; set; }
+    private DateTimeOffset? LastChangedAt { get; set; }
 
     public bool AutoTransition { get; }
     public bool AutoTransitionTurnOffIfNoValidSceneFound { get; }
@@ -87,6 +88,7 @@ public class Room : IAsyncDisposable
     }
 
     public BinarySensor? SimulatePresenceSensor;
+    public TimeSpan SimulatePresenceIgnoreDuration;
 
     private readonly List<Action> _offActions = new();
     public IReadOnlyCollection<Action> OffActions => _offActions.AsReadOnly();
@@ -169,6 +171,7 @@ public class Room : IAsyncDisposable
         AutoTransition = config.AutoTransition;
         AutoTransitionTurnOffIfNoValidSceneFound = config.AutoTransitionTurnOffIfNoValidSceneFound;
         SimulatePresenceSensor = !String.IsNullOrWhiteSpace(config.SimulatePresenceSensor) ? new BinarySensor(_haContext, config.SimulatePresenceSensor) : null;
+        SimulatePresenceIgnoreDuration = config.SimulatePresenceIgnoreDuration ?? TimeSpan.FromMinutes(3);
         InitialClickAfterMotionBehaviour = config.InitialClickAfterMotionBehaviour == Config.FlexiLights.InitialClickAfterMotionBehaviour.ChangeOffDurationOnly ? InitialClickAfterMotionBehaviour.ChangeOffDurationOnly : InitialClickAfterMotionBehaviour.ChangeOFfDurationAndGoToNextFlexiScene;
         IlluminanceThreshold = config.IlluminanceThreshold;
         IlluminanceLowerThreshold = config.IlluminanceLowerThreshold ?? IlluminanceThreshold;
@@ -405,9 +408,11 @@ public class Room : IAsyncDisposable
     {
         var baseName = $"sensor.flexilights_{Name.MakeHaFriendly()}";
 
+        LastChangedAt = _scheduler.Now;
+
         var attributes = new EnabledSwitchAttributes
         {
-            LastUpdated = DateTime.Now.ToString("O"),
+            LastUpdated = LastChangedAt?.ToString("O"),
             Device = GetDevice()
         };
 
@@ -714,13 +719,12 @@ public class Room : IAsyncDisposable
         if (FlexiSceneThatShouldActivate != null)
         {
             await ExecuteFlexiScene(FlexiSceneThatShouldActivate, InitiatedBy.Motion);
+            await UpdateStateInHomeAssistant();
         }
         else
         {
             _logger.LogWarning("{Room}: Motion was detected but found no flexi scenes that could be executed.", Name);
         }
-
-        await UpdateStateInHomeAssistant();
     }
 
     private async void MotionSensor_TurnedOff(object? sender, BinarySensorEventArgs e)
@@ -825,6 +829,9 @@ public class Room : IAsyncDisposable
             return;
 
         var flexiSceneToSimulate = FlexiScenes.GetFlexiSceneToSimulate(_scheduler.Now);
+
+        if (LastChangedAt?.Add(SimulatePresenceIgnoreDuration) > _scheduler.Now)
+            return;
 
         if (FlexiScenes.Current == flexiSceneToSimulate)
             return;
