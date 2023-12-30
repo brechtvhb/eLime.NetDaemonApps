@@ -13,7 +13,7 @@ public class WakeUpPcAction : Action
         Script = script;
 
         MacAddress = macAddress ?? throw new ArgumentNullException("scriptData.macAddress");
-        BroadcastAddress = broadcastAddress ?? throw new ArgumentNullException("scriptData.broadcastAddress");
+        BroadcastAddress = broadcastAddress;
     }
 
     public override Task Execute(bool isAutoTransition = false)
