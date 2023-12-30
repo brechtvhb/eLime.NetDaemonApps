@@ -121,7 +121,7 @@ internal static class ActionConfigExtensions
         return config.Script switch
         {
             "script.momentary_switch" => new MomentarySwitchAction(script, config.ScriptData?["entityId"]),
-            "script.wake_up_pc" => new WakeUpPcAction(script, config.ScriptData?["macAddress"]),
+            "script.wake_up_pc" => new WakeUpPcAction(script, config.ScriptData?["macAddress"], config.ScriptData?["broadcastAddress"]),
             _ => throw new ArgumentOutOfRangeException()
         };
     }
