@@ -20,8 +20,8 @@ public class ClassicIrrigationZoneBuilder
     private TimeOnly? _startWindow;
     private TimeOnly? _endWindow;
 
-    private DateTimeOffset _irrigationSeasonStart;
-    private DateTimeOffset _irrigationSeasonEnd;
+    private DateTimeOffset? _irrigationSeasonStart;
+    private DateTimeOffset? _irrigationSeasonEnd;
 
     public ClassicIrrigationZoneBuilder(AppTestContext testCtx)
     {

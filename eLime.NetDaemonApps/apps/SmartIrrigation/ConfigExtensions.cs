@@ -28,13 +28,15 @@ public static class ConfigExtensions
         var zones = new List<IrrigationZone>();
         foreach (var zone in config.Zones)
         {
+            DateTimeOffset? irrigationSeasonStart = !String.IsNullOrWhiteSpace(zone.IrrigationSeasonStart) && zone.IrrigationSeasonStart.Length == 5 ? new DateTimeOffset(new DateTime(scheduler.Now.Year, Convert.ToInt32(zone.IrrigationSeasonStart[..2]), Convert.ToInt32(zone.IrrigationSeasonStart[3..2]))) : null;
+            DateTimeOffset? irrigationSeasonEnd = !String.IsNullOrWhiteSpace(zone.IrrigationSeasonEnd) && zone.IrrigationSeasonEnd.Length == 5 ? new DateTimeOffset(new DateTime(scheduler.Now.Year, Convert.ToInt32(zone.IrrigationSeasonEnd[..2]), Convert.ToInt32(zone.IrrigationSeasonEnd[3..2]))) : null;
             IrrigationZone irrigationZone = null;
             if (zone.Container != null)
-                irrigationZone = new ContainerIrrigationZone(zone.Name, zone.FlowRate, BinarySwitch.Create(ha, zone.ValveEntity), NumericSensor.Create(ha, zone.Container.VolumeEntity), BinarySensor.Create(ha, zone.Container.OverFlowEntity), zone.Container.CriticalVolume, zone.Container.LowVolume, zone.Container.TargetVolume, scheduler, zone.IrrigationSeasonStart, zone.IrrigationSeasonEnd);
+                irrigationZone = new ContainerIrrigationZone(zone.Name, zone.FlowRate, BinarySwitch.Create(ha, zone.ValveEntity), NumericSensor.Create(ha, zone.Container.VolumeEntity), BinarySensor.Create(ha, zone.Container.OverFlowEntity), zone.Container.CriticalVolume, zone.Container.LowVolume, zone.Container.TargetVolume, scheduler, irrigationSeasonStart, irrigationSeasonEnd);
             if (zone.Irrigation != null)
-                irrigationZone = new ClassicIrrigationZone(zone.Name, zone.FlowRate, BinarySwitch.Create(ha, zone.ValveEntity), NumericSensor.Create(ha, zone.Irrigation.SoilMoistureEntity), zone.Irrigation.CriticalSoilMoisture, zone.Irrigation.LowSoilMoisture, zone.Irrigation.TargetSoilMoisture, zone.Irrigation.MaxDuration, zone.Irrigation.MinimumTimeout, zone.Irrigation.IrrigationStartWindow, zone.Irrigation.IrrigationEndWindow, scheduler, zone.IrrigationSeasonStart, zone.IrrigationSeasonEnd);
+                irrigationZone = new ClassicIrrigationZone(zone.Name, zone.FlowRate, BinarySwitch.Create(ha, zone.ValveEntity), NumericSensor.Create(ha, zone.Irrigation.SoilMoistureEntity), zone.Irrigation.CriticalSoilMoisture, zone.Irrigation.LowSoilMoisture, zone.Irrigation.TargetSoilMoisture, zone.Irrigation.MaxDuration, zone.Irrigation.MinimumTimeout, zone.Irrigation.IrrigationStartWindow, zone.Irrigation.IrrigationEndWindow, scheduler, irrigationSeasonStart, irrigationSeasonEnd);
             if (zone.AntiFrostMisting != null)
-                irrigationZone = new AntiFrostMistingIrrigationZone(zone.Name, zone.FlowRate, BinarySwitch.Create(ha, zone.ValveEntity), NumericSensor.Create(ha, zone.AntiFrostMisting.TemperatureEntity), zone.AntiFrostMisting.CriticalTemperature, zone.AntiFrostMisting.LowTemperature, zone.AntiFrostMisting.MistingDuration, zone.AntiFrostMisting.MistingTimeout, scheduler, zone.IrrigationSeasonStart, zone.IrrigationSeasonEnd);
+                irrigationZone = new AntiFrostMistingIrrigationZone(zone.Name, zone.FlowRate, BinarySwitch.Create(ha, zone.ValveEntity), NumericSensor.Create(ha, zone.AntiFrostMisting.TemperatureEntity), zone.AntiFrostMisting.CriticalTemperature, zone.AntiFrostMisting.LowTemperature, zone.AntiFrostMisting.MistingDuration, zone.AntiFrostMisting.MistingTimeout, scheduler, irrigationSeasonStart, irrigationSeasonEnd);
 
             if (irrigationZone != null)
                 zones.Add(irrigationZone);

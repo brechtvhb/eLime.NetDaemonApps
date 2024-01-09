@@ -17,8 +17,8 @@ public class ContainerIrrigationZoneBuilder
     private Int32 _criticallyLowVolume;
     private Int32 _targetVolume;
 
-    private DateTimeOffset _irrigationSeasonStart;
-    private DateTimeOffset _irrigationSeasonEnd;
+    private DateTimeOffset? _irrigationSeasonStart;
+    private DateTimeOffset? _irrigationSeasonEnd;
 
     public ContainerIrrigationZoneBuilder(AppTestContext testCtx)
     {
