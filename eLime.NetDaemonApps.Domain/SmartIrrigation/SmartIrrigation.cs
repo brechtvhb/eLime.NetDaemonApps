@@ -387,7 +387,7 @@ public class SmartIrrigation : IDisposable
 
     private void InitializeState(IrrigationZone zone)
     {
-        _logger.LogDebug("{IrrigationZone}: Initializing zone.", zone.Name);
+        _logger.LogDebug($"{{IrrigationZone}}: Initializing zone. Season start: {zone.IrrigationSeasonStart}. Season end: {zone.IrrigationSeasonEnd}", zone.Name);
         var storedIrrigationZoneState = _fileStorage.Get<IrrigationZoneFileStorage>("SmartIrrigation", $"{zone.Name.MakeHaFriendly()}");
 
         if (storedIrrigationZoneState == null)
