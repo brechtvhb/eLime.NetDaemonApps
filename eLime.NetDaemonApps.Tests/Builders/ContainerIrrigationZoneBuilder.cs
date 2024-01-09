@@ -17,6 +17,9 @@ public class ContainerIrrigationZoneBuilder
     private Int32 _criticallyLowVolume;
     private Int32 _targetVolume;
 
+    private DateTimeOffset _irrigationSeasonStart;
+    private DateTimeOffset _irrigationSeasonEnd;
+
     public ContainerIrrigationZoneBuilder(AppTestContext testCtx)
     {
         _testCtx = testCtx;
@@ -34,6 +37,14 @@ public class ContainerIrrigationZoneBuilder
     public ContainerIrrigationZoneBuilder WithName(String name)
     {
         _name = name;
+        return this;
+    }
+
+    public ContainerIrrigationZoneBuilder WithIrrigationSeason(DateTimeOffset start, DateTimeOffset end)
+    {
+        _irrigationSeasonStart = start;
+        _irrigationSeasonEnd = end;
+
         return this;
     }
 
@@ -66,7 +77,7 @@ public class ContainerIrrigationZoneBuilder
 
     public ContainerIrrigationZone Build()
     {
-        var x = new ContainerIrrigationZone(_name, _flowRate, _valve, _volumeSensor, _overflowSensor, _criticallyLowVolume, _lowVolume, _targetVolume);
+        var x = new ContainerIrrigationZone(_name, _flowRate, _valve, _volumeSensor, _overflowSensor, _criticallyLowVolume, _lowVolume, _targetVolume, _testCtx.Scheduler, _irrigationSeasonStart, _irrigationSeasonEnd);
         return x;
     }
 }

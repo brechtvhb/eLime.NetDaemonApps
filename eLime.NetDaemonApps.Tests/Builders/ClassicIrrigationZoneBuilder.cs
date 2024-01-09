@@ -20,6 +20,9 @@ public class ClassicIrrigationZoneBuilder
     private TimeOnly? _startWindow;
     private TimeOnly? _endWindow;
 
+    private DateTimeOffset _irrigationSeasonStart;
+    private DateTimeOffset _irrigationSeasonEnd;
+
     public ClassicIrrigationZoneBuilder(AppTestContext testCtx)
     {
         _testCtx = testCtx;
@@ -36,6 +39,14 @@ public class ClassicIrrigationZoneBuilder
     public ClassicIrrigationZoneBuilder WithName(String name)
     {
         _name = name;
+        return this;
+    }
+
+    public ClassicIrrigationZoneBuilder WithIrrigationSeason(DateTimeOffset start, DateTimeOffset end)
+    {
+        _irrigationSeasonStart = start;
+        _irrigationSeasonEnd = end;
+
         return this;
     }
 
@@ -77,7 +88,7 @@ public class ClassicIrrigationZoneBuilder
 
     public ClassicIrrigationZone Build()
     {
-        var x = new ClassicIrrigationZone(_name, _flowRate, _valve, _soilMoistureSensor, _criticallyLowSoilMoisture, _lowSoilMoisture, _targetSoilMoisture, _maxDuration, _minimumTimeout, _startWindow, _endWindow);
+        var x = new ClassicIrrigationZone(_name, _flowRate, _valve, _soilMoistureSensor, _criticallyLowSoilMoisture, _lowSoilMoisture, _targetSoilMoisture, _maxDuration, _minimumTimeout, _startWindow, _endWindow, _testCtx.Scheduler, _irrigationSeasonStart, _irrigationSeasonEnd);
         return x;
     }
 }

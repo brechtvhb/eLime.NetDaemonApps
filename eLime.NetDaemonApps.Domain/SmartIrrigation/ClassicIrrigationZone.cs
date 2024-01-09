@@ -1,6 +1,7 @@
 ﻿using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
 using Microsoft.Extensions.Logging;
+using System.Reactive.Concurrency;
 
 namespace eLime.NetDaemonApps.Domain.SmartIrrigation;
 
@@ -16,9 +17,9 @@ public class ClassicIrrigationZone : IrrigationZone, IZoneWithLimitedRuntime
     public TimeOnly? IrrigationEndWindow { get; }
 
 
-    public ClassicIrrigationZone(String name, Int32 flowRate, BinarySwitch valve, NumericSensor soilMoistureSensor, Int32 criticallyLowSoilMoisture, Int32 lowSoilMoisture, Int32 targetSoilMoisture, TimeSpan? maxDuration, TimeSpan? minimumTimeout, TimeOnly? irrigationStartWindow, TimeOnly? irrigationEndWindow)
+    public ClassicIrrigationZone(String name, Int32 flowRate, BinarySwitch valve, NumericSensor soilMoistureSensor, Int32 criticallyLowSoilMoisture, Int32 lowSoilMoisture, Int32 targetSoilMoisture, TimeSpan? maxDuration, TimeSpan? minimumTimeout, TimeOnly? irrigationStartWindow, TimeOnly? irrigationEndWindow, IScheduler scheduler, DateTimeOffset? irrigationSeasonStart, DateTimeOffset? irrigationSeasonEnd)
     {
-        SetCommonFields(name, flowRate, valve);
+        SetCommonFields(name, flowRate, valve, scheduler, irrigationSeasonStart, irrigationSeasonEnd);
 
         SoilMoistureSensor = soilMoistureSensor;
         SoilMoistureSensor.Changed += CheckDesiredState;
@@ -40,6 +41,11 @@ public class ClassicIrrigationZone : IrrigationZone, IZoneWithLimitedRuntime
 
     protected override NeedsWatering GetDesiredState()
     {
+        AdjustYearIfNeeded();
+
+        if (HasIrrigationSeason && !WithinIrrigationSeason)
+            return NeedsWatering.No;
+
         return CurrentlyWatering switch
         {
             true when Mode == ZoneMode.Manual => NeedsWatering.Ongoing,

@@ -65,7 +65,61 @@ public class AntiFrostMistingIrrigationTests
     }
 
     [TestMethod]
-    public void Below_Critical_Moisture_Triggers_State_Critical()
+    public void Below_Low_Temperature_Does_Not_Trigger_Valve_On_Out_Of_Season()
+    {
+        // Arrange
+        _testCtx = AppTestContext.Create(new DateTime(DateTime.Now.Year, 1, 1));
+        var zone1 = new AntiFrostMistingIrrigationZoneBuilder(_testCtx)
+            .WithIrrigationSeason(new DateTimeOffset(new DateTime(1970, 4, 1)), new DateTimeOffset(new DateTime(1970, 5, 15)))
+            .Build();
+
+        var irrigation = new SmartIrrigationBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+            .With(_pumpSocket, 2000)
+            .With(_availableRainWaterSensor, 1000)
+            .AddZone(zone1)
+            .Build();
+
+        zone1.SetMode(ZoneMode.Automatic);
+
+        //Act
+        _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.fruit_trees_temperature"), "0.5");
+
+
+        //Assert
+        Assert.AreEqual(NeedsWatering.No, irrigation.Zones.First().State);
+        _testCtx.VerifySwitchTurnOn(new BinarySwitch(_testCtx.HaContext, "switch.fruit_trees_valve"), Moq.Times.Never);
+    }
+
+
+    [TestMethod]
+    public void Below_Low_Temperature_Does_Trigger_Valve_On_During_Season()
+    {
+        // Arrange
+        _testCtx = AppTestContext.Create(new DateTime(DateTime.Now.Year, 5, 1));
+        var zone1 = new AntiFrostMistingIrrigationZoneBuilder(_testCtx)
+            .WithIrrigationSeason(new DateTimeOffset(new DateTime(1970, 4, 1)), new DateTimeOffset(new DateTime(1970, 5, 15)))
+            .Build();
+
+        var irrigation = new SmartIrrigationBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+            .With(_pumpSocket, 2000)
+            .With(_availableRainWaterSensor, 1000)
+            .AddZone(zone1)
+            .Build();
+
+        zone1.SetMode(ZoneMode.Automatic);
+
+        //Act
+        _testCtx.TriggerStateChange(_testCtx.HaContext.Entity("sensor.fruit_trees_temperature"), "0.5");
+
+
+        //Assert
+        Assert.AreEqual(NeedsWatering.Yes, irrigation.Zones.First().State);
+        _testCtx.VerifySwitchTurnOn(new BinarySwitch(_testCtx.HaContext, "switch.fruit_trees_valve"), Moq.Times.Once);
+    }
+
+
+    [TestMethod]
+    public void Below_Critical_Temperature_Triggers_State_Critical()
     {
         // Arrange
         var zone1 = new AntiFrostMistingIrrigationZoneBuilder(_testCtx)

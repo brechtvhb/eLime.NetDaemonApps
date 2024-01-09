@@ -14,9 +14,11 @@ public class AntiFrostMistingIrrigationZoneBuilder
     private NumericSensor _temperatureSensor;
     private Int32 _lowTemperature;
     private Int32 _criticallyLowTemperature;
-    private Int32 _targetTemperature;
     private TimeSpan _mistingDuration;
     private TimeSpan _mistingTimeout;
+
+    private DateTimeOffset? _irrigationSeasonStart;
+    private DateTimeOffset? _irrigationSeasonEnd;
 
     public AntiFrostMistingIrrigationZoneBuilder(AppTestContext testCtx)
     {
@@ -28,7 +30,6 @@ public class AntiFrostMistingIrrigationZoneBuilder
         _temperatureSensor = NumericSensor.Create(_testCtx.HaContext, "sensor.fruit_trees_temperature");
         _lowTemperature = 1;
         _criticallyLowTemperature = 0;
-        _targetTemperature = 2;
 
         _mistingDuration = TimeSpan.FromMinutes(5);
         _mistingTimeout = TimeSpan.FromMinutes(5);
@@ -37,6 +38,14 @@ public class AntiFrostMistingIrrigationZoneBuilder
     public AntiFrostMistingIrrigationZoneBuilder WithName(String name)
     {
         _name = name;
+        return this;
+    }
+
+    public AntiFrostMistingIrrigationZoneBuilder WithIrrigationSeason(DateTimeOffset start, DateTimeOffset end)
+    {
+        _irrigationSeasonStart = start;
+        _irrigationSeasonEnd = end;
+
         return this;
     }
 
@@ -58,12 +67,11 @@ public class AntiFrostMistingIrrigationZoneBuilder
     }
 
 
-    public AntiFrostMistingIrrigationZoneBuilder With(NumericSensor TemperatureSensor, Int32 lowTemperature, Int32 criticallyLowTemperature, Int32 targetTemperature)
+    public AntiFrostMistingIrrigationZoneBuilder With(NumericSensor TemperatureSensor, Int32 lowTemperature, Int32 criticallyLowTemperature)
     {
         _temperatureSensor = TemperatureSensor;
         _lowTemperature = lowTemperature;
         _criticallyLowTemperature = criticallyLowTemperature;
-        _targetTemperature = targetTemperature;
 
         return this;
     }
@@ -71,7 +79,7 @@ public class AntiFrostMistingIrrigationZoneBuilder
 
     public AntiFrostMistingIrrigationZone Build()
     {
-        var x = new AntiFrostMistingIrrigationZone(_name, _flowRate, _valve, _temperatureSensor, _criticallyLowTemperature, _lowTemperature, _mistingDuration, _mistingTimeout);
+        var x = new AntiFrostMistingIrrigationZone(_name, _flowRate, _valve, _temperatureSensor, _criticallyLowTemperature, _lowTemperature, _mistingDuration, _mistingTimeout, _testCtx.Scheduler, _irrigationSeasonStart, _irrigationSeasonEnd);
         return x;
     }
 }

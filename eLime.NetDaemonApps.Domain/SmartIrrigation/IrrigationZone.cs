@@ -2,6 +2,7 @@
 using eLime.NetDaemonApps.Domain.Helper;
 using Microsoft.Extensions.Logging;
 using System.Reactive.Concurrency;
+#pragma warning disable CS8618
 
 namespace eLime.NetDaemonApps.Domain.SmartIrrigation;
 
@@ -24,6 +25,11 @@ public abstract class IrrigationZone : IDisposable
     public IDisposable? ModeChangedCommandHandler { get; set; }
     public IDisposable? StopTimer { get; set; }
 
+    public IScheduler Scheduler { get; set; }
+    public DateTimeOffset? IrrigationSeasonStart { get; set; }
+    public DateTimeOffset? IrrigationSeasonEnd { get; set; }
+
+
     internal IrrigationZoneFileStorage ToFileStorage() => new()
     {
         State = State,
@@ -33,14 +39,38 @@ public abstract class IrrigationZone : IDisposable
     };
 
 
-    protected void SetCommonFields(String name, Int32 flowRate, BinarySwitch valve)
+    protected void SetCommonFields(String name, Int32 flowRate, BinarySwitch valve, IScheduler scheduler, DateTimeOffset? irrigationSeasonStart, DateTimeOffset? irrigationSeasonEnd)
     {
         Name = name;
         FlowRate = flowRate;
         Valve = valve;
         Valve.TurnedOn += Valve_TurnedOn;
         Valve.TurnedOff += Valve_TurnedOff;
+
+        Scheduler = scheduler;
+        IrrigationSeasonStart = irrigationSeasonStart;
+        IrrigationSeasonEnd = irrigationSeasonEnd;
     }
+
+    protected void AdjustYearIfNeeded()
+    {
+        IrrigationSeasonStart = AdjustYearIfNeeded(IrrigationSeasonStart);
+        IrrigationSeasonEnd = AdjustYearIfNeeded(IrrigationSeasonEnd);
+    }
+
+    protected DateTimeOffset? AdjustYearIfNeeded(DateTimeOffset? date)
+    {
+        if (date == null)
+            return null;
+
+        if (date.Value.Year == Scheduler.Now.Year)
+            return date;
+
+        return new DateTimeOffset(Scheduler.Now.Year, date.Value.Month, date.Value.Day, 0, 0, 0, date.Value.Offset);
+    }
+
+    protected bool WithinIrrigationSeason => !(IrrigationSeasonStart > Scheduler.Now) && !(IrrigationSeasonEnd < Scheduler.Now);
+    protected bool HasIrrigationSeason => IrrigationSeasonStart != null || IrrigationSeasonEnd != null;
 
     private void Valve_TurnedOn(object? sender, BinarySensorEventArgs e)
     {

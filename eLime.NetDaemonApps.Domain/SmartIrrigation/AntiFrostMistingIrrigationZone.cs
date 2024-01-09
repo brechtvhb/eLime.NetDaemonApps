@@ -1,6 +1,7 @@
 ﻿using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
 using Microsoft.Extensions.Logging;
+using System.Reactive.Concurrency;
 
 namespace eLime.NetDaemonApps.Domain.SmartIrrigation;
 
@@ -12,9 +13,10 @@ public class AntiFrostMistingIrrigationZone : IrrigationZone, IZoneWithLimitedRu
     public TimeSpan MistingDuration { get; }
     public TimeSpan MistingTimeout { get; }
 
-    public AntiFrostMistingIrrigationZone(String name, Int32 flowRate, BinarySwitch valve, NumericSensor temperatureSensor, Double criticallyLowTemperature, Double lowTemperature, TimeSpan mistingDuration, TimeSpan mistingTimeout)
+
+    public AntiFrostMistingIrrigationZone(String name, Int32 flowRate, BinarySwitch valve, NumericSensor temperatureSensor, Double criticallyLowTemperature, Double lowTemperature, TimeSpan mistingDuration, TimeSpan mistingTimeout, IScheduler scheduler, DateTimeOffset? irrigationSeasonStart, DateTimeOffset? irrigationSeasonEnd)
     {
-        SetCommonFields(name, flowRate, valve);
+        SetCommonFields(name, flowRate, valve, scheduler, irrigationSeasonStart, irrigationSeasonEnd);
 
         TemperatureSensor = temperatureSensor;
         TemperatureSensor.Changed += CheckDesiredState;
@@ -32,6 +34,11 @@ public class AntiFrostMistingIrrigationZone : IrrigationZone, IZoneWithLimitedRu
 
     protected override NeedsWatering GetDesiredState()
     {
+        AdjustYearIfNeeded();
+
+        if (HasIrrigationSeason && !WithinIrrigationSeason)
+            return NeedsWatering.No;
+
         if (CurrentlyWatering)
             return NeedsWatering.Ongoing;
 
@@ -41,6 +48,7 @@ public class AntiFrostMistingIrrigationZone : IrrigationZone, IZoneWithLimitedRu
                 ? NeedsWatering.Yes
                 : NeedsWatering.No;
     }
+
 
     public override bool CanStartWatering(DateTimeOffset now, bool energyAvailable)
     {

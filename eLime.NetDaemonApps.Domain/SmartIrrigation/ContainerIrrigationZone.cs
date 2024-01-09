@@ -1,5 +1,6 @@
 ﻿using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
+using System.Reactive.Concurrency;
 
 namespace eLime.NetDaemonApps.Domain.SmartIrrigation;
 
@@ -11,9 +12,9 @@ public class ContainerIrrigationZone : IrrigationZone
     public Int32 CriticallyLowVolume { get; }
     public Int32 LowVolume { get; }
 
-    public ContainerIrrigationZone(String name, Int32 flowRate, BinarySwitch valve, NumericSensor volumeSensor, BinarySensor overflowSensor, Int32 criticallyLowVolume, Int32 lowVolume, Int32 targetVolume)
+    public ContainerIrrigationZone(String name, Int32 flowRate, BinarySwitch valve, NumericSensor volumeSensor, BinarySensor overflowSensor, Int32 criticallyLowVolume, Int32 lowVolume, Int32 targetVolume, IScheduler scheduler, DateTimeOffset? irrigationSeasonStart, DateTimeOffset? irrigationSeasonEnd)
     {
-        SetCommonFields(name, flowRate, valve);
+        SetCommonFields(name, flowRate, valve, scheduler, irrigationSeasonStart, irrigationSeasonEnd);
 
         VolumeSensor = volumeSensor;
         VolumeSensor.Changed += CheckDesiredState;
@@ -39,6 +40,11 @@ public class ContainerIrrigationZone : IrrigationZone
 
     protected override NeedsWatering GetDesiredState()
     {
+        AdjustYearIfNeeded();
+
+        if (HasIrrigationSeason && !WithinIrrigationSeason)
+            return NeedsWatering.No;
+
         if (OverflowSensor.IsOn())
             return NeedsWatering.No;
 
