@@ -28,8 +28,8 @@ public static class ConfigExtensions
         var zones = new List<IrrigationZone>();
         foreach (var zone in config.Zones)
         {
-            DateTimeOffset? irrigationSeasonStart = !String.IsNullOrWhiteSpace(zone.IrrigationSeasonStart) && zone.IrrigationSeasonStart.Length == 5 ? new DateTimeOffset(new DateTime(scheduler.Now.Year, Convert.ToInt32(zone.IrrigationSeasonStart[..2]), Convert.ToInt32(zone.IrrigationSeasonStart[3..5]))) : null;
-            DateTimeOffset? irrigationSeasonEnd = !String.IsNullOrWhiteSpace(zone.IrrigationSeasonEnd) && zone.IrrigationSeasonEnd.Length == 5 ? new DateTimeOffset(new DateTime(scheduler.Now.Year, Convert.ToInt32(zone.IrrigationSeasonEnd[..2]), Convert.ToInt32(zone.IrrigationSeasonEnd[3..5]))) : null;
+            DateTimeOffset? irrigationSeasonStart = !String.IsNullOrWhiteSpace(zone.IrrigationSeasonStart) && zone.IrrigationSeasonStart.Length == 5 ? new DateTimeOffset(new DateTime(scheduler.Now.Year, Convert.ToInt32(zone.IrrigationSeasonStart[..2]), Convert.ToInt32(zone.IrrigationSeasonStart[..^2]))) : null;
+            DateTimeOffset? irrigationSeasonEnd = !String.IsNullOrWhiteSpace(zone.IrrigationSeasonEnd) && zone.IrrigationSeasonEnd.Length == 5 ? new DateTimeOffset(new DateTime(scheduler.Now.Year, Convert.ToInt32(zone.IrrigationSeasonEnd[..2]), Convert.ToInt32(zone.IrrigationSeasonEnd[..^2]))) : null;
             IrrigationZone irrigationZone = null;
             if (zone.Container != null)
                 irrigationZone = new ContainerIrrigationZone(zone.Name, zone.FlowRate, BinarySwitch.Create(ha, zone.ValveEntity), NumericSensor.Create(ha, zone.Container.VolumeEntity), BinarySensor.Create(ha, zone.Container.OverFlowEntity), zone.Container.CriticalVolume, zone.Container.LowVolume, zone.Container.TargetVolume, scheduler, irrigationSeasonStart, irrigationSeasonEnd);
