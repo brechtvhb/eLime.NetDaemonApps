@@ -95,6 +95,8 @@ public class SmartIrrigation : IDisposable
             DebounceStartWatering();
             DebounceStopWatering();
         });
+
+        UpdateStateInHomeAssistant().RunSync();
     }
 
 
