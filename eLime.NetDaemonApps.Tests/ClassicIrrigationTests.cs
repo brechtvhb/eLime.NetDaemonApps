@@ -44,7 +44,7 @@ public class ClassicIrrigationTests
     public void Below_Low_Moisture_Triggers_Valve_On()
     {
         // Arrange
-        var zone1 = new ClassicIrrigationZoneBuilder(_testCtx)
+        var zone1 = new ClassicIrrigationZoneBuilder(_testCtx, _logger)
             .Build();
 
         var irrigation = new SmartIrrigationBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
@@ -68,7 +68,7 @@ public class ClassicIrrigationTests
     public void Below_Critical_Moisture_Triggers_State_Critical()
     {
         // Arrange
-        var zone1 = new ClassicIrrigationZoneBuilder(_testCtx)
+        var zone1 = new ClassicIrrigationZoneBuilder(_testCtx, _logger)
             .Build();
 
         var irrigation = new SmartIrrigationBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
@@ -92,7 +92,7 @@ public class ClassicIrrigationTests
     public void Above_Target_Moisture_Triggers_Valve_Off()
     {
         // Arrange
-        var zone1 = new ClassicIrrigationZoneBuilder(_testCtx)
+        var zone1 = new ClassicIrrigationZoneBuilder(_testCtx, _logger)
             .Build();
 
         var irrigation = new SmartIrrigationBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
@@ -119,7 +119,7 @@ public class ClassicIrrigationTests
     public void Above_MaxDuration_Triggers_Valve_Off()
     {
         // Arrange
-        var zone1 = new ClassicIrrigationZoneBuilder(_testCtx)
+        var zone1 = new ClassicIrrigationZoneBuilder(_testCtx, _logger)
             .WithMaxDuration(TimeSpan.FromHours(1), TimeSpan.FromHours(23))
             .Build();
 
@@ -146,7 +146,7 @@ public class ClassicIrrigationTests
     public void Respects_Timeout()
     {
         // Arrange
-        var zone1 = new ClassicIrrigationZoneBuilder(_testCtx)
+        var zone1 = new ClassicIrrigationZoneBuilder(_testCtx, _logger)
             .WithMaxDuration(TimeSpan.FromHours(1), TimeSpan.FromHours(23))
             .Build();
 
@@ -177,7 +177,7 @@ public class ClassicIrrigationTests
     public void Can_Turn_On_Again_After_Timeout()
     {
         // Arrange
-        var zone1 = new ClassicIrrigationZoneBuilder(_testCtx)
+        var zone1 = new ClassicIrrigationZoneBuilder(_testCtx, _logger)
             .WithMaxDuration(TimeSpan.FromHours(1), TimeSpan.FromHours(23))
             .Build();
 
@@ -208,7 +208,7 @@ public class ClassicIrrigationTests
     public void Within_TimeWindow_Triggers_Valve_On()
     {
         // Arrange
-        var zone1 = new ClassicIrrigationZoneBuilder(_testCtx)
+        var zone1 = new ClassicIrrigationZoneBuilder(_testCtx, _logger)
             .WithTimeWindow(new TimeOnly(10, 00), new TimeOnly(12, 00))
             .Build();
 
@@ -236,7 +236,7 @@ public class ClassicIrrigationTests
     public void Not_Within_TimeWindow_Does_Not_Trigger_Valve_On()
     {
         // Arrange
-        var zone1 = new ClassicIrrigationZoneBuilder(_testCtx)
+        var zone1 = new ClassicIrrigationZoneBuilder(_testCtx, _logger)
             .WithTimeWindow(new TimeOnly(10, 00), new TimeOnly(12, 00))
             .Build();
 
@@ -264,7 +264,7 @@ public class ClassicIrrigationTests
     public void Past_TimeWindow_Triggers_Valve_Off()
     {
         // Arrange
-        var zone1 = new ClassicIrrigationZoneBuilder(_testCtx)
+        var zone1 = new ClassicIrrigationZoneBuilder(_testCtx, _logger)
             .WithTimeWindow(new TimeOnly(10, 00), new TimeOnly(12, 00))
             .Build();
 
@@ -295,7 +295,7 @@ public class ClassicIrrigationTests
     public void Within_TimeWindow_Over_2_Days_Triggers_Valve_On()
     {
         // Arrange
-        var zone1 = new ClassicIrrigationZoneBuilder(_testCtx)
+        var zone1 = new ClassicIrrigationZoneBuilder(_testCtx, _logger)
             .WithTimeWindow(new TimeOnly(22, 00), new TimeOnly(01, 00))
             .Build();
 
@@ -323,7 +323,7 @@ public class ClassicIrrigationTests
     public void Past_TimeWindow_Over_2_Days_Triggers_Valve_Off()
     {
         // Arrange
-        var zone1 = new ClassicIrrigationZoneBuilder(_testCtx)
+        var zone1 = new ClassicIrrigationZoneBuilder(_testCtx, _logger)
             .WithTimeWindow(new TimeOnly(22, 00), new TimeOnly(01, 00))
             .Build();
 
@@ -355,7 +355,7 @@ public class ClassicIrrigationTests
     public void Past_TimeWindow_And_Larger_Max_Duration_Triggers_Valve_Off_At_End_Of_Window()
     {
         // Arrange
-        var zone1 = new ClassicIrrigationZoneBuilder(_testCtx)
+        var zone1 = new ClassicIrrigationZoneBuilder(_testCtx, _logger)
             .WithMaxDuration(TimeSpan.FromHours(3), TimeSpan.FromHours(23))
             .WithTimeWindow(new TimeOnly(10, 00), new TimeOnly(12, 00))
             .Build();
@@ -387,7 +387,7 @@ public class ClassicIrrigationTests
     public void In_TimeWindow_And_Smaller_Max_Duration_Triggers_Valve_Off_At_End_Of_Duration()
     {
         // Arrange
-        var zone1 = new ClassicIrrigationZoneBuilder(_testCtx)
+        var zone1 = new ClassicIrrigationZoneBuilder(_testCtx, _logger)
             .WithMaxDuration(TimeSpan.FromMinutes(30), TimeSpan.FromHours(23))
             .WithTimeWindow(new TimeOnly(10, 00), new TimeOnly(12, 00))
             .Build();

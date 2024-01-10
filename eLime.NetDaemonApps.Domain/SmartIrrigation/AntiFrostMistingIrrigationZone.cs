@@ -14,9 +14,9 @@ public class AntiFrostMistingIrrigationZone : IrrigationZone, IZoneWithLimitedRu
     public TimeSpan MistingTimeout { get; }
 
 
-    public AntiFrostMistingIrrigationZone(String name, Int32 flowRate, BinarySwitch valve, NumericSensor temperatureSensor, Double criticallyLowTemperature, Double lowTemperature, TimeSpan mistingDuration, TimeSpan mistingTimeout, IScheduler scheduler, DateTimeOffset? irrigationSeasonStart, DateTimeOffset? irrigationSeasonEnd)
+    public AntiFrostMistingIrrigationZone(ILogger logger, String name, Int32 flowRate, BinarySwitch valve, NumericSensor temperatureSensor, Double criticallyLowTemperature, Double lowTemperature, TimeSpan mistingDuration, TimeSpan mistingTimeout, IScheduler scheduler, DateTimeOffset? irrigationSeasonStart, DateTimeOffset? irrigationSeasonEnd)
     {
-        SetCommonFields(name, flowRate, valve, scheduler, irrigationSeasonStart, irrigationSeasonEnd);
+        SetCommonFields(logger, name, flowRate, valve, scheduler, irrigationSeasonStart, irrigationSeasonEnd);
 
         TemperatureSensor = temperatureSensor;
         TemperatureSensor.Changed += CheckDesiredState;
@@ -35,6 +35,8 @@ public class AntiFrostMistingIrrigationZone : IrrigationZone, IZoneWithLimitedRu
     protected override NeedsWatering GetDesiredState()
     {
         AdjustYearIfNeeded();
+
+        Logger.LogInformation($"{{Zone}}: HasIrrigationSeason: {HasIrrigationSeason}. WithinIrrigationSeason: {WithinIrrigationSeason}", Name);
 
         if (HasIrrigationSeason && !WithinIrrigationSeason)
             return NeedsWatering.No;

@@ -44,7 +44,7 @@ public class ContainerIrrigationTests
     public void Below_Low_Volume_Triggers_Valve_On()
     {
         // Arrange
-        var zone = new ContainerIrrigationZoneBuilder(_testCtx)
+        var zone = new ContainerIrrigationZoneBuilder(_testCtx, _logger)
             .Build();
 
         var irrigation = new SmartIrrigationBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
@@ -70,7 +70,7 @@ public class ContainerIrrigationTests
     public void Below_Critical_Volume_Triggers_State_Critical()
     {
         // Arrange
-        var zone = new ContainerIrrigationZoneBuilder(_testCtx)
+        var zone = new ContainerIrrigationZoneBuilder(_testCtx, _logger)
             .Build();
 
         var irrigation = new SmartIrrigationBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
@@ -95,7 +95,7 @@ public class ContainerIrrigationTests
     public void Above_Target_Volume_Triggers_Valve_Off()
     {
         // Arrange
-        var zone = new ContainerIrrigationZoneBuilder(_testCtx)
+        var zone = new ContainerIrrigationZoneBuilder(_testCtx, _logger)
             .Build();
 
         var irrigation = new SmartIrrigationBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
@@ -123,7 +123,7 @@ public class ContainerIrrigationTests
     public void Overflow_On_Triggers_Valve_Off()
     {
         // Arrange
-        var zone = new ContainerIrrigationZoneBuilder(_testCtx)
+        var zone = new ContainerIrrigationZoneBuilder(_testCtx, _logger)
             .Build();
 
         var irrigation = new SmartIrrigationBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
@@ -151,7 +151,7 @@ public class ContainerIrrigationTests
     public void Valve_On_Sets_State_Ongoing_When_Off()
     {
         // Arrange
-        var zone = new ContainerIrrigationZoneBuilder(_testCtx)
+        var zone = new ContainerIrrigationZoneBuilder(_testCtx, _logger)
             .Build();
 
         var irrigation = new SmartIrrigationBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)

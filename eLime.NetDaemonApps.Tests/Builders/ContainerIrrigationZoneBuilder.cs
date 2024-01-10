@@ -2,12 +2,14 @@
 using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
 using eLime.NetDaemonApps.Domain.SmartIrrigation;
 using eLime.NetDaemonApps.Tests.Helpers;
+using Microsoft.Extensions.Logging;
 
 namespace eLime.NetDaemonApps.Tests.Builders;
 
 public class ContainerIrrigationZoneBuilder
 {
     private readonly AppTestContext _testCtx;
+    private readonly ILogger _logger;
     private String _name;
     private Int32 _flowRate;
     private BinarySwitch _valve;
@@ -20,9 +22,10 @@ public class ContainerIrrigationZoneBuilder
     private DateTimeOffset? _irrigationSeasonStart;
     private DateTimeOffset? _irrigationSeasonEnd;
 
-    public ContainerIrrigationZoneBuilder(AppTestContext testCtx)
+    public ContainerIrrigationZoneBuilder(AppTestContext testCtx, ILogger logger)
     {
         _testCtx = testCtx;
+        _logger = logger;
 
         _name = "pond";
         _flowRate = 500;
@@ -77,7 +80,7 @@ public class ContainerIrrigationZoneBuilder
 
     public ContainerIrrigationZone Build()
     {
-        var x = new ContainerIrrigationZone(_name, _flowRate, _valve, _volumeSensor, _overflowSensor, _criticallyLowVolume, _lowVolume, _targetVolume, _testCtx.Scheduler, _irrigationSeasonStart, _irrigationSeasonEnd);
+        var x = new ContainerIrrigationZone(_logger, _name, _flowRate, _valve, _volumeSensor, _overflowSensor, _criticallyLowVolume, _lowVolume, _targetVolume, _testCtx.Scheduler, _irrigationSeasonStart, _irrigationSeasonEnd);
         return x;
     }
 }

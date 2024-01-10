@@ -2,12 +2,14 @@
 using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
 using eLime.NetDaemonApps.Domain.SmartIrrigation;
 using eLime.NetDaemonApps.Tests.Helpers;
+using Microsoft.Extensions.Logging;
 
 namespace eLime.NetDaemonApps.Tests.Builders;
 
 public class AntiFrostMistingIrrigationZoneBuilder
 {
     private readonly AppTestContext _testCtx;
+    private readonly ILogger _logger;
     private String _name;
     private Int32 _flowRate;
     private BinarySwitch _valve;
@@ -20,9 +22,10 @@ public class AntiFrostMistingIrrigationZoneBuilder
     private DateTimeOffset? _irrigationSeasonStart;
     private DateTimeOffset? _irrigationSeasonEnd;
 
-    public AntiFrostMistingIrrigationZoneBuilder(AppTestContext testCtx)
+    public AntiFrostMistingIrrigationZoneBuilder(AppTestContext testCtx, ILogger logger)
     {
         _testCtx = testCtx;
+        _logger = logger;
 
         _name = "front yard";
         _flowRate = 50;
@@ -79,7 +82,7 @@ public class AntiFrostMistingIrrigationZoneBuilder
 
     public AntiFrostMistingIrrigationZone Build()
     {
-        var x = new AntiFrostMistingIrrigationZone(_name, _flowRate, _valve, _temperatureSensor, _criticallyLowTemperature, _lowTemperature, _mistingDuration, _mistingTimeout, _testCtx.Scheduler, _irrigationSeasonStart, _irrigationSeasonEnd);
+        var x = new AntiFrostMistingIrrigationZone(_logger, _name, _flowRate, _valve, _temperatureSensor, _criticallyLowTemperature, _lowTemperature, _mistingDuration, _mistingTimeout, _testCtx.Scheduler, _irrigationSeasonStart, _irrigationSeasonEnd);
         return x;
     }
 }

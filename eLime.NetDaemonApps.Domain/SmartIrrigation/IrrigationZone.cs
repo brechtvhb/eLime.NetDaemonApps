@@ -8,6 +8,7 @@ namespace eLime.NetDaemonApps.Domain.SmartIrrigation;
 
 public abstract class IrrigationZone : IDisposable
 {
+    public ILogger Logger { get; private set; }
     public String Name { get; private set; }
     public Int32 FlowRate { get; private set; }
     public BinarySwitch Valve { get; private set; }
@@ -25,9 +26,9 @@ public abstract class IrrigationZone : IDisposable
     public IDisposable? ModeChangedCommandHandler { get; set; }
     public IDisposable? StopTimer { get; set; }
 
-    public IScheduler Scheduler { get; set; }
-    public DateTimeOffset? IrrigationSeasonStart { get; set; }
-    public DateTimeOffset? IrrigationSeasonEnd { get; set; }
+    public IScheduler Scheduler { get; private set; }
+    public DateTimeOffset? IrrigationSeasonStart { get; private set; }
+    public DateTimeOffset? IrrigationSeasonEnd { get; private set; }
 
 
     internal IrrigationZoneFileStorage ToFileStorage() => new()
@@ -39,8 +40,10 @@ public abstract class IrrigationZone : IDisposable
     };
 
 
-    protected void SetCommonFields(String name, Int32 flowRate, BinarySwitch valve, IScheduler scheduler, DateTimeOffset? irrigationSeasonStart, DateTimeOffset? irrigationSeasonEnd)
+    protected void SetCommonFields(ILogger logger, String name, Int32 flowRate, BinarySwitch valve, IScheduler scheduler, DateTimeOffset? irrigationSeasonStart, DateTimeOffset? irrigationSeasonEnd)
     {
+        Logger = logger;
+
         Name = name;
         FlowRate = flowRate;
         Valve = valve;

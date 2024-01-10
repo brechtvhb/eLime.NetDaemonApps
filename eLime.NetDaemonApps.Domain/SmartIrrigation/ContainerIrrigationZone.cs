@@ -1,5 +1,6 @@
 ﻿using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
+using Microsoft.Extensions.Logging;
 using System.Reactive.Concurrency;
 
 namespace eLime.NetDaemonApps.Domain.SmartIrrigation;
@@ -12,9 +13,9 @@ public class ContainerIrrigationZone : IrrigationZone
     public Int32 CriticallyLowVolume { get; }
     public Int32 LowVolume { get; }
 
-    public ContainerIrrigationZone(String name, Int32 flowRate, BinarySwitch valve, NumericSensor volumeSensor, BinarySensor overflowSensor, Int32 criticallyLowVolume, Int32 lowVolume, Int32 targetVolume, IScheduler scheduler, DateTimeOffset? irrigationSeasonStart, DateTimeOffset? irrigationSeasonEnd)
+    public ContainerIrrigationZone(ILogger logger, String name, Int32 flowRate, BinarySwitch valve, NumericSensor volumeSensor, BinarySensor overflowSensor, Int32 criticallyLowVolume, Int32 lowVolume, Int32 targetVolume, IScheduler scheduler, DateTimeOffset? irrigationSeasonStart, DateTimeOffset? irrigationSeasonEnd)
     {
-        SetCommonFields(name, flowRate, valve, scheduler, irrigationSeasonStart, irrigationSeasonEnd);
+        SetCommonFields(logger, name, flowRate, valve, scheduler, irrigationSeasonStart, irrigationSeasonEnd);
 
         VolumeSensor = volumeSensor;
         VolumeSensor.Changed += CheckDesiredState;

@@ -44,7 +44,7 @@ public class AntiFrostMistingIrrigationTests
     public void Below_Low_Temperature_Triggers_Valve_On()
     {
         // Arrange
-        var zone1 = new AntiFrostMistingIrrigationZoneBuilder(_testCtx)
+        var zone1 = new AntiFrostMistingIrrigationZoneBuilder(_testCtx, _logger)
             .Build();
 
         var irrigation = new SmartIrrigationBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
@@ -69,7 +69,7 @@ public class AntiFrostMistingIrrigationTests
     {
         // Arrange
         _testCtx = AppTestContext.Create(new DateTime(DateTime.Now.Year, 1, 1));
-        var zone1 = new AntiFrostMistingIrrigationZoneBuilder(_testCtx)
+        var zone1 = new AntiFrostMistingIrrigationZoneBuilder(_testCtx, _logger)
             .WithIrrigationSeason(new DateTimeOffset(new DateTime(1970, 4, 1)), new DateTimeOffset(new DateTime(1970, 5, 15)))
             .Build();
 
@@ -96,7 +96,7 @@ public class AntiFrostMistingIrrigationTests
     {
         // Arrange
         _testCtx = AppTestContext.Create(new DateTime(DateTime.Now.Year, 5, 1));
-        var zone1 = new AntiFrostMistingIrrigationZoneBuilder(_testCtx)
+        var zone1 = new AntiFrostMistingIrrigationZoneBuilder(_testCtx, _logger)
             .WithIrrigationSeason(new DateTimeOffset(new DateTime(1970, 4, 1)), new DateTimeOffset(new DateTime(1970, 5, 15)))
             .Build();
 
@@ -122,7 +122,7 @@ public class AntiFrostMistingIrrigationTests
     public void Below_Critical_Temperature_Triggers_State_Critical()
     {
         // Arrange
-        var zone1 = new AntiFrostMistingIrrigationZoneBuilder(_testCtx)
+        var zone1 = new AntiFrostMistingIrrigationZoneBuilder(_testCtx, _logger)
             .Build();
 
         var irrigation = new SmartIrrigationBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
@@ -146,7 +146,7 @@ public class AntiFrostMistingIrrigationTests
     public void End_Of_Misting_Duration_Triggers_Valve_Off()
     {
         // Arrange
-        var zone1 = new AntiFrostMistingIrrigationZoneBuilder(_testCtx)
+        var zone1 = new AntiFrostMistingIrrigationZoneBuilder(_testCtx, _logger)
             .WithMistingDurations(TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5))
             .Build();
 
@@ -173,7 +173,7 @@ public class AntiFrostMistingIrrigationTests
     public void Respects_Timeout()
     {
         // Arrange
-        var zone1 = new AntiFrostMistingIrrigationZoneBuilder(_testCtx)
+        var zone1 = new AntiFrostMistingIrrigationZoneBuilder(_testCtx, _logger)
             .WithMistingDurations(TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5))
             .Build();
 
@@ -203,7 +203,7 @@ public class AntiFrostMistingIrrigationTests
     public void Can_Turn_On_Again_After_Timeout()
     {
         // Arrange
-        var zone1 = new AntiFrostMistingIrrigationZoneBuilder(_testCtx)
+        var zone1 = new AntiFrostMistingIrrigationZoneBuilder(_testCtx, _logger)
             .WithMistingDurations(TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(1))
             .Build();
 

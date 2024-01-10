@@ -2,12 +2,14 @@
 using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
 using eLime.NetDaemonApps.Domain.SmartIrrigation;
 using eLime.NetDaemonApps.Tests.Helpers;
+using Microsoft.Extensions.Logging;
 
 namespace eLime.NetDaemonApps.Tests.Builders;
 
 public class ClassicIrrigationZoneBuilder
 {
     private readonly AppTestContext _testCtx;
+    private readonly ILogger _logger;
     private String _name;
     private Int32 _flowRate;
     private BinarySwitch _valve;
@@ -23,9 +25,10 @@ public class ClassicIrrigationZoneBuilder
     private DateTimeOffset? _irrigationSeasonStart;
     private DateTimeOffset? _irrigationSeasonEnd;
 
-    public ClassicIrrigationZoneBuilder(AppTestContext testCtx)
+    public ClassicIrrigationZoneBuilder(AppTestContext testCtx, ILogger logger)
     {
         _testCtx = testCtx;
+        _logger = logger;
 
         _name = "front yard";
         _flowRate = 1500;
@@ -88,7 +91,7 @@ public class ClassicIrrigationZoneBuilder
 
     public ClassicIrrigationZone Build()
     {
-        var x = new ClassicIrrigationZone(_name, _flowRate, _valve, _soilMoistureSensor, _criticallyLowSoilMoisture, _lowSoilMoisture, _targetSoilMoisture, _maxDuration, _minimumTimeout, _startWindow, _endWindow, _testCtx.Scheduler, _irrigationSeasonStart, _irrigationSeasonEnd);
+        var x = new ClassicIrrigationZone(_logger, _name, _flowRate, _valve, _soilMoistureSensor, _criticallyLowSoilMoisture, _lowSoilMoisture, _targetSoilMoisture, _maxDuration, _minimumTimeout, _startWindow, _endWindow, _testCtx.Scheduler, _irrigationSeasonStart, _irrigationSeasonEnd);
         return x;
     }
 }

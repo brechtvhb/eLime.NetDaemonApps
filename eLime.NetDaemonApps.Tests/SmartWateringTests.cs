@@ -73,7 +73,7 @@ public class SmartWateringTests
     public void Init_HappyFlow()
     {
         // Arrange
-        var zone = new ContainerIrrigationZoneBuilder(_testCtx)
+        var zone = new ContainerIrrigationZoneBuilder(_testCtx, _logger)
             .Build();
 
         var irrigation = new SmartIrrigationBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
@@ -99,7 +99,7 @@ public class SmartWateringTests
     public void Valve_Turning_on_Triggers_State_Ongoing()
     {
         // Arrange
-        var zone = new ContainerIrrigationZoneBuilder(_testCtx)
+        var zone = new ContainerIrrigationZoneBuilder(_testCtx, _logger)
             .Build();
 
         var irrigation = new SmartIrrigationBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
@@ -126,11 +126,11 @@ public class SmartWateringTests
     public void Under_FlowRate_Triggers_Second_Zone()
     {
         // Arrange
-        var zone1 = new ContainerIrrigationZoneBuilder(_testCtx)
+        var zone1 = new ContainerIrrigationZoneBuilder(_testCtx, _logger)
             .WithFlowRate(500)
             .Build();
 
-        var zone2 = new ClassicIrrigationZoneBuilder(_testCtx)
+        var zone2 = new ClassicIrrigationZoneBuilder(_testCtx, _logger)
             .WithFlowRate(300)
             .Build();
 
@@ -160,11 +160,11 @@ public class SmartWateringTests
     public void Over_FlowRate_Does_Not_Trigger_Second_Zone()
     {
         // Arrange
-        var zone1 = new ContainerIrrigationZoneBuilder(_testCtx)
+        var zone1 = new ContainerIrrigationZoneBuilder(_testCtx, _logger)
             .WithFlowRate(500)
             .Build();
 
-        var zone2 = new ClassicIrrigationZoneBuilder(_testCtx)
+        var zone2 = new ClassicIrrigationZoneBuilder(_testCtx, _logger)
             .WithFlowRate(600)
             .Build();
 
@@ -196,11 +196,11 @@ public class SmartWateringTests
     public void Critical_Has_Precedence_Over_Normal()
     {
         // Arrange
-        var zone1 = new ContainerIrrigationZoneBuilder(_testCtx)
+        var zone1 = new ContainerIrrigationZoneBuilder(_testCtx, _logger)
             .WithFlowRate(500)
             .Build();
 
-        var zone2 = new ClassicIrrigationZoneBuilder(_testCtx)
+        var zone2 = new ClassicIrrigationZoneBuilder(_testCtx, _logger)
             .WithFlowRate(600)
             .Build();
 
@@ -229,7 +229,7 @@ public class SmartWateringTests
     public void Energy_Available_Triggers_Start()
     {
         // Arrange
-        var zone1 = new ContainerIrrigationZoneBuilder(_testCtx)
+        var zone1 = new ContainerIrrigationZoneBuilder(_testCtx, _logger)
             .WithFlowRate(500)
             .Build();
 
@@ -255,7 +255,7 @@ public class SmartWateringTests
     public void Energy_Available_After_Sensor_Update_Triggers_Start()
     {
         // Arrange
-        var zone1 = new ContainerIrrigationZoneBuilder(_testCtx)
+        var zone1 = new ContainerIrrigationZoneBuilder(_testCtx, _logger)
             .WithFlowRate(500)
             .Build();
 
@@ -282,7 +282,7 @@ public class SmartWateringTests
     public void No_Energy_Available_Triggers_No_start()
     {
         // Arrange
-        var zone1 = new ContainerIrrigationZoneBuilder(_testCtx)
+        var zone1 = new ContainerIrrigationZoneBuilder(_testCtx, _logger)
             .WithFlowRate(500)
             .Build();
 
@@ -306,7 +306,7 @@ public class SmartWateringTests
     public void No_Energy_When_Watering_Triggers_Stop()
     {
         // Arrange
-        var zone1 = new ContainerIrrigationZoneBuilder(_testCtx)
+        var zone1 = new ContainerIrrigationZoneBuilder(_testCtx, _logger)
             .WithFlowRate(500)
             .Build();
 
@@ -334,7 +334,7 @@ public class SmartWateringTests
     public void Mode_Off_Does_Not_Trigger_Start()
     {
         // Arrange
-        var zone1 = new ContainerIrrigationZoneBuilder(_testCtx)
+        var zone1 = new ContainerIrrigationZoneBuilder(_testCtx, _logger)
             .WithFlowRate(500)
             .Build();
 
@@ -358,7 +358,7 @@ public class SmartWateringTests
     public void No_Water_When_Watering_Triggers_Stop()
     {
         // Arrange
-        var zone1 = new ContainerIrrigationZoneBuilder(_testCtx)
+        var zone1 = new ContainerIrrigationZoneBuilder(_testCtx, _logger)
             .WithFlowRate(500)
             .Build();
 
@@ -383,7 +383,7 @@ public class SmartWateringTests
     public void Rain_Predicted_Does_Not_Trigger_Start()
     {
         // Arrange
-        var zone1 = new ContainerIrrigationZoneBuilder(_testCtx)
+        var zone1 = new ContainerIrrigationZoneBuilder(_testCtx, _logger)
             .WithFlowRate(500)
             .Build();
 
@@ -409,7 +409,7 @@ public class SmartWateringTests
     public void No_Rain_Predicted_Does_Trigger_Start()
     {
         // Arrange
-        var zone1 = new ContainerIrrigationZoneBuilder(_testCtx)
+        var zone1 = new ContainerIrrigationZoneBuilder(_testCtx, _logger)
             .WithFlowRate(500)
             .Build();
 

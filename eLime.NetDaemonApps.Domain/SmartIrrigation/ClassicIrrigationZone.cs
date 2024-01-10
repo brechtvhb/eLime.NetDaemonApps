@@ -17,9 +17,9 @@ public class ClassicIrrigationZone : IrrigationZone, IZoneWithLimitedRuntime
     public TimeOnly? IrrigationEndWindow { get; }
 
 
-    public ClassicIrrigationZone(String name, Int32 flowRate, BinarySwitch valve, NumericSensor soilMoistureSensor, Int32 criticallyLowSoilMoisture, Int32 lowSoilMoisture, Int32 targetSoilMoisture, TimeSpan? maxDuration, TimeSpan? minimumTimeout, TimeOnly? irrigationStartWindow, TimeOnly? irrigationEndWindow, IScheduler scheduler, DateTimeOffset? irrigationSeasonStart, DateTimeOffset? irrigationSeasonEnd)
+    public ClassicIrrigationZone(ILogger logger, String name, Int32 flowRate, BinarySwitch valve, NumericSensor soilMoistureSensor, Int32 criticallyLowSoilMoisture, Int32 lowSoilMoisture, Int32 targetSoilMoisture, TimeSpan? maxDuration, TimeSpan? minimumTimeout, TimeOnly? irrigationStartWindow, TimeOnly? irrigationEndWindow, IScheduler scheduler, DateTimeOffset? irrigationSeasonStart, DateTimeOffset? irrigationSeasonEnd)
     {
-        SetCommonFields(name, flowRate, valve, scheduler, irrigationSeasonStart, irrigationSeasonEnd);
+        SetCommonFields(logger, name, flowRate, valve, scheduler, irrigationSeasonStart, irrigationSeasonEnd);
 
         SoilMoistureSensor = soilMoistureSensor;
         SoilMoistureSensor.Changed += CheckDesiredState;
