@@ -36,8 +36,6 @@ public class AntiFrostMistingIrrigationZone : IrrigationZone, IZoneWithLimitedRu
     {
         AdjustYearIfNeeded();
 
-        Logger.LogInformation($"{{Zone}}: HasIrrigationSeason: {HasIrrigationSeason}. WithinIrrigationSeason: {WithinIrrigationSeason}", Name);
-
         if (HasIrrigationSeason && !WithinIrrigationSeason)
             return NeedsWatering.No;
 
