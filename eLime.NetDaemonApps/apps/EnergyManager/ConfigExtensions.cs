@@ -80,7 +80,7 @@ public static class ConfigExtensions
     public static TimeWindow ToEntities(this TimeWindowConfig config, IHaContext ha)
     {
         var activeEntity = new BinarySensor(ha, config.ActiveEntity);
-        return new TimeWindow(activeEntity, config.Start, config.End);
+        return new TimeWindow(activeEntity, new TimeOnly(0, 0).Add(config.Start), new TimeOnly(0, 0).Add(config.End));
     }
 
 }

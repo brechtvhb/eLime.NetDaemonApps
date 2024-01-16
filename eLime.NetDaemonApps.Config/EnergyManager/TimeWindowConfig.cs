@@ -3,6 +3,6 @@
 public class TimeWindowConfig
 {
     public string ActiveEntity { get; set; }
-    public TimeOnly Start { get; }
-    public TimeOnly End { get; }
+    public TimeSpan Start { get; }
+    public TimeSpan End { get; }
 }
