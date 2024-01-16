@@ -77,9 +77,6 @@ public class TriggeredEnergyConsumer : EnergyConsumer
 
     public override bool CanStart(DateTimeOffset now)
     {
-        if (Name == "Washing machine")
-            Logger.LogDebug($"IsWithinTimeWindow: {IsWithinTimeWindow(now)}. HasTimeWindow: {HasTimeWindow()}");
-
         if (State is EnergyConsumerState.Running or EnergyConsumerState.Off)
             return false;
 

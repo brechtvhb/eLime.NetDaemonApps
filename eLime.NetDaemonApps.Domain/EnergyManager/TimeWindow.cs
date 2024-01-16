@@ -1,5 +1,4 @@
 ﻿using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
-using NetDaemon.HassModel.Entities;
 
 namespace eLime.NetDaemonApps.Domain.EnergyManager;
 
@@ -34,5 +33,10 @@ public class TimeWindow
         }
 
         return start <= now && end >= now;
+    }
+
+    public override string ToString()
+    {
+        return $"Active: {Active?.EntityId} - {Active?.EntityState}. Between: {Start.ToString("HH:mm")} - {End.ToString("HH:mm")}";
     }
 }

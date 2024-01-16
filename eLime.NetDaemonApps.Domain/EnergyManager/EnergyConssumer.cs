@@ -158,6 +158,9 @@ public abstract class EnergyConsumer : IDisposable
         if (!HasTimeWindow())
             return null;
 
+        if (Name == "Washing machine")
+            Logger.LogDebug($"TimeWindows: {String.Join(" / ", TimeWindows.Select(x => x.ToString()))}");
+
         return TimeWindows.FirstOrDefault(timeWindow => timeWindow.IsActive(now));
     }
 
