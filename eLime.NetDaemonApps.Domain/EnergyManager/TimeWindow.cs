@@ -37,6 +37,6 @@ public class TimeWindow
 
     public override string ToString()
     {
-        return $"Active: {Active?.EntityId} - {Active?.EntityState}. Between: {Start.ToString("HH:mm")} - {End.ToString("HH:mm")}";
+        return $"Active: {Active?.EntityId} - {Active?.State}. Between: {Start.ToString("HH:mm")} - {End.ToString("HH:mm")}";
     }
 }
