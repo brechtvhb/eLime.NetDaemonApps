@@ -38,7 +38,7 @@ public class CarChargerEnergyConsumerTests
     public void Init_HappyFlow()
     {
         // Arrange
-        var consumer = new CarChargerEnergyConsumerBuilder(_testCtx)
+        var consumer = new CarChargerEnergyConsumerBuilder(_logger, _testCtx)
             .Build();
 
         var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
@@ -56,7 +56,7 @@ public class CarChargerEnergyConsumerTests
     public void Occupied_Triggers_TurnOn()
     {
         // Arrange
-        var consumer = new CarChargerEnergyConsumerBuilder(_testCtx)
+        var consumer = new CarChargerEnergyConsumerBuilder(_logger, _testCtx)
             .Build();
 
         var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
@@ -80,7 +80,7 @@ public class CarChargerEnergyConsumerTests
     public void Occupied_ButNoKnownCar_DoesNotTrigger_TurnsOn()
     {
         // Arrange
-        var consumer = new CarChargerEnergyConsumerBuilder(_testCtx)
+        var consumer = new CarChargerEnergyConsumerBuilder(_logger, _testCtx)
             .Build();
 
         var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
@@ -104,7 +104,7 @@ public class CarChargerEnergyConsumerTests
     public void Occupied_ButNotEnoughPower_DoesNotTrigger_TurnsOn()
     {
         // Arrange
-        var consumer = new CarChargerEnergyConsumerBuilder(_testCtx)
+        var consumer = new CarChargerEnergyConsumerBuilder(_logger, _testCtx)
             .Build();
 
         var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
@@ -129,7 +129,7 @@ public class CarChargerEnergyConsumerTests
     public void ExcessEnergy_Adjusts_Load()
     {
         // Arrange
-        var consumer = new CarChargerEnergyConsumerBuilder(_testCtx)
+        var consumer = new CarChargerEnergyConsumerBuilder(_logger, _testCtx)
             .Build();
 
         var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
@@ -155,7 +155,7 @@ public class CarChargerEnergyConsumerTests
     public void ConsumingEnergy_Adjusts_Load()
     {
         // Arrange
-        var consumer = new CarChargerEnergyConsumerBuilder(_testCtx)
+        var consumer = new CarChargerEnergyConsumerBuilder(_logger, _testCtx)
             .WithRuntime(TimeSpan.FromMinutes(5), null)
             .Build();
 
@@ -183,7 +183,7 @@ public class CarChargerEnergyConsumerTests
     public void ConsumingEnergy_Respects_MinimumTimeRuntime()
     {
         // Arrange
-        var consumer = new CarChargerEnergyConsumerBuilder(_testCtx)
+        var consumer = new CarChargerEnergyConsumerBuilder(_logger, _testCtx)
             .WithRuntime(TimeSpan.FromMinutes(5), null)
             .Build();
 
@@ -213,7 +213,7 @@ public class CarChargerEnergyConsumerTests
     public void ConsumingEnergy_ShutsDown_After_MinimumRuntime()
     {
         // Arrange
-        var consumer = new CarChargerEnergyConsumerBuilder(_testCtx)
+        var consumer = new CarChargerEnergyConsumerBuilder(_logger, _testCtx)
             .WithRuntime(TimeSpan.FromMinutes(5), null)
             .Build();
 
@@ -246,7 +246,7 @@ public class CarChargerEnergyConsumerTests
     public void ConsumingEnergy_IsNotJumpy()
     {
         // Arrange
-        var consumer = new CarChargerEnergyConsumerBuilder(_testCtx)
+        var consumer = new CarChargerEnergyConsumerBuilder(_logger, _testCtx)
             .Build();
 
         var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
@@ -280,7 +280,7 @@ public class CarChargerEnergyConsumerTests
     public void Charged_Triggers_TurnOff()
     {
         // Arrange
-        var consumer = new CarChargerEnergyConsumerBuilder(_testCtx)
+        var consumer = new CarChargerEnergyConsumerBuilder(_logger, _testCtx)
             .Build();
 
         var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)

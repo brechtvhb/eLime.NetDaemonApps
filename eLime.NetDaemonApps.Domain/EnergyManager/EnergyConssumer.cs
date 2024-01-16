@@ -8,6 +8,8 @@ namespace eLime.NetDaemonApps.Domain.EnergyManager;
 
 public abstract class EnergyConsumer : IDisposable
 {
+    protected ILogger Logger;
+
     public String Name { get; private set; }
     public NumericEntity PowerUsage { get; private set; }
     public BinarySensor? CriticallyNeeded { get; private set; }
@@ -38,8 +40,10 @@ public abstract class EnergyConsumer : IDisposable
         LastRun = LastRun,
     };
 
-    protected void SetCommonFields(String name, NumericEntity powerUsage, BinarySensor? criticallyNeeded, Double switchOnLoad, Double switchOffLoad, TimeSpan? minimumRuntime, TimeSpan? maximumRuntime, TimeSpan? minimumTimeout, TimeSpan? maximumTimeout, List<TimeWindow> timeWindows)
+    protected void SetCommonFields(ILogger logger, String name, NumericEntity powerUsage, BinarySensor? criticallyNeeded, Double switchOnLoad, Double switchOffLoad, TimeSpan? minimumRuntime, TimeSpan? maximumRuntime, TimeSpan? minimumTimeout, TimeSpan? maximumTimeout, List<TimeWindow> timeWindows)
     {
+        Logger = logger;
+
         Name = name;
         PowerUsage = powerUsage;
         CriticallyNeeded = criticallyNeeded;
@@ -60,12 +64,12 @@ public abstract class EnergyConsumer : IDisposable
         StateChanged?.Invoke(this, e);
     }
 
-    public void SetState(ILogger logger, IScheduler scheduler, EnergyConsumerState state, DateTimeOffset? startedAt, DateTimeOffset? lastRun)
+    public void SetState(IScheduler scheduler, EnergyConsumerState state, DateTimeOffset? startedAt, DateTimeOffset? lastRun)
     {
         State = state;
 
         if (startedAt != null && State == EnergyConsumerState.Running)
-            Started(logger, scheduler, startedAt);
+            Started(scheduler, startedAt);
 
         if (lastRun != null)
             LastRun = lastRun;
@@ -79,12 +83,12 @@ public abstract class EnergyConsumer : IDisposable
         StopTimer = null;
     }
 
-    public void Stopped(ILogger logger, DateTimeOffset now)
+    public void Stopped(DateTimeOffset now)
     {
         StartedAt = null;
         LastRun = now;
 
-        logger.LogDebug("{EnergyConsumer}: Was stopped.", Name);
+        Logger.LogDebug("{EnergyConsumer}: Was stopped.", Name);
 
         CheckDesiredState(now);
     }
@@ -118,8 +122,6 @@ public abstract class EnergyConsumer : IDisposable
         if (@event != null)
             OnStateCHanged(@event);
     }
-
-
 
     public TimeSpan? GetRunTime(DateTimeOffset now)
     {
@@ -159,7 +161,7 @@ public abstract class EnergyConsumer : IDisposable
         return TimeWindows.FirstOrDefault(timeWindow => timeWindow.IsActive(now));
     }
 
-    internal void Started(ILogger logger, IScheduler scheduler, DateTimeOffset? startTime = null)
+    internal void Started(IScheduler scheduler, DateTimeOffset? startTime = null)
     {
         StartedAt = startTime ?? scheduler.Now;
         var timespan = GetRunTime(scheduler.Now);
@@ -169,11 +171,11 @@ public abstract class EnergyConsumer : IDisposable
             case null:
                 break;
             case not null when timespan <= TimeSpan.Zero:
-                logger.LogDebug("{EnergyConsumer}: Will stop right now.", Name);
+                Logger.LogDebug("{EnergyConsumer}: Will stop right now.", Name);
                 TurnOff();
                 break;
             case not null when timespan > TimeSpan.Zero:
-                logger.LogDebug("{EnergyConsumer}: Will run for maximum span of '{TimeSpan}'", Name, timespan.Round().ToString());
+                Logger.LogDebug("{EnergyConsumer}: Will run for maximum span of '{TimeSpan}'", Name, timespan.Round().ToString());
                 StopTimer = scheduler.Schedule(timespan.Value, TurnOff);
                 break;
         }

@@ -3,12 +3,14 @@ using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 using eLime.NetDaemonApps.Domain.Entities.TextSensors;
 using eLime.NetDaemonApps.Domain.Helper;
 using eLime.NetDaemonApps.Tests.Helpers;
+using Microsoft.Extensions.Logging;
 using NetDaemon.HassModel.Entities;
 
 namespace eLime.NetDaemonApps.Tests.Builders;
 
 public class TriggeredEnergyConsumerBuilder
 {
+    private readonly ILogger _logger;
     private readonly AppTestContext _testCtx;
     private String _name;
 
@@ -33,8 +35,9 @@ public class TriggeredEnergyConsumerBuilder
     private Boolean _shutDownOnComplete;
     private List<(String state, Double peakLoad)> _statePeakLoads = new();
 
-    public TriggeredEnergyConsumerBuilder(AppTestContext testCtx, String baseType)
+    public TriggeredEnergyConsumerBuilder(ILogger logger, AppTestContext testCtx, String baseType)
     {
+        _logger = logger;
         _testCtx = testCtx;
 
         if (baseType == "irrigation")
@@ -150,7 +153,7 @@ public class TriggeredEnergyConsumerBuilder
 
     public TriggeredEnergyConsumer Build()
     {
-        var x = new TriggeredEnergyConsumer(_name, _powerUsage, _criticallyNeeded, _switchOnLoad, _switchOffLoad, _minimumRuntime, _maximumRuntime, _minimumTimeout, _maximumTimeout, _timeWindows, _socket, _statePeakLoads, _stateSensor, _startState, _completedState, _criticalState, _canForceShutdown, _shutDownOnComplete);
+        var x = new TriggeredEnergyConsumer(_logger, _name, _powerUsage, _criticallyNeeded, _switchOnLoad, _switchOffLoad, _minimumRuntime, _maximumRuntime, _minimumTimeout, _maximumTimeout, _timeWindows, _socket, _statePeakLoads, _stateSensor, _startState, _completedState, _criticalState, _canForceShutdown, _shutDownOnComplete);
         return x;
     }
 }

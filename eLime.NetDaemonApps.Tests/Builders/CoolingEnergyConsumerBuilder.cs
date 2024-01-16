@@ -2,12 +2,14 @@
 using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 using eLime.NetDaemonApps.Domain.Helper;
 using eLime.NetDaemonApps.Tests.Helpers;
+using Microsoft.Extensions.Logging;
 using NetDaemon.HassModel.Entities;
 
 namespace eLime.NetDaemonApps.Tests.Builders;
 
 public class CoolingEnergyConsumerBuilder
 {
+    private readonly ILogger _logger;
     private readonly AppTestContext _testCtx;
     private String _name;
 
@@ -29,8 +31,9 @@ public class CoolingEnergyConsumerBuilder
     private Double _targetTemperature;
     private Double _maxTemperature;
 
-    public CoolingEnergyConsumerBuilder(AppTestContext testCtx)
+    public CoolingEnergyConsumerBuilder(ILogger logger, AppTestContext testCtx)
     {
+        _logger = logger;
         _testCtx = testCtx;
 
         _name = "Fridge";
@@ -104,7 +107,7 @@ public class CoolingEnergyConsumerBuilder
 
     public CoolingEnergyConsumer Build()
     {
-        var x = new CoolingEnergyConsumer(_name, _powerUsage, _criticallyNeeded, _switchOnLoad, _switchOffLoad, _minimumRuntime, _maximumRuntime, _minimumTimeout, _maximumTimeout, _timeWindows, _socket, _peakLoad, _temperatureSensor, _targetTemperature, _maxTemperature);
+        var x = new CoolingEnergyConsumer(_logger, _name, _powerUsage, _criticallyNeeded, _switchOnLoad, _switchOffLoad, _minimumRuntime, _maximumRuntime, _minimumTimeout, _maximumTimeout, _timeWindows, _socket, _peakLoad, _temperatureSensor, _targetTemperature, _maxTemperature);
         return x;
     }
 }

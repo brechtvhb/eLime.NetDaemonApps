@@ -2,12 +2,14 @@
 using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 using eLime.NetDaemonApps.Domain.Helper;
 using eLime.NetDaemonApps.Tests.Helpers;
+using Microsoft.Extensions.Logging;
 using NetDaemon.HassModel.Entities;
 
 namespace eLime.NetDaemonApps.Tests.Builders;
 
 public class SimpleEnergyConsumerBuilder
 {
+    private readonly ILogger _logger;
     private readonly AppTestContext _testCtx;
     private String _name;
 
@@ -25,8 +27,9 @@ public class SimpleEnergyConsumerBuilder
     private BinarySwitch _socket;
     private Double _peakLoad;
 
-    public SimpleEnergyConsumerBuilder(AppTestContext testCtx)
+    public SimpleEnergyConsumerBuilder(ILogger logger, AppTestContext testCtx)
     {
+        _logger = logger;
         _testCtx = testCtx;
 
         _name = "Pond pump";
@@ -89,7 +92,7 @@ public class SimpleEnergyConsumerBuilder
 
     public SimpleEnergyConsumer Build()
     {
-        var x = new SimpleEnergyConsumer(_name, _powerUsage, _criticallyNeeded, _switchOnLoad, _switchOffLoad, _minimumRuntime, _maximumRuntime, _minimumTimeout, _maximumTimeout, _timeWindows, _socket, _peakLoad);
+        var x = new SimpleEnergyConsumer(_logger, _name, _powerUsage, _criticallyNeeded, _switchOnLoad, _switchOffLoad, _minimumRuntime, _maximumRuntime, _minimumTimeout, _maximumTimeout, _timeWindows, _socket, _peakLoad);
         return x;
     }
 }

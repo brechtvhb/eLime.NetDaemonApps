@@ -3,12 +3,14 @@ using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 using eLime.NetDaemonApps.Domain.Entities.Input;
 using eLime.NetDaemonApps.Domain.Entities.TextSensors;
 using eLime.NetDaemonApps.Tests.Helpers;
+using Microsoft.Extensions.Logging;
 using NetDaemon.HassModel.Entities;
 
 namespace eLime.NetDaemonApps.Tests.Builders;
 
 public class CarChargerEnergyConsumerBuilder
 {
+    private readonly ILogger _logger;
     private readonly AppTestContext _testCtx;
     private String _name;
 
@@ -32,8 +34,9 @@ public class CarChargerEnergyConsumerBuilder
 
     public List<Car> _cars = new();
 
-    public CarChargerEnergyConsumerBuilder(AppTestContext testCtx)
+    public CarChargerEnergyConsumerBuilder(ILogger logger, AppTestContext testCtx)
     {
+        _logger = logger;
         _testCtx = testCtx;
 
 
@@ -108,7 +111,7 @@ public class CarChargerEnergyConsumerBuilder
 
     public CarChargerEnergyConsumer Build()
     {
-        var x = new CarChargerEnergyConsumer(_name, _powerUsage, _criticallyNeeded, _switchOnLoad, _switchOffLoad, _minimumRuntime, _maximumRuntime, _minimumTimeout, _maximumTimeout, _timeWindows, _minimumCurrent, _maximumCurrent, _offCurrent, _currentEntity, _stateSensor, _cars, _testCtx.Scheduler);
+        var x = new CarChargerEnergyConsumer(_logger, _name, _powerUsage, _criticallyNeeded, _switchOnLoad, _switchOffLoad, _minimumRuntime, _maximumRuntime, _minimumTimeout, _maximumTimeout, _timeWindows, _minimumCurrent, _maximumCurrent, _offCurrent, _currentEntity, _stateSensor, _cars, _testCtx.Scheduler);
         return x;
     }
 }

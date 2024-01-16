@@ -1,5 +1,6 @@
 ﻿using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 using eLime.NetDaemonApps.Domain.Entities.TextSensors;
+using Microsoft.Extensions.Logging;
 using NetDaemon.HassModel.Entities;
 
 namespace eLime.NetDaemonApps.Domain.EnergyManager;
@@ -40,10 +41,10 @@ public class TriggeredEnergyConsumer : EnergyConsumer
         }
     }
 
-    public TriggeredEnergyConsumer(String name, NumericEntity powerUsage, BinarySensor? criticallyNeeded, Double switchOnLoad, Double switchOffLoad, TimeSpan? minimumRuntime, TimeSpan? maximumRuntime, TimeSpan? minimumTimeout,
+    public TriggeredEnergyConsumer(ILogger logger, String name, NumericEntity powerUsage, BinarySensor? criticallyNeeded, Double switchOnLoad, Double switchOffLoad, TimeSpan? minimumRuntime, TimeSpan? maximumRuntime, TimeSpan? minimumTimeout,
         TimeSpan? maximumTimeout, List<TimeWindow> timeWindows, BinarySwitch socket, List<(String State, Double PeakLoad)> peakLoads, TextSensor stateSensor, String startState, String completedState, String criticalState, bool canForceShutdown, bool shutDownOnComplete)
     {
-        SetCommonFields(name, powerUsage, criticallyNeeded, switchOnLoad, switchOffLoad, minimumRuntime, maximumRuntime, minimumTimeout, maximumTimeout, timeWindows);
+        SetCommonFields(logger, name, powerUsage, criticallyNeeded, switchOnLoad, switchOffLoad, minimumRuntime, maximumRuntime, minimumTimeout, maximumTimeout, timeWindows);
         Socket = socket;
         Socket.TurnedOn += Socket_TurnedOn;
         Socket.TurnedOff += Socket_TurnedOff;
@@ -76,6 +77,9 @@ public class TriggeredEnergyConsumer : EnergyConsumer
 
     public override bool CanStart(DateTimeOffset now)
     {
+        if (Name == "Washing machine")
+            Logger.LogDebug($"IsWithinTimeWindow: {IsWithinTimeWindow(now)}. HasTimeWindow: {HasTimeWindow()}");
+
         if (State is EnergyConsumerState.Running or EnergyConsumerState.Off)
             return false;
 

@@ -79,7 +79,7 @@ public class EnergyManager : IDisposable
             consumer.CheckDesiredState(_scheduler.Now);
 
             if (consumer is { State: EnergyConsumerState.Running, StartedAt: null })
-                consumer.Started(_logger, _scheduler);
+                consumer.Started(_scheduler);
         }
     }
 
@@ -95,13 +95,13 @@ public class EnergyManager : IDisposable
             case EnergyConsumerStartCommand:
                 break;
             case EnergyConsumerStartedEvent:
-                energyConsumer.Started(_logger, _scheduler);
+                energyConsumer.Started(_scheduler);
                 break;
             case EnergyConsumerStopCommand:
                 energyConsumer.Stop();
                 break;
             case EnergyConsumerStoppedEvent:
-                energyConsumer.Stopped(_logger, _scheduler.Now);
+                energyConsumer.Stopped(_scheduler.Now);
                 break;
         }
 
@@ -272,7 +272,7 @@ public class EnergyManager : IDisposable
         if (storedEnergyConsumerState == null)
             return;
 
-        consumer.SetState(_logger, _scheduler, storedEnergyConsumerState.State, storedEnergyConsumerState.StartedAt, storedEnergyConsumerState.LastRun);
+        consumer.SetState(_scheduler, storedEnergyConsumerState.State, storedEnergyConsumerState.StartedAt, storedEnergyConsumerState.LastRun);
     }
 
     public Device GetGlobalDevice()

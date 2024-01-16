@@ -38,7 +38,7 @@ public class TriggeredEnergyConsumerTests
     public void Init_HappyFlow()
     {
         // Arrange
-        var consumer = new TriggeredEnergyConsumerBuilder(_testCtx, "irrigation")
+        var consumer = new TriggeredEnergyConsumerBuilder(_logger, _testCtx, "irrigation")
             .Build();
 
         var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
@@ -55,7 +55,7 @@ public class TriggeredEnergyConsumerTests
     public void StateChange_Triggers_TurnsOn()
     {
         // Arrange
-        var consumer = new TriggeredEnergyConsumerBuilder(_testCtx, "irrigation")
+        var consumer = new TriggeredEnergyConsumerBuilder(_logger, _testCtx, "irrigation")
             .Build();
 
         var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
@@ -75,7 +75,7 @@ public class TriggeredEnergyConsumerTests
     public void Running_Renders_PeakLoad()
     {
         // Arrange
-        var consumer = new TriggeredEnergyConsumerBuilder(_testCtx, "irrigation")
+        var consumer = new TriggeredEnergyConsumerBuilder(_logger, _testCtx, "irrigation")
             .Build();
 
         var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
@@ -96,7 +96,7 @@ public class TriggeredEnergyConsumerTests
     public void Prewashing_Renders_PeakLoad()
     {
         // Arrange
-        var consumer = new TriggeredEnergyConsumerBuilder(_testCtx, "washer")
+        var consumer = new TriggeredEnergyConsumerBuilder(_logger, _testCtx, "washer")
             .Build();
 
         var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
@@ -116,7 +116,7 @@ public class TriggeredEnergyConsumerTests
     public void PostHeating_Renders_LowerPeakLoad()
     {
         // Arrange
-        var consumer = new TriggeredEnergyConsumerBuilder(_testCtx, "washer")
+        var consumer = new TriggeredEnergyConsumerBuilder(_logger, _testCtx, "washer")
             .Build();
 
         var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
@@ -136,7 +136,7 @@ public class TriggeredEnergyConsumerTests
     public void StateChange_Triggers_TurnsOff()
     {
         // Arrange
-        var consumer = new TriggeredEnergyConsumerBuilder(_testCtx, "washer")
+        var consumer = new TriggeredEnergyConsumerBuilder(_logger, _testCtx, "washer")
             .Build();
 
         var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)

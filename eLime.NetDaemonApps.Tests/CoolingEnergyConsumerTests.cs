@@ -38,7 +38,7 @@ public class CoolingEnergyConsumerTests
     public void Init_HappyFlow()
     {
         // Arrange
-        var consumer = new CoolingEnergyConsumerBuilder(_testCtx)
+        var consumer = new CoolingEnergyConsumerBuilder(_logger, _testCtx)
             .Build();
 
         var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
@@ -55,7 +55,7 @@ public class CoolingEnergyConsumerTests
     public void HotFridge_TurnsOn()
     {
         // Arrange
-        var consumer = new CoolingEnergyConsumerBuilder(_testCtx)
+        var consumer = new CoolingEnergyConsumerBuilder(_logger, _testCtx)
             .Build();
         _testCtx.TriggerStateChange(consumer.TemperatureSensor, "4");
 
@@ -76,7 +76,7 @@ public class CoolingEnergyConsumerTests
     public void CoolFridge_TurnsOff()
     {
         // Arrange
-        var consumer = new CoolingEnergyConsumerBuilder(_testCtx)
+        var consumer = new CoolingEnergyConsumerBuilder(_logger, _testCtx)
             .Build();
         _testCtx.TriggerStateChange(consumer.TemperatureSensor, "4");
 
@@ -101,9 +101,9 @@ public class CoolingEnergyConsumerTests
 
         _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_production_watt"), "100");
 
-        var consumer = new CoolingEnergyConsumerBuilder(_testCtx)
+        var consumer = new CoolingEnergyConsumerBuilder(_logger, _testCtx)
             .Build();
-        var consumer2 = new CoolingEnergyConsumerBuilder(_testCtx)
+        var consumer2 = new CoolingEnergyConsumerBuilder(_logger, _testCtx)
             .WithName("VeryHotFridge")
             .WithTemperatureSensor("sensor.very_hot_fridge_temperature", 1, 8)
             .Build();

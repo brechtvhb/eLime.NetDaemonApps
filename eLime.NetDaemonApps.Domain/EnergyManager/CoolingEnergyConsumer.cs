@@ -1,4 +1,5 @@
 ﻿using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
+using Microsoft.Extensions.Logging;
 using NetDaemon.HassModel.Entities;
 
 namespace eLime.NetDaemonApps.Domain.EnergyManager;
@@ -14,10 +15,10 @@ public class CoolingEnergyConsumer : EnergyConsumer
     public override double PeakLoad { get; }
 
 
-    public CoolingEnergyConsumer(String name, NumericEntity powerUsage, BinarySensor? criticallyNeeded, Double switchOnLoad, Double switchOffLoad, TimeSpan? minimumRuntime, TimeSpan? maximumRuntime, TimeSpan? minimumTimeout,
+    public CoolingEnergyConsumer(ILogger logger, String name, NumericEntity powerUsage, BinarySensor? criticallyNeeded, Double switchOnLoad, Double switchOffLoad, TimeSpan? minimumRuntime, TimeSpan? maximumRuntime, TimeSpan? minimumTimeout,
         TimeSpan? maximumTimeout, List<TimeWindow> timeWindows, BinarySwitch socket, Double peakLoad, NumericEntity temperatureSensor, Double targetTemperature, Double maxTemperature)
     {
-        SetCommonFields(name, powerUsage, criticallyNeeded, switchOnLoad, switchOffLoad, minimumRuntime, maximumRuntime, minimumTimeout, maximumTimeout, timeWindows);
+        SetCommonFields(logger, name, powerUsage, criticallyNeeded, switchOnLoad, switchOffLoad, minimumRuntime, maximumRuntime, minimumTimeout, maximumTimeout, timeWindows);
         Socket = socket;
         Socket.TurnedOn += Socket_TurnedOn;
         Socket.TurnedOff += Socket_TurnedOff;
@@ -81,7 +82,7 @@ public class CoolingEnergyConsumer : EnergyConsumer
 
         return true;
     }
-    
+
     public override void TurnOn()
     {
         Socket.TurnOn();

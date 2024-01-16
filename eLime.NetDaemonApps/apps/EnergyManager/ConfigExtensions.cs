@@ -32,7 +32,7 @@ public static class ConfigExtensions
             if (consumer.Simple != null)
             {
                 var socket = BinarySwitch.Create(ha, consumer.Simple.SocketEntity);
-                energyConsumer = new SimpleEnergyConsumer(consumer.Name, powerUsageEntity, criticallyNeededEntity, consumer.SwitchOnLoad, consumer.SwitchOffLoad, consumer.MinimumRuntime, consumer.MaximumRuntime, consumer.MinimumTimeout, consumer.MaximumTimeout, timeWindows, socket, consumer.Simple.PeakLoad);
+                energyConsumer = new SimpleEnergyConsumer(logger, consumer.Name, powerUsageEntity, criticallyNeededEntity, consumer.SwitchOnLoad, consumer.SwitchOffLoad, consumer.MinimumRuntime, consumer.MaximumRuntime, consumer.MinimumTimeout, consumer.MaximumTimeout, timeWindows, socket, consumer.Simple.PeakLoad);
             }
 
             if (consumer.Cooling != null)
@@ -40,7 +40,7 @@ public static class ConfigExtensions
                 var socket = BinarySwitch.Create(ha, consumer.Cooling.SocketEntity);
                 var temperatureSensor = new NumericEntity(ha, consumer.Cooling.TemperatureSensor);
 
-                energyConsumer = new CoolingEnergyConsumer(consumer.Name, powerUsageEntity, criticallyNeededEntity, consumer.SwitchOnLoad, consumer.SwitchOffLoad, consumer.MinimumRuntime, consumer.MaximumRuntime, consumer.MinimumTimeout, consumer.MaximumTimeout, timeWindows, socket, consumer.Cooling.PeakLoad, temperatureSensor, consumer.Cooling.TargetTemperature, consumer.Cooling.MaxTemperature);
+                energyConsumer = new CoolingEnergyConsumer(logger, consumer.Name, powerUsageEntity, criticallyNeededEntity, consumer.SwitchOnLoad, consumer.SwitchOffLoad, consumer.MinimumRuntime, consumer.MaximumRuntime, consumer.MinimumTimeout, consumer.MaximumTimeout, timeWindows, socket, consumer.Cooling.PeakLoad, temperatureSensor, consumer.Cooling.TargetTemperature, consumer.Cooling.MaxTemperature);
             }
             if (consumer.Triggered != null)
             {
@@ -48,7 +48,7 @@ public static class ConfigExtensions
                 var stateSensor = TextSensor.Create(ha, consumer.Triggered.StateSensor);
                 var stateMap = consumer.Triggered.PeakLoads.Select(x => (x.State, x.PeakLoad)).ToList();
 
-                energyConsumer = new TriggeredEnergyConsumer(consumer.Name, powerUsageEntity, criticallyNeededEntity, consumer.SwitchOnLoad, consumer.SwitchOffLoad, consumer.MinimumRuntime, consumer.MaximumRuntime, consumer.MinimumTimeout, consumer.MaximumTimeout, timeWindows, socket, stateMap, stateSensor, consumer.Triggered.StartState, consumer.Triggered.CompletedState, consumer.Triggered.CriticalState, consumer.Triggered.CanForceShutdown, consumer.Triggered.ShutDownOnComplete);
+                energyConsumer = new TriggeredEnergyConsumer(logger, consumer.Name, powerUsageEntity, criticallyNeededEntity, consumer.SwitchOnLoad, consumer.SwitchOffLoad, consumer.MinimumRuntime, consumer.MaximumRuntime, consumer.MinimumTimeout, consumer.MaximumTimeout, timeWindows, socket, stateMap, stateSensor, consumer.Triggered.StartState, consumer.Triggered.CompletedState, consumer.Triggered.CriticalState, consumer.Triggered.CanForceShutdown, consumer.Triggered.ShutDownOnComplete);
             }
 
             if (consumer.CarCharger != null)
@@ -64,7 +64,7 @@ public static class ConfigExtensions
                 var currentEntity = InputNumberEntity.Create(ha, consumer.CarCharger.CurrentEntity);
                 var stateSensor = TextSensor.Create(ha, consumer.CarCharger.StateSensor);
 
-                energyConsumer = new CarChargerEnergyConsumer(consumer.Name, powerUsageEntity, criticallyNeededEntity, consumer.SwitchOnLoad, consumer.SwitchOffLoad, consumer.MinimumRuntime, consumer.MaximumRuntime, consumer.MinimumTimeout, consumer.MaximumTimeout, timeWindows, consumer.CarCharger.MinimumCurrent, consumer.CarCharger.MaximumCurrent, consumer.CarCharger.OffCurrent, currentEntity, stateSensor, cars, scheduler);
+                energyConsumer = new CarChargerEnergyConsumer(logger, consumer.Name, powerUsageEntity, criticallyNeededEntity, consumer.SwitchOnLoad, consumer.SwitchOffLoad, consumer.MinimumRuntime, consumer.MaximumRuntime, consumer.MinimumTimeout, consumer.MaximumTimeout, timeWindows, consumer.CarCharger.MinimumCurrent, consumer.CarCharger.MaximumCurrent, consumer.CarCharger.OffCurrent, currentEntity, stateSensor, cars, scheduler);
             }
 
 
