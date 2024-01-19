@@ -136,11 +136,11 @@ public class EnergyManager : IDisposable
 
 
     //TODO: Use linear programming model and estimates of production and consumption to be able to schedule deferred loads in the future.
-    private void StartConsumersIfNeeded(Double estimatedLoad)
+    private void StartConsumersIfNeeded(Double currentLoad)
     {
         var runningConsumers = Consumers.Where(x => x.State == EnergyConsumerState.Running);
         //Keep remaining peak load for running consumers in mind (eg: to avoid turning on devices when washer is prewashing but still has to heat).
-        estimatedLoad += runningConsumers.Where(x => x.PeakLoad > x.CurrentLoad).Sum(x => (x.PeakLoad - x.CurrentLoad));
+        var estimatedLoad = currentLoad + runningConsumers.Where(x => x.PeakLoad > x.CurrentLoad).Sum(x => (x.PeakLoad - x.CurrentLoad));
 
         var consumersThatCriticallyNeedEnergy = Consumers.Where(x => x is { State: EnergyConsumerState.CriticallyNeedsEnergy });
 
@@ -157,6 +157,7 @@ public class EnergyManager : IDisposable
 
             _logger.LogDebug("{Consumer}: Started consumer, consumer is in critical need of energy.", criticalConsumer.Name);
             estimatedLoad += criticalConsumer.PeakLoad;
+            currentLoad += criticalConsumer.PeakLoad;
         }
 
         var consumersThatNeedEnergy = Consumers.Where(x => x is { State: EnergyConsumerState.NeedsEnergy });
@@ -165,14 +166,23 @@ public class EnergyManager : IDisposable
             if (!consumer.CanStart(_scheduler.Now))
                 continue;
 
-            //Will not turn on a consumer when it is below the allowed switch on load
-            if (estimatedLoad >= consumer.SwitchOnLoad)
-                continue;
+            if (consumer is IDynamicLoadConsumer)
+            {
+                if (currentLoad >= consumer.SwitchOnLoad)
+                    continue;
+            }
+            else
+            {
+                //Will not turn on a consumer when it is below the allowed switch on load
+                if (estimatedLoad >= consumer.SwitchOnLoad)
+                    continue;
+            }
 
             consumer.TurnOn();
 
             _logger.LogDebug("{Consumer}: Will start consumer.", consumer.Name);
             estimatedLoad += consumer.PeakLoad;
+            currentLoad += consumer.PeakLoad;
         }
     }
 
