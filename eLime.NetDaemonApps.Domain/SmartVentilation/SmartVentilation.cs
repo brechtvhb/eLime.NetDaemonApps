@@ -14,7 +14,6 @@ namespace eLime.NetDaemonApps.Domain.SmartVentilation;
 public class SmartVentilation
 {
     private Boolean IsEnabled { get; set; }
-    //private Climate {get;}
     public Climate Climate { get; }
     private string NetDaemonUserId { get; }
 
