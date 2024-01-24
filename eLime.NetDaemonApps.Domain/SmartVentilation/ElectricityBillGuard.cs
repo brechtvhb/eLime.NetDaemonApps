@@ -21,19 +21,19 @@ public class ElectricityBillGuard : IDisposable
     }
 
 
-    private (VentilationState? State, Boolean Enforce) GetDesiredState()
+    public (VentilationState? State, Boolean Enforce) GetDesiredState()
     {
         if (_sleepSensor.IsOn())
             return (VentilationState.Off, false);
 
-        if (_awaySensor.IsOn())
-            return (VentilationState.Off, false);
-
-        return (null, false);
-
+        return _awaySensor.IsOn()
+            ? (VentilationState.Off, false)
+            : (VentilationState.Low, false);
     }
 
     public void Dispose()
     {
+        _awaySensor.Dispose();
+        _sleepSensor.Dispose();
     }
 }

@@ -17,14 +17,13 @@ public class StatePingPongGuard : IDisposable
         TimeoutSpan = timeoutSpan ?? TimeSpan.FromMinutes(15);
     }
 
-
-    private (VentilationState? State, Boolean Enforce) GetDesiredState(VentilationState currentState, DateTimeOffset lastChange)
-    {
-        if (lastChange.Add(TimeoutSpan) < _scheduler.Now)
-            return (null, false);
-
-        return (currentState, true);
-    }
+    internal (VentilationState? State, Boolean Enforce) GetDesiredState(VentilationState? currentState, DateTimeOffset? lastChange) =>
+        lastChange switch
+        {
+            null => (null, false),
+            _ when lastChange.Value.Add(TimeoutSpan) < _scheduler.Now => (null, false),
+            _ => (currentState, true)
+        };
 
     public void Dispose()
     {

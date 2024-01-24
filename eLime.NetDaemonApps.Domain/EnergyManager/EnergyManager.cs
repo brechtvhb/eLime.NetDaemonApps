@@ -118,7 +118,7 @@ public class EnergyManager : IDisposable
 
     private Double AdjustDynamicLoadsIfNeeded(Double estimatedLoad)
     {
-        var dynamicLoadConsumers = Consumers.Where(x => x.State == EnergyConsumerState.Running && x is IDynamicLoadConsumer).OfType<IDynamicLoadConsumer>().ToList();
+        var dynamicLoadConsumers = Consumers.Where(x => x.State == EnergyConsumerState.Running).OfType<IDynamicLoadConsumer>().ToList();
 
         foreach (var dynamicLoadConsumer in dynamicLoadConsumers)
         {

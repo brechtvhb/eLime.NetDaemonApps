@@ -21,9 +21,9 @@ public class MoldGuard : IDisposable
     }
 
 
-    private (VentilationState? State, Boolean Enforce) GetDesiredState(VentilationState currentState, DateTimeOffset lastChange)
+    public (VentilationState? State, Boolean Enforce) GetDesiredState(VentilationState? currentState, DateTimeOffset? lastChange)
     {
-        if (currentState == VentilationState.Off && lastChange.Add(_maxAwayTimespan) < _scheduler.Now)
+        if (currentState == VentilationState.Off && lastChange?.Add(_maxAwayTimespan) < _scheduler.Now)
             RechargeStartedAt = _scheduler.Now;
 
         if (RechargeStartedAt == null || RechargeStartedAt.Value.Add(_rechargeTimespan) >= _scheduler.Now)

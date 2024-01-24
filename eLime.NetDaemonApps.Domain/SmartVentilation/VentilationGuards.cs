@@ -9,4 +9,5 @@ public enum VentilationGuards
     DryAir,
     IndoorTemperature,
     ElectricityBill,
+    Manual
 }
