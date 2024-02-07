@@ -42,7 +42,7 @@ public class SmartVentilation
 
     private readonly DebounceDispatcher? GuardScreenDebounceDispatcher;
 
-    public SmartVentilation(IHaContext haContext, ILogger logger, IScheduler scheduler, IMqttEntityManager mqttEntityManager, IFileStorage fileStorage, Boolean enabled, String name, Climate climate, String ndUserId,
+    public SmartVentilation(IHaContext haContext, ILogger logger, IScheduler scheduler, IMqttEntityManager mqttEntityManager, IFileStorage fileStorage, Boolean enabled, Climate climate, String ndUserId,
         StatePingPongGuard statePingPongGuard, IndoorAirQualityGuard indoorAirQualityGuard, BathroomAirQualityGuard bathroomAirQualityGuard, MoldGuard moldGuard, DryAirGuard dryAirGuard, ElectricityBillGuard electricityBillGuard,
         TimeSpan debounceDuration)
     {

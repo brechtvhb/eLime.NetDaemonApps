@@ -14,7 +14,7 @@ namespace eLime.NetDaemonApps.apps.SmartVentilation;
 public static class ConfigExtensions
 {
 
-    public static Domain.SmartVentilation.SmartVentilation ToEntities(this SmartVentilationConfig config, IHaContext ha, IScheduler scheduler, IMqttEntityManager mqttEntityManager, IFileStorage storage, ILogger logger, String netDaemonUserId, string name)
+    public static Domain.SmartVentilation.SmartVentilation ToEntities(this SmartVentilationConfig config, IHaContext ha, IScheduler scheduler, IMqttEntityManager mqttEntityManager, IFileStorage storage, ILogger logger, String netDaemonUserId)
     {
         var climate = new Climate(ha, config.ClimateEntity);
 
@@ -25,7 +25,7 @@ public static class ConfigExtensions
         var dryAirGuard = config.DryAir.ToEntities(ha, logger, scheduler);
         var electricityBillGuard = config.ElectricityBill.ToEntities(ha, logger, scheduler);
 
-        var ventilation = new Domain.SmartVentilation.SmartVentilation(ha, logger, scheduler, mqttEntityManager, storage, config.Enabled ?? true, name, climate, netDaemonUserId,
+        var ventilation = new Domain.SmartVentilation.SmartVentilation(ha, logger, scheduler, mqttEntityManager, storage, config.Enabled ?? true, climate, netDaemonUserId,
             statePingPongGuard, indoorAirQualityGuard, bathroomAirQualityGuard, moldGuard, dryAirGuard, electricityBillGuard, TimeSpan.FromSeconds(3));
         return ventilation;
     }
