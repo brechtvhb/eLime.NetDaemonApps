@@ -1,8 +1,10 @@
 ﻿using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
+using eLime.NetDaemonApps.Domain.Entities.ClimateEntities;
 using eLime.NetDaemonApps.Domain.Entities.Covers;
 using eLime.NetDaemonApps.Domain.Entities.Input;
 using eLime.NetDaemonApps.Domain.Entities.Lights;
 using eLime.NetDaemonApps.Domain.Scenes;
+using eLime.NetDaemonApps.Domain.SmartVentilation;
 using Moq;
 using NetDaemon.HassModel.Entities;
 
@@ -105,6 +107,11 @@ public static class AppTestContextExtensions
     private static bool Match(string s, ServiceTarget x)
     {
         return x.EntityIds != null && x.EntityIds.Any(id => id == s);
+    }
+
+    public static void VerifyFanModeSet(this AppTestContext ctx, Climate entity, VentilationState fanMode, Func<Times> times)
+    {
+        ctx.HaContextMock.Verify(c => c.CallService("climate", "set_fan_mode", It.Is<ServiceTarget>(s => Match(entity.EntityId, s)), It.Is<ClimateSetFanModeParameters>(x => x.FanMode == fanMode.ToString().ToLower())), times);
     }
 
     public static void VerifyScreenGoesDown(this AppTestContext ctx, Cover entity, Func<Times> times)
