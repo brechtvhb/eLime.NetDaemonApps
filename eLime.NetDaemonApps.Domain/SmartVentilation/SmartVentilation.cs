@@ -58,7 +58,7 @@ public class SmartVentilation
         NetDaemonUserId = ndUserId;
 
         Climate = climate;
-        Climate.StateChanged += Screen_StateChanged;
+        Climate.StateChanged += Climate_StateChanged;
 
         StatePingPongGuard = statePingPongGuard;
         IndoorAirQualityGuard = indoorAirQualityGuard;
@@ -145,9 +145,8 @@ public class SmartVentilation
 
     }
 
-    private async void Screen_StateChanged(object? sender, ClimateEventArgs e)
+    private async void Climate_StateChanged(object? sender, ClimateEventArgs e)
     {
-        //NetDaemon user ID is no longer passed along when state transitions from closing to closed or from opening to opened :/
         if (e.New?.Context?.UserId != NetDaemonUserId)
         {
             LastStateChange = _scheduler.Now;
@@ -268,7 +267,7 @@ public class SmartVentilation
     public void Dispose()
     {
         _logger.LogInformation("Disposing");
-        Climate.StateChanged -= Screen_StateChanged;
+        Climate.StateChanged -= Climate_StateChanged;
 
         StatePingPongGuard.Dispose();
         IndoorAirQualityGuard.Dispose();

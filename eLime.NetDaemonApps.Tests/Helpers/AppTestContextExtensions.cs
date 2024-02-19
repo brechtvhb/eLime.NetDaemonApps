@@ -113,6 +113,11 @@ public static class AppTestContextExtensions
     {
         ctx.HaContextMock.Verify(c => c.CallService("climate", "set_fan_mode", It.Is<ServiceTarget>(s => Match(entity.EntityId, s)), It.Is<ClimateSetFanModeParameters>(x => x.FanMode == fanMode.ToString().ToLower())), times);
     }
+    public static void VerifyFanModeSet(this AppTestContext ctx, Climate entity, VentilationState fanMode, Times times)
+    {
+        ctx.HaContextMock.Verify(c => c.CallService("climate", "set_fan_mode", It.Is<ServiceTarget>(s => Match(entity.EntityId, s)), It.Is<ClimateSetFanModeParameters>(x => x.FanMode == fanMode.ToString().ToLower())), times);
+    }
+
 
     public static void VerifyScreenGoesDown(this AppTestContext ctx, Cover entity, Func<Times> times)
     {
