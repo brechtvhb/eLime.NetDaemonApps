@@ -1,3 +1,4 @@
+using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 using eLime.NetDaemonApps.Domain.Entities.ClimateEntities;
 using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
 using eLime.NetDaemonApps.Domain.FlexiScenes.Rooms;
@@ -23,6 +24,10 @@ public class SmartVentilationTests
 
     private Climate _climate;
     private NumericSensor _co2Sensor;
+    private NumericSensor _humiditySensor;
+    private BinarySensor _awaySensor;
+    private BinarySensor _sleepSensor;
+    private NumericSensor _outdoorTemperatureSensor;
 
     [TestInitialize]
     public void Init()
@@ -36,6 +41,10 @@ public class SmartVentilationTests
 
         _climate = new Climate(_testCtx.HaContext, "climate.comfod");
         _co2Sensor = new(_testCtx.HaContext, "sensor.co2");
+        _humiditySensor = new(_testCtx.HaContext, "sensor.co2");
+        _awaySensor = new(_testCtx.HaContext, "boolean_sensor.away");
+        _sleepSensor = new(_testCtx.HaContext, "boolean_sensor.kids_sleeping");
+        _outdoorTemperatureSensor = new(_testCtx.HaContext, "sensor.outdoor_temperature");
     }
 
     [TestMethod]
@@ -54,7 +63,7 @@ public class SmartVentilationTests
     }
 
     [TestMethod]
-    public void ManualChangePreventsPingPong()
+    public void StatePingPongGuard_ManualChangePreventsPingPong()
     {
         // Arrange
         _testCtx.TriggerStateChange(_climate, "fan_only");
@@ -72,7 +81,7 @@ public class SmartVentilationTests
     }
 
     [TestMethod]
-    public void ManualChangeRevertsAfterCooldown()
+    public void StatePingPongGuard_ManualChangeRevertsAfterCooldown()
     {
         // Arrange
         _testCtx.TriggerStateChange(_climate, "fan_only");
@@ -89,5 +98,255 @@ public class SmartVentilationTests
 
         //Assert
         _testCtx.VerifyFanModeSet(_climate, VentilationState.Low, Moq.Times.Exactly(2));
+    }
+
+    [TestMethod]
+    public void IndoorAirQualityGuard_HighCo2IncreasesFanSpeed()
+    {
+        // Arrange
+        _testCtx.TriggerStateChange(_climate, "fan_only");
+        var ventilation = new VentilationBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage)
+            .With(_climate)
+            .WithStatePingPongGuard(TimeSpan.FromSeconds(30))
+            .WithIndoorAirQualityGuard([_co2Sensor], 800, 1000)
+            .Build();
+
+        //Act
+        _testCtx.TriggerStateChange(_co2Sensor, new EntityState { State = "900" });
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(61));
+
+        //Assert
+        _testCtx.VerifyFanModeSet(_climate, VentilationState.Medium, Moq.Times.Exactly(1));
+    }
+
+    [TestMethod]
+    public void IndoorAirQualityGuard_VeryHighCo2MaximizesFanSpeed()
+    {
+        // Arrange
+        _testCtx.TriggerStateChange(_climate, "fan_only");
+        var ventilation = new VentilationBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage)
+            .With(_climate)
+            .WithStatePingPongGuard(TimeSpan.FromSeconds(30))
+            .WithIndoorAirQualityGuard([_co2Sensor], 800, 1000)
+            .Build();
+
+        //Act
+        _testCtx.TriggerStateChange(_co2Sensor, new EntityState { State = "1100" });
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(61));
+
+        //Assert
+        _testCtx.VerifyFanModeSet(_climate, VentilationState.High, Moq.Times.Exactly(1));
+    }
+
+    [TestMethod]
+    public void IndoorAirQualityGuard_LowCo2ReturnsToBaseSpeed()
+    {
+        // Arrange
+        _testCtx.TriggerStateChange(_climate, "fan_only");
+        _testCtx.TriggerStateChange(_co2Sensor, new EntityState { State = "1100" });
+        var ventilation = new VentilationBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage)
+            .With(_climate)
+            .WithStatePingPongGuard(TimeSpan.FromSeconds(30))
+            .WithIndoorAirQualityGuard([_co2Sensor], 800, 1000)
+            .Build();
+
+        //Act
+        _testCtx.TriggerStateChange(_co2Sensor, new EntityState { State = "400" });
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(61));
+
+        //Assert
+        _testCtx.VerifyFanModeSet(_climate, VentilationState.Low, Moq.Times.Exactly(1));
+    }
+
+
+    [TestMethod]
+    public void BathroomAirQualityGuard_HighHumidityIncreasesFanSpeed()
+    {
+        // Arrange
+        _testCtx.TriggerStateChange(_climate, "fan_only");
+        var ventilation = new VentilationBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage)
+            .With(_climate)
+            .WithStatePingPongGuard(TimeSpan.FromSeconds(30))
+            .WithBathroomAirQualityGuard([_humiditySensor], 70, 80)
+            .Build();
+
+        //Act
+        _testCtx.TriggerStateChange(_humiditySensor, new EntityState { State = "75" });
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(61));
+
+        //Assert
+        _testCtx.VerifyFanModeSet(_climate, VentilationState.Medium, Moq.Times.Exactly(1));
+    }
+
+    [TestMethod]
+    public void BathroomAirQualityGuard_VeryHighHumidityMaximizesFanSpeed()
+    {
+        // Arrange
+        _testCtx.TriggerStateChange(_climate, "fan_only");
+        var ventilation = new VentilationBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage)
+            .With(_climate)
+            .WithStatePingPongGuard(TimeSpan.FromSeconds(30))
+            .WithBathroomAirQualityGuard([_humiditySensor], 70, 80)
+            .Build();
+
+        //Act
+        _testCtx.TriggerStateChange(_humiditySensor, new EntityState { State = "85" });
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(61));
+
+        //Assert
+        _testCtx.VerifyFanModeSet(_climate, VentilationState.High, Moq.Times.Exactly(1));
+    }
+
+    [TestMethod]
+    public void BathroomAirQualityGuard_LowHumidityReturnsToBaseSpeed()
+    {
+        // Arrange
+        _testCtx.TriggerStateChange(_climate, "fan_only");
+        _testCtx.TriggerStateChange(_humiditySensor, new EntityState { State = "85" });
+        var ventilation = new VentilationBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage)
+            .With(_climate)
+            .WithStatePingPongGuard(TimeSpan.FromSeconds(30))
+            .WithBathroomAirQualityGuard([_humiditySensor], 70, 80)
+            .Build();
+
+        //Act
+        _testCtx.TriggerStateChange(_humiditySensor, new EntityState { State = "60" });
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(61));
+
+        //Assert
+        _testCtx.VerifyFanModeSet(_climate, VentilationState.Low, Moq.Times.Exactly(1));
+    }
+
+    [TestMethod]
+    public void MoldGuard_LongAwayTimeActivatesFan()
+    {
+        // Arrange
+        _testCtx.TriggerStateChange(_awaySensor, "on");
+
+        var ventilation = new VentilationBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage)
+            .With(_climate)
+            .WithStatePingPongGuard(TimeSpan.FromMinutes(1))
+            .WithMoldGuard(TimeSpan.FromHours(8), TimeSpan.FromHours(1))
+            .WithElectricityBillGuard(_awaySensor, _sleepSensor)
+            .Build();
+
+        _climate.SetFanMode("away");
+        _testCtx.TriggerStateChangeWithAttributes(_climate, "fan_only", new { fan_mode = "away" });
+
+        //Act
+        _testCtx.AdvanceTimeBy(TimeSpan.FromHours(8) + TimeSpan.FromMinutes(1));
+
+        //Assert
+        _testCtx.VerifyFanModeSet(_climate, VentilationState.Low, Moq.Times.Once);
+    }
+
+    [TestMethod]
+    public void MoldGuard_FanGoesOffAfterRechargeTime()
+    {
+        // Arrange
+        _testCtx.TriggerStateChange(_awaySensor, "on");
+
+        var ventilation = new VentilationBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage)
+            .With(_climate)
+            .WithStatePingPongGuard(TimeSpan.FromMinutes(1))
+            .WithMoldGuard(TimeSpan.FromHours(8), TimeSpan.FromHours(1))
+            .WithElectricityBillGuard(_awaySensor, _sleepSensor)
+            .Build();
+
+        _testCtx.TriggerStateChangeWithAttributes(_climate, "fan_only", new { fan_mode = "away" });
+
+        _testCtx.AdvanceTimeBy(TimeSpan.FromHours(8) + TimeSpan.FromMinutes(1));
+        _testCtx.TriggerStateChangeWithAttributes(_climate, "fan_only", new { fan_mode = "low" });
+
+        //Act
+        _testCtx.AdvanceTimeBy(TimeSpan.FromHours(1) + TimeSpan.FromMinutes(1));
+
+        //Assert
+        _testCtx.VerifyFanModeSet(_climate, VentilationState.Away, Moq.Times.Exactly(2));
+    }
+
+
+    [TestMethod]
+    public void DryAirGuard_DryAirDecreasesFanSpeed()
+    {
+        // Arrange
+        _testCtx.TriggerStateChange(_climate, "fan_only");
+        _testCtx.TriggerStateChange(_outdoorTemperatureSensor, new EntityState { State = "5" });
+
+        var ventilation = new VentilationBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage)
+            .With(_climate)
+            .WithStatePingPongGuard(TimeSpan.FromSeconds(30))
+            .WithDryAirGuard([_humiditySensor], 35, _outdoorTemperatureSensor, 10)
+            .Build();
+
+        //Act
+        _testCtx.TriggerStateChange(_humiditySensor, new EntityState { State = "25" });
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(61));
+
+        //Assert
+        _testCtx.VerifyFanModeSet(_climate, VentilationState.Away, Moq.Times.Exactly(1));
+    }
+
+
+    [TestMethod]
+    public void DryAirGuard_NormalAirReturnsToBaseSpeed()
+    {
+        // Arrange
+        _testCtx.TriggerStateChange(_climate, "fan_only");
+        _testCtx.TriggerStateChange(_humiditySensor, new EntityState { State = "25" });
+        _testCtx.TriggerStateChange(_outdoorTemperatureSensor, new EntityState { State = "25" });
+
+        var ventilation = new VentilationBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage)
+            .With(_climate)
+            .WithStatePingPongGuard(TimeSpan.FromSeconds(30))
+            .WithDryAirGuard([_humiditySensor], 35, _outdoorTemperatureSensor, 10)
+            .Build();
+
+        //Act
+        _testCtx.TriggerStateChange(_humiditySensor, new EntityState { State = "45" });
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(61));
+
+        //Assert
+        _testCtx.VerifyFanModeSet(_climate, VentilationState.Low, Moq.Times.Exactly(2));
+    }
+
+
+    [TestMethod]
+    public void DryAirGuard_DryAirDoesNotingWithHighOutdoorTemperatures()
+    {
+        // Arrange
+        _testCtx.TriggerStateChange(_climate, "fan_only");
+        _testCtx.TriggerStateChange(_outdoorTemperatureSensor, new EntityState { State = "15" });
+
+        var ventilation = new VentilationBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage)
+            .With(_climate)
+            .WithStatePingPongGuard(TimeSpan.FromSeconds(30))
+            .WithDryAirGuard([_humiditySensor], 35, _outdoorTemperatureSensor, 10)
+            .Build();
+
+        //Act
+        _testCtx.TriggerStateChange(_humiditySensor, new EntityState { State = "25" });
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(61));
+
+        //Assert
+        _testCtx.VerifyFanModeSet(_climate, VentilationState.Away, Moq.Times.Never);
+    }
+
+    [TestMethod]
+    public void ElectricityBillGuard_FanGoesOff()
+    {
+        // Arrange
+        var ventilation = new VentilationBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage)
+            .With(_climate)
+            .WithStatePingPongGuard(TimeSpan.FromMinutes(1))
+            .WithElectricityBillGuard(_awaySensor, _sleepSensor)
+            .Build();
+
+        //Act
+        _testCtx.TriggerStateChange(_awaySensor, "on");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(61));
+
+        //Assert
+        _testCtx.VerifyFanModeSet(_climate, VentilationState.Away, Moq.Times.Exactly(1));
     }
 }

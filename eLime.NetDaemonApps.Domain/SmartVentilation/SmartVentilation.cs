@@ -127,7 +127,7 @@ public class SmartVentilation
         }
 
         var desiredStateForMoldGuard = MoldGuard.GetDesiredState(CurrentState, LastStateChange);
-        if (desiredStateForIndoorBathroomAirQualityGuard is { Enforce: true })
+        if (desiredStateForMoldGuard is { Enforce: true })
         {
             await ChangeState(desiredStateForMoldGuard.State, VentilationGuards.Mold);
             return;

@@ -2,7 +2,7 @@
 
 public enum VentilationState
 {
-    Off, //Is away actually
+    Away,
     Low,
     Medium,
     High

@@ -32,7 +32,7 @@ public class DryAirGuard : IDisposable
             return (null, false);
 
         if (IndoorHumiditySensors.Any(x => x.State < LowHumidityThreshold))
-            return (VentilationState.Off, false);
+            return (VentilationState.Away, true);
 
         return (null, false);
 
