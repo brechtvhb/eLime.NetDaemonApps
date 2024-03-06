@@ -227,7 +227,7 @@ public class SmartVentilation
         LastStateChangeTriggeredBy = storedState.LastStateChangeTriggeredBy;
         IsEnabled = storedState.Enabled;
 
-        _logger.LogDebug("Retrieved smart ventilation state");
+        _logger.LogDebug($"Retrieved smart ventilation state. Last change triggered by {LastStateChangeTriggeredBy} at {LastStateChange?.ToString("O")}.");
     }
 
     private async Task UpdateStateInHomeAssistant()
