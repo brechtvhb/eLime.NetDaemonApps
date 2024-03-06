@@ -51,7 +51,7 @@ public class CarChargerEnergyConsumerBuilder
 
         _currentEntity = InputNumberEntity.Create(_testCtx.HaContext, "input_number.y");
         WithStateSensor(TextSensor.Create(_testCtx.HaContext, "sensor.z"));
-        AddCar("Passat GTE", 11.5, false, new NumericEntity(_testCtx.HaContext, "sensor.a"), new BinarySensor(_testCtx.HaContext, "binary_sensor.b"));
+        AddCar("Passat GTE", false, 11.5, false, new NumericEntity(_testCtx.HaContext, "sensor.a"), null, new BinarySensor(_testCtx.HaContext, "binary_sensor.b"));
     }
 
     public CarChargerEnergyConsumerBuilder WithName(String name)
@@ -103,9 +103,9 @@ public class CarChargerEnergyConsumerBuilder
         return this;
     }
 
-    public CarChargerEnergyConsumerBuilder AddCar(String name, Double batteryCapacity, Boolean ignoreStateOnForceCharge, NumericEntity batteryPercentageSensor, BinarySensor cableConnectedSensor)
+    public CarChargerEnergyConsumerBuilder AddCar(String name, Boolean supports3Phase, Double batteryCapacity, Boolean ignoreStateOnForceCharge, NumericEntity batteryPercentageSensor, NumericEntity? maxBatteryPercentageSensor, BinarySensor cableConnectedSensor)
     {
-        _cars.Add(new Car(name, batteryCapacity, ignoreStateOnForceCharge, batteryPercentageSensor, cableConnectedSensor));
+        _cars.Add(new Car(name, supports3Phase, batteryCapacity, ignoreStateOnForceCharge, batteryPercentageSensor, maxBatteryPercentageSensor, cableConnectedSensor));
         return this;
     }
 

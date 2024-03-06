@@ -57,8 +57,9 @@ public static class ConfigExtensions
                 foreach (var car in consumer.CarCharger.Cars)
                 {
                     var batteryPercentageSensor = new NumericEntity(ha, car.BatteryPercentageSensor);
+                    var maxBatteryPercentageSensor = !String.IsNullOrWhiteSpace(car.MaxBatteryPercentageSensor) ? new NumericEntity(ha, car.MaxBatteryPercentageSensor) : null;
                     var cableConnectedSensor = new BinarySensor(ha, car.CableConnectedSensor);
-                    cars.Add(new Car(car.Name, car.BatteryCapacity, car.IgnoreStateOnForceCharge, batteryPercentageSensor, cableConnectedSensor));
+                    cars.Add(new Car(car.Name, car.Supports3Phase, car.BatteryCapacity, car.IgnoreStateOnForceCharge, batteryPercentageSensor, maxBatteryPercentageSensor, cableConnectedSensor));
                 }
 
                 var currentEntity = InputNumberEntity.Create(ha, consumer.CarCharger.CurrentEntity);
