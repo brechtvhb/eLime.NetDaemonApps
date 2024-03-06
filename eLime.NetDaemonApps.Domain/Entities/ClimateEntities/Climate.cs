@@ -22,7 +22,7 @@ public record Climate : Entity<Climate, EntityState<ClimateAttributes>, ClimateA
 
     public void Initialize()
     {
-        _subscribeDisposable = StateChanges()
+        _subscribeDisposable = StateAllChanges()
             .Subscribe(x =>
             {
                 if (x.New == null)

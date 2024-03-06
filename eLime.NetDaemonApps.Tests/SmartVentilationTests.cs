@@ -262,7 +262,7 @@ public class SmartVentilationTests
         _testCtx.AdvanceTimeBy(TimeSpan.FromHours(1) + TimeSpan.FromMinutes(1));
 
         //Assert
-        _testCtx.VerifyFanModeSet(_climate, VentilationState.Away, Moq.Times.Exactly(2));
+        _testCtx.VerifyFanModeSet(_climate, VentilationState.Off, Moq.Times.Exactly(2));
     }
 
 
@@ -284,7 +284,7 @@ public class SmartVentilationTests
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(61));
 
         //Assert
-        _testCtx.VerifyFanModeSet(_climate, VentilationState.Away, Moq.Times.Exactly(1));
+        _testCtx.VerifyFanModeSet(_climate, VentilationState.Off, Moq.Times.Exactly(1));
     }
 
 
@@ -329,7 +329,7 @@ public class SmartVentilationTests
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(61));
 
         //Assert
-        _testCtx.VerifyFanModeSet(_climate, VentilationState.Away, Moq.Times.Never);
+        _testCtx.VerifyFanModeSet(_climate, VentilationState.Off, Moq.Times.Never);
     }
 
     [TestMethod]
@@ -347,6 +347,6 @@ public class SmartVentilationTests
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(61));
 
         //Assert
-        _testCtx.VerifyFanModeSet(_climate, VentilationState.Away, Moq.Times.Exactly(1));
+        _testCtx.VerifyFanModeSet(_climate, VentilationState.Off, Moq.Times.Exactly(1));
     }
 }

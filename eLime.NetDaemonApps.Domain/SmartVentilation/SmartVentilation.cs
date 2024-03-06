@@ -151,7 +151,7 @@ public class SmartVentilation
         {
             LastStateChange = _scheduler.Now;
             LastStateChangeTriggeredBy = VentilationGuards.Manual;
-            _logger.LogInformation($"Manual state change detected ({e.New?.State}) UserID was {e.New?.Context?.UserId} (NetDaemonUserID is {NetDaemonUserId}).");
+            _logger.LogInformation($"Manual state change detected ({e.New?.Attributes?.FanMode}). UserID was {e.New?.Context?.UserId} (NetDaemonUserID is {NetDaemonUserId}).");
         }
 
         await UpdateStateInHomeAssistant();

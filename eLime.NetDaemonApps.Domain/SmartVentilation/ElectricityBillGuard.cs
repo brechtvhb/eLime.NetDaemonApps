@@ -24,10 +24,10 @@ public class ElectricityBillGuard : IDisposable
     public (VentilationState? State, Boolean Enforce) GetDesiredState()
     {
         if (_sleepSensor.IsOn())
-            return (VentilationState.Away, false);
+            return (VentilationState.Off, false);
 
         return _awaySensor.IsOn()
-            ? (VentilationState.Away, false)
+            ? (Away: VentilationState.Off, false)
             : (VentilationState.Low, false);
     }
 
