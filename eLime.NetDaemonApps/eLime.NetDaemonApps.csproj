@@ -43,4 +43,11 @@
       <ProjectReference Include="..\eLime.NetDaemonApps.Config\eLime.NetDaemonApps.Config.csproj" />
       <ProjectReference Include="..\eLime.NetDaemonApps.Domain\eLime.NetDaemonApps.Domain.csproj" />
     </ItemGroup>
+        
+    <ItemGroup>
+      <None Update="apps\SmartVentilation\SmartVentilation.yaml">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+      </None>
+    </ItemGroup>
 </Project>

@@ -1,3 +1,6 @@
+// Use unique namespaces for your apps if you going to share with others to avoid
+// conflicting names
+
 using eLime.NetDaemonApps.Config;
 using eLime.NetDaemonApps.Domain.Storage;
 using NetDaemon.Extensions.MqttEntityManager;
@@ -5,23 +8,25 @@ using System.Reactive.Concurrency;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace eLime.NetDaemonApps.apps.EnergyManager;
+namespace eLime.NetDaemonApps.apps.SmartVentilation;
 
-[NetDaemonApp(Id = "energyManager")]
-public class EnergyManager : IAsyncInitializable, IAsyncDisposable
+[Focus]
+[NetDaemonApp(Id = "smartVentilation")]
+public class SmartVentilation : IAsyncInitializable, IAsyncDisposable
 {
     private readonly IHaContext _ha;
     private readonly IScheduler _scheduler;
     private readonly IMqttEntityManager _mqttEntityManager;
     private readonly IFileStorage _fileStorage;
-    private readonly ILogger _logger;
-    private readonly EnergyManagerConfig _config;
 
-    private Domain.EnergyManager.EnergyManager _energyManager;
+    private readonly ILogger _logger;
+    private readonly SmartVentilationConfig _config;
+
+    private Domain.SmartVentilation.SmartVentilation _smartVentilation;
 
     private CancellationToken _ct;
 
-    public EnergyManager(IHaContext ha, IScheduler scheduler, IAppConfig<EnergyManagerConfig> config, IMqttEntityManager mqttEntityManager, IFileStorage fileStorage, ILogger<EnergyManager> logger)
+    public SmartVentilation(IHaContext ha, IScheduler scheduler, IAppConfig<SmartVentilationConfig> config, IMqttEntityManager mqttEntityManager, IFileStorage fileStorage, ILogger<SmartVentilation> logger)
     {
         _ha = ha;
         _scheduler = scheduler;
@@ -36,7 +41,7 @@ public class EnergyManager : IAsyncInitializable, IAsyncDisposable
         _ct = cancellationToken;
         try
         {
-            _energyManager = _config.ToEntities(_ha, _scheduler, _mqttEntityManager, _fileStorage, _logger);
+            _smartVentilation = _config.ToEntities(_ha, _scheduler, _mqttEntityManager, _fileStorage, _logger, _config.NetDaemonUserId);
         }
         catch (Exception ex)
         {
@@ -46,15 +51,15 @@ public class EnergyManager : IAsyncInitializable, IAsyncDisposable
         return Task.CompletedTask;
     }
 
-
-
     public ValueTask DisposeAsync()
     {
-        _logger.LogInformation("Disposing Energy manager");
+        _logger.LogInformation("Disposing Smart ventilation");
 
-        _energyManager.Dispose();
+        _smartVentilation.Dispose();
 
-        _logger.LogInformation("Disposed Energy manager");
+
+        _logger.LogInformation("Disposed Smart ventilation");
+
 
         return ValueTask.CompletedTask;
     }

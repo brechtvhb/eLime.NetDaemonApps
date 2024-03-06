@@ -1,0 +1,32 @@
+﻿eLime.NetDaemonApps.Config.SmartVentilationConfig:
+  name: "SmartVentilation"
+  netDaemonUserId: "17e75fc5e676439783970c2536a6c3d9"
+  enabled: true
+  climateEntity: "climate.zehnder_comfo_d_comfod_550r_luxe"
+  statePingPong:
+    timeoutSpan: "00:30:00"
+  indoor:
+    co2Sensors:
+    - "sensor.bureau_co2"
+    - "sensor.zithoek_b_co2"
+    co2MediumThreshold: 800
+    co2HighThreshold: 1050
+  bathroom:
+    humiditySensors:
+    - "sensor.kastwand_rv"
+    - "sensor.bdk1_rv"
+    humidityMediumThreshold: 65
+    humidityHighThreshold: 75
+  mold:
+    maxAwayTimeSpan: "08:00:00"
+    rechargeTimeSpan: "01:00:00"
+  dryAir:
+    humiditySensors:
+    - "sensor.zithoek_rv"
+    - "sensor.dressing_rv"
+    humidityLowThreshold: 35
+    outdoorTemperatureSensor: "sensor.gw2000a_v2_2_0_outdoor_temperature"
+    maxOutdoorTemperature: 12
+  electricityBill:
+    awaySensor: "input_boolean.away"
+    sleepingSensor: "binary_sensor.operating_mode_kids_sleeping"

@@ -164,7 +164,7 @@ public class SmartVentilation
 
         if (desiredState != Climate.Mode)
         {
-            _logger.LogInformation("Changing Ventilation mode to {DesiredState}", desiredState);
+            _logger.LogInformation("Changing Ventilation mode to {DesiredState} triggered by {VentilationGuard}", desiredState, triggeredBy.ToString());
             Climate.SetFanMode(desiredState.Value);
             LastStateChange = _scheduler.Now;
             LastStateChangeTriggeredBy = triggeredBy;
