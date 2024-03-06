@@ -231,7 +231,7 @@ public class SmartVentilationTests
             .Build();
 
         _climate.SetFanMode("away");
-        _testCtx.TriggerStateChangeWithAttributes(_climate, "fan_only", new { fan_mode = "away" });
+        _testCtx.TriggerStateChangeWithAttributes(_climate, "fan_only", new { fan_mode = "off" });
 
         //Act
         _testCtx.AdvanceTimeBy(TimeSpan.FromHours(8) + TimeSpan.FromMinutes(1));
@@ -253,7 +253,7 @@ public class SmartVentilationTests
             .WithElectricityBillGuard(_awaySensor, _sleepSensor)
             .Build();
 
-        _testCtx.TriggerStateChangeWithAttributes(_climate, "fan_only", new { fan_mode = "away" });
+        _testCtx.TriggerStateChangeWithAttributes(_climate, "fan_only", new { fan_mode = "off" });
 
         _testCtx.AdvanceTimeBy(TimeSpan.FromHours(8) + TimeSpan.FromMinutes(1));
         _testCtx.TriggerStateChangeWithAttributes(_climate, "fan_only", new { fan_mode = "low" });
