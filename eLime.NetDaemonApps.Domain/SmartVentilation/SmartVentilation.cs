@@ -120,12 +120,6 @@ public class SmartVentilation
             return;
         }
 
-        if (desiredStateForIndoorAirQualityGuard.State == VentilationState.Medium || desiredStateForIndoorBathroomAirQualityGuard.State == VentilationState.Medium)
-        {
-            await ChangeState(VentilationState.Medium, VentilationGuards.BathroomAirQuality);
-            return;
-        }
-
         var desiredStateForMoldGuard = MoldGuard.GetDesiredState(CurrentState, LastStateChange);
         if (desiredStateForMoldGuard is { Enforce: true })
         {
@@ -137,6 +131,17 @@ public class SmartVentilation
         if (desiredStateForDryAirGuard is { Enforce: true })
         {
             await ChangeState(desiredStateForDryAirGuard.State, VentilationGuards.DryAir);
+            return;
+        }
+
+        if (desiredStateForIndoorAirQualityGuard.State == VentilationState.Medium)
+        {
+            await ChangeState(VentilationState.Medium, VentilationGuards.IndoorAirQuality);
+            return;
+        }
+        if (desiredStateForIndoorBathroomAirQualityGuard.State == VentilationState.Medium)
+        {
+            await ChangeState(VentilationState.Medium, VentilationGuards.BathroomAirQuality);
             return;
         }
 
