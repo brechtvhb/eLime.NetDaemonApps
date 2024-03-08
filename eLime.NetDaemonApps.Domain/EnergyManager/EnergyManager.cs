@@ -180,7 +180,7 @@ public class EnergyManager : IDisposable
 
             consumer.TurnOn();
 
-            _logger.LogDebug("{Consumer}: Will start consumer.", consumer.Name);
+            _logger.LogDebug("{Consumer}: Will start consumer. Current load/estimated load was: {CurrentLoad}/{EstimatedLoad}. Switch-on/peak load of consumer is: {SwitchOnLoad}/{PeakLoad}", consumer.Name, currentLoad, estimatedLoad, consumer.SwitchOnLoad, consumer.PeakLoad);
             estimatedLoad += consumer.PeakLoad;
             currentLoad += consumer.PeakLoad;
         }
