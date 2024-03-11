@@ -41,12 +41,12 @@ public class GridMonitor : IDisposable
 
     public double AverageImportSince(DateTimeOffset now, TimeSpan timeSpan)
     {
-        return _lastImportValues.Where(x => x.Moment.Add(timeSpan) > now).Select(x => x.Value).DefaultIfEmpty().Average();
+        return Math.Round(_lastImportValues.Where(x => x.Moment.Add(timeSpan) > now).Select(x => x.Value).DefaultIfEmpty().Average());
     }
 
     public double AverageExportSince(DateTimeOffset now, TimeSpan timeSpan)
     {
-        return _lastExportValues.Where(x => x.Moment.Add(timeSpan) > now).Select(x => x.Value).DefaultIfEmpty().Average();
+        return Math.ReciprocalEstimate(_lastExportValues.Where(x => x.Moment.Add(timeSpan) > now).Select(x => x.Value).DefaultIfEmpty().Average());
     }
 
     public double AverageLoadSince(DateTimeOffset now, TimeSpan timeSpan)

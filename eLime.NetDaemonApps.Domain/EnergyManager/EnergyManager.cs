@@ -202,7 +202,7 @@ public class EnergyManager : IDisposable
         var consumersThatPreferSolar = Consumers.OrderByDescending(x => x.SwitchOffLoad).Where(x => x.CanForceStop(_scheduler.Now) && x is { Running: true } && x.SwitchOffLoad < estimatedLoad).ToList();
         foreach (var consumer in consumersThatPreferSolar.TakeWhile(consumer => consumer.SwitchOffLoad < estimatedLoad))
         {
-            _logger.LogDebug("{Consumer}: Will stop consumer because current load is above switch off load. Current load/estimated load was: {CurrentLoad}/{EstimatedLoad}. Switch-on/peak load of consumer is: {SwitchOnLoad}/{PeakLoad}", consumer.Name, currentLoad, estimatedLoad, consumer.SwitchOnLoad, consumer.PeakLoad);
+            _logger.LogDebug("{Consumer}: Will stop consumer because current load is above switch off load. Current load/estimated load was: {CurrentLoad}/{EstimatedLoad}. Switch-off/peak load of consumer is: {SwitchOffLoad}/{PeakLoad}", consumer.Name, currentLoad, estimatedLoad, consumer.SwitchOffLoad, consumer.PeakLoad);
             consumer.Stop();
             estimatedLoad -= consumer.CurrentLoad;
         }
@@ -213,7 +213,7 @@ public class EnergyManager : IDisposable
             var consumersThatShouldForceStopped = Consumers.Where(x => x.CanForceStopOnPeakLoad(_scheduler.Now) && x.Running);
             foreach (var consumer in consumersThatShouldForceStopped)
             {
-                _logger.LogDebug("{Consumer}: Will stop consumer right now because peak load was exceeded. Current load/estimated load was: {CurrentLoad}/{EstimatedLoad}. Switch-on/peak load of consumer is: {SwitchOnLoad}/{PeakLoad}", consumer.Name, currentLoad, estimatedLoad, consumer.SwitchOnLoad, consumer.PeakLoad);
+                _logger.LogDebug("{Consumer}: Will stop consumer right now because peak load was exceeded. Current load/estimated load was: {CurrentLoad}/{EstimatedLoad}. Switch-off/peak load of consumer is: {SwitchOffLoad}/{PeakLoad}", consumer.Name, currentLoad, estimatedLoad, consumer.SwitchOffLoad, consumer.PeakLoad);
                 consumer.Stop();
                 estimatedLoad -= consumer.CurrentLoad;
 
