@@ -1,5 +1,6 @@
 ﻿using eLime.NetDaemonApps.Domain.EnergyManager;
 using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
+using eLime.NetDaemonApps.Domain.Entities.DeviceTracker;
 using eLime.NetDaemonApps.Domain.Entities.Input;
 using eLime.NetDaemonApps.Domain.Entities.TextSensors;
 using eLime.NetDaemonApps.Tests.Helpers;
@@ -51,7 +52,7 @@ public class CarChargerEnergyConsumerBuilder
 
         _currentEntity = InputNumberEntity.Create(_testCtx.HaContext, "input_number.y");
         WithStateSensor(TextSensor.Create(_testCtx.HaContext, "sensor.z"));
-        AddCar("Passat GTE", false, 11.5, false, new NumericEntity(_testCtx.HaContext, "sensor.a"), null, new BinarySensor(_testCtx.HaContext, "binary_sensor.b"));
+        AddCar("Passat GTE", CarChargingMode.Ac1Phase, null, 6, 16, 11.5, false, new NumericEntity(_testCtx.HaContext, "sensor.a"), null, new BinarySensor(_testCtx.HaContext, "binary_sensor.b"), new DeviceTracker(_testCtx.HaContext, "device_tracker.passat_gte_position"));
     }
 
     public CarChargerEnergyConsumerBuilder WithName(String name)
@@ -103,9 +104,9 @@ public class CarChargerEnergyConsumerBuilder
         return this;
     }
 
-    public CarChargerEnergyConsumerBuilder AddCar(String name, Boolean supports3Phase, Double batteryCapacity, Boolean ignoreStateOnForceCharge, NumericEntity batteryPercentageSensor, NumericEntity? maxBatteryPercentageSensor, BinarySensor cableConnectedSensor)
+    public CarChargerEnergyConsumerBuilder AddCar(String name, CarChargingMode mode, InputNumberEntity? currentEntity, Int32? minimumCurrent, Int32? maximumCurrent, Double batteryCapacity, Boolean ignoreStateOnForceCharge, NumericEntity batteryPercentageSensor, NumericEntity? maxBatteryPercentageSensor, BinarySensor cableConnectedSensor, DeviceTracker location)
     {
-        _cars.Add(new Car(name, supports3Phase, batteryCapacity, ignoreStateOnForceCharge, batteryPercentageSensor, maxBatteryPercentageSensor, cableConnectedSensor));
+        _cars.Add(new Car(name, mode, currentEntity, minimumCurrent, maximumCurrent, ignoreStateOnForceCharge, batteryCapacity, batteryPercentageSensor, maxBatteryPercentageSensor, cableConnectedSensor, location));
         return this;
     }
 

@@ -2,15 +2,18 @@
 using eLime.NetDaemonApps.Config.EnergyManager;
 using eLime.NetDaemonApps.Domain.EnergyManager;
 using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
+using eLime.NetDaemonApps.Domain.Entities.DeviceTracker;
 using eLime.NetDaemonApps.Domain.Entities.Input;
 using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
 using eLime.NetDaemonApps.Domain.Entities.TextSensors;
+using eLime.NetDaemonApps.Domain.Helper;
 using eLime.NetDaemonApps.Domain.Storage;
 using NetDaemon.Extensions.MqttEntityManager;
 using NetDaemon.HassModel.Entities;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Concurrency;
+using CarChargingMode = eLime.NetDaemonApps.Domain.EnergyManager.CarChargingMode;
 
 namespace eLime.NetDaemonApps.apps.EnergyManager;
 
@@ -56,10 +59,14 @@ public static class ConfigExtensions
                 var cars = new List<Car>();
                 foreach (var car in consumer.CarCharger.Cars)
                 {
+                    var carCurrentEntity = !String.IsNullOrWhiteSpace(car.CurrentEntity) ? new InputNumberEntity(ha, car.MaxBatteryPercentageSensor) : null;
                     var batteryPercentageSensor = new NumericEntity(ha, car.BatteryPercentageSensor);
                     var maxBatteryPercentageSensor = !String.IsNullOrWhiteSpace(car.MaxBatteryPercentageSensor) ? new NumericEntity(ha, car.MaxBatteryPercentageSensor) : null;
                     var cableConnectedSensor = new BinarySensor(ha, car.CableConnectedSensor);
-                    cars.Add(new Car(car.Name, car.Supports3Phase, car.BatteryCapacity, car.IgnoreStateOnForceCharge, batteryPercentageSensor, maxBatteryPercentageSensor, cableConnectedSensor));
+                    var location = new DeviceTracker(ha, car.Location);
+                    var mode = Enum<CarChargingMode>.Cast(car.Mode);
+
+                    cars.Add(new Car(car.Name, mode, carCurrentEntity, car.MinimumCurrent, car.MaximumCurrent, car.IgnoreStateOnForceCharge, car.BatteryCapacity, batteryPercentageSensor, maxBatteryPercentageSensor, cableConnectedSensor, location));
                 }
 
                 var currentEntity = InputNumberEntity.Create(ha, consumer.CarCharger.CurrentEntity);

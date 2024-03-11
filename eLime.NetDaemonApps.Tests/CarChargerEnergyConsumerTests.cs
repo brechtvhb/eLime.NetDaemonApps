@@ -68,6 +68,7 @@ public class CarChargerEnergyConsumerTests
         _testCtx.TriggerStateChange(consumer.StateSensor, "Occupied");
         _testCtx.TriggerStateChange(consumer.Cars.First().CableConnectedSensor, "on");
         _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "5");
+        _testCtx.TriggerStateChange(consumer.Cars.First().Location, "home");
 
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(30));
 
@@ -99,6 +100,30 @@ public class CarChargerEnergyConsumerTests
         _testCtx.InputNumberChanged(consumer.CurrentEntity, 6, Moq.Times.Never);
     }
 
+    [TestMethod]
+    public void Occupied_ButCarNotHome_DoesNotTrigger_TurnsOn()
+    {
+        // Arrange
+        var consumer = new CarChargerEnergyConsumerBuilder(_logger, _testCtx)
+            .Build();
+
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+            .AddConsumer(consumer)
+            .Build();
+
+        //Act
+        _testCtx.TriggerStateChange(consumer.StateSensor, "Occupied");
+        _testCtx.TriggerStateChange(consumer.Cars.First().CableConnectedSensor, "on");
+        _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "5");
+        _testCtx.TriggerStateChange(consumer.Cars.First().Location, "away");
+
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
+
+        //Assert
+        Assert.AreEqual(EnergyConsumerState.Off, energyManager.Consumers.First().State);
+        _testCtx.InputNumberChanged(consumer.CurrentEntity, 6, Moq.Times.Never);
+    }
+
 
     [TestMethod]
     public void Occupied_ButNotEnoughPower_DoesNotTrigger_TurnsOn()
@@ -116,6 +141,7 @@ public class CarChargerEnergyConsumerTests
         _testCtx.TriggerStateChange(consumer.StateSensor, "Occupied");
         _testCtx.TriggerStateChange(consumer.Cars.First().CableConnectedSensor, "on");
         _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "5");
+        _testCtx.TriggerStateChange(consumer.Cars.First().Location, "home");
 
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
 
@@ -140,6 +166,7 @@ public class CarChargerEnergyConsumerTests
         _testCtx.TriggerStateChange(consumer.StateSensor, "Occupied");
         _testCtx.TriggerStateChange(consumer.Cars.First().CableConnectedSensor, "on");
         _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "5");
+        _testCtx.TriggerStateChange(consumer.Cars.First().Location, "home");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
 
         //Act
@@ -166,6 +193,7 @@ public class CarChargerEnergyConsumerTests
         _testCtx.TriggerStateChange(consumer.StateSensor, "Occupied");
         _testCtx.TriggerStateChange(consumer.Cars.First().CableConnectedSensor, "on");
         _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "5");
+        _testCtx.TriggerStateChange(consumer.Cars.First().Location, "home");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
 
         //Act
@@ -195,6 +223,7 @@ public class CarChargerEnergyConsumerTests
         _testCtx.TriggerStateChange(consumer.StateSensor, "Occupied");
         _testCtx.TriggerStateChange(consumer.Cars.First().CableConnectedSensor, "on");
         _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "5");
+        _testCtx.TriggerStateChange(consumer.Cars.First().Location, "home");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(30));
 
         //Act
@@ -224,6 +253,7 @@ public class CarChargerEnergyConsumerTests
         _testCtx.TriggerStateChange(consumer.StateSensor, "Occupied");
         _testCtx.TriggerStateChange(consumer.Cars.First().CableConnectedSensor, "on");
         _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "5");
+        _testCtx.TriggerStateChange(consumer.Cars.First().Location, "home");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
 
         //Act
@@ -253,10 +283,10 @@ public class CarChargerEnergyConsumerTests
             .AddConsumer(consumer)
             .Build();
 
-
         _testCtx.TriggerStateChange(consumer.StateSensor, "Occupied");
         _testCtx.TriggerStateChange(consumer.Cars.First().CableConnectedSensor, "on");
         _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "5");
+        _testCtx.TriggerStateChange(consumer.Cars.First().Location, "home");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
 
         _testCtx.TriggerStateChange(consumer.CurrentEntity, "16");
@@ -291,6 +321,7 @@ public class CarChargerEnergyConsumerTests
         _testCtx.TriggerStateChange(consumer.StateSensor, "Occupied");
         _testCtx.TriggerStateChange(consumer.Cars.First().CableConnectedSensor, "on");
         _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "5");
+        _testCtx.TriggerStateChange(consumer.Cars.First().Location, "home");
 
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
 

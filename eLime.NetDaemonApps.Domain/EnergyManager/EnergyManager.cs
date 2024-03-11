@@ -140,7 +140,7 @@ public class EnergyManager : IDisposable
     {
         var runningConsumers = Consumers.Where(x => x.State == EnergyConsumerState.Running);
         //Keep remaining peak load for running consumers in mind (eg: to avoid turning on devices when washer is prewashing but still has to heat).
-        var estimatedLoad = currentLoad + runningConsumers.Where(x => x.PeakLoad > x.CurrentLoad).Sum(x => (x.PeakLoad - x.CurrentLoad));
+        var estimatedLoad = currentLoad + Math.Round(runningConsumers.Where(x => x.PeakLoad > x.CurrentLoad).Sum(x => (x.PeakLoad - x.CurrentLoad)), 0);
 
         var consumersThatCriticallyNeedEnergy = Consumers.Where(x => x is { State: EnergyConsumerState.CriticallyNeedsEnergy });
 
@@ -155,7 +155,7 @@ public class EnergyManager : IDisposable
 
             criticalConsumer.TurnOn();
 
-            _logger.LogDebug("{Consumer}: Started consumer, consumer is in critical need of energy.", criticalConsumer.Name);
+            _logger.LogDebug("{Consumer}: Started consumer, consumer is in critical need of energy. Current load/estimated load was: {CurrentLoad}/{EstimatedLoad}. Switch-on/peak load of consumer is: {SwitchOnLoad}/{PeakLoad}.", criticalConsumer.Name, currentLoad, estimatedLoad, criticalConsumer.SwitchOnLoad, criticalConsumer.PeakLoad);
             estimatedLoad += criticalConsumer.PeakLoad;
             currentLoad += criticalConsumer.PeakLoad;
         }
@@ -180,7 +180,7 @@ public class EnergyManager : IDisposable
 
             consumer.TurnOn();
 
-            _logger.LogDebug("{Consumer}: Will start consumer. Current load/estimated load was: {CurrentLoad}/{EstimatedLoad}. Switch-on/peak load of consumer is: {SwitchOnLoad}/{PeakLoad}", consumer.Name, currentLoad, estimatedLoad, consumer.SwitchOnLoad, consumer.PeakLoad);
+            _logger.LogDebug("{Consumer}: Will start consumer. Current load/estimated load was: {CurrentLoad}/{EstimatedLoad}. Switch-on/peak load of consumer is: {SwitchOnLoad}/{PeakLoad}.", consumer.Name, currentLoad, estimatedLoad, consumer.SwitchOnLoad, consumer.PeakLoad);
             estimatedLoad += consumer.PeakLoad;
             currentLoad += consumer.PeakLoad;
         }
@@ -188,7 +188,8 @@ public class EnergyManager : IDisposable
 
     private void StopConsumersIfNeeded()
     {
-        var estimatedLoad = GridMonitor.AverageLoadSince(_scheduler.Now, TimeSpan.FromMinutes(3));
+        var currentLoad = GridMonitor.AverageLoadSince(_scheduler.Now, TimeSpan.FromMinutes(3));
+        var estimatedLoad = currentLoad;
 
         var consumersThatNoLongerNeedEnergy = Consumers.Where(x => x is { State: EnergyConsumerState.Off, Running: true });
         foreach (var consumer in consumersThatNoLongerNeedEnergy)
@@ -201,7 +202,7 @@ public class EnergyManager : IDisposable
         var consumersThatPreferSolar = Consumers.OrderByDescending(x => x.SwitchOffLoad).Where(x => x.CanForceStop(_scheduler.Now) && x is { Running: true } && x.SwitchOffLoad < estimatedLoad).ToList();
         foreach (var consumer in consumersThatPreferSolar.TakeWhile(consumer => consumer.SwitchOffLoad < estimatedLoad))
         {
-            _logger.LogDebug("{Consumer}: Will stop consumer because current load is above switch off load", consumer.Name);
+            _logger.LogDebug("{Consumer}: Will stop consumer because current load is above switch off load. Current load/estimated load was: {CurrentLoad}/{EstimatedLoad}. Switch-on/peak load of consumer is: {SwitchOnLoad}/{PeakLoad}", consumer.Name, currentLoad, estimatedLoad, consumer.SwitchOnLoad, consumer.PeakLoad);
             consumer.Stop();
             estimatedLoad -= consumer.CurrentLoad;
         }
@@ -212,7 +213,7 @@ public class EnergyManager : IDisposable
             var consumersThatShouldForceStopped = Consumers.Where(x => x.CanForceStopOnPeakLoad(_scheduler.Now) && x.Running);
             foreach (var consumer in consumersThatShouldForceStopped)
             {
-                _logger.LogDebug("{Consumer}: Will stop consumer right now because peak load was exceeded.", consumer.Name);
+                _logger.LogDebug("{Consumer}: Will stop consumer right now because peak load was exceeded. Current load/estimated load was: {CurrentLoad}/{EstimatedLoad}. Switch-on/peak load of consumer is: {SwitchOnLoad}/{PeakLoad}", consumer.Name, currentLoad, estimatedLoad, consumer.SwitchOnLoad, consumer.PeakLoad);
                 consumer.Stop();
                 estimatedLoad -= consumer.CurrentLoad;
 

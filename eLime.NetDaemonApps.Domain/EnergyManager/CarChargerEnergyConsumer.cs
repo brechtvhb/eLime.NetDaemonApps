@@ -17,11 +17,18 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
     public InputNumberEntity CurrentEntity { get; set; }
     public override bool Running => (CurrentEntity.State ?? 0) > OffCurrent;
 
-    public override double PeakLoad => (CurrentEntity.State > OffCurrent) ? MinimumCurrent * 230 : 0;
+    public override double PeakLoad => (CurrentEntity.State > OffCurrent) ? MinimumCurrentForConnectedCar * VoltageMultiplier : 0;
     public TextSensor StateSensor { get; set; }
 
-    public List<Car> Cars { get; }
+    public List<Car> Cars { get; set; }
 
+    private Car? ConnectedCar => Cars.SingleOrDefault(x => x.IsConnectedToHomeCharger);
+    private Int32 VoltageMultiplier => ConnectedCar?.Mode == CarChargingMode.Ac3Phase ? 230 * 3 : 230;
+    private Int32 MinimumCurrentForConnectedCar => ConnectedCar == null
+        ? MinimumCurrent
+        : ConnectedCar.MinimumCurrent < MinimumCurrent
+            ? ConnectedCar.MinimumCurrent ?? MinimumCurrent
+            : MinimumCurrent;
 
     public DateTimeOffset? _lastCurrentChange;
 
@@ -40,10 +47,11 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         Cars = cars;
     }
 
+    //TODO: needs adjustment for cars where you can set the current
     public (Double current, Double netPowerChange) Rebalance(double netGridUsage)
     {
         var currentCurrent = CurrentEntity.State ?? 0;
-        var netGridCurrent = Math.Round((double)netGridUsage / 230, 0, MidpointRounding.ToZero);
+        var netGridCurrent = Math.Round((double)netGridUsage / VoltageMultiplier, 0, MidpointRounding.ToZero);
 
         var toBeCurrent = currentCurrent - netGridCurrent;
 
@@ -59,7 +67,7 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
             return (0, 0);
 
         ChangeCurrent(toBeCurrent);
-        return (toBeCurrent, netCurrentChange * 230);
+        return (toBeCurrent, netCurrentChange * VoltageMultiplier);
     }
 
     private void ChangeCurrent(Double toBeCurrent)
@@ -74,7 +82,8 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 
     protected override EnergyConsumerState GetDesiredState(DateTimeOffset? now)
     {
-        var needsEnergy = (StateSensor.State == CarChargerStates.Occupied.ToString() || StateSensor.State == CarChargerStates.Charging.ToString()) && Cars.Any(x => (x.CableConnectedSensor.IsOn() && x.BatteryPercentageSensor.State < 100) || (x.IgnoreStateOnForceCharge && CriticallyNeeded != null && CriticallyNeeded.IsOn()));
+        var connectedCarNeedsEnergy = ConnectedCar != null && (ConnectedCar.NeedsEnergy || (ConnectedCar.IgnoreStateOnForceCharge && CriticallyNeeded != null && CriticallyNeeded.IsOn()));
+        var needsEnergy = (StateSensor.State == CarChargerStates.Occupied.ToString() || StateSensor.State == CarChargerStates.Charging.ToString()) && connectedCarNeedsEnergy;
 
         return Running switch
         {
