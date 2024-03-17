@@ -2,11 +2,13 @@
 using eLime.NetDaemonApps.Domain.Entities.DeviceTracker;
 using eLime.NetDaemonApps.Domain.Entities.Input;
 using NetDaemon.HassModel.Entities;
+using System.Reactive.Concurrency;
 
 namespace eLime.NetDaemonApps.Domain.EnergyManager;
 
 public class Car
 {
+    private readonly IScheduler _scheduler;
     public String Name { get; }
     public CarChargingMode Mode { get; }
 
@@ -22,9 +24,12 @@ public class Car
     public BinarySensor CableConnectedSensor { get; }
     public DeviceTracker Location { get; }
 
+    public DateTimeOffset? _lastCurrentChange;
+
     public Car(string name, CarChargingMode mode, InputNumberEntity? currentEntity, int? minimumCurrent, int? maximumCurrent, bool ignoreStateOnForceCharge,
-        double batteryCapacity, NumericEntity batteryPercentageSensor, NumericEntity? maxBatteryPercentageSensor, BinarySensor cableConnectedSensor, DeviceTracker location)
+        double batteryCapacity, NumericEntity batteryPercentageSensor, NumericEntity? maxBatteryPercentageSensor, BinarySensor cableConnectedSensor, DeviceTracker location, IScheduler scheduler)
     {
+        _scheduler = scheduler;
         Name = name;
         Mode = mode;
 
@@ -41,10 +46,25 @@ public class Car
     }
 
     public Boolean IsConnectedToHomeCharger => CableConnectedSensor.IsOn() && Location.State == "home";
+    public Boolean CanSetCurrent => IsConnectedToHomeCharger && CurrentEntity != null;
 
     public Boolean NeedsEnergy => MaxBatteryPercentageSensor != null
         ? BatteryPercentageSensor.State < MaxBatteryPercentageSensor.State
         : BatteryPercentageSensor.State < 100;
+
+    public void ChangeCurrent(Double toBeCurrent)
+    {
+        if (CurrentEntity == null)
+            return;
+
+        if (_lastCurrentChange?.Add(TimeSpan.FromSeconds(5)) > _scheduler.Now)
+            return;
+
+        CurrentEntity.Change(toBeCurrent);
+        _lastCurrentChange = _scheduler.Now;
+    }
+
+
 
 }
 

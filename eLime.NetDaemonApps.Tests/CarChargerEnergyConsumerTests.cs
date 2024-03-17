@@ -150,7 +150,6 @@ public class CarChargerEnergyConsumerTests
         _testCtx.InputNumberChanged(consumer.CurrentEntity, 6, Moq.Times.Never);
     }
 
-
     [TestMethod]
     public void ExcessEnergy_Adjusts_Load()
     {
@@ -332,5 +331,219 @@ public class CarChargerEnergyConsumerTests
         //Assert
         Assert.AreEqual(EnergyConsumerState.Off, energyManager.Consumers.First().State);
         _testCtx.InputNumberChanged(consumer.CurrentEntity, 5, Moq.Times.Exactly(2));
+    }
+
+    [TestMethod]
+    public void MaxBatteryReached_Triggers_TurnOff()
+    {
+        // Arrange
+        var consumer = new CarChargerEnergyConsumerBuilder(_logger, _testCtx)
+            .InitTeslaTests()
+            .Build();
+
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+            .AddConsumer(consumer)
+            .Build();
+
+        //Act
+        _testCtx.TriggerStateChange(consumer.StateSensor, "Occupied");
+        _testCtx.TriggerStateChange(consumer.Cars.First().CableConnectedSensor, "on");
+        _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "5");
+        _testCtx.TriggerStateChange(consumer.Cars.First().MaxBatteryPercentageSensor, "80");
+        _testCtx.TriggerStateChange(consumer.Cars.First().Location, "home");
+
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
+
+        _testCtx.TriggerStateChange(consumer.StateSensor, "Charging");
+        _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "80");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(30));
+
+        //Assert
+        Assert.AreEqual(EnergyConsumerState.Off, energyManager.Consumers.First().State);
+        _testCtx.InputNumberChanged(consumer.CurrentEntity, 5, Moq.Times.Exactly(2));
+    }
+
+    [TestMethod]
+    public void ExcessEnergy_Adjusts_Load_3Phase()
+    {
+        // Arrange
+        var consumer = new CarChargerEnergyConsumerBuilder(_logger, _testCtx)
+            .InitTeslaTests()
+            .Build();
+
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+            .AddConsumer(consumer)
+            .Build();
+
+
+        _testCtx.TriggerStateChange(consumer.StateSensor, "Occupied");
+        _testCtx.TriggerStateChange(consumer.Cars.First().CableConnectedSensor, "on");
+        _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "5");
+        _testCtx.TriggerStateChange(consumer.Cars.First().MaxBatteryPercentageSensor, "80");
+        _testCtx.TriggerStateChange(consumer.Cars.First().Location, "home");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
+
+        //Act
+        _testCtx.TriggerStateChange(consumer.CurrentEntity, "6");
+        _testCtx.TriggerStateChange(consumer.Cars.First().CurrentEntity, "6");
+        _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_production_watt"), "900");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(30));
+
+        //Assert
+        _testCtx.InputNumberChanged(consumer.CurrentEntity, 7, Moq.Times.Once);
+    }
+
+
+    [TestMethod]
+    public void Occupied_Triggers_TurnOn_AndAdjustsCarCurrentForSupportedCar()
+    {
+        // Arrange
+        var consumer = new CarChargerEnergyConsumerBuilder(_logger, _testCtx)
+            .InitTeslaTests()
+            .Build();
+
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+            .AddConsumer(consumer)
+            .Build();
+
+        //Act
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
+        _testCtx.TriggerStateChange(consumer.StateSensor, "Occupied");
+        _testCtx.TriggerStateChange(consumer.Cars.First().CableConnectedSensor, "on");
+        _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "5");
+        _testCtx.TriggerStateChange(consumer.Cars.First().MaxBatteryPercentageSensor, "80");
+        _testCtx.TriggerStateChange(consumer.Cars.First().Location, "home");
+
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(30));
+
+        //Assert
+        Assert.AreEqual(EnergyConsumerState.NeedsEnergy, energyManager.Consumers.First().State);
+        _testCtx.InputNumberChanged(consumer.CurrentEntity, 6, Moq.Times.Once);
+        _testCtx.InputNumberChanged(consumer.Cars.First().CurrentEntity, 1, Moq.Times.Once);
+    }
+
+    [TestMethod]
+    public void ExcessEnergy_Adjusts_Load_AndAdjustsCarCurrentForSupportedCar()
+    {
+        // Arrange
+        var consumer = new CarChargerEnergyConsumerBuilder(_logger, _testCtx)
+            .InitTeslaTests()
+            .Build();
+
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+            .AddConsumer(consumer)
+            .Build();
+
+
+        _testCtx.TriggerStateChange(consumer.StateSensor, "Occupied");
+        _testCtx.TriggerStateChange(consumer.Cars.First().CableConnectedSensor, "on");
+        _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "5");
+        _testCtx.TriggerStateChange(consumer.Cars.First().MaxBatteryPercentageSensor, "80");
+        _testCtx.TriggerStateChange(consumer.Cars.First().Location, "home");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
+
+        //Act
+        _testCtx.TriggerStateChange(consumer.CurrentEntity, "6");
+        _testCtx.TriggerStateChange(consumer.Cars.First().CurrentEntity, "1");
+        _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_production_watt"), "900");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(30));
+
+        //Assert
+        _testCtx.InputNumberChanged(consumer.Cars.First().CurrentEntity, 2, Moq.Times.Once);
+    }
+
+    [TestMethod]
+    public void ExcessEnergy_Adjusts_ChargerAndCarCurrentForSupportedCar()
+    {
+        // Arrange
+        var consumer = new CarChargerEnergyConsumerBuilder(_logger, _testCtx)
+            .InitTeslaTests()
+            .Build();
+
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+            .AddConsumer(consumer)
+            .Build();
+
+        _testCtx.TriggerStateChange(consumer.StateSensor, "Occupied");
+        _testCtx.TriggerStateChange(consumer.Cars.First().CableConnectedSensor, "on");
+        _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "5");
+        _testCtx.TriggerStateChange(consumer.Cars.First().MaxBatteryPercentageSensor, "80");
+        _testCtx.TriggerStateChange(consumer.Cars.First().Location, "home");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
+
+        //Act
+        _testCtx.TriggerStateChange(consumer.CurrentEntity, "6");
+        _testCtx.TriggerStateChange(consumer.Cars.First().CurrentEntity, "5");
+        _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_production_watt"), "1500");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(30));
+
+        //Assert
+        _testCtx.InputNumberChanged(consumer.CurrentEntity, 7, Moq.Times.Once);
+        _testCtx.InputNumberChanged(consumer.Cars.First().CurrentEntity, 7, Moq.Times.Once);
+    }
+
+    [TestMethod]
+    public void ConsumingEnergy_Adjusts_ChargerAndCar()
+    {
+        // Arrange
+        var consumer = new CarChargerEnergyConsumerBuilder(_logger, _testCtx)
+            .WithRuntime(TimeSpan.FromMinutes(5), null)
+            .InitTeslaTests()
+            .Build();
+
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+            .AddConsumer(consumer)
+            .Build();
+
+        _testCtx.TriggerStateChange(consumer.StateSensor, "Occupied");
+        _testCtx.TriggerStateChange(consumer.Cars.First().CableConnectedSensor, "on");
+        _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "5");
+        _testCtx.TriggerStateChange(consumer.Cars.First().MaxBatteryPercentageSensor, "80");
+        _testCtx.TriggerStateChange(consumer.Cars.First().Location, "home");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
+
+        //Act
+        _testCtx.TriggerStateChange(consumer.CurrentEntity, "8");
+        _testCtx.TriggerStateChange(consumer.Cars.First().CurrentEntity, "8");
+        _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_production_watt"), "0");
+        _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_consumption_watt"), "800");
+
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(30));
+
+        //Assert
+        _testCtx.InputNumberChanged(consumer.CurrentEntity, 7, Moq.Times.Once);
+        _testCtx.InputNumberChanged(consumer.Cars.First().CurrentEntity, 7, Moq.Times.Once);
+    }
+
+    [TestMethod]
+    public void ConsumingEnergy_Adjusts_OnlyCarWhenBelowChargerMiniumCurrent()
+    {
+        // Arrange
+        var consumer = new CarChargerEnergyConsumerBuilder(_logger, _testCtx)
+            .WithRuntime(TimeSpan.FromMinutes(5), null)
+            .InitTeslaTests()
+            .Build();
+
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+            .AddConsumer(consumer)
+            .Build();
+
+        _testCtx.TriggerStateChange(consumer.StateSensor, "Occupied");
+        _testCtx.TriggerStateChange(consumer.Cars.First().CableConnectedSensor, "on");
+        _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "5");
+        _testCtx.TriggerStateChange(consumer.Cars.First().MaxBatteryPercentageSensor, "80");
+        _testCtx.TriggerStateChange(consumer.Cars.First().Location, "home");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
+
+        //Act
+        _testCtx.TriggerStateChange(consumer.CurrentEntity, "6");
+        _testCtx.TriggerStateChange(consumer.Cars.First().CurrentEntity, "6");
+        _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_production_watt"), "0");
+        _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_consumption_watt"), "800");
+
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(30));
+
+        //Assert
+        _testCtx.InputNumberChanged(consumer.Cars.First().CurrentEntity, 5, Moq.Times.Once);
     }
 }

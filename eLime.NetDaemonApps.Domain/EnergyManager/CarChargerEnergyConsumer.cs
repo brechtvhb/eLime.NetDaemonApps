@@ -47,27 +47,76 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         Cars = cars;
     }
 
-    //TODO: needs adjustment for cars where you can set the current
     public (Double current, Double netPowerChange) Rebalance(double netGridUsage)
     {
-        var currentCurrent = CurrentEntity.State ?? 0;
+        var currentChargerCurrent = CurrentEntity.State ?? 0;
+        var currentCarCurrent = Cars.First().CurrentEntity?.State ?? 0;
+
         var netGridCurrent = Math.Round((double)netGridUsage / VoltageMultiplier, 0, MidpointRounding.ToZero);
 
-        var toBeCurrent = currentCurrent - netGridCurrent;
+        double toBeChargerCurrent;
+        double toBeCarCurrent = 0;
 
-        if (toBeCurrent < MinimumCurrent)
-            toBeCurrent = MinimumCurrent;
+        if (ConnectedCar?.CanSetCurrent ?? false)
+        {
+            toBeCarCurrent = currentCarCurrent - netGridCurrent;
+            toBeChargerCurrent = toBeCarCurrent;
+        }
+        else
+        {
+            toBeChargerCurrent = currentChargerCurrent - netGridCurrent;
+        }
 
-        if (toBeCurrent > MaximumCurrent)
-            toBeCurrent = MaximumCurrent;
 
-        var netCurrentChange = toBeCurrent - currentCurrent;
+        var (chargerCurrent, chargerCurrentChanged) = SetChargerCurrent(toBeChargerCurrent, currentChargerCurrent);
+        var (carCurrent, carCurrentChanged) = SetCarCurrentIfSupported(toBeCarCurrent, currentChargerCurrent);
 
-        if (netCurrentChange == 0)
+        if (!chargerCurrentChanged && !carCurrentChanged)
             return (0, 0);
 
-        ChangeCurrent(toBeCurrent);
-        return (toBeCurrent, netCurrentChange * VoltageMultiplier);
+        var netCurrentChange = ConnectedCar?.CanSetCurrent ?? false
+            ? carCurrent - currentChargerCurrent
+            : chargerCurrent - currentChargerCurrent;
+
+        return (ConnectedCar?.CanSetCurrent ?? false ? carCurrent : chargerCurrent, netCurrentChange * VoltageMultiplier);
+    }
+
+    private (double chargercurrent, bool changed) SetChargerCurrent(double chargerCurrent, double currentCurrent)
+    {
+        if (chargerCurrent < MinimumCurrent)
+            chargerCurrent = MinimumCurrent;
+
+        if (chargerCurrent > MaximumCurrent)
+            chargerCurrent = MaximumCurrent;
+
+        var netCurrentChange = chargerCurrent - currentCurrent;
+
+        if (netCurrentChange == 0)
+            return (chargerCurrent, false);
+
+        ChangeCurrent(chargerCurrent);
+
+        return (chargerCurrent, true);
+    }
+
+    private (double carCurrent, bool changed) SetCarCurrentIfSupported(double carCurrent, double currentCurrent)
+    {
+        if (!(ConnectedCar?.CanSetCurrent ?? false))
+            return (carCurrent, false);
+
+        if (carCurrent < ConnectedCar.MinimumCurrent)
+            carCurrent = ConnectedCar.MinimumCurrent ?? 0;
+
+        if (carCurrent > ConnectedCar.MaximumCurrent)
+            carCurrent = ConnectedCar.MaximumCurrent ?? 0;
+
+        var netCurrentChange = carCurrent - currentCurrent;
+
+        if (netCurrentChange == 0)
+            return (carCurrent, false);
+
+        ConnectedCar.ChangeCurrent(carCurrent);
+        return (carCurrent, true);
     }
 
     private void ChangeCurrent(Double toBeCurrent)
@@ -132,6 +181,9 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
     public override void TurnOn()
     {
         ChangeCurrent(MinimumCurrent);
+
+        if (ConnectedCar?.CanSetCurrent ?? false)
+            ConnectedCar?.ChangeCurrent(ConnectedCar?.MinimumCurrent ?? 1);
     }
 
     public override void TurnOff()
