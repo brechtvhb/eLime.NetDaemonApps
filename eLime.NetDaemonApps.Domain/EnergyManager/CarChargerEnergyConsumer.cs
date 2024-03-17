@@ -198,6 +198,9 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 
         CurrentEntity.Changed -= CurrentEntity_Changed;
         CurrentEntity.Dispose();
+
+        foreach (var car in Cars)
+            car.Dispose();
     }
 
     private void CurrentEntity_Changed(object? sender, InputNumberSensorEventArgs e)

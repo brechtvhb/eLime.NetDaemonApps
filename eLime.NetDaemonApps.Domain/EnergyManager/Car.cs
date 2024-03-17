@@ -64,6 +64,10 @@ public class Car
         _lastCurrentChange = _scheduler.Now;
     }
 
+    public void Dispose()
+    {
+        CurrentEntity?.Dispose();
+    }
 
 
 }
