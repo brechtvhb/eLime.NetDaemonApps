@@ -28,6 +28,9 @@ public record Climate : Entity<Climate, EntityState<ClimateAttributes>, ClimateA
                 if (x.New == null)
                     return;
 
+                if (x.Old?.Attributes?.FanMode == x.New?.Attributes?.FanMode)
+                    return;
+
                 OnStateChanged(new ClimateEventArgs(x));
             });
     }
