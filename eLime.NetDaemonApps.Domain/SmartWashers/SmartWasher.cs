@@ -250,8 +250,8 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers
 
             if (e.New?.State == 0 && NoPowerResetter == null && State != WasherStates.Idle && State != WasherStates.DelayedStart && State != WasherStates.Ready)
             {
-                _logger.LogInformation("Wonky washer detected! Will reset washer to Idle in 5 minutes if socket power usage remains 0.");
-                NoPowerResetter = _scheduler.Schedule(TimeSpan.FromMinutes(10), () => TransitionTo(_logger, new IdleState()));
+                _logger.LogInformation("Wonky washer detected! Will reset washer to Idle in 10 minutes if socket power usage remains 0.");
+                NoPowerResetter = _scheduler.Schedule(TimeSpan.FromMinutes(10), () => TransitionTo(_logger, new ReadyState()));
             }
 
             if (e.New?.State != 0 && NoPowerResetter != null)
