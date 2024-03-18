@@ -78,7 +78,7 @@ public class SmartWasherTests
         _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(11));
 
         //Assert
-        Assert.AreEqual(WasherStates.Idle, washer.State);
+        Assert.AreEqual(WasherStates.Ready, washer.State);
     }
 
     [TestMethod]
