@@ -516,7 +516,7 @@ public class CarChargerEnergyConsumerTests
     }
 
     [TestMethod]
-    public void ConsumingEnergy_Adjusts_OnlyCarWhenBelowChargerMiniumCurrent()
+    public void ConsumingEnergy_Adjusts_OnlyCarWhenBelowChargerMinimumCurrent()
     {
         // Arrange
         var consumer = new CarChargerEnergyConsumerBuilder(_logger, _testCtx)
