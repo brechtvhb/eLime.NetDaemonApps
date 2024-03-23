@@ -134,7 +134,7 @@ public abstract class EnergyConsumer : IDisposable
         if (now > end)
             end = end.AddDays(1);
 
-        var timeUntilEndOfWindow = now - end;
+        var timeUntilEndOfWindow = end - now;
 
         if (MaximumRuntime == null)
             return GetRemainingRunTime(timeUntilEndOfWindow, now);
