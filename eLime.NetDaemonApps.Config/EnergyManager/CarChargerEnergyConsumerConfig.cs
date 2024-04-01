@@ -21,8 +21,6 @@ public class CarConfig
     public int? MinimumCurrent { get; set; }
     public int? MaximumCurrent { get; set; }
 
-    public Boolean IgnoreStateOnForceCharge { get; set; }
-
     public Double BatteryCapacity { get; set; }
     public String BatteryPercentageSensor { get; set; }
     public String MaxBatteryPercentageSensor { get; set; }

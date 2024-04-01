@@ -147,7 +147,7 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 
     protected override EnergyConsumerState GetDesiredState(DateTimeOffset? now)
     {
-        var connectedCarNeedsEnergy = ConnectedCar != null && (ConnectedCar.NeedsEnergy || (ConnectedCar.IgnoreStateOnForceCharge && CriticallyNeeded != null && CriticallyNeeded.IsOn()));
+        var connectedCarNeedsEnergy = ConnectedCar?.NeedsEnergy ?? false;
         var needsEnergy = (StateSensor.State == CarChargerStates.Occupied.ToString() || StateSensor.State == CarChargerStates.Charging.ToString()) && connectedCarNeedsEnergy;
 
         return Running switch

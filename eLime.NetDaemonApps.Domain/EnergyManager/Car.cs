@@ -17,7 +17,6 @@ public class Car
     public InputNumberEntity? CurrentEntity { get; set; }
 
     public Double BatteryCapacity { get; }
-    public Boolean IgnoreStateOnForceCharge { get; set; }
 
     public NumericEntity BatteryPercentageSensor { get; }
     public NumericEntity? MaxBatteryPercentageSensor { get; }
@@ -26,8 +25,9 @@ public class Car
 
     public DateTimeOffset? _lastCurrentChange;
 
-    public Car(string name, CarChargingMode mode, InputNumberEntity? currentEntity, int? minimumCurrent, int? maximumCurrent, bool ignoreStateOnForceCharge,
-        double batteryCapacity, NumericEntity batteryPercentageSensor, NumericEntity? maxBatteryPercentageSensor, BinarySensor cableConnectedSensor, DeviceTracker location, IScheduler scheduler)
+    public Car(string name, CarChargingMode mode, InputNumberEntity? currentEntity, int? minimumCurrent, int? maximumCurrent,
+        double batteryCapacity, NumericEntity batteryPercentageSensor, NumericEntity? maxBatteryPercentageSensor,
+        BinarySensor cableConnectedSensor, DeviceTracker location, IScheduler scheduler)
     {
         _scheduler = scheduler;
         Name = name;
@@ -38,7 +38,6 @@ public class Car
         MaximumCurrent = maximumCurrent;
 
         BatteryCapacity = batteryCapacity;
-        IgnoreStateOnForceCharge = ignoreStateOnForceCharge;
         BatteryPercentageSensor = batteryPercentageSensor;
         MaxBatteryPercentageSensor = maxBatteryPercentageSensor;
         CableConnectedSensor = cableConnectedSensor;
