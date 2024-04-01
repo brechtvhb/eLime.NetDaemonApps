@@ -183,10 +183,15 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 
     public override void TurnOn()
     {
-        ChangeCurrent(MinimumCurrent);
-
         if (ConnectedCar?.CanSetCurrent ?? false)
+        {
+            ChangeCurrent(MaximumCurrent);
             ConnectedCar?.ChangeCurrent(ConnectedCar?.MinimumCurrent ?? 1);
+        }
+        else
+        {
+            ChangeCurrent(MinimumCurrent);
+        }
     }
 
     public override void TurnOff()
