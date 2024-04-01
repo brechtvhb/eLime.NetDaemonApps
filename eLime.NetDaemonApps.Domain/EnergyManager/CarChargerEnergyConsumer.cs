@@ -75,7 +75,7 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
             return (0, 0);
 
         var netCurrentChange = ConnectedCar?.CanSetCurrent ?? false
-            ? carCurrent - currentChargerCurrent
+            ? carCurrent - currentCarCurrent
             : chargerCurrent - currentChargerCurrent;
 
         return (ConnectedCar?.CanSetCurrent ?? false ? carCurrent : chargerCurrent, netCurrentChange * VoltageMultiplier);
