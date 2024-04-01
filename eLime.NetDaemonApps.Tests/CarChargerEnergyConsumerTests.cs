@@ -419,7 +419,7 @@ public class CarChargerEnergyConsumerTests
 
         //Assert
         Assert.AreEqual(EnergyConsumerState.NeedsEnergy, energyManager.Consumers.First().State);
-        _testCtx.InputNumberChanged(consumer.CurrentEntity, 6, Moq.Times.Once);
+        _testCtx.InputNumberChanged(consumer.CurrentEntity, 16, Moq.Times.Once);
         _testCtx.InputNumberChanged(consumer.Cars.First().CurrentEntity, 1, Moq.Times.Once);
     }
 
