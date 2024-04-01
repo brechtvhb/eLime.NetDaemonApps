@@ -9,9 +9,12 @@ namespace eLime.NetDaemonApps.Domain.EnergyManager;
 
 public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 {
+    public IDisposable? BalancingMethodChangedCommandHandler { get; set; }
     private readonly IScheduler _scheduler;
+
     public Int32 MinimumCurrent { get; set; }
     public Int32 MaximumCurrent { get; set; }
+    public BalancingMethod BalancingMethod { get; set; }
     public Int32 OffCurrent { get; set; }
 
     public InputNumberEntity CurrentEntity { get; set; }
@@ -47,12 +50,12 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         Cars = cars;
     }
 
-    public (Double current, Double netPowerChange) Rebalance(double netGridUsage)
+    public (Double current, Double netPowerChange) Rebalance(double netGridUsage, double peakUsage)
     {
         var currentChargerCurrent = CurrentEntity.State ?? 0;
         var currentCarCurrent = ConnectedCar?.CurrentEntity?.State ?? 0;
 
-        var netGridCurrent = Math.Round((double)netGridUsage / VoltageMultiplier, 0, MidpointRounding.ToZero);
+        var netGridCurrent = GetBalancingAdjustedGridCurrent(netGridUsage, peakUsage);
 
         double toBeChargerCurrent;
         double toBeCarCurrent = 0;
@@ -67,9 +70,8 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
             toBeChargerCurrent = currentChargerCurrent - netGridCurrent;
         }
 
-
         var (chargerCurrent, chargerCurrentChanged) = SetChargerCurrent(ConnectedCar, toBeChargerCurrent, currentChargerCurrent);
-        var (carCurrent, carCurrentChanged) = SetCarCurrentIfSupported(toBeCarCurrent, currentChargerCurrent);
+        var (carCurrent, carCurrentChanged) = SetCarCurrentIfSupported(toBeCarCurrent, currentCarCurrent);
 
         if (!chargerCurrentChanged && !carCurrentChanged)
             return (0, 0);
@@ -79,6 +81,16 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
             : chargerCurrent - currentChargerCurrent;
 
         return (ConnectedCar?.CanSetCurrent ?? false ? carCurrent : chargerCurrent, netCurrentChange * VoltageMultiplier);
+    }
+
+    private double GetBalancingAdjustedGridCurrent(double netGridUsage, double peakUsage)
+    {
+        return BalancingMethod switch
+        {
+            BalancingMethod.NearPeak => Math.Round((double)(netGridUsage - peakUsage) / VoltageMultiplier, 0, MidpointRounding.ToPositiveInfinity),
+            BalancingMethod.SolarPreferred => Math.Round((double)netGridUsage / VoltageMultiplier, 0, MidpointRounding.ToPositiveInfinity),
+            _ => Math.Round((double)netGridUsage / VoltageMultiplier, 0, MidpointRounding.ToNegativeInfinity)
+        };
     }
 
     private (double chargercurrent, bool changed) SetChargerCurrent(Car? connectedCar, double chargerCurrent, double currentCurrent)
@@ -102,7 +114,7 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         return (chargerCurrent, true);
     }
 
-    private (double carCurrent, bool changed) SetCarCurrentIfSupported(double carCurrent, double currentCurrent)
+    private (double carCurrent, bool changed) SetCarCurrentIfSupported(double carCurrent, double currentCarCurrent)
     {
         if (!(ConnectedCar?.CanSetCurrent ?? false))
             return (carCurrent, false);
@@ -113,7 +125,7 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         if (carCurrent > ConnectedCar.MaximumCurrent)
             carCurrent = ConnectedCar.MaximumCurrent ?? 0;
 
-        var netCurrentChange = carCurrent - currentCurrent;
+        var netCurrentChange = carCurrent - currentCarCurrent;
 
         if (netCurrentChange == 0)
             return (carCurrent, false);
@@ -202,6 +214,7 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
     public new void Dispose()
     {
         base.Dispose();
+        BalancingMethodChangedCommandHandler?.Dispose();
         StateSensor.Dispose();
 
         CurrentEntity.Changed -= CurrentEntity_Changed;

@@ -56,6 +56,7 @@ public class EnergyManager : IDisposable
         foreach (var energyConsumer in Consumers)
         {
             InitializeConsumerSensors(energyConsumer).RunSync();
+            InitializeBalancingModeDropDown(energyConsumer).RunSync();
             InitializeState(energyConsumer);
             energyConsumer.StateChanged += EnergyConsumer_StateChanged;
         }
@@ -122,7 +123,7 @@ public class EnergyManager : IDisposable
 
         foreach (var dynamicLoadConsumer in dynamicLoadConsumers)
         {
-            var (current, netChange) = dynamicLoadConsumer.Rebalance(estimatedLoad);
+            var (current, netChange) = dynamicLoadConsumer.Rebalance(estimatedLoad, GridMonitor.PeakLoad);
 
             if (netChange == 0)
                 continue;
@@ -276,6 +277,43 @@ public class EnergyManager : IDisposable
         }
     }
 
+    private async Task InitializeBalancingModeDropDown(EnergyConsumer consumer)
+    {
+        if (consumer is not IDynamicLoadConsumer dynamicLoadConsumer)
+            return;
+
+        var selectName = $"select.energy_consumer_{consumer.Name.MakeHaFriendly()}_balancing_method";
+        var state = _haContext.Entity(selectName).State;
+
+        if (state == null)
+        {
+            _logger.LogDebug("{Consumer}: Creating Dynamic Load balancing method dropdown in home assistant.", consumer.Name);
+            var selectOptions = new SelectOptions()
+            {
+                Icon = "mdi:car-turbocharger",
+                Options = Enum<BalancingMethod>.AllValuesAsStringList(),
+                Device = GetConsumerDevice(consumer)
+            };
+
+            await _mqttEntityManager.CreateAsync(selectName, new EntityCreationOptions(UniqueId: selectName, Name: $"Dynamic load balancing method - {consumer.Name}", DeviceClass: "select", Persist: true), selectOptions);
+            await _mqttEntityManager.SetStateAsync(selectName, BalancingMethod.SolarMaximized.ToString());
+            dynamicLoadConsumer.BalancingMethod = BalancingMethod.SolarMaximized;
+        }
+
+        var observer = await _mqttEntityManager.PrepareCommandSubscriptionAsync(selectName);
+        dynamicLoadConsumer.BalancingMethodChangedCommandHandler = observer.SubscribeAsync(SetBalancingMethodHandler(dynamicLoadConsumer, selectName));
+    }
+
+    private Func<string, Task> SetBalancingMethodHandler(IDynamicLoadConsumer dynamicLoadConsumer, string selectName)
+    {
+        return async state =>
+        {
+            _logger.LogDebug("{Consumer}: Setting dynamic load balancing method to{State}.", dynamicLoadConsumer.Name, state);
+            await _mqttEntityManager.SetStateAsync(selectName, state);
+            dynamicLoadConsumer.BalancingMethod = Enum<BalancingMethod>.Cast(state);
+        };
+    }
+
     private void InitializeState(EnergyConsumer consumer)
     {
         var storedEnergyConsumerState = _fileStorage.Get<EnergyConsumerFileStorage>("EnergyManager", $"{consumer.Name.MakeHaFriendly()}");
@@ -284,6 +322,11 @@ public class EnergyManager : IDisposable
             return;
 
         consumer.SetState(_scheduler, storedEnergyConsumerState.State, storedEnergyConsumerState.StartedAt, storedEnergyConsumerState.LastRun);
+
+        if (consumer is not IDynamicLoadConsumer dynamicLoadConsumer || storedEnergyConsumerState.BalancingMethod is null)
+            return;
+
+        dynamicLoadConsumer.BalancingMethod = storedEnergyConsumerState.BalancingMethod ?? BalancingMethod.SolarMaximized;
     }
 
     public Device GetGlobalDevice()

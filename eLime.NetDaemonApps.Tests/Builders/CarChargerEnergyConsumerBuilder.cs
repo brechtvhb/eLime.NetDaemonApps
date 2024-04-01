@@ -29,6 +29,7 @@ public class CarChargerEnergyConsumerBuilder
     public int _minimumCurrent;
     public int _maximumCurrent;
     public int _offCurrent;
+    private BalancingMethod _balancingMethod = BalancingMethod.SolarMaximized;
 
     public InputNumberEntity _currentEntity;
     public TextSensor _stateSensor;
@@ -123,6 +124,12 @@ public class CarChargerEnergyConsumerBuilder
         return this;
     }
 
+    public CarChargerEnergyConsumerBuilder WithBalancingMethod(BalancingMethod balancingMethod)
+    {
+        _balancingMethod = balancingMethod;
+        return this;
+    }
+
     public CarChargerEnergyConsumerBuilder AddCar(String name, CarChargingMode mode, InputNumberEntity? currentEntity, Int32? minimumCurrent, Int32? maximumCurrent, Double batteryCapacity, Boolean ignoreStateOnForceCharge, NumericEntity batteryPercentageSensor, NumericEntity? maxBatteryPercentageSensor, BinarySensor cableConnectedSensor, DeviceTracker location)
     {
         _cars.Add(new Car(name, mode, currentEntity, minimumCurrent, maximumCurrent, ignoreStateOnForceCharge, batteryCapacity, batteryPercentageSensor, maxBatteryPercentageSensor, cableConnectedSensor, location, _testCtx.Scheduler));
@@ -132,6 +139,7 @@ public class CarChargerEnergyConsumerBuilder
     public CarChargerEnergyConsumer Build()
     {
         var x = new CarChargerEnergyConsumer(_logger, _name, _powerUsage, _criticallyNeeded, _switchOnLoad, _switchOffLoad, _minimumRuntime, _maximumRuntime, _minimumTimeout, _maximumTimeout, _timeWindows, _minimumCurrent, _maximumCurrent, _offCurrent, _currentEntity, _stateSensor, _cars, _testCtx.Scheduler);
+        x.BalancingMethod = _balancingMethod;
         return x;
     }
 }

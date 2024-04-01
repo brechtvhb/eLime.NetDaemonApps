@@ -33,12 +33,22 @@ public abstract class EnergyConsumer : IDisposable
 
     public event EventHandler<EnergyConsumerStateChangedEvent>? StateChanged;
 
-    internal EnergyConsumerFileStorage ToFileStorage() => new()
+    internal EnergyConsumerFileStorage ToFileStorage()
     {
-        State = State,
-        StartedAt = StartedAt,
-        LastRun = LastRun,
-    };
+        var fileStorage = new EnergyConsumerFileStorage
+        {
+            State = State,
+            StartedAt = StartedAt,
+            LastRun = LastRun,
+        };
+
+        if (this is not IDynamicLoadConsumer dynamicLoadConsumer)
+            return fileStorage;
+
+        fileStorage.BalancingMethod = dynamicLoadConsumer.BalancingMethod;
+
+        return fileStorage;
+    }
 
     protected void SetCommonFields(ILogger logger, String name, NumericEntity powerUsage, BinarySensor? criticallyNeeded, Double switchOnLoad, Double switchOffLoad, TimeSpan? minimumRuntime, TimeSpan? maximumRuntime, TimeSpan? minimumTimeout, TimeSpan? maximumTimeout, List<TimeWindow> timeWindows)
     {
