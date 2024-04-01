@@ -50,7 +50,7 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
     public (Double current, Double netPowerChange) Rebalance(double netGridUsage)
     {
         var currentChargerCurrent = CurrentEntity.State ?? 0;
-        var currentCarCurrent = Cars.First().CurrentEntity?.State ?? 0;
+        var currentCarCurrent = ConnectedCar?.CurrentEntity?.State ?? 0;
 
         var netGridCurrent = Math.Round((double)netGridUsage / VoltageMultiplier, 0, MidpointRounding.ToZero);
 
