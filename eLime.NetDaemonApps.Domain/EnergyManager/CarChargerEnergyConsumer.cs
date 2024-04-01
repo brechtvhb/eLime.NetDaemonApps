@@ -68,7 +68,7 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         }
 
 
-        var (chargerCurrent, chargerCurrentChanged) = SetChargerCurrent(toBeChargerCurrent, currentChargerCurrent);
+        var (chargerCurrent, chargerCurrentChanged) = SetChargerCurrent(ConnectedCar, toBeChargerCurrent, currentChargerCurrent);
         var (carCurrent, carCurrentChanged) = SetCarCurrentIfSupported(toBeCarCurrent, currentChargerCurrent);
 
         if (!chargerCurrentChanged && !carCurrentChanged)
@@ -81,12 +81,15 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         return (ConnectedCar?.CanSetCurrent ?? false ? carCurrent : chargerCurrent, netCurrentChange * VoltageMultiplier);
     }
 
-    private (double chargercurrent, bool changed) SetChargerCurrent(double chargerCurrent, double currentCurrent)
+    private (double chargercurrent, bool changed) SetChargerCurrent(Car? connectedCar, double chargerCurrent, double currentCurrent)
     {
         if (chargerCurrent < MinimumCurrent)
             chargerCurrent = MinimumCurrent;
 
         if (chargerCurrent > MaximumCurrent)
+            chargerCurrent = MaximumCurrent;
+
+        if (connectedCar?.CanSetCurrent ?? false)
             chargerCurrent = MaximumCurrent;
 
         var netCurrentChange = chargerCurrent - currentCurrent;

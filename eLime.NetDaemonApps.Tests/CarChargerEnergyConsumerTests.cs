@@ -390,7 +390,8 @@ public class CarChargerEnergyConsumerTests
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(30));
 
         //Assert
-        _testCtx.InputNumberChanged(consumer.CurrentEntity, 7, Moq.Times.Once);
+        _testCtx.InputNumberChanged(consumer.CurrentEntity, 16, Moq.Times.Once);
+        _testCtx.InputNumberChanged(consumer.Cars.First().CurrentEntity, 7, Moq.Times.Once);
     }
 
 
@@ -478,7 +479,7 @@ public class CarChargerEnergyConsumerTests
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(30));
 
         //Assert
-        _testCtx.InputNumberChanged(consumer.CurrentEntity, 7, Moq.Times.Once);
+        _testCtx.InputNumberChanged(consumer.CurrentEntity, 16, Moq.Times.Once);
         _testCtx.InputNumberChanged(consumer.Cars.First().CurrentEntity, 7, Moq.Times.Once);
     }
 
@@ -511,7 +512,7 @@ public class CarChargerEnergyConsumerTests
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(30));
 
         //Assert
-        _testCtx.InputNumberChanged(consumer.CurrentEntity, 7, Moq.Times.Once);
+        _testCtx.InputNumberChanged(consumer.CurrentEntity, 16, Moq.Times.Once);
         _testCtx.InputNumberChanged(consumer.Cars.First().CurrentEntity, 7, Moq.Times.Once);
     }
 
