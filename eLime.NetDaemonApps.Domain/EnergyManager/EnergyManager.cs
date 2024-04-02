@@ -308,7 +308,7 @@ public class EnergyManager : IDisposable
     {
         return async state =>
         {
-            _logger.LogDebug("{Consumer}: Setting dynamic load balancing method to{State}.", dynamicLoadConsumer.Name, state);
+            _logger.LogDebug("{Consumer}: Setting dynamic load balancing method to {State}.", dynamicLoadConsumer.Name, state);
             await _mqttEntityManager.SetStateAsync(selectName, state);
             dynamicLoadConsumer.BalancingMethod = Enum<BalancingMethod>.Cast(state);
         };
