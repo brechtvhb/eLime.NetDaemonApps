@@ -7,6 +7,7 @@ public class CarChargerEnergyConsumerConfig
     public Int32 OffCurrent { get; set; }
 
     public String CurrentEntity { get; set; }
+    public String VoltageEntity { get; set; }
     public String StateSensor { get; set; }
     public List<CarConfig> Cars { get; set; }
 

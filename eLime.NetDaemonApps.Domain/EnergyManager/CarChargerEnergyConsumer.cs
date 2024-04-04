@@ -20,13 +20,16 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
     public InputNumberEntity CurrentEntity { get; set; }
     public override bool Running => (CurrentEntity.State ?? 0) > OffCurrent;
 
-    public override double PeakLoad => MinimumCurrentForConnectedCar * VoltageMultiplier;
+    public override double PeakLoad => MinimumCurrentForConnectedCar * TotalVoltage;
     public TextSensor StateSensor { get; set; }
 
     public List<Car> Cars { get; set; }
 
     private Car? ConnectedCar => Cars.SingleOrDefault(x => x.IsConnectedToHomeCharger);
-    private Int32 VoltageMultiplier => ConnectedCar?.Mode == CarChargingMode.Ac3Phase ? 230 * 3 : 230;
+    public NumericEntity? VoltageEntity { get; set; }
+    public Int32 SinglePhaseVoltage => Convert.ToInt32(VoltageEntity?.State ?? 230);
+
+    private Int32 TotalVoltage => ConnectedCar?.Mode == CarChargingMode.Ac3Phase ? SinglePhaseVoltage * 3 : SinglePhaseVoltage;
     private Int32 MinimumCurrentForConnectedCar => ConnectedCar == null
         ? MinimumCurrent
         : ConnectedCar.MinimumCurrent < MinimumCurrent
@@ -36,7 +39,7 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
     public DateTimeOffset? _lastCurrentChange;
 
     public CarChargerEnergyConsumer(ILogger logger, String name, NumericEntity powerUsage, BinarySensor? criticallyNeeded, Double switchOnLoad, Double switchOffLoad, TimeSpan? minimumRuntime, TimeSpan? maximumRuntime, TimeSpan? minimumTimeout,
-        TimeSpan? maximumTimeout, List<TimeWindow> timeWindows, Int32 minimumCurrent, Int32 maximumCurrent, Int32 offCurrent, InputNumberEntity currentEntity, TextSensor stateSensor, List<Car> cars, IScheduler scheduler)
+        TimeSpan? maximumTimeout, List<TimeWindow> timeWindows, Int32 minimumCurrent, Int32 maximumCurrent, Int32 offCurrent, InputNumberEntity currentEntity, NumericEntity voltageEntity, TextSensor stateSensor, List<Car> cars, IScheduler scheduler)
     {
         _scheduler = scheduler;
         SetCommonFields(logger, name, powerUsage, criticallyNeeded, switchOnLoad, switchOffLoad, minimumRuntime, maximumRuntime, minimumTimeout, maximumTimeout, timeWindows);
@@ -46,6 +49,8 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 
         CurrentEntity = currentEntity;
         CurrentEntity.Changed += CurrentEntity_Changed;
+
+        VoltageEntity = voltageEntity;
         StateSensor = stateSensor;
         Cars = cars;
     }
@@ -80,17 +85,17 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
             ? carCurrent - currentCarCurrent
             : chargerCurrent - currentChargerCurrent;
 
-        return (ConnectedCar?.CanSetCurrent ?? false ? carCurrent : chargerCurrent, netCurrentChange * VoltageMultiplier);
+        return (ConnectedCar?.CanSetCurrent ?? false ? carCurrent : chargerCurrent, netCurrentChange * TotalVoltage);
     }
 
     private double GetBalancingAdjustedGridCurrent(double netGridUsage, double peakUsage)
     {
         return BalancingMethod switch
         {
-            _ when CriticallyNeeded?.IsOn() == true => Math.Round((double)(netGridUsage - peakUsage) / VoltageMultiplier, 0, MidpointRounding.ToPositiveInfinity),
-            BalancingMethod.NearPeak => Math.Round((double)(netGridUsage - peakUsage) / VoltageMultiplier, 0, MidpointRounding.ToPositiveInfinity),
-            BalancingMethod.SolarPreferred => Math.Round((double)netGridUsage / VoltageMultiplier, 0, MidpointRounding.ToPositiveInfinity),
-            _ => Math.Round((double)netGridUsage / VoltageMultiplier, 0, MidpointRounding.ToNegativeInfinity)
+            _ when CriticallyNeeded?.IsOn() == true => Math.Round((double)(netGridUsage - peakUsage) / TotalVoltage, 0, MidpointRounding.ToPositiveInfinity),
+            BalancingMethod.NearPeak => Math.Round((double)(netGridUsage - peakUsage) / TotalVoltage, 0, MidpointRounding.ToPositiveInfinity),
+            BalancingMethod.SolarPreferred => Math.Round((double)netGridUsage / TotalVoltage, 0, MidpointRounding.ToPositiveInfinity),
+            _ => Math.Round((double)netGridUsage / TotalVoltage, 0, MidpointRounding.ToNegativeInfinity)
         };
     }
 

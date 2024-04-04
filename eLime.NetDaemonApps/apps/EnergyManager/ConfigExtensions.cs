@@ -70,9 +70,11 @@ public static class ConfigExtensions
                 }
 
                 var currentEntity = InputNumberEntity.Create(ha, consumer.CarCharger.CurrentEntity);
+                var voltageEntity = !String.IsNullOrEmpty(consumer.CarCharger.VoltageEntity) ? new NumericEntity(ha, consumer.CarCharger.VoltageEntity) : null;
                 var stateSensor = TextSensor.Create(ha, consumer.CarCharger.StateSensor);
 
-                energyConsumer = new CarChargerEnergyConsumer(logger, consumer.Name, powerUsageEntity, criticallyNeededEntity, consumer.SwitchOnLoad, consumer.SwitchOffLoad, consumer.MinimumRuntime, consumer.MaximumRuntime, consumer.MinimumTimeout, consumer.MaximumTimeout, timeWindows, consumer.CarCharger.MinimumCurrent, consumer.CarCharger.MaximumCurrent, consumer.CarCharger.OffCurrent, currentEntity, stateSensor, cars, scheduler);
+                energyConsumer = new CarChargerEnergyConsumer(logger, consumer.Name, powerUsageEntity, criticallyNeededEntity, consumer.SwitchOnLoad, consumer.SwitchOffLoad, consumer.MinimumRuntime, consumer.MaximumRuntime, consumer.MinimumTimeout, consumer.MaximumTimeout, timeWindows,
+                    consumer.CarCharger.MinimumCurrent, consumer.CarCharger.MaximumCurrent, consumer.CarCharger.OffCurrent, currentEntity, voltageEntity, stateSensor, cars, scheduler);
             }
 
 

@@ -29,9 +29,10 @@ public class CarChargerEnergyConsumerBuilder
     public int _minimumCurrent;
     public int _maximumCurrent;
     public int _offCurrent;
-    private BalancingMethod _balancingMethod = BalancingMethod.SolarMaximized;
+    private BalancingMethod _balancingMethod = BalancingMethod.SolarOnly;
 
     public InputNumberEntity _currentEntity;
+    public NumericEntity _voltageEntity;
     public TextSensor _stateSensor;
 
     public List<Car> _cars = new();
@@ -51,6 +52,7 @@ public class CarChargerEnergyConsumerBuilder
         _offCurrent = 5;
 
         _currentEntity = InputNumberEntity.Create(_testCtx.HaContext, "input_number.y");
+        _voltageEntity = new NumericEntity(_testCtx.HaContext, "sensor.voltage");
         WithStateSensor(TextSensor.Create(_testCtx.HaContext, "sensor.z"));
         AddCar("Passat GTE", CarChargingMode.Ac1Phase, null, 6, 16, 11.5, new NumericEntity(_testCtx.HaContext, "sensor.a"), null, new BinarySensor(_testCtx.HaContext, "binary_sensor.b"), new DeviceTracker(_testCtx.HaContext, "device_tracker.passat_gte_position"));
     }
@@ -138,7 +140,8 @@ public class CarChargerEnergyConsumerBuilder
 
     public CarChargerEnergyConsumer Build()
     {
-        var x = new CarChargerEnergyConsumer(_logger, _name, _powerUsage, _criticallyNeeded, _switchOnLoad, _switchOffLoad, _minimumRuntime, _maximumRuntime, _minimumTimeout, _maximumTimeout, _timeWindows, _minimumCurrent, _maximumCurrent, _offCurrent, _currentEntity, _stateSensor, _cars, _testCtx.Scheduler);
+        var x = new CarChargerEnergyConsumer(_logger, _name, _powerUsage, _criticallyNeeded, _switchOnLoad, _switchOffLoad, _minimumRuntime, _maximumRuntime, _minimumTimeout, _maximumTimeout, _timeWindows,
+            _minimumCurrent, _maximumCurrent, _offCurrent, _currentEntity, _voltageEntity, _stateSensor, _cars, _testCtx.Scheduler);
         x.BalancingMethod = _balancingMethod;
         return x;
     }

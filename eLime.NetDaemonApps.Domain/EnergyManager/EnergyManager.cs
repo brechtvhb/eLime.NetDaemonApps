@@ -296,8 +296,8 @@ public class EnergyManager : IDisposable
             };
 
             await _mqttEntityManager.CreateAsync(selectName, new EntityCreationOptions(UniqueId: selectName, Name: $"Dynamic load balancing method - {consumer.Name}", DeviceClass: "select", Persist: true), selectOptions);
-            await _mqttEntityManager.SetStateAsync(selectName, BalancingMethod.SolarMaximized.ToString());
-            dynamicLoadConsumer.BalancingMethod = BalancingMethod.SolarMaximized;
+            await _mqttEntityManager.SetStateAsync(selectName, BalancingMethod.SolarOnly.ToString());
+            dynamicLoadConsumer.BalancingMethod = BalancingMethod.SolarOnly;
         }
 
         var observer = await _mqttEntityManager.PrepareCommandSubscriptionAsync(selectName);
@@ -326,7 +326,7 @@ public class EnergyManager : IDisposable
         if (consumer is not IDynamicLoadConsumer dynamicLoadConsumer || storedEnergyConsumerState.BalancingMethod is null)
             return;
 
-        dynamicLoadConsumer.BalancingMethod = storedEnergyConsumerState.BalancingMethod ?? BalancingMethod.SolarMaximized;
+        dynamicLoadConsumer.BalancingMethod = storedEnergyConsumerState.BalancingMethod ?? BalancingMethod.SolarOnly;
     }
 
     public Device GetGlobalDevice()

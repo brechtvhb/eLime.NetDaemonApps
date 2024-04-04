@@ -28,6 +28,7 @@ public class CarChargerEnergyConsumerTests
         _fileStorage = A.Fake<IFileStorage>();
 
         _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.grid_voltage"), "230");
+        _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.voltage"), "230");
         _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "input_number.peak_consumption"), "4.0");
         _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_consumption_watt"), "0");
         _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_production_watt"), "2000");
