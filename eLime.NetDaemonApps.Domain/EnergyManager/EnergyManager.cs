@@ -283,10 +283,8 @@ public class EnergyManager : IDisposable
             return;
 
         var selectName = $"select.energy_consumer_{consumer.Name.MakeHaFriendly()}_balancing_method";
-        var state = _haContext.Entity(selectName).State;
 
-        _logger.LogDebug("{Consumer}: Creating Dynamic Load balancing method dropdown in home assistant.", consumer.Name);
-        var selectOptions = new SelectOptions()
+        var selectOptions = new SelectOptions
         {
             Icon = "mdi:car-turbocharger",
             Options = Enum<BalancingMethod>.AllValuesAsStringList(),
@@ -294,19 +292,20 @@ public class EnergyManager : IDisposable
         };
 
         await _mqttEntityManager.CreateAsync(selectName, new EntityCreationOptions(UniqueId: selectName, Name: $"Dynamic load balancing method - {consumer.Name}", DeviceClass: "select", Persist: true), selectOptions);
-        await _mqttEntityManager.SetStateAsync(selectName, state == null ? BalancingMethod.SolarOnly.ToString() : dynamicLoadConsumer.BalancingMethod.ToString());
+        await _mqttEntityManager.SetStateAsync(selectName, dynamicLoadConsumer.BalancingMethod.ToString());
 
         var observer = await _mqttEntityManager.PrepareCommandSubscriptionAsync(selectName);
-        dynamicLoadConsumer.BalancingMethodChangedCommandHandler = observer.SubscribeAsync(SetBalancingMethodHandler(dynamicLoadConsumer, selectName));
+        dynamicLoadConsumer.BalancingMethodChangedCommandHandler = observer.SubscribeAsync(SetBalancingMethodHandler(consumer, dynamicLoadConsumer, selectName));
     }
 
-    private Func<string, Task> SetBalancingMethodHandler(IDynamicLoadConsumer dynamicLoadConsumer, string selectName)
+    private Func<string, Task> SetBalancingMethodHandler(EnergyConsumer consumer, IDynamicLoadConsumer dynamicLoadConsumer, string selectName)
     {
         return async state =>
         {
-            _logger.LogDebug("{Consumer}: Setting dynamic load balancing method to {State}.", dynamicLoadConsumer.Name, state);
+            _logger.LogDebug("{Consumer}: Setting dynamic load balancing method to {State}.", consumer.Name, state);
             await _mqttEntityManager.SetStateAsync(selectName, state);
             dynamicLoadConsumer.BalancingMethod = Enum<BalancingMethod>.Cast(state);
+            DebounceUpdateInHomeAssistant(consumer).RunSync();
         };
     }
 
