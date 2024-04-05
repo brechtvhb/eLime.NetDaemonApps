@@ -187,6 +187,9 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         if (CriticallyNeeded != null && CriticallyNeeded.IsOn())
             return false;
 
+        if (BalancingMethod == BalancingMethod.NearPeak)
+            return false;
+
         return true;
     }
 
