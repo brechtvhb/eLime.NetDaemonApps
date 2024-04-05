@@ -285,7 +285,7 @@ public class EnergyManager : IDisposable
         var selectName = $"select.energy_consumer_{consumer.Name.MakeHaFriendly()}_balancing_method";
         var state = _haContext.Entity(selectName).State;
 
-        if (state == null)
+        if (state != null)
         {
             _logger.LogDebug("{Consumer}: Creating Dynamic Load balancing method dropdown in home assistant.", consumer.Name);
             var selectOptions = new SelectOptions()

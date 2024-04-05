@@ -94,8 +94,8 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         {
             _ when CriticallyNeeded?.IsOn() == true => Math.Round((double)(netGridUsage - peakUsage) / TotalVoltage, 0, MidpointRounding.ToPositiveInfinity),
             BalancingMethod.NearPeak => Math.Round((double)(netGridUsage - peakUsage) / TotalVoltage, 0, MidpointRounding.ToPositiveInfinity),
-            BalancingMethod.SolarPreferred => Math.Round((double)netGridUsage / TotalVoltage, 0, MidpointRounding.ToPositiveInfinity),
-            _ => Math.Round((double)netGridUsage / TotalVoltage, 0, MidpointRounding.ToNegativeInfinity)
+            BalancingMethod.SolarPreferred => Math.Round((double)netGridUsage / TotalVoltage, 0, MidpointRounding.ToNegativeInfinity),
+            _ => Math.Round((double)netGridUsage / TotalVoltage, 0, MidpointRounding.ToPositiveInfinity)
         };
     }
 

@@ -175,7 +175,7 @@ public class CarChargerEnergyConsumerTests
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(30));
 
         //Assert
-        _testCtx.InputNumberChanged(consumer.CurrentEntity, 9, Moq.Times.Once);
+        _testCtx.InputNumberChanged(consumer.CurrentEntity, 8, Moq.Times.Once);
     }
 
     [TestMethod]
@@ -204,7 +204,7 @@ public class CarChargerEnergyConsumerTests
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(30));
 
         //Assert
-        _testCtx.InputNumberChanged(consumer.CurrentEntity, 13, Moq.Times.Once);
+        _testCtx.InputNumberChanged(consumer.CurrentEntity, 12, Moq.Times.Once);
     }
 
     [TestMethod]
@@ -295,15 +295,15 @@ public class CarChargerEnergyConsumerTests
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(30));
 
         //Act
-        _testCtx.TriggerStateChange(consumer.CurrentEntity, "13");
+        _testCtx.TriggerStateChange(consumer.CurrentEntity, "12");
         _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_production_watt"), "0");
-        _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_consumption_watt"), "110");
+        _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_consumption_watt"), "-110");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(30));
 
         //Assert
-        _testCtx.InputNumberChanged(consumer.CurrentEntity, 13, Moq.Times.Once);
-        _testCtx.InputNumberChanged(consumer.CurrentEntity, 12, Moq.Times.Never);
-        _testCtx.InputNumberChanged(consumer.CurrentEntity, 14, Moq.Times.Never);
+        _testCtx.InputNumberChanged(consumer.CurrentEntity, 12, Moq.Times.Once);
+        _testCtx.InputNumberChanged(consumer.CurrentEntity, 11, Moq.Times.Never);
+        _testCtx.InputNumberChanged(consumer.CurrentEntity, 13, Moq.Times.Never);
     }
 
     [TestMethod]
@@ -392,7 +392,7 @@ public class CarChargerEnergyConsumerTests
 
         //Assert
         _testCtx.InputNumberChanged(consumer.CurrentEntity, 16, Moq.Times.Once);
-        _testCtx.InputNumberChanged(consumer.Cars.First().CurrentEntity, 8, Moq.Times.Once);
+        _testCtx.InputNumberChanged(consumer.Cars.First().CurrentEntity, 7, Moq.Times.Once);
     }
 
 
@@ -451,7 +451,7 @@ public class CarChargerEnergyConsumerTests
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(30));
 
         //Assert
-        _testCtx.InputNumberChanged(consumer.Cars.First().CurrentEntity, 3, Moq.Times.Once);
+        _testCtx.InputNumberChanged(consumer.Cars.First().CurrentEntity, 2, Moq.Times.Once);
     }
 
     [TestMethod]
@@ -481,7 +481,7 @@ public class CarChargerEnergyConsumerTests
 
         //Assert
         _testCtx.InputNumberChanged(consumer.CurrentEntity, 16, Moq.Times.Once);
-        _testCtx.InputNumberChanged(consumer.Cars.First().CurrentEntity, 8, Moq.Times.Once);
+        _testCtx.InputNumberChanged(consumer.Cars.First().CurrentEntity, 7, Moq.Times.Once);
     }
 
     [TestMethod]
@@ -514,7 +514,7 @@ public class CarChargerEnergyConsumerTests
 
         //Assert
         _testCtx.InputNumberChanged(consumer.CurrentEntity, 16, Moq.Times.Once);
-        _testCtx.InputNumberChanged(consumer.Cars.First().CurrentEntity, 7, Moq.Times.Once);
+        _testCtx.InputNumberChanged(consumer.Cars.First().CurrentEntity, 6, Moq.Times.Once);
     }
 
     [TestMethod]
@@ -546,7 +546,7 @@ public class CarChargerEnergyConsumerTests
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(30));
 
         //Assert
-        _testCtx.InputNumberChanged(consumer.Cars.First().CurrentEntity, 5, Moq.Times.Once);
+        _testCtx.InputNumberChanged(consumer.Cars.First().CurrentEntity, 4, Moq.Times.Once);
     }
 
     [TestMethod]
@@ -614,7 +614,7 @@ public class CarChargerEnergyConsumerTests
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(30));
 
         //Assert
-        _testCtx.InputNumberChanged(consumer.Cars.First().CurrentEntity, 7, Moq.Times.Once);
+        _testCtx.InputNumberChanged(consumer.Cars.First().CurrentEntity, 8, Moq.Times.Once);
     }
 
     [TestMethod]
@@ -646,14 +646,14 @@ public class CarChargerEnergyConsumerTests
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(30));
 
         //Act
-        _testCtx.TriggerStateChange(consumer.Cars.First().CurrentEntity, "7");
-        _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_production_watt"), "100");
+        _testCtx.TriggerStateChange(consumer.Cars.First().CurrentEntity, "8");
+        _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_production_watt"), "-600");
         _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_consumption_watt"), "0");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(30));
 
         //Assert
-        _testCtx.InputNumberChanged(consumer.Cars.First().CurrentEntity, 7, Moq.Times.Once);
-        _testCtx.InputNumberChanged(consumer.Cars.First().CurrentEntity, 6, Moq.Times.Never);
-        _testCtx.InputNumberChanged(consumer.Cars.First().CurrentEntity, 8, Moq.Times.Never);
+        _testCtx.InputNumberChanged(consumer.Cars.First().CurrentEntity, 8, Moq.Times.Once);
+        _testCtx.InputNumberChanged(consumer.Cars.First().CurrentEntity, 7, Moq.Times.Never);
+        _testCtx.InputNumberChanged(consumer.Cars.First().CurrentEntity, 9, Moq.Times.Never);
     }
 }
