@@ -285,20 +285,16 @@ public class EnergyManager : IDisposable
         var selectName = $"select.energy_consumer_{consumer.Name.MakeHaFriendly()}_balancing_method";
         var state = _haContext.Entity(selectName).State;
 
-        if (state != null)
+        _logger.LogDebug("{Consumer}: Creating Dynamic Load balancing method dropdown in home assistant.", consumer.Name);
+        var selectOptions = new SelectOptions()
         {
-            _logger.LogDebug("{Consumer}: Creating Dynamic Load balancing method dropdown in home assistant.", consumer.Name);
-            var selectOptions = new SelectOptions()
-            {
-                Icon = "mdi:car-turbocharger",
-                Options = Enum<BalancingMethod>.AllValuesAsStringList(),
-                Device = GetConsumerDevice(consumer)
-            };
+            Icon = "mdi:car-turbocharger",
+            Options = Enum<BalancingMethod>.AllValuesAsStringList(),
+            Device = GetConsumerDevice(consumer)
+        };
 
-            await _mqttEntityManager.CreateAsync(selectName, new EntityCreationOptions(UniqueId: selectName, Name: $"Dynamic load balancing method - {consumer.Name}", DeviceClass: "select", Persist: true), selectOptions);
-            await _mqttEntityManager.SetStateAsync(selectName, BalancingMethod.SolarOnly.ToString());
-            dynamicLoadConsumer.BalancingMethod = BalancingMethod.SolarOnly;
-        }
+        await _mqttEntityManager.CreateAsync(selectName, new EntityCreationOptions(UniqueId: selectName, Name: $"Dynamic load balancing method - {consumer.Name}", DeviceClass: "select", Persist: true), selectOptions);
+        await _mqttEntityManager.SetStateAsync(selectName, state == null ? BalancingMethod.SolarOnly.ToString() : dynamicLoadConsumer.BalancingMethod.ToString());
 
         var observer = await _mqttEntityManager.PrepareCommandSubscriptionAsync(selectName);
         dynamicLoadConsumer.BalancingMethodChangedCommandHandler = observer.SubscribeAsync(SetBalancingMethodHandler(dynamicLoadConsumer, selectName));
