@@ -55,9 +55,9 @@ public class EnergyManager : IDisposable
         InitializeStateSensor().RunSync();
         foreach (var energyConsumer in Consumers)
         {
+            InitializeState(energyConsumer);
             InitializeConsumerSensors(energyConsumer).RunSync();
             InitializeBalancingModeDropDown(energyConsumer).RunSync();
-            InitializeState(energyConsumer);
             energyConsumer.StateChanged += EnergyConsumer_StateChanged;
         }
 
