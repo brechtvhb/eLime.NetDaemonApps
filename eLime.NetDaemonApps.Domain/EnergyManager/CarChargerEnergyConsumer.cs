@@ -25,7 +25,7 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 
     public List<Car> Cars { get; set; }
 
-    private Car? ConnectedCar => Cars.SingleOrDefault(x => x.IsConnectedToHomeCharger);
+    private Car? ConnectedCar => Cars.FirstOrDefault(x => x.IsConnectedToHomeCharger);
     public NumericEntity? VoltageEntity { get; set; }
     public Int32 SinglePhaseVoltage => Convert.ToInt32(VoltageEntity?.State ?? 230);
 
