@@ -20,13 +20,14 @@ public class Car
 
     public NumericEntity BatteryPercentageSensor { get; }
     public NumericEntity? MaxBatteryPercentageSensor { get; }
+    public Boolean RemainOnAtFullBattery { get; }
     public BinarySensor CableConnectedSensor { get; }
     public DeviceTracker Location { get; }
 
     public DateTimeOffset? _lastCurrentChange;
 
     public Car(string name, CarChargingMode mode, InputNumberEntity? currentEntity, int? minimumCurrent, int? maximumCurrent,
-        double batteryCapacity, NumericEntity batteryPercentageSensor, NumericEntity? maxBatteryPercentageSensor,
+        double batteryCapacity, NumericEntity batteryPercentageSensor, NumericEntity? maxBatteryPercentageSensor, bool remainOnAtFullBattery,
         BinarySensor cableConnectedSensor, DeviceTracker location, IScheduler scheduler)
     {
         _scheduler = scheduler;
@@ -40,6 +41,8 @@ public class Car
         BatteryCapacity = batteryCapacity;
         BatteryPercentageSensor = batteryPercentageSensor;
         MaxBatteryPercentageSensor = maxBatteryPercentageSensor;
+        RemainOnAtFullBattery = remainOnAtFullBattery;
+
         CableConnectedSensor = cableConnectedSensor;
         Location = location;
     }
@@ -47,9 +50,11 @@ public class Car
     public Boolean IsConnectedToHomeCharger => CableConnectedSensor.IsOn() && Location.State == "home";
     public Boolean CanSetCurrent => IsConnectedToHomeCharger && CurrentEntity != null;
 
-    public Boolean NeedsEnergy => MaxBatteryPercentageSensor != null
-        ? BatteryPercentageSensor.State < MaxBatteryPercentageSensor.State
-        : BatteryPercentageSensor.State < 100;
+    public Boolean NeedsEnergy => RemainOnAtFullBattery ||
+        (MaxBatteryPercentageSensor != null
+            ? BatteryPercentageSensor.State < MaxBatteryPercentageSensor.State
+            : BatteryPercentageSensor.State < 100
+        );
 
     public void ChangeCurrent(Double toBeCurrent)
     {

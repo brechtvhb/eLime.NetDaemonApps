@@ -25,6 +25,7 @@ public class CarConfig
     public Double BatteryCapacity { get; set; }
     public String BatteryPercentageSensor { get; set; }
     public String MaxBatteryPercentageSensor { get; set; }
+    public Boolean RemainOnAtFullBattery { get; set; }
 
     public String CableConnectedSensor { get; set; }
     public String Location { get; set; }

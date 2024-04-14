@@ -364,6 +364,37 @@ public class CarChargerEnergyConsumerTests
         _testCtx.InputNumberChanged(consumer.CurrentEntity, 5, Moq.Times.Exactly(2));
     }
 
+
+    [TestMethod]
+    public void MaxBatteryReached_DoesNotTriggerTurnOff_IfRemainOnAtfullBattery()
+    {
+        // Arrange
+        var consumer = new CarChargerEnergyConsumerBuilder(_logger, _testCtx)
+            .InitTeslaTests(true)
+            .Build();
+
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+            .AddConsumer(consumer)
+            .Build();
+
+        //Act
+        _testCtx.TriggerStateChange(consumer.StateSensor, "Occupied");
+        _testCtx.TriggerStateChange(consumer.Cars.First().CableConnectedSensor, "on");
+        _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "5");
+        _testCtx.TriggerStateChange(consumer.Cars.First().MaxBatteryPercentageSensor, "80");
+        _testCtx.TriggerStateChange(consumer.Cars.First().Location, "home");
+
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
+
+        _testCtx.TriggerStateChange(consumer.StateSensor, "Charging");
+        _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "80");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(30));
+
+        //Assert
+        Assert.AreEqual(EnergyConsumerState.NeedsEnergy, energyManager.Consumers.First().State);
+        _testCtx.InputNumberChanged(consumer.CurrentEntity, 5, Moq.Times.Exactly(1));
+    }
+
     [TestMethod]
     public void ExcessEnergy_Adjusts_Load_3Phase()
     {
