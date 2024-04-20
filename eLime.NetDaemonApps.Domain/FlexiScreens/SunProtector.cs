@@ -1,9 +1,12 @@
 ﻿using eLime.NetDaemonApps.Domain.Entities.Sun;
+using Microsoft.Extensions.Logging;
 
 namespace eLime.NetDaemonApps.Domain.FlexiScreens;
 
 public class SunProtector : IDisposable
 {
+    private ILogger Logger { get; }
+
     private double ScreenOrientation { get; }
     private Sun Sun { get; }
     private double? OrientationThreshold { get; }
@@ -12,8 +15,9 @@ public class SunProtector : IDisposable
 
     public (ScreenState? State, Boolean Enforce) DesiredState { get; private set; }
 
-    public SunProtector(double screenOrientation, Sun sun, double? orientationThreshold, double? elevationThreshold, ScreenState? desiredStateBelowElevationThreshold)
+    public SunProtector(ILogger logger, double screenOrientation, Sun sun, double? orientationThreshold, double? elevationThreshold, ScreenState? desiredStateBelowElevationThreshold)
     {
+        Logger = logger;
         ScreenOrientation = screenOrientation;
         Sun = sun;
         Sun.StateChanged += CheckDesiredState;

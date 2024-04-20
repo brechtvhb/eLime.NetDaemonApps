@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using NetDaemon.Extensions.MqttEntityManager;
 using NetDaemon.HassModel.Entities;
 using EnergyManager = eLime.NetDaemonApps.Domain.EnergyManager.EnergyManager;
+using Times = Moq.Times;
 
 namespace eLime.NetDaemonApps.Tests;
 
@@ -357,11 +358,12 @@ public class CarChargerEnergyConsumerTests
 
         _testCtx.TriggerStateChange(consumer.StateSensor, "Charging");
         _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "80");
+        _testCtx.TriggerStateChange(consumer.Cars.First().ChargerSwitch, "on");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(30));
 
         //Assert
         Assert.AreEqual(EnergyConsumerState.Off, energyManager.Consumers.First().State);
-        _testCtx.InputNumberChanged(consumer.CurrentEntity, 5, Moq.Times.Exactly(2));
+        _testCtx.VerifySwitchTurnOff(consumer.Cars.First().ChargerSwitch, Moq.Times.Exactly(1));
     }
 
 
@@ -388,11 +390,13 @@ public class CarChargerEnergyConsumerTests
 
         _testCtx.TriggerStateChange(consumer.StateSensor, "Charging");
         _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "80");
+        _testCtx.TriggerStateChange(consumer.Cars.First().ChargerSwitch, "on");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(30));
 
         //Assert
-        Assert.AreEqual(EnergyConsumerState.NeedsEnergy, energyManager.Consumers.First().State);
+        Assert.AreEqual(EnergyConsumerState.Running, energyManager.Consumers.First().State);
         _testCtx.InputNumberChanged(consumer.CurrentEntity, 5, Moq.Times.Exactly(1));
+        _testCtx.VerifySwitchTurnOff(consumer.Cars.First().ChargerSwitch, Times.Never);
     }
 
     [TestMethod]
@@ -414,10 +418,11 @@ public class CarChargerEnergyConsumerTests
         _testCtx.TriggerStateChange(consumer.Cars.First().MaxBatteryPercentageSensor, "80");
         _testCtx.TriggerStateChange(consumer.Cars.First().Location, "home");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
-
-        //Act
         _testCtx.TriggerStateChange(consumer.CurrentEntity, "6");
         _testCtx.TriggerStateChange(consumer.Cars.First().CurrentEntity, "6");
+        _testCtx.TriggerStateChange(consumer.Cars.First().ChargerSwitch, "on");
+
+        //Act
         _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_production_watt"), "900");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(30));
 
@@ -452,6 +457,8 @@ public class CarChargerEnergyConsumerTests
         //Assert
         Assert.AreEqual(EnergyConsumerState.NeedsEnergy, energyManager.Consumers.First().State);
         _testCtx.InputNumberChanged(consumer.CurrentEntity, 16, Moq.Times.Once);
+
+        _testCtx.VerifySwitchTurnOn(consumer.Cars.First().ChargerSwitch, Moq.Times.Once);
         _testCtx.InputNumberChanged(consumer.Cars.First().CurrentEntity, 1, Moq.Times.Once);
     }
 
@@ -474,10 +481,11 @@ public class CarChargerEnergyConsumerTests
         _testCtx.TriggerStateChange(consumer.Cars.First().MaxBatteryPercentageSensor, "80");
         _testCtx.TriggerStateChange(consumer.Cars.First().Location, "home");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
-
-        //Act
         _testCtx.TriggerStateChange(consumer.CurrentEntity, "6");
         _testCtx.TriggerStateChange(consumer.Cars.First().CurrentEntity, "1");
+        _testCtx.TriggerStateChange(consumer.Cars.First().ChargerSwitch, "on");
+
+        //Act
         _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_production_watt"), "900");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(30));
 
@@ -503,10 +511,11 @@ public class CarChargerEnergyConsumerTests
         _testCtx.TriggerStateChange(consumer.Cars.First().MaxBatteryPercentageSensor, "80");
         _testCtx.TriggerStateChange(consumer.Cars.First().Location, "home");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
-
-        //Act
         _testCtx.TriggerStateChange(consumer.CurrentEntity, "6");
         _testCtx.TriggerStateChange(consumer.Cars.First().CurrentEntity, "5");
+        _testCtx.TriggerStateChange(consumer.Cars.First().ChargerSwitch, "on");
+
+        //Act
         _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_production_watt"), "1500");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(30));
 
@@ -534,10 +543,11 @@ public class CarChargerEnergyConsumerTests
         _testCtx.TriggerStateChange(consumer.Cars.First().MaxBatteryPercentageSensor, "80");
         _testCtx.TriggerStateChange(consumer.Cars.First().Location, "home");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
-
-        //Act
         _testCtx.TriggerStateChange(consumer.CurrentEntity, "8");
         _testCtx.TriggerStateChange(consumer.Cars.First().CurrentEntity, "8");
+        _testCtx.TriggerStateChange(consumer.Cars.First().ChargerSwitch, "on");
+
+        //Act
         _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_production_watt"), "0");
         _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_consumption_watt"), "800");
 
@@ -567,10 +577,11 @@ public class CarChargerEnergyConsumerTests
         _testCtx.TriggerStateChange(consumer.Cars.First().MaxBatteryPercentageSensor, "80");
         _testCtx.TriggerStateChange(consumer.Cars.First().Location, "home");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
-
-        //Act
         _testCtx.TriggerStateChange(consumer.CurrentEntity, "6");
         _testCtx.TriggerStateChange(consumer.Cars.First().CurrentEntity, "6");
+        _testCtx.TriggerStateChange(consumer.Cars.First().ChargerSwitch, "on");
+
+        //Act
         _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_production_watt"), "0");
         _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_consumption_watt"), "800");
 
@@ -601,10 +612,11 @@ public class CarChargerEnergyConsumerTests
         consumer.BalancingMethod = BalancingMethod.NearPeak;
 
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
-
-        //Act
         _testCtx.TriggerStateChange(consumer.CurrentEntity, "16");
         _testCtx.TriggerStateChange(consumer.Cars.First().CurrentEntity, "6");
+        _testCtx.TriggerStateChange(consumer.Cars.First().ChargerSwitch, "on");
+
+        //Act
         _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_production_watt"), "0");
         _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_consumption_watt"), "800");
 
@@ -635,10 +647,11 @@ public class CarChargerEnergyConsumerTests
         consumer.BalancingMethod = BalancingMethod.SolarPreferred;
 
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
-
-        //Act
         _testCtx.TriggerStateChange(consumer.CurrentEntity, "16");
         _testCtx.TriggerStateChange(consumer.Cars.First().CurrentEntity, "6");
+        _testCtx.TriggerStateChange(consumer.Cars.First().ChargerSwitch, "on");
+
+        //Act
         _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_production_watt"), "800");
         _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_consumption_watt"), "0");
 
@@ -672,6 +685,7 @@ public class CarChargerEnergyConsumerTests
 
         _testCtx.TriggerStateChange(consumer.CurrentEntity, "16");
         _testCtx.TriggerStateChange(consumer.Cars.First().CurrentEntity, "6");
+        _testCtx.TriggerStateChange(consumer.Cars.First().ChargerSwitch, "on");
         _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_production_watt"), "800");
         _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_consumption_watt"), "0");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(30));

@@ -1,15 +1,18 @@
 ﻿using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
+using Microsoft.Extensions.Logging;
 
 namespace eLime.NetDaemonApps.Domain.FlexiScreens;
 
 public class ChildrenAreAngryProtector : IDisposable
 {
+    private ILogger Logger { get; }
     //Eg: Kids sleeping sensor / operating mode
     public BinarySensor ForceDownSensor { get; }
     public (ScreenState? State, Boolean Enforce) DesiredState { get; private set; }
 
-    public ChildrenAreAngryProtector(BinarySensor forceDownSensor)
+    public ChildrenAreAngryProtector(ILogger logger, BinarySensor forceDownSensor)
     {
+        Logger = logger;
         ForceDownSensor = forceDownSensor;
         ForceDownSensor.TurnedOn += CheckDesiredState;
         ForceDownSensor.TurnedOff += CheckDesiredState;

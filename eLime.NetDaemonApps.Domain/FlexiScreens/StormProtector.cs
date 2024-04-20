@@ -1,12 +1,12 @@
 ﻿using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
 using eLime.NetDaemonApps.Domain.Entities.Weather;
+using Microsoft.Extensions.Logging;
 
 namespace eLime.NetDaemonApps.Domain.FlexiScreens;
 
 public class StormProtector : IDisposable
 {
-
-
+    private ILogger Logger { get; }
     private NumericThresholdSensor? WindSpeedSensor { get; }
     private double? WindSpeedStormStartThreshold { get; }
     private double? WindSpeedStormEndThreshold { get; }
@@ -30,11 +30,13 @@ public class StormProtector : IDisposable
     private bool Night { get; set; }
     public bool StormyNight { get; private set; }
 
-    public StormProtector(NumericThresholdSensor? windSpeedSensor, double? windSpeedStormStartThreshold, double? windSpeedStormEndThreshold,
+    public StormProtector(ILogger logger, NumericThresholdSensor? windSpeedSensor, double? windSpeedStormStartThreshold, double? windSpeedStormEndThreshold,
         NumericThresholdSensor? rainRateSensor, double? rainRateStormStartThreshold, double? rainRateStormEndThreshold,
         NumericThresholdSensor? shortTermRainForecastSensor, double? shortTermRainForecastSensorStormStartThreshold, double? shortTermRainForecastSensorStormEndThreshold,
         Weather? hourlyWeather, int? nightlyPredictionHours, double? nightlyWindSpeedThreshold, double? nightlyRainThreshold, double? nightlyRainRateThreshold)
     {
+        Logger = logger;
+
         WindSpeedSensor = windSpeedSensor;
         if (WindSpeedSensor != null)
         {
@@ -169,7 +171,7 @@ public class StormProtector : IDisposable
         if (windSpeedIsAboveStormThreshold == true || rainRateIsAboveStormThreshold == true || shortTermRainForecastIsAboveStormThreshold == true)
         {
             StormModeActive = true;
-
+            Logger.LogInformation($"Storm mode activated: - Wind speed: {WindSpeedSensor?.State} (Over threshold: {windSpeedIsAboveStormThreshold}). Rain rate: {RainRateSensor?.State} (Over threshold: {rainRateIsAboveStormThreshold}). Short term rain forecast: {ShortTermRainForecastSensor?.State} (Over threshold: {shortTermRainForecastIsAboveStormThreshold} ).");
             if (Night)
                 StormyNight = true;
 

@@ -12,9 +12,11 @@ public class Car
     public String Name { get; }
     public CarChargingMode Mode { get; }
 
+    public BinarySwitch? ChargerSwitch { get; }
+
+    public InputNumberEntity? CurrentEntity { get; set; }
     public int? MinimumCurrent { get; }
     public int? MaximumCurrent { get; }
-    public InputNumberEntity? CurrentEntity { get; set; }
 
     public Double BatteryCapacity { get; }
 
@@ -26,7 +28,7 @@ public class Car
 
     public DateTimeOffset? _lastCurrentChange;
 
-    public Car(string name, CarChargingMode mode, InputNumberEntity? currentEntity, int? minimumCurrent, int? maximumCurrent,
+    public Car(string name, CarChargingMode mode, BinarySwitch? chargerSwitch, InputNumberEntity? currentEntity, int? minimumCurrent, int? maximumCurrent,
         double batteryCapacity, NumericEntity batteryPercentageSensor, NumericEntity? maxBatteryPercentageSensor, bool remainOnAtFullBattery,
         BinarySensor cableConnectedSensor, DeviceTracker location, IScheduler scheduler)
     {
@@ -34,6 +36,7 @@ public class Car
         Name = name;
         Mode = mode;
 
+        ChargerSwitch = chargerSwitch;
         CurrentEntity = currentEntity;
         MinimumCurrent = minimumCurrent;
         MaximumCurrent = maximumCurrent;
@@ -55,6 +58,15 @@ public class Car
             ? BatteryPercentageSensor.State < MaxBatteryPercentageSensor.State
             : BatteryPercentageSensor.State < 100
         );
+
+    public void TurnOnCharger()
+    {
+        ChargerSwitch?.TurnOn();
+    }
+    public void TurnOffCharger()
+    {
+        ChargerSwitch?.TurnOff();
+    }
 
     public void ChangeCurrent(Double toBeCurrent)
     {

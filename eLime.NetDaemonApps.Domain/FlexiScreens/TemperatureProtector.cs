@@ -1,10 +1,12 @@
 ﻿using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
 using eLime.NetDaemonApps.Domain.Entities.Weather;
+using Microsoft.Extensions.Logging;
 
 namespace eLime.NetDaemonApps.Domain.FlexiScreens;
 
 public class TemperatureProtector : IDisposable
 {
+    private ILogger Logger { get; }
     private NumericThresholdSensor? SolarLuxSensor { get; }
     public double? SolarLuxAboveThreshold { get; set; }
     public double? SolarLuxBelowThreshold { get; set; }
@@ -21,10 +23,11 @@ public class TemperatureProtector : IDisposable
 
     private bool TemperatureProtectorActive { get; set; }
 
-    public TemperatureProtector(NumericThresholdSensor? solarLuxSensor, double? solarLuxAboveThreshold, double? solarLuxBelowThreshold,
+    public TemperatureProtector(ILogger logger, NumericThresholdSensor? solarLuxSensor, double? solarLuxAboveThreshold, double? solarLuxBelowThreshold,
         NumericSensor? indoorTemperatureSensor, double? maxIndoorTemperature, double? maxConditionalIndoorTemperature,
         Weather? weather, double? conditionalMaxOutdoorTemperaturePrediction, int? conditionalOutdoorTemperaturePredictionDays)
     {
+        Logger = logger;
         SolarLuxSensor = solarLuxSensor;
         if (SolarLuxSensor != null)
         {

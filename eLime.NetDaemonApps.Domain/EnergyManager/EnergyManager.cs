@@ -112,14 +112,15 @@ public class EnergyManager : IDisposable
     private void ManageConsumersIfNeeded()
     {
         var estimatedLoad = GridMonitor.CurrentLoad;
-        estimatedLoad = AdjustDynamicLoadsIfNeeded(estimatedLoad);
-        StartConsumersIfNeeded(estimatedLoad);
-        StopConsumersIfNeeded();
+        var (estimatedAdjustedLoad, loadAdjusted) = AdjustDynamicLoadsIfNeeded(estimatedLoad);
+        StartConsumersIfNeeded(estimatedAdjustedLoad);
+        StopConsumersIfNeeded(loadAdjusted);
     }
 
-    private Double AdjustDynamicLoadsIfNeeded(Double estimatedLoad)
+    private (Double estimatedAdjustedLoad, Boolean loadAdjusted) AdjustDynamicLoadsIfNeeded(Double estimatedLoad)
     {
         var dynamicLoadConsumers = Consumers.Where(x => x.State == EnergyConsumerState.Running).OfType<IDynamicLoadConsumer>().ToList();
+        var loadAdjusted = false;
 
         foreach (var dynamicLoadConsumer in dynamicLoadConsumers)
         {
@@ -130,11 +131,11 @@ public class EnergyManager : IDisposable
 
             _logger.LogDebug("{Consumer}: Changed current for dynamic consumer, to {DynamicCurrent}A (Net change: {NetLoadChange}W).", dynamicLoadConsumer.Name, current, netChange);
             estimatedLoad += netChange;
+            loadAdjusted = true;
         }
 
-        return estimatedLoad;
+        return (estimatedLoad, loadAdjusted);
     }
-
 
     //TODO: Use linear programming model and estimates of production and consumption to be able to schedule deferred loads in the future.
     private void StartConsumersIfNeeded(Double currentLoad)
@@ -187,7 +188,7 @@ public class EnergyManager : IDisposable
         }
     }
 
-    private void StopConsumersIfNeeded()
+    private void StopConsumersIfNeeded(Boolean dynamicLoadAdjusted)
     {
         var currentLoad = GridMonitor.AverageLoadSince(_scheduler.Now, TimeSpan.FromMinutes(3));
         var estimatedLoad = currentLoad;
@@ -203,6 +204,12 @@ public class EnergyManager : IDisposable
         var consumersThatPreferSolar = Consumers.OrderByDescending(x => x.SwitchOffLoad).Where(x => x.CanForceStop(_scheduler.Now) && x is { Running: true } && x.SwitchOffLoad < estimatedLoad).ToList();
         foreach (var consumer in consumersThatPreferSolar.TakeWhile(consumer => consumer.SwitchOffLoad < estimatedLoad))
         {
+            if (consumer is IDynamicLoadConsumer && dynamicLoadAdjusted)
+            {
+                _logger.LogDebug("{Consumer}: Should stop, but won't do it because dynamic load was adjusted. Current load/estimated load was: {CurrentLoad}/{EstimatedLoad}. Switch-off/peak load of consumer is: {SwitchOffLoad}/{PeakLoad}", consumer.Name, currentLoad, estimatedLoad, consumer.SwitchOffLoad, consumer.PeakLoad);
+                return;
+            }
+
             _logger.LogDebug("{Consumer}: Will stop consumer because current load is above switch off load. Current load/estimated load was: {CurrentLoad}/{EstimatedLoad}. Switch-off/peak load of consumer is: {SwitchOffLoad}/{PeakLoad}", consumer.Name, currentLoad, estimatedLoad, consumer.SwitchOffLoad, consumer.PeakLoad);
             consumer.Stop();
             estimatedLoad -= consumer.CurrentLoad;
@@ -214,6 +221,12 @@ public class EnergyManager : IDisposable
             var consumersThatShouldForceStopped = Consumers.Where(x => x.CanForceStopOnPeakLoad(_scheduler.Now) && x.Running);
             foreach (var consumer in consumersThatShouldForceStopped)
             {
+                if (consumer is IDynamicLoadConsumer && dynamicLoadAdjusted)
+                {
+                    _logger.LogDebug("{Consumer}: Should force stop, but won't do it because dynamic load was adjusted. Current load/estimated load was: {CurrentLoad}/{EstimatedLoad}. Switch-off/peak load of consumer is: {SwitchOffLoad}/{PeakLoad}", consumer.Name, currentLoad, estimatedLoad, consumer.SwitchOffLoad, consumer.PeakLoad);
+                    return;
+                }
+
                 _logger.LogDebug("{Consumer}: Will stop consumer right now because peak load was exceeded. Current load/estimated load was: {CurrentLoad}/{EstimatedLoad}. Switch-off/peak load of consumer is: {SwitchOffLoad}/{PeakLoad}", consumer.Name, currentLoad, estimatedLoad, consumer.SwitchOffLoad, consumer.PeakLoad);
                 consumer.Stop();
                 estimatedLoad -= consumer.CurrentLoad;

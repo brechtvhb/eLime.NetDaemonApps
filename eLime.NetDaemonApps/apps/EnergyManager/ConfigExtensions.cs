@@ -59,14 +59,16 @@ public static class ConfigExtensions
                 var cars = new List<Car>();
                 foreach (var car in consumer.CarCharger.Cars)
                 {
+                    var carChargerSwitch = !String.IsNullOrWhiteSpace(car.ChargerSwitch) ? new BinarySwitch(ha, car.ChargerSwitch) : null;
                     var carCurrentEntity = !String.IsNullOrWhiteSpace(car.CurrentEntity) ? new InputNumberEntity(ha, car.CurrentEntity) : null;
+
                     var batteryPercentageSensor = new NumericEntity(ha, car.BatteryPercentageSensor);
                     var maxBatteryPercentageSensor = !String.IsNullOrWhiteSpace(car.MaxBatteryPercentageSensor) ? new NumericEntity(ha, car.MaxBatteryPercentageSensor) : null;
                     var cableConnectedSensor = new BinarySensor(ha, car.CableConnectedSensor);
                     var location = new DeviceTracker(ha, car.Location);
                     var mode = Enum<CarChargingMode>.Cast(car.Mode);
 
-                    cars.Add(new Car(car.Name, mode, carCurrentEntity, car.MinimumCurrent, car.MaximumCurrent, car.BatteryCapacity, batteryPercentageSensor, maxBatteryPercentageSensor, car.RemainOnAtFullBattery, cableConnectedSensor, location, scheduler));
+                    cars.Add(new Car(car.Name, mode, carChargerSwitch, carCurrentEntity, car.MinimumCurrent, car.MaximumCurrent, car.BatteryCapacity, batteryPercentageSensor, maxBatteryPercentageSensor, car.RemainOnAtFullBattery, cableConnectedSensor, location, scheduler));
                 }
 
                 var currentEntity = InputNumberEntity.Create(ha, consumer.CarCharger.CurrentEntity);

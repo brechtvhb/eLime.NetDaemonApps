@@ -18,6 +18,7 @@ public class CarConfig
     public String Name { get; set; }
     public CarChargingMode Mode { get; set; }
 
+    public string ChargerSwitch { get; set; }
     public String CurrentEntity { get; set; }
     public int? MinimumCurrent { get; set; }
     public int? MaximumCurrent { get; set; }

@@ -1,11 +1,15 @@
-﻿namespace eLime.NetDaemonApps.Domain.FlexiScreens;
+﻿using Microsoft.Extensions.Logging;
+
+namespace eLime.NetDaemonApps.Domain.FlexiScreens;
 
 public class ManIsAngryProtector
 {
+    private ILogger Logger { get; }
     public TimeSpan MinimumIntervalSinceLastAutomatedAction { get; set; }
 
-    public ManIsAngryProtector(TimeSpan? minimumIntervalSinceLastAutomatedAction)
+    public ManIsAngryProtector(ILogger logger, TimeSpan? minimumIntervalSinceLastAutomatedAction)
     {
+        Logger = logger;
         MinimumIntervalSinceLastAutomatedAction = minimumIntervalSinceLastAutomatedAction ?? TimeSpan.FromMinutes(15);
     }
 
