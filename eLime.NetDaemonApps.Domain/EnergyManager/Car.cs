@@ -36,7 +36,13 @@ public class Car
         Name = name;
         Mode = mode;
 
-        ChargerSwitch = chargerSwitch;
+        if (chargerSwitch != null)
+        {
+            ChargerSwitch = chargerSwitch;
+            ChargerSwitch.TurnedOn += ChargerSwitchTurnedOn;
+            ChargerSwitch.TurnedOff += ChargerSwitchTurnedOff;
+        }
+
         CurrentEntity = currentEntity;
         MinimumCurrent = minimumCurrent;
         MaximumCurrent = maximumCurrent;
@@ -48,6 +54,28 @@ public class Car
 
         CableConnectedSensor = cableConnectedSensor;
         Location = location;
+    }
+
+    public event EventHandler<BinarySensorEventArgs>? ChargerTurnedOn;
+    public event EventHandler<BinarySensorEventArgs>? ChargerTurnedOff;
+
+    protected void OnChargerSwitchTurnedOn(BinarySensorEventArgs e)
+    {
+        ChargerTurnedOn?.Invoke(this, e);
+    }
+    protected void OnChargerSwitchTurnedOff(BinarySensorEventArgs e)
+    {
+        ChargerTurnedOff?.Invoke(this, e);
+    }
+
+    private void ChargerSwitchTurnedOn(object? sender, BinarySensorEventArgs e)
+    {
+        OnChargerSwitchTurnedOn(e);
+    }
+
+    private void ChargerSwitchTurnedOff(object? sender, BinarySensorEventArgs e)
+    {
+        OnChargerSwitchTurnedOff(e);
     }
 
     public Boolean IsConnectedToHomeCharger => CableConnectedSensor.IsOn() && Location.State == "home";
@@ -83,6 +111,11 @@ public class Car
     public void Dispose()
     {
         CurrentEntity?.Dispose();
+
+        if (ChargerSwitch == null) return;
+        ChargerSwitch.TurnedOn -= ChargerSwitchTurnedOn;
+        ChargerSwitch.TurnedOff -= ChargerSwitchTurnedOff;
+        ChargerSwitch.Dispose();
     }
 
 

@@ -59,7 +59,7 @@ public static class ConfigExtensions
                 var cars = new List<Car>();
                 foreach (var car in consumer.CarCharger.Cars)
                 {
-                    var carChargerSwitch = !String.IsNullOrWhiteSpace(car.ChargerSwitch) ? new BinarySwitch(ha, car.ChargerSwitch) : null;
+                    var carChargerSwitch = !String.IsNullOrWhiteSpace(car.ChargerSwitch) ? BinarySwitch.Create(ha, car.ChargerSwitch) : null;
                     var carCurrentEntity = !String.IsNullOrWhiteSpace(car.CurrentEntity) ? new InputNumberEntity(ha, car.CurrentEntity) : null;
 
                     var batteryPercentageSensor = new NumericEntity(ha, car.BatteryPercentageSensor);

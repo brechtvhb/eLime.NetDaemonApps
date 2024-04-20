@@ -54,6 +54,15 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         VoltageEntity = voltageEntity;
         StateSensor = stateSensor;
         Cars = cars;
+
+        foreach (var car in Cars)
+        {
+            if (car.ChargerSwitch == null)
+                continue;
+
+            car.ChargerTurnedOn += Car_ChargerTurnedOn;
+            car.ChargerTurnedOff += Car_ChargerTurnedOff;
+        }
     }
 
     public (Double current, Double netPowerChange) Rebalance(double netGridUsage, double peakUsage)
@@ -241,7 +250,15 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         CurrentEntity.Dispose();
 
         foreach (var car in Cars)
+        {
+            if (car.ChargerSwitch != null)
+            {
+                car.ChargerTurnedOn += Car_ChargerTurnedOn;
+                car.ChargerTurnedOff += Car_ChargerTurnedOff;
+            }
+
             car.Dispose();
+        }
     }
 
     private void CurrentEntity_Changed(object? sender, InputNumberSensorEventArgs e)
@@ -254,4 +271,14 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         else
             CheckDesiredState(new EnergyConsumerStoppedEvent(this, EnergyConsumerState.Off));
     }
+
+    private void Car_ChargerTurnedOn(object? sender, BinarySensorEventArgs e)
+    {
+        CheckDesiredState(new EnergyConsumerStartedEvent(this, EnergyConsumerState.Running));
+    }
+    private void Car_ChargerTurnedOff(object? sender, BinarySensorEventArgs e)
+    {
+        CheckDesiredState(new EnergyConsumerStoppedEvent(this, EnergyConsumerState.Off));
+    }
+
 }
