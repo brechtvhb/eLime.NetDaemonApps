@@ -170,14 +170,14 @@ public class ScreenBuilder
 
         var sleepSensor = _sleepSensor ?? (_config.SleepSensor != null ? BinarySensor.Create(_testCtx.HaContext, _config.SleepSensor) : null);
 
-        var sunProtector = _config.SunProtection.ToEntities(sun, _config.Orientation);
-        var stormProtector = _config.StormProtection.ToEntities(windSpeedSensor, rainRateSensor, forecastRainSensor, hourlyWeather);
-        var temperatureProtector = _config.TemperatureProtection.ToEntities(solarLuxSensor, indoorTemperatureSensor, weather);
-        var manIsAngryProtector = _config.MinimumIntervalSinceLastAutomatedAction != null ? new ManIsAngryProtector(_config.MinimumIntervalSinceLastAutomatedAction) : new ManIsAngryProtector(TimeSpan.FromMinutes(15));
-        var womanIsAngryProtector = _config.MinimumIntervalSinceLastManualAction != null ? new WomanIsAngryProtector(_config.MinimumIntervalSinceLastManualAction) : new WomanIsAngryProtector(TimeSpan.FromHours(1));
+        var sunProtector = _config.SunProtection.ToEntities(sun, _config.Orientation, _logger);
+        var stormProtector = _config.StormProtection.ToEntities(windSpeedSensor, rainRateSensor, forecastRainSensor, hourlyWeather, _logger);
+        var temperatureProtector = _config.TemperatureProtection.ToEntities(solarLuxSensor, indoorTemperatureSensor, weather, _logger);
+        var manIsAngryProtector = _config.MinimumIntervalSinceLastAutomatedAction != null ? new ManIsAngryProtector(_logger, _config.MinimumIntervalSinceLastAutomatedAction) : new ManIsAngryProtector(_logger, TimeSpan.FromMinutes(15));
+        var womanIsAngryProtector = _config.MinimumIntervalSinceLastManualAction != null ? new WomanIsAngryProtector(_logger, _config.MinimumIntervalSinceLastManualAction) : new WomanIsAngryProtector(_logger, TimeSpan.FromHours(1));
         var frostProtector = new FrostProtector(weather);
 
-        var childrenAreAngryProtector = sleepSensor != null ? new ChildrenAreAngryProtector(sleepSensor) : null;
+        var childrenAreAngryProtector = sleepSensor != null ? new ChildrenAreAngryProtector(_logger, sleepSensor) : null;
 
         var flexiScreen = new FlexiScreen(_testCtx.HaContext, _logger, _testCtx.Scheduler, _mqttEntityManager, _fileStorage, _config.Enabled ?? true, _config.Name, screen, "somecoolid", sunProtector, stormProtector, temperatureProtector, manIsAngryProtector, womanIsAngryProtector, frostProtector, childrenAreAngryProtector, TimeSpan.Zero);
         return flexiScreen;
