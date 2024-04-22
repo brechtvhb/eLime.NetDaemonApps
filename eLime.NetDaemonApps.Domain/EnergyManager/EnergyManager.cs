@@ -317,7 +317,7 @@ public class EnergyManager : IDisposable
         {
             _logger.LogDebug("{Consumer}: Setting dynamic load balancing method to {State}.", consumer.Name, state);
             await _mqttEntityManager.SetStateAsync(selectName, state);
-            dynamicLoadConsumer.BalancingMethod = Enum<BalancingMethod>.Cast(state);
+            dynamicLoadConsumer.SetBalancingMethod(_scheduler.Now, Enum<BalancingMethod>.Cast(state));
             DebounceUpdateInHomeAssistant(consumer).RunSync();
         };
     }
@@ -334,7 +334,7 @@ public class EnergyManager : IDisposable
         if (consumer is not IDynamicLoadConsumer dynamicLoadConsumer || storedEnergyConsumerState.BalancingMethod is null)
             return;
 
-        dynamicLoadConsumer.BalancingMethod = storedEnergyConsumerState.BalancingMethod ?? BalancingMethod.SolarOnly;
+        dynamicLoadConsumer.SetBalancingMethod(_scheduler.Now, storedEnergyConsumerState.BalancingMethod ?? BalancingMethod.SolarOnly);
     }
 
     public Device GetGlobalDevice()

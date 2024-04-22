@@ -143,7 +143,7 @@ public class CarChargerEnergyConsumerBuilder
     {
         var x = new CarChargerEnergyConsumer(_logger, _name, _powerUsage, _criticallyNeeded, _switchOnLoad, _switchOffLoad, _minimumRuntime, _maximumRuntime, _minimumTimeout, _maximumTimeout, _timeWindows,
             _minimumCurrent, _maximumCurrent, _offCurrent, _currentEntity, _voltageEntity, _stateSensor, _cars, _testCtx.Scheduler);
-        x.BalancingMethod = _balancingMethod;
+        x.SetBalancingMethod(_testCtx.Scheduler.Now, _balancingMethod);
         return x;
     }
 }

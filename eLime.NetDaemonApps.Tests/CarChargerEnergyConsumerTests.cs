@@ -609,7 +609,7 @@ public class CarChargerEnergyConsumerTests
         _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "5");
         _testCtx.TriggerStateChange(consumer.Cars.First().MaxBatteryPercentageSensor, "80");
         _testCtx.TriggerStateChange(consumer.Cars.First().Location, "home");
-        consumer.BalancingMethod = BalancingMethod.NearPeak;
+        consumer.SetBalancingMethod(_testCtx.Scheduler.Now, BalancingMethod.NearPeak);
 
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
         _testCtx.TriggerStateChange(consumer.CurrentEntity, "16");
@@ -644,7 +644,7 @@ public class CarChargerEnergyConsumerTests
         _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "5");
         _testCtx.TriggerStateChange(consumer.Cars.First().MaxBatteryPercentageSensor, "80");
         _testCtx.TriggerStateChange(consumer.Cars.First().Location, "home");
-        consumer.BalancingMethod = BalancingMethod.SolarPreferred;
+        consumer.SetBalancingMethod(_testCtx.Scheduler.Now, BalancingMethod.SolarPreferred);
 
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
         _testCtx.TriggerStateChange(consumer.CurrentEntity, "16");
@@ -679,7 +679,7 @@ public class CarChargerEnergyConsumerTests
         _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "5");
         _testCtx.TriggerStateChange(consumer.Cars.First().MaxBatteryPercentageSensor, "80");
         _testCtx.TriggerStateChange(consumer.Cars.First().Location, "home");
-        consumer.BalancingMethod = BalancingMethod.SolarPreferred;
+        consumer.SetBalancingMethod(_testCtx.Scheduler.Now, BalancingMethod.SolarPreferred);
 
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
 

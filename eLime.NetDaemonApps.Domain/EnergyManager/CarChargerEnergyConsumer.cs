@@ -14,7 +14,9 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 
     public Int32 MinimumCurrent { get; set; }
     public Int32 MaximumCurrent { get; set; }
-    public BalancingMethod BalancingMethod { get; set; }
+    public BalancingMethod BalancingMethod { get; private set; }
+    private DateTimeOffset? _balancingMethodLastChangedAt;
+
     public Int32 OffCurrent { get; set; }
 
     public InputNumberEntity CurrentEntity { get; set; }
@@ -63,6 +65,12 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
             car.ChargerTurnedOn += Car_ChargerTurnedOn;
             car.ChargerTurnedOff += Car_ChargerTurnedOff;
         }
+    }
+
+    public void SetBalancingMethod(DateTimeOffset now, BalancingMethod balancingMethod)
+    {
+        BalancingMethod = balancingMethod;
+        _balancingMethodLastChangedAt = now;
     }
 
     public (Double current, Double netPowerChange) Rebalance(double netGridUsage, double peakUsage)
@@ -199,7 +207,13 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         if (CriticallyNeeded != null && CriticallyNeeded.IsOn())
             return false;
 
+        if (CriticallyNeeded?.EntityState?.LastUpdated?.AddMinutes(3) > now)
+            return false;
+
         if (BalancingMethod == BalancingMethod.NearPeak)
+            return false;
+
+        if (_balancingMethodLastChangedAt?.AddMinutes(3) > now)
             return false;
 
         return true;
