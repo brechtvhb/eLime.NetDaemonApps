@@ -75,8 +75,8 @@ public class CarChargerEnergyConsumerTests
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(30));
 
         //Assert
-        Assert.AreEqual(EnergyConsumerState.NeedsEnergy, energyManager.Consumers.First().State);
-        _testCtx.InputNumberChanged(consumer.CurrentEntity, 6, Moq.Times.Once);
+        Assert.AreEqual(EnergyConsumerState.Running, energyManager.Consumers.First().State);
+        _testCtx.InputNumberChanged(consumer.CurrentEntity, 6, Times.Once);
     }
 
     [TestMethod]
