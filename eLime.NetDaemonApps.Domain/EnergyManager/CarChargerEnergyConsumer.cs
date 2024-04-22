@@ -267,7 +267,7 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
     {
         if (e.New.State < MinimumCurrent)
         {
-            if (State != EnergyConsumerState.Off)
+            if (State == EnergyConsumerState.Running)
                 CheckDesiredState(new EnergyConsumerStoppedEvent(this, EnergyConsumerState.Off));
 
             return;
@@ -294,7 +294,7 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
     }
     private void Car_ChargerTurnedOff(object? sender, BinarySensorEventArgs e)
     {
-        if (State != EnergyConsumerState.Off)
+        if (State == EnergyConsumerState.Running)
             CheckDesiredState(new EnergyConsumerStoppedEvent(this, EnergyConsumerState.Off));
     }
 
