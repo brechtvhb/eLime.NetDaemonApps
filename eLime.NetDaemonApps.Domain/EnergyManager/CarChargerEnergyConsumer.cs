@@ -265,7 +265,7 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 
     private void CurrentEntity_Changed(object? sender, InputNumberSensorEventArgs e)
     {
-        if (e.New.State >= MinimumCurrent)
+        if (e.New.State >= MinimumCurrent && ConnectedCar?.ChargerSwitch == null)
         {
             if (State != EnergyConsumerState.Running)
                 CheckDesiredState(new EnergyConsumerStartedEvent(this, EnergyConsumerState.Running));
