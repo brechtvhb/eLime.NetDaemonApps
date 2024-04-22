@@ -265,18 +265,31 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 
     private void CurrentEntity_Changed(object? sender, InputNumberSensorEventArgs e)
     {
-        if (e.New.State >= MinimumCurrent)
+        if (e.New.State < MinimumCurrent)
+        {
+            if (State != EnergyConsumerState.Off)
+                CheckDesiredState(new EnergyConsumerStoppedEvent(this, EnergyConsumerState.Off));
+
+            return;
+        }
+
+        if (ConnectedCar?.ChargerSwitch == null)
         {
             if (State != EnergyConsumerState.Running)
                 CheckDesiredState(new EnergyConsumerStartedEvent(this, EnergyConsumerState.Running));
+
+            return;
         }
-        else
-            CheckDesiredState(new EnergyConsumerStoppedEvent(this, EnergyConsumerState.Off));
+
+        if (State != EnergyConsumerState.Running && ConnectedCar.ChargerSwitch.IsOn())
+            CheckDesiredState(new EnergyConsumerStartedEvent(this, EnergyConsumerState.Running));
+
+
     }
 
     private void Car_ChargerTurnedOn(object? sender, BinarySensorEventArgs e)
     {
-        if (State != EnergyConsumerState.Running)
+        if (State != EnergyConsumerState.Running && CurrentEntity.State >= MinimumCurrent)
             CheckDesiredState(new EnergyConsumerStartedEvent(this, EnergyConsumerState.Running));
     }
     private void Car_ChargerTurnedOff(object? sender, BinarySensorEventArgs e)
