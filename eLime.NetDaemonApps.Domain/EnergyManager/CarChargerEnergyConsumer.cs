@@ -39,6 +39,11 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
             ? ConnectedCar.MinimumCurrent ?? MinimumCurrent
             : MinimumCurrent;
 
+    private Int32 CurrentCurrentForConnectedCar => ConnectedCar == null
+        ? Convert.ToInt32(CurrentEntity.State)
+        : Convert.ToInt32(ConnectedCar.CurrentEntity?.State);
+
+
     public DateTimeOffset? _lastCurrentChange;
 
     public CarChargerEnergyConsumer(ILogger logger, String name, NumericEntity powerUsage, BinarySensor? criticallyNeeded, Double switchOnLoad, Double switchOffLoad, TimeSpan? minimumRuntime, TimeSpan? maximumRuntime, TimeSpan? minimumTimeout,
@@ -214,6 +219,10 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
             return false;
 
         if (_balancingMethodLastChangedAt?.AddMinutes(3) > now)
+            return false;
+
+        //Can re-balance
+        if (CurrentCurrentForConnectedCar > MinimumCurrentForConnectedCar)
             return false;
 
         return true;
