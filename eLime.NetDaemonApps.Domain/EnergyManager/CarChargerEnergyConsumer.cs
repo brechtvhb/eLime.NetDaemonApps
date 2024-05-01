@@ -233,6 +233,10 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         if (MinimumRuntime != null && StartedAt?.Add(MinimumRuntime.Value) > now)
             return false;
 
+        //Can re-balance
+        if (CurrentCurrentForConnectedCar > MinimumCurrentForConnectedCar)
+            return false;
+
         return true;
     }
 
