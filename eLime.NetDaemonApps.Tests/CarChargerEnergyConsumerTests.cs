@@ -368,7 +368,7 @@ public class CarChargerEnergyConsumerTests
 
 
     [TestMethod]
-    public void MaxBatteryReached_DoesNotTriggerTurnOff_IfRemainOnAtfullBattery()
+    public void MaxBatteryReached_DoesNotTriggerTurnOff_IfRemainOnAtFullBattery()
     {
         // Arrange
         var consumer = new CarChargerEnergyConsumerBuilder(_logger, _testCtx)
