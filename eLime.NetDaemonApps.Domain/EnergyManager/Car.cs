@@ -79,6 +79,7 @@ public class Car
     }
 
     public Boolean IsConnectedToHomeCharger => CableConnectedSensor.IsOn() && Location.State == "home";
+
     public Boolean CanSetCurrent => IsConnectedToHomeCharger && CurrentEntity != null;
 
     public Boolean NeedsEnergy => RemainOnAtFullBattery ||
@@ -86,6 +87,14 @@ public class Car
             ? BatteryPercentageSensor.State < MaxBatteryPercentageSensor.State
             : BatteryPercentageSensor.State < 100
         );
+
+    public Boolean IsRunning => ChargerSwitch == null
+        ? CanSetCurrent
+            ? CurrentEntity.State >= MinimumCurrent
+            : true
+        : CanSetCurrent
+          ? ChargerSwitch.IsOn() && CurrentEntity.State >= MinimumCurrent
+          : ChargerSwitch.IsOn();
 
     public void TurnOnCharger()
     {

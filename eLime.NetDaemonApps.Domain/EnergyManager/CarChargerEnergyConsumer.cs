@@ -21,9 +21,7 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 
     public InputNumberEntity CurrentEntity { get; set; }
 
-    public override bool Running => ConnectedCar?.ChargerSwitch != null
-        ? ConnectedCar.ChargerSwitch.IsOn() && (CurrentEntity.State ?? 0) > OffCurrent
-        : (CurrentEntity.State ?? 0) > OffCurrent;
+    public override bool Running => (ConnectedCar?.IsRunning ?? false) && (CurrentEntity.State ?? 0) > OffCurrent;
 
     public override double PeakLoad => MinimumCurrentForConnectedCar * TotalVoltage;
     public TextSensor StateSensor { get; set; }
