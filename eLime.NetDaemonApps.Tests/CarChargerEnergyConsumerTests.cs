@@ -357,8 +357,10 @@ public class CarChargerEnergyConsumerTests
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
 
         _testCtx.TriggerStateChange(consumer.StateSensor, "Charging");
+        _testCtx.TriggerStateChange(consumer.CurrentEntity, "6");
         _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "80");
         _testCtx.TriggerStateChange(consumer.Cars.First().ChargerSwitch, "on");
+        _testCtx.TriggerStateChange(consumer.Cars.First().CurrentEntity, "2");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(30));
 
         //Assert
