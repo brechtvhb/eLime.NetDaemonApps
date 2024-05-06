@@ -77,8 +77,9 @@ public class CoolingEnergyConsumer : EnergyConsumer
 
     public override bool CanForceStopOnPeakLoad(DateTimeOffset now)
     {
-        if (MinimumRuntime != null && StartedAt?.Add(MinimumRuntime.Value) > now)
-            return false;
+        //Do not care about minimum runtime if peak load hits, happens only several times a month ...
+        //if (MinimumRuntime != null && StartedAt?.Add(MinimumRuntime.Value) > now)
+        //    return false;
 
         return true;
     }
