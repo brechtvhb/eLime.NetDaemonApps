@@ -27,6 +27,7 @@ public class SmartVentilationTests
     private NumericSensor _humiditySensor;
     private BinarySensor _awaySensor;
     private BinarySensor _sleepSensor;
+    private BinarySensor _summerModeSensor;
     private NumericSensor _outdoorTemperatureSensor;
 
     [TestInitialize]
@@ -44,6 +45,7 @@ public class SmartVentilationTests
         _humiditySensor = new(_testCtx.HaContext, "sensor.co2");
         _awaySensor = new(_testCtx.HaContext, "boolean_sensor.away");
         _sleepSensor = new(_testCtx.HaContext, "boolean_sensor.kids_sleeping");
+        _summerModeSensor = new(_testCtx.HaContext, "boolean_sensor.summer");
         _outdoorTemperatureSensor = new(_testCtx.HaContext, "sensor.outdoor_temperature");
     }
 
@@ -215,6 +217,48 @@ public class SmartVentilationTests
 
         //Assert
         _testCtx.VerifyFanModeSet(_climate, VentilationState.Low, Moq.Times.Exactly(1));
+    }
+
+    [TestMethod]
+    public void IndoorTemperatureGuard_HotIncreasesSpeed()
+    {
+        // Arrange
+        var ventilation = new VentilationBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage)
+            .With(_climate)
+            .WithStatePingPongGuard(TimeSpan.FromSeconds(30))
+            .WithIndoorTemperatureGuard(_summerModeSensor, _outdoorTemperatureSensor)
+            .Build();
+
+        _testCtx.TriggerStateChangeWithAttributes(_climate, "fan_only", new { Temperature = 22, CurrentTemperature = 23 });
+
+        //Act
+        _testCtx.TriggerStateChange(_outdoorTemperatureSensor, new EntityState { State = "18" });
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(61));
+
+        //Assert
+        _testCtx.VerifyFanModeSet(_climate, VentilationState.Low, Moq.Times.Exactly(2));
+    }
+
+    [TestMethod]
+    public void IndoorTemperatureGuard_VeryHotIncreasesSpeed()
+    {
+        // Arrange
+        _testCtx.TriggerStateChange(_summerModeSensor, "on");
+
+        var ventilation = new VentilationBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage)
+            .With(_climate)
+            .WithStatePingPongGuard(TimeSpan.FromSeconds(30))
+            .WithIndoorTemperatureGuard(_summerModeSensor, _outdoorTemperatureSensor)
+            .Build();
+
+        _testCtx.TriggerStateChangeWithAttributes(_climate, "fan_only", new { temperature = 22, current_temperature = 24 });
+
+        //Act
+        _testCtx.TriggerStateChange(_outdoorTemperatureSensor, new EntityState { State = "18" });
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(61));
+
+        //Assert
+        _testCtx.VerifyFanModeSet(_climate, VentilationState.Medium, Moq.Times.Exactly(1));
     }
 
     [TestMethod]

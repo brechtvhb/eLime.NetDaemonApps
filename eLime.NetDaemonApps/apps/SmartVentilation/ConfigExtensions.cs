@@ -21,12 +21,13 @@ public static class ConfigExtensions
         var statePingPongGuard = config.StatePingPong.ToEntities(logger, scheduler);
         var indoorAirQualityGuard = config.Indoor.ToEntities(ha, logger, scheduler);
         var bathroomAirQualityGuard = config.Bathroom.ToEntities(ha, logger, scheduler);
+        var indoorTemperatureGuard = config.IndoorTemperature.ToEntities(ha, logger, scheduler);
         var moldGuard = config.Mold.ToEntities(logger, scheduler);
         var dryAirGuard = config.DryAir.ToEntities(ha, logger, scheduler);
         var electricityBillGuard = config.ElectricityBill.ToEntities(ha, logger, scheduler);
 
         var ventilation = new Domain.SmartVentilation.SmartVentilation(ha, logger, scheduler, mqttEntityManager, storage, config.Enabled ?? true, climate, netDaemonUserId,
-            statePingPongGuard, indoorAirQualityGuard, bathroomAirQualityGuard, moldGuard, dryAirGuard, electricityBillGuard, TimeSpan.FromSeconds(3));
+            statePingPongGuard, indoorAirQualityGuard, bathroomAirQualityGuard, indoorTemperatureGuard, moldGuard, dryAirGuard, electricityBillGuard, TimeSpan.FromSeconds(3));
         return ventilation;
     }
 
@@ -46,6 +47,13 @@ public static class ConfigExtensions
     {
         var humiditySensors = config.HumiditySensors.Select(x => new NumericSensor(ha, x)).ToList();
         var guard = new BathroomAirQualityGuard(logger, scheduler, humiditySensors, config.HumidityMediumThreshold, config.HumidityHighThreshold);
+        return guard;
+    }
+    public static IndoorTemperatureGuard ToEntities(this IndoorTemperatureGuardConfig config, IHaContext ha, ILogger logger, IScheduler scheduler)
+    {
+        var summerModeSensor = new BinarySensor(ha, config.SummerModeSensor);
+        var outdoorTemperatureSensor = new NumericSensor(ha, config.OutdoorTemperatureSensor);
+        var guard = new IndoorTemperatureGuard(logger, scheduler, summerModeSensor, outdoorTemperatureSensor);
         return guard;
     }
     public static MoldGuard ToEntities(this MoldGuardConfig config, ILogger logger, IScheduler scheduler)

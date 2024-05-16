@@ -20,6 +20,7 @@ public class SmartVentilation
     public StatePingPongGuard StatePingPongGuard { get; }
     public IndoorAirQualityGuard IndoorAirQualityGuard { get; }
     public BathroomAirQualityGuard BathroomAirQualityGuard { get; }
+    public IndoorTemperatureGuard IndoorTemperatureGuard { get; }
     public MoldGuard MoldGuard { get; }
     public DryAirGuard DryAirGuard { get; }
     public ElectricityBillGuard ElectricityBillGuard { get; }
@@ -43,7 +44,7 @@ public class SmartVentilation
     private readonly DebounceDispatcher? GuardScreenDebounceDispatcher;
 
     public SmartVentilation(IHaContext haContext, ILogger logger, IScheduler scheduler, IMqttEntityManager mqttEntityManager, IFileStorage fileStorage, Boolean enabled, Climate climate, String ndUserId,
-        StatePingPongGuard statePingPongGuard, IndoorAirQualityGuard indoorAirQualityGuard, BathroomAirQualityGuard bathroomAirQualityGuard, MoldGuard moldGuard, DryAirGuard dryAirGuard, ElectricityBillGuard electricityBillGuard,
+        StatePingPongGuard statePingPongGuard, IndoorAirQualityGuard indoorAirQualityGuard, BathroomAirQualityGuard bathroomAirQualityGuard, IndoorTemperatureGuard indoorTemperatureGuard, MoldGuard moldGuard, DryAirGuard dryAirGuard, ElectricityBillGuard electricityBillGuard,
         TimeSpan debounceDuration)
     {
         _haContext = haContext;
@@ -63,6 +64,7 @@ public class SmartVentilation
         StatePingPongGuard = statePingPongGuard;
         IndoorAirQualityGuard = indoorAirQualityGuard;
         BathroomAirQualityGuard = bathroomAirQualityGuard;
+        IndoorTemperatureGuard = indoorTemperatureGuard;
         MoldGuard = moldGuard;
         DryAirGuard = dryAirGuard;
         ElectricityBillGuard = electricityBillGuard;
@@ -117,6 +119,13 @@ public class SmartVentilation
         if (desiredStateForIndoorBathroomAirQualityGuard is { Enforce: true })
         {
             await ChangeState(desiredStateForIndoorBathroomAirQualityGuard.State, VentilationGuards.BathroomAirQuality);
+            return;
+        }
+
+        var indoorTemperatureGuard = IndoorTemperatureGuard.GetDesiredState(Climate);
+        if (indoorTemperatureGuard is { Enforce: true })
+        {
+            await ChangeState(indoorTemperatureGuard.State, VentilationGuards.IndoorTemperature);
             return;
         }
 

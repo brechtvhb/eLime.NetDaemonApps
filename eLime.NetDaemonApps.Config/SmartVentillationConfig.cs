@@ -13,6 +13,7 @@ public class SmartVentilationConfig
     public StatePingPongGuardConfig StatePingPong { get; set; }
     public IndoorAirQualityGuardConfig Indoor { get; set; }
     public BathroomAirQualityGuardConfig Bathroom { get; set; }
+    public IndoorTemperatureGuardConfig IndoorTemperature { get; set; }
     public MoldGuardConfig Mold { get; set; }
     public DryAirGuardConfig DryAir { get; set; }
     public ElectricityBillGuardConfig ElectricityBill { get; set; }

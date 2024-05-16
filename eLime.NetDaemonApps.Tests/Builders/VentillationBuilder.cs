@@ -20,6 +20,7 @@ public class VentilationBuilder
     private StatePingPongGuard _statePingPongGuard;
     private IndoorAirQualityGuard _indoorAirQualityGuard;
     private BathroomAirQualityGuard _bathroomAirQualityGuard;
+    private IndoorTemperatureGuard _indoorTemperatureGuard;
     private MoldGuard _moldGuard;
     private DryAirGuard _dryAirGuard;
     private ElectricityBillGuard _electricityBillGuard;
@@ -34,6 +35,7 @@ public class VentilationBuilder
         _statePingPongGuard = new StatePingPongGuard(_logger, _testCtx.Scheduler, TimeSpan.FromMinutes(30));
         _indoorAirQualityGuard = new IndoorAirQualityGuard(_logger, _testCtx.Scheduler, new List<NumericSensor> { new(testCtx.HaContext, "sensor.co2") }, 850, 1000);
         _bathroomAirQualityGuard = new BathroomAirQualityGuard(_logger, _testCtx.Scheduler, new List<NumericSensor> { new(testCtx.HaContext, "sensor.humidity_bathroom") }, 70, 80);
+        _indoorTemperatureGuard = new IndoorTemperatureGuard(_logger, _testCtx.Scheduler, new BinarySensor(_testCtx.HaContext, "binary_sensor.summer"), new NumericSensor(testCtx.HaContext, "sensor.outdoor_temp"));
         _moldGuard = new MoldGuard(_logger, _testCtx.Scheduler, TimeSpan.FromHours(10), TimeSpan.FromHours(1));
         _dryAirGuard = new DryAirGuard(_logger, _testCtx.Scheduler, new List<NumericSensor> { new(testCtx.HaContext, "sensor.humidity_living") }, 38, new NumericSensor(testCtx.HaContext, "sensor.outdoor_temp"), 10);
         _electricityBillGuard = new ElectricityBillGuard(_logger, _testCtx.Scheduler, new BinarySensor(_testCtx.HaContext, "binary_sensor.away"), new BinarySensor(_testCtx.HaContext, "binary_sensor.sleeping"));
@@ -60,6 +62,11 @@ public class VentilationBuilder
         _bathroomAirQualityGuard = new BathroomAirQualityGuard(_logger, _testCtx.Scheduler, humiditySensors, humidityMediumThreshold, humidityHighThreshold);
         return this;
     }
+    public VentilationBuilder WithIndoorTemperatureGuard(BinarySensor summerModeSensor, NumericSensor outdoorTemperatureSensor)
+    {
+        _indoorTemperatureGuard = new IndoorTemperatureGuard(_logger, _testCtx.Scheduler, summerModeSensor, outdoorTemperatureSensor);
+        return this;
+    }
     public VentilationBuilder WithMoldGuard(TimeSpan? maxAwayTimespan, TimeSpan? rechargeTimespan)
     {
         _moldGuard = new MoldGuard(_logger, _testCtx.Scheduler, maxAwayTimespan, rechargeTimespan);
@@ -81,7 +88,7 @@ public class VentilationBuilder
     {
 
         var ventilation = new SmartVentilation(_testCtx.HaContext, _logger, _testCtx.Scheduler, _mqttEntityManager, _fileStorage, true, _climate, "somecoolid",
-            _statePingPongGuard, _indoorAirQualityGuard, _bathroomAirQualityGuard, _moldGuard, _dryAirGuard, _electricityBillGuard, TimeSpan.Zero);
+            _statePingPongGuard, _indoorAirQualityGuard, _bathroomAirQualityGuard, _indoorTemperatureGuard, _moldGuard, _dryAirGuard, _electricityBillGuard, TimeSpan.Zero);
 
         return ventilation;
     }
