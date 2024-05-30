@@ -180,7 +180,7 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         var connectedCarNeedsEnergy = ConnectedCar?.NeedsEnergy ?? false;
         var needsEnergy = (StateSensor.State == CarChargerStates.Occupied.ToString() || StateSensor.State == CarChargerStates.Charging.ToString()) && connectedCarNeedsEnergy;
 
-        //Turns of entire charging station if no known car is connected that needs no energy.
+        //Turns of entire charging station if no known car is connected that needs energy.
         if (!Running && !needsEnergy && (CurrentEntity.State ?? 0) > OffCurrent)
             TurnOff();
 
