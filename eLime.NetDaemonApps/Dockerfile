@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:7.0-alpine AS build
+FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine AS build
 WORKDIR /src
 
 # Copy csproj and restore as distinct layers
@@ -21,7 +21,7 @@ RUN dotnet publish -c Release -o /out /src/eLime.NetDaemonApps/eLime.NetDaemonAp
  #&& dotnet tool install --tool-path /tools dotnet-gcdump
 
 # Build runtime image
-FROM mcr.microsoft.com/dotnet/aspnet:7.0-alpine AS run
+FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine AS run
 
 #WORKDIR /tools
 #COPY --from=build /tools .
