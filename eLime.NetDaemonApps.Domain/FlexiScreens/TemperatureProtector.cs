@@ -106,7 +106,10 @@ public class TemperatureProtector : IDisposable
         }
 
         if (solarLuxIndicatingSunIsNotShining)
+        {
+            TemperatureProtectorActive = false;
             return (ScreenState.Up, false);
+        }
 
         if (okInside && noHotDaysAhead)
             TemperatureProtectorActive = false;
