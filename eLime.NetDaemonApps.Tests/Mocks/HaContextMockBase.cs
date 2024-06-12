@@ -25,6 +25,10 @@ public class HaContextMockBase : IHaContext
     public IReadOnlyList<Entity> GetAllEntities() => _entityStates.Keys.Select(s => new Entity(this, s)).ToList();
 
     public Area? GetAreaFromEntityId(string entityId) => null;
+    public EntityRegistration? GetEntityRegistration(string entityId)
+    {
+        throw new NotImplementedException();
+    }
 
     public EntityState? GetState(string entityId) => _entityStates.TryGetValue(entityId, out var result) ? result : null;
 

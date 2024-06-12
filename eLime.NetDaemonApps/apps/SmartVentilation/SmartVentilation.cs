@@ -10,7 +10,6 @@ using System.Threading.Tasks;
 
 namespace eLime.NetDaemonApps.apps.SmartVentilation;
 
-[Focus]
 [NetDaemonApp(Id = "smartVentilation")]
 public class SmartVentilation : IAsyncInitializable, IAsyncDisposable
 {

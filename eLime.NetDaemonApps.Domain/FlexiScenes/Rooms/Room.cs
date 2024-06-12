@@ -370,9 +370,9 @@ public class Room : IAsyncDisposable
     }
 
 
-    public Device GetDevice()
+    public eLime.NetDaemonApps.Domain.Mqtt.Device GetDevice()
     {
-        return new Device { Identifiers = new List<string> { $"flexiscene.{Name.MakeHaFriendly()}" }, Name = "Flexi scene: " + Name, Manufacturer = "Me" };
+        return new eLime.NetDaemonApps.Domain.Mqtt.Device { Identifiers = new List<string> { $"flexiscene.{Name.MakeHaFriendly()}" }, Name = "Flexi scene: " + Name, Manufacturer = "Me" };
     }
 
 
