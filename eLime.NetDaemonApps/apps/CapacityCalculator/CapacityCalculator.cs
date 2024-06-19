@@ -55,7 +55,7 @@ public class CapacityCalculator : IAsyncInitializable, IAsyncDisposable
     {
         _logger.LogInformation("Disposing Capacity calculator");
 
-        _capacityCalculator.Dispose();
+        _capacityCalculator?.Dispose();
 
 
         _logger.LogInformation("Disposed Capacity calculator");
