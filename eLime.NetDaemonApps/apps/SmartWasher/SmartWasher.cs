@@ -18,7 +18,6 @@ namespace eLime.NetDaemonApps.apps.SmartWasher;
 /// Spinning (10): 420 W
 /// </summary>
 
-[Focus]
 [NetDaemonApp(Id = "smartwasher")]
 public class SmartWasher : IAsyncInitializable, IAsyncDisposable
 {

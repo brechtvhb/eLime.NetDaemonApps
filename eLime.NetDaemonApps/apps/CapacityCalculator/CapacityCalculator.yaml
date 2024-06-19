@@ -1,0 +1,2 @@
+﻿eLime.NetDaemonApps.Config.CapacityCalculatorConfig:
+  smartMeterUrl: "http://electricity.home:82/smartmeter/api/read"
