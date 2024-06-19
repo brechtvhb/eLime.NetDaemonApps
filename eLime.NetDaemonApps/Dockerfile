@@ -30,6 +30,7 @@ WORKDIR /app
 RUN apk add --no-cache icu-libs
 RUN apk add --no-cache icu-data-full
 ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
+ENV TZ=Europe/Brussels
 COPY --from=build /out .
 
 ENTRYPOINT ["dotnet", "eLime.NetDaemonApps.dll"]
