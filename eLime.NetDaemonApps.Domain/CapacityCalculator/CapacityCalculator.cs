@@ -42,15 +42,11 @@ public class CapacityCalculator
         InitializeState();
 
         //Testing time zone shit
-        var timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById("Europe/Brussels");
-        var localTime = TimeZoneInfo.ConvertTimeFromUtc(scheduler.Now.DateTime, timeZoneInfo);
-
         var startTime = new TimeOnly(00, 01);
-        var start = localTime.Add(-localTime.TimeOfDay).Add(startTime.ToTimeSpan());
-        start = TimeZoneInfo.ConvertTimeToUtc(start, timeZoneInfo);
-        _logger.LogInformation($"Start: {start:HH:mm}");
+        var startFrom = startTime.GetUtcDateTimeFromLocalTimeOnly(scheduler.Now.DateTime).AddDays(1);
 
-        GuardTask = _scheduler.RunEvery(TimeSpan.FromDays(1), start.AddDays(1), () =>
+        _logger.LogInformation($"Will poll smart meter daily starting from: {startFrom:O}");
+        GuardTask = _scheduler.RunEvery(TimeSpan.FromDays(1), startFrom, () =>
         {
             CalculateAveragePeak().RunSync();
         });
@@ -72,7 +68,7 @@ public class CapacityCalculator
     {
         var sensorName = $"sensor.average_capacity_past_year";
 
-        _logger.LogDebug("Creating entities in home assistant.");
+        _logger.LogTrace("Creating entities in home assistant.");
         var sensor = new NumericSensorOptions { Icon = "fapro:bolt", Device = GetDevice(), UnitOfMeasurement = "kW" };
         await _mqttEntityManager.CreateAsync(sensorName, new EntityCreationOptions(UniqueId: sensorName, Name: $"Average capacity past 12 months", DeviceClass: "power", Persist: true), sensor);
     }
