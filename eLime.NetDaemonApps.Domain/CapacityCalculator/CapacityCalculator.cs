@@ -46,7 +46,8 @@ public class CapacityCalculator
         var localTime = TimeZoneInfo.ConvertTimeFromUtc(scheduler.Now.DateTime, timeZoneInfo);
 
         var startTime = new TimeOnly(00, 01);
-        var start = localTime.Add(-localTime.TimeOfDay).Add(startTime.ToTimeSpan()).ToUniversalTime();
+        var start = localTime.Add(-localTime.TimeOfDay).Add(startTime.ToTimeSpan());
+        start = TimeZoneInfo.ConvertTimeToUtc(start, timeZoneInfo);
         _logger.LogInformation($"Start: {start:HH:mm}");
 
         GuardTask = _scheduler.RunEvery(TimeSpan.FromDays(1), start.AddDays(1), () =>
