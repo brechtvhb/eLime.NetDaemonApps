@@ -27,6 +27,9 @@ FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine AS run
 #COPY --from=build /tools .
 
 WORKDIR /app
+RUN apk add --no-cache icu-libs
+RUN apk add --no-cache icu-data-full
+ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
 COPY --from=build /out .
 
 ENTRYPOINT ["dotnet", "eLime.NetDaemonApps.dll"]
