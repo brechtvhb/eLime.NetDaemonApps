@@ -53,7 +53,8 @@ public static class ConfigExtensions
     {
         var summerModeSensor = new BinarySensor(ha, config.SummerModeSensor);
         var outdoorTemperatureSensor = new NumericSensor(ha, config.OutdoorTemperatureSensor);
-        var guard = new IndoorTemperatureGuard(logger, scheduler, summerModeSensor, outdoorTemperatureSensor);
+        var postHeatExchangerTemperatureSensor = new NumericSensor(ha, config.PostHeatExchangerTemperatureSensor);
+        var guard = new IndoorTemperatureGuard(logger, scheduler, summerModeSensor, outdoorTemperatureSensor, postHeatExchangerTemperatureSensor);
         return guard;
     }
     public static MoldGuard ToEntities(this MoldGuardConfig config, ILogger logger, IScheduler scheduler)

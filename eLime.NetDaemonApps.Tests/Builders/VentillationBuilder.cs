@@ -35,7 +35,7 @@ public class VentilationBuilder
         _statePingPongGuard = new StatePingPongGuard(_logger, _testCtx.Scheduler, TimeSpan.FromMinutes(30));
         _indoorAirQualityGuard = new IndoorAirQualityGuard(_logger, _testCtx.Scheduler, new List<NumericSensor> { new(testCtx.HaContext, "sensor.co2") }, 850, 1000);
         _bathroomAirQualityGuard = new BathroomAirQualityGuard(_logger, _testCtx.Scheduler, new List<NumericSensor> { new(testCtx.HaContext, "sensor.humidity_bathroom") }, 70, 80);
-        _indoorTemperatureGuard = new IndoorTemperatureGuard(_logger, _testCtx.Scheduler, new BinarySensor(_testCtx.HaContext, "binary_sensor.summer"), new NumericSensor(testCtx.HaContext, "sensor.outdoor_temp"));
+        _indoorTemperatureGuard = new IndoorTemperatureGuard(_logger, _testCtx.Scheduler, new BinarySensor(_testCtx.HaContext, "binary_sensor.summer"), new NumericSensor(testCtx.HaContext, "sensor.outdoor_temp"), new NumericSensor(testCtx.HaContext, "sensor.ewt_temp"));
         _moldGuard = new MoldGuard(_logger, _testCtx.Scheduler, TimeSpan.FromHours(10), TimeSpan.FromHours(1));
         _dryAirGuard = new DryAirGuard(_logger, _testCtx.Scheduler, new List<NumericSensor> { new(testCtx.HaContext, "sensor.humidity_living") }, 38, new NumericSensor(testCtx.HaContext, "sensor.outdoor_temp"), 10);
         _electricityBillGuard = new ElectricityBillGuard(_logger, _testCtx.Scheduler, new BinarySensor(_testCtx.HaContext, "binary_sensor.away"), new BinarySensor(_testCtx.HaContext, "binary_sensor.sleeping"));
@@ -62,9 +62,9 @@ public class VentilationBuilder
         _bathroomAirQualityGuard = new BathroomAirQualityGuard(_logger, _testCtx.Scheduler, humiditySensors, humidityMediumThreshold, humidityHighThreshold);
         return this;
     }
-    public VentilationBuilder WithIndoorTemperatureGuard(BinarySensor summerModeSensor, NumericSensor outdoorTemperatureSensor)
+    public VentilationBuilder WithIndoorTemperatureGuard(BinarySensor summerModeSensor, NumericSensor outdoorTemperatureSensor, NumericSensor postEwtTemperatureSensor)
     {
-        _indoorTemperatureGuard = new IndoorTemperatureGuard(_logger, _testCtx.Scheduler, summerModeSensor, outdoorTemperatureSensor);
+        _indoorTemperatureGuard = new IndoorTemperatureGuard(_logger, _testCtx.Scheduler, summerModeSensor, outdoorTemperatureSensor, postEwtTemperatureSensor);
         return this;
     }
     public VentilationBuilder WithMoldGuard(TimeSpan? maxAwayTimespan, TimeSpan? rechargeTimespan)

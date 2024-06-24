@@ -29,6 +29,7 @@ public class SmartVentilationTests
     private BinarySensor _sleepSensor;
     private BinarySensor _summerModeSensor;
     private NumericSensor _outdoorTemperatureSensor;
+    private NumericSensor _postEwtTemperatureSensor;
 
     [TestInitialize]
     public void Init()
@@ -47,6 +48,7 @@ public class SmartVentilationTests
         _sleepSensor = new(_testCtx.HaContext, "boolean_sensor.kids_sleeping");
         _summerModeSensor = new(_testCtx.HaContext, "boolean_sensor.summer");
         _outdoorTemperatureSensor = new(_testCtx.HaContext, "sensor.outdoor_temperature");
+        _outdoorTemperatureSensor = new(_testCtx.HaContext, "sensor.ewt_temperature");
     }
 
     [TestMethod]
@@ -226,7 +228,7 @@ public class SmartVentilationTests
         var ventilation = new VentilationBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage)
             .With(_climate)
             .WithStatePingPongGuard(TimeSpan.FromSeconds(30))
-            .WithIndoorTemperatureGuard(_summerModeSensor, _outdoorTemperatureSensor)
+            .WithIndoorTemperatureGuard(_summerModeSensor, _outdoorTemperatureSensor, _postEwtTemperatureSensor)
             .Build();
 
         _testCtx.TriggerStateChangeWithAttributes(_climate, "fan_only", new { Temperature = 22, CurrentTemperature = 23 });
@@ -248,7 +250,7 @@ public class SmartVentilationTests
         var ventilation = new VentilationBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage)
             .With(_climate)
             .WithStatePingPongGuard(TimeSpan.FromSeconds(30))
-            .WithIndoorTemperatureGuard(_summerModeSensor, _outdoorTemperatureSensor)
+            .WithIndoorTemperatureGuard(_summerModeSensor, _outdoorTemperatureSensor, _postEwtTemperatureSensor)
             .Build();
 
         _testCtx.TriggerStateChangeWithAttributes(_climate, "fan_only", new { temperature = 22, current_temperature = 24 });

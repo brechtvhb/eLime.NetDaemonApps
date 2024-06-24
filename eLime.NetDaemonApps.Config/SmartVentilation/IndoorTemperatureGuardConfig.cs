@@ -4,5 +4,5 @@ public class IndoorTemperatureGuardConfig
 {
     public string? SummerModeSensor { get; set; }
     public string? OutdoorTemperatureSensor { get; set; }
-    public string? HeatExchangerTemperatureSensor { get; set; }
+    public string? PostHeatExchangerTemperatureSensor { get; set; }
 }
