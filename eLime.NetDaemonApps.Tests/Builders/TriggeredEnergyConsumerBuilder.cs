@@ -24,6 +24,7 @@ public class TriggeredEnergyConsumerBuilder
     private TimeSpan? _minimumTimeout;
     private TimeSpan? _maximumTimeout;
     private List<TimeWindow> _timeWindows = new();
+    private string _timezone;
 
     private BinarySwitch _socket;
 
@@ -39,6 +40,7 @@ public class TriggeredEnergyConsumerBuilder
     {
         _logger = logger;
         _testCtx = testCtx;
+        _timezone = "Utc";
 
         if (baseType == "irrigation")
         {
@@ -117,6 +119,12 @@ public class TriggeredEnergyConsumerBuilder
         _timeWindows.Add(new TimeWindow(isActive, start, end));
         return this;
     }
+    public TriggeredEnergyConsumerBuilder WithTimezone(String timezone)
+    {
+        _timezone = timezone;
+        return this;
+    }
+
 
     public TriggeredEnergyConsumerBuilder WithLoads(Double switchOn, Double switchOff)
     {
@@ -153,7 +161,7 @@ public class TriggeredEnergyConsumerBuilder
 
     public TriggeredEnergyConsumer Build()
     {
-        var x = new TriggeredEnergyConsumer(_logger, _name, _powerUsage, _criticallyNeeded, _switchOnLoad, _switchOffLoad, _minimumRuntime, _maximumRuntime, _minimumTimeout, _maximumTimeout, _timeWindows, _socket, _statePeakLoads, _stateSensor, _startState, _completedState, _criticalState, _canForceShutdown, _shutDownOnComplete);
+        var x = new TriggeredEnergyConsumer(_logger, _name, _powerUsage, _criticallyNeeded, _switchOnLoad, _switchOffLoad, _minimumRuntime, _maximumRuntime, _minimumTimeout, _maximumTimeout, _timeWindows, _timezone, _socket, _statePeakLoads, _stateSensor, _startState, _completedState, _criticalState, _canForceShutdown, _shutDownOnComplete);
         return x;
     }
 }

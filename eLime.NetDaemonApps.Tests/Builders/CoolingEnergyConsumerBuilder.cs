@@ -22,7 +22,8 @@ public class CoolingEnergyConsumerBuilder
     private TimeSpan? _maximumRuntime;
     private TimeSpan? _minimumTimeout;
     private TimeSpan? _maximumTimeout;
-    private List<TimeWindow> _timeWindows = new();
+    private List<TimeWindow> _timeWindows = [];
+    private String _timezone;
 
     private BinarySwitch _socket;
     private Double _peakLoad;
@@ -35,6 +36,7 @@ public class CoolingEnergyConsumerBuilder
     {
         _logger = logger;
         _testCtx = testCtx;
+        _timezone = "Utc";
 
         _name = "Fridge";
         _powerUsage = new NumericEntity(_testCtx.HaContext, "sensor.socket_fridge_power");
@@ -96,6 +98,12 @@ public class CoolingEnergyConsumerBuilder
         return this;
     }
 
+    public CoolingEnergyConsumerBuilder WithTimezone(String timezone)
+    {
+        _timezone = timezone;
+        return this;
+    }
+
     public CoolingEnergyConsumerBuilder WithTemperatureSensor(string sensorName, double targetTemperature, double maxTemperature)
     {
         _temperatureSensor = new NumericEntity(_testCtx.HaContext, sensorName);
@@ -107,7 +115,7 @@ public class CoolingEnergyConsumerBuilder
 
     public CoolingEnergyConsumer Build()
     {
-        var x = new CoolingEnergyConsumer(_logger, _name, _powerUsage, _criticallyNeeded, _switchOnLoad, _switchOffLoad, _minimumRuntime, _maximumRuntime, _minimumTimeout, _maximumTimeout, _timeWindows, _socket, _peakLoad, _temperatureSensor, _targetTemperature, _maxTemperature);
+        var x = new CoolingEnergyConsumer(_logger, _name, _powerUsage, _criticallyNeeded, _switchOnLoad, _switchOffLoad, _minimumRuntime, _maximumRuntime, _minimumTimeout, _maximumTimeout, _timeWindows, _timezone, _socket, _peakLoad, _temperatureSensor, _targetTemperature, _maxTemperature);
         return x;
     }
 }

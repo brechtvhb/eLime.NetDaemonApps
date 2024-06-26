@@ -23,6 +23,7 @@ public class SimpleEnergyConsumerBuilder
     private TimeSpan? _minimumTimeout;
     private TimeSpan? _maximumTimeout;
     private List<TimeWindow> _timeWindows = new();
+    private string _timezone;
 
     private BinarySwitch _socket;
     private Double _peakLoad;
@@ -31,6 +32,7 @@ public class SimpleEnergyConsumerBuilder
     {
         _logger = logger;
         _testCtx = testCtx;
+        _timezone = "Utc";
 
         _name = "Pond pump";
         _powerUsage = new NumericEntity(_testCtx.HaContext, "sensor.socket_pond_pump_power");
@@ -89,10 +91,15 @@ public class SimpleEnergyConsumerBuilder
         _timeWindows.Add(new TimeWindow(isActive, start, end));
         return this;
     }
+    public SimpleEnergyConsumerBuilder WithTimezone(String timezone)
+    {
+        _timezone = timezone;
+        return this;
+    }
 
     public SimpleEnergyConsumer Build()
     {
-        var x = new SimpleEnergyConsumer(_logger, _name, _powerUsage, _criticallyNeeded, _switchOnLoad, _switchOffLoad, _minimumRuntime, _maximumRuntime, _minimumTimeout, _maximumTimeout, _timeWindows, _socket, _peakLoad);
+        var x = new SimpleEnergyConsumer(_logger, _name, _powerUsage, _criticallyNeeded, _switchOnLoad, _switchOffLoad, _minimumRuntime, _maximumRuntime, _minimumTimeout, _maximumTimeout, _timeWindows, _timezone, _socket, _peakLoad);
         return x;
     }
 }

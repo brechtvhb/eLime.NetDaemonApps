@@ -17,9 +17,9 @@ public static class TimespanExtensions
         return roundedTimeSpan;
     }
 
-    public static DateTime GetUtcDateTimeFromLocalTimeOnly(this TimeOnly timeOnly, DateTime utcDate)
+    public static DateTime GetUtcDateTimeFromLocalTimeOnly(this TimeOnly timeOnly, DateTime utcDate, String timezone /*= "Europe/Brussels"*/)
     {
-        var timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById("Europe/Brussels");
+        var timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById(timezone);
         var localDateTime = TimeZoneInfo.ConvertTimeFromUtc(utcDate, timeZoneInfo);
 
         var modifiedLocalDateTime = localDateTime.Add(-localDateTime.TimeOfDay).Add(timeOnly.ToTimeSpan());

@@ -26,6 +26,8 @@ public abstract class EnergyConsumer : IDisposable
     public TimeSpan? MaximumTimeout { get; private set; }
 
     public List<TimeWindow> TimeWindows { get; private set; }
+    public String Timezone { get; private set; }
+
     public DateTimeOffset? StartedAt { get; private set; }
     public DateTimeOffset? LastRun { get; private set; }
     public EnergyConsumerState State { get; private set; }
@@ -50,7 +52,7 @@ public abstract class EnergyConsumer : IDisposable
         return fileStorage;
     }
 
-    protected void SetCommonFields(ILogger logger, String name, NumericEntity powerUsage, BinarySensor? criticallyNeeded, Double switchOnLoad, Double switchOffLoad, TimeSpan? minimumRuntime, TimeSpan? maximumRuntime, TimeSpan? minimumTimeout, TimeSpan? maximumTimeout, List<TimeWindow> timeWindows)
+    protected void SetCommonFields(ILogger logger, String name, NumericEntity powerUsage, BinarySensor? criticallyNeeded, Double switchOnLoad, Double switchOffLoad, TimeSpan? minimumRuntime, TimeSpan? maximumRuntime, TimeSpan? minimumTimeout, TimeSpan? maximumTimeout, List<TimeWindow> timeWindows, String timezone)
     {
         Logger = logger;
 
@@ -66,7 +68,7 @@ public abstract class EnergyConsumer : IDisposable
         MaximumTimeout = maximumTimeout;
 
         TimeWindows = timeWindows;
-
+        Timezone = timezone;
     }
 
     protected void OnStateCHanged(EnergyConsumerStateChangedEvent e)
@@ -171,7 +173,7 @@ public abstract class EnergyConsumer : IDisposable
         //if (Name == "Washing machine")
         //    Logger.LogDebug($"TimeWindows: {String.Join(" / ", TimeWindows.Select(x => x.ToString()))}");
 
-        return TimeWindows.FirstOrDefault(timeWindow => timeWindow.IsActive(now));
+        return TimeWindows.FirstOrDefault(timeWindow => timeWindow.IsActive(now, Timezone));
     }
 
     internal void Started(IScheduler scheduler, DateTimeOffset? startTime = null)

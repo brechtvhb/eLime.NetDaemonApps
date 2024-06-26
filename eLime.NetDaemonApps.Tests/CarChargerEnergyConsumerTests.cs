@@ -425,6 +425,7 @@ public class CarChargerEnergyConsumerTests
         _testCtx.TriggerStateChange(consumer.CurrentEntity, "6");
         _testCtx.TriggerStateChange(consumer.Cars.First().CurrentEntity, "6");
         _testCtx.TriggerStateChange(consumer.Cars.First().ChargerSwitch, "on");
+        _testCtx.TriggerStateChange(consumer.PowerUsage, "4000");
 
         //Act
         _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_production_watt"), "900");
@@ -488,7 +489,7 @@ public class CarChargerEnergyConsumerTests
         _testCtx.TriggerStateChange(consumer.CurrentEntity, "6");
         _testCtx.TriggerStateChange(consumer.Cars.First().CurrentEntity, "1");
         _testCtx.TriggerStateChange(consumer.Cars.First().ChargerSwitch, "on");
-
+        _testCtx.TriggerStateChange(consumer.PowerUsage, "700");
         //Act
         _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_production_watt"), "900");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(30));
@@ -518,6 +519,7 @@ public class CarChargerEnergyConsumerTests
         _testCtx.TriggerStateChange(consumer.CurrentEntity, "6");
         _testCtx.TriggerStateChange(consumer.Cars.First().CurrentEntity, "5");
         _testCtx.TriggerStateChange(consumer.Cars.First().ChargerSwitch, "on");
+        _testCtx.TriggerStateChange(consumer.PowerUsage, "3500");
 
         //Act
         _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_production_watt"), "1500");
@@ -550,6 +552,7 @@ public class CarChargerEnergyConsumerTests
         _testCtx.TriggerStateChange(consumer.CurrentEntity, "8");
         _testCtx.TriggerStateChange(consumer.Cars.First().CurrentEntity, "8");
         _testCtx.TriggerStateChange(consumer.Cars.First().ChargerSwitch, "on");
+        _testCtx.TriggerStateChange(consumer.PowerUsage, "5400");
 
         //Act
         _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_production_watt"), "0");
@@ -584,6 +587,7 @@ public class CarChargerEnergyConsumerTests
         _testCtx.TriggerStateChange(consumer.CurrentEntity, "6");
         _testCtx.TriggerStateChange(consumer.Cars.First().CurrentEntity, "6");
         _testCtx.TriggerStateChange(consumer.Cars.First().ChargerSwitch, "on");
+        _testCtx.TriggerStateChange(consumer.PowerUsage, "4000");
 
         //Act
         _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_production_watt"), "0");
@@ -619,6 +623,7 @@ public class CarChargerEnergyConsumerTests
         _testCtx.TriggerStateChange(consumer.CurrentEntity, "16");
         _testCtx.TriggerStateChange(consumer.Cars.First().CurrentEntity, "6");
         _testCtx.TriggerStateChange(consumer.Cars.First().ChargerSwitch, "on");
+        _testCtx.TriggerStateChange(consumer.PowerUsage, "4000");
 
         //Act
         _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_production_watt"), "0");
@@ -654,6 +659,7 @@ public class CarChargerEnergyConsumerTests
         _testCtx.TriggerStateChange(consumer.CurrentEntity, "16");
         _testCtx.TriggerStateChange(consumer.Cars.First().CurrentEntity, "6");
         _testCtx.TriggerStateChange(consumer.Cars.First().ChargerSwitch, "on");
+        _testCtx.TriggerStateChange(consumer.PowerUsage, "4000");
 
         //Act
         _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_production_watt"), "800");
@@ -690,12 +696,14 @@ public class CarChargerEnergyConsumerTests
         _testCtx.TriggerStateChange(consumer.CurrentEntity, "16");
         _testCtx.TriggerStateChange(consumer.Cars.First().CurrentEntity, "6");
         _testCtx.TriggerStateChange(consumer.Cars.First().ChargerSwitch, "on");
+        _testCtx.TriggerStateChange(consumer.PowerUsage, "4000");
         _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_production_watt"), "800");
         _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_consumption_watt"), "0");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(30));
 
         //Act
         _testCtx.TriggerStateChange(consumer.Cars.First().CurrentEntity, "8");
+        _testCtx.TriggerStateChange(consumer.PowerUsage, "5400");
         _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_production_watt"), "-600");
         _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_consumption_watt"), "0");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(30));

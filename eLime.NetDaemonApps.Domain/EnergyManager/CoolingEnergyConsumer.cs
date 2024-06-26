@@ -16,9 +16,9 @@ public class CoolingEnergyConsumer : EnergyConsumer
 
 
     public CoolingEnergyConsumer(ILogger logger, String name, NumericEntity powerUsage, BinarySensor? criticallyNeeded, Double switchOnLoad, Double switchOffLoad, TimeSpan? minimumRuntime, TimeSpan? maximumRuntime, TimeSpan? minimumTimeout,
-        TimeSpan? maximumTimeout, List<TimeWindow> timeWindows, BinarySwitch socket, Double peakLoad, NumericEntity temperatureSensor, Double targetTemperature, Double maxTemperature)
+        TimeSpan? maximumTimeout, List<TimeWindow> timeWindows, String timezone, BinarySwitch socket, Double peakLoad, NumericEntity temperatureSensor, Double targetTemperature, Double maxTemperature)
     {
-        SetCommonFields(logger, name, powerUsage, criticallyNeeded, switchOnLoad, switchOffLoad, minimumRuntime, maximumRuntime, minimumTimeout, maximumTimeout, timeWindows);
+        SetCommonFields(logger, name, powerUsage, criticallyNeeded, switchOnLoad, switchOffLoad, minimumRuntime, maximumRuntime, minimumTimeout, maximumTimeout, timeWindows, timezone);
         Socket = socket;
         Socket.TurnedOn += Socket_TurnedOn;
         Socket.TurnedOff += Socket_TurnedOff;

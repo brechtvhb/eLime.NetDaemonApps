@@ -5,6 +5,7 @@ internal interface IDynamicLoadConsumer
     public String Name { get; }
     public Int32 MinimumCurrent { get; }
     public Int32 MaximumCurrent { get; }
+    public TimeSpan MinimumRebalancingInterval { get; }
     public BalancingMethod BalancingMethod { get; }
 
     public IDisposable? BalancingMethodChangedCommandHandler { get; set; }

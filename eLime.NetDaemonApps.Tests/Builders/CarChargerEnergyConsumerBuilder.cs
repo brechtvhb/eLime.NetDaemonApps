@@ -25,6 +25,7 @@ public class CarChargerEnergyConsumerBuilder
     private TimeSpan? _minimumTimeout;
     private TimeSpan? _maximumTimeout;
     private List<TimeWindow> _timeWindows = new();
+    private string _timezone;
 
     public int _minimumCurrent;
     public int _maximumCurrent;
@@ -41,6 +42,7 @@ public class CarChargerEnergyConsumerBuilder
     {
         _logger = logger;
         _testCtx = testCtx;
+        _timezone = "Utc";
 
         _name = "Veton";
         _powerUsage = new NumericEntity(_testCtx.HaContext, "sensor.x");
@@ -114,6 +116,12 @@ public class CarChargerEnergyConsumerBuilder
         return this;
     }
 
+    public CarChargerEnergyConsumerBuilder WithTimezone(String timezone)
+    {
+        _timezone = timezone;
+        return this;
+    }
+
     public CarChargerEnergyConsumerBuilder WithLoads(Double switchOn, Double switchOff)
     {
         _switchOnLoad = switchOn;
@@ -141,7 +149,7 @@ public class CarChargerEnergyConsumerBuilder
 
     public CarChargerEnergyConsumer Build()
     {
-        var x = new CarChargerEnergyConsumer(_logger, _name, _powerUsage, _criticallyNeeded, _switchOnLoad, _switchOffLoad, _minimumRuntime, _maximumRuntime, _minimumTimeout, _maximumTimeout, _timeWindows,
+        var x = new CarChargerEnergyConsumer(_logger, _name, _powerUsage, _criticallyNeeded, _switchOnLoad, _switchOffLoad, _minimumRuntime, _maximumRuntime, _minimumTimeout, _maximumTimeout, _timeWindows, _timezone,
             _minimumCurrent, _maximumCurrent, _offCurrent, _currentEntity, _voltageEntity, _stateSensor, _cars, _testCtx.Scheduler);
         x.SetBalancingMethod(_testCtx.Scheduler.Now, _balancingMethod);
         return x;

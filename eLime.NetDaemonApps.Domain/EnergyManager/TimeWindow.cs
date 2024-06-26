@@ -1,4 +1,5 @@
 ﻿using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
+using eLime.NetDaemonApps.Domain.Helper;
 
 namespace eLime.NetDaemonApps.Domain.EnergyManager;
 
@@ -15,13 +16,14 @@ public class TimeWindow
         End = end;
     }
 
-    public bool IsActive(DateTimeOffset now)
+    public bool IsActive(DateTimeOffset now, String timezone)
     {
         if (Active != null && Active.IsOff())
             return false;
 
-        var start = now.Add(-now.TimeOfDay).Add(Start.ToTimeSpan());
-        var end = now.Add(-now.TimeOfDay).Add(End.ToTimeSpan());
+
+        var start = Start.GetUtcDateTimeFromLocalTimeOnly(now.DateTime, timezone);
+        var end = End.GetUtcDateTimeFromLocalTimeOnly(now.DateTime, timezone);
 
         if (Start > End)
         {

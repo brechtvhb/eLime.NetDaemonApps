@@ -15,6 +15,7 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
     public Int32 MinimumCurrent { get; set; }
     public Int32 MaximumCurrent { get; set; }
     public BalancingMethod BalancingMethod { get; private set; }
+    public TimeSpan MinimumRebalancingInterval => TimeSpan.FromSeconds(30); //TODO: config setting
     private DateTimeOffset? _balancingMethodLastChangedAt;
 
     public Int32 OffCurrent { get; set; }
@@ -39,18 +40,19 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
             ? ConnectedCar.MinimumCurrent ?? MinimumCurrent
             : MinimumCurrent;
 
-    private Int32 CurrentCurrentForConnectedCar => ConnectedCar == null
-        ? Convert.ToInt32(CurrentEntity.State)
-        : Convert.ToInt32(ConnectedCar.CurrentEntity?.State);
-
+    private Int32 CurrentCurrentForConnectedCar => CurrentLoad > 0 ? Convert.ToInt32(CurrentLoad / TotalVoltage) : 0;
+    //Tessie's ridiculous way of handling API polling is screwing me here
+    //private Int32 CurrentCurrentForConnectedCar => ConnectedCar == null
+    //    ? Convert.ToInt32(CurrentEntity.State)
+    //    : Convert.ToInt32(ConnectedCar.CurrentEntity?.State);
 
     public DateTimeOffset? _lastCurrentChange;
 
     public CarChargerEnergyConsumer(ILogger logger, String name, NumericEntity powerUsage, BinarySensor? criticallyNeeded, Double switchOnLoad, Double switchOffLoad, TimeSpan? minimumRuntime, TimeSpan? maximumRuntime, TimeSpan? minimumTimeout,
-        TimeSpan? maximumTimeout, List<TimeWindow> timeWindows, Int32 minimumCurrent, Int32 maximumCurrent, Int32 offCurrent, InputNumberEntity currentEntity, NumericEntity voltageEntity, TextSensor stateSensor, List<Car> cars, IScheduler scheduler)
+        TimeSpan? maximumTimeout, List<TimeWindow> timeWindows, String timezone, Int32 minimumCurrent, Int32 maximumCurrent, Int32 offCurrent, InputNumberEntity currentEntity, NumericEntity voltageEntity, TextSensor stateSensor, List<Car> cars, IScheduler scheduler)
     {
         _scheduler = scheduler;
-        SetCommonFields(logger, name, powerUsage, criticallyNeeded, switchOnLoad, switchOffLoad, minimumRuntime, maximumRuntime, minimumTimeout, maximumTimeout, timeWindows);
+        SetCommonFields(logger, name, powerUsage, criticallyNeeded, switchOnLoad, switchOffLoad, minimumRuntime, maximumRuntime, minimumTimeout, maximumTimeout, timeWindows, timezone);
         MinimumCurrent = minimumCurrent;
         MaximumCurrent = maximumCurrent;
         OffCurrent = offCurrent;
@@ -80,6 +82,9 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 
     public (Double current, Double netPowerChange) Rebalance(double netGridUsage, double peakUsage)
     {
+        if (_lastCurrentChange?.Add(MinimumRebalancingInterval) > _scheduler.Now)
+            return (0, 0);
+
         var currentChargerCurrent = CurrentEntity.State ?? 0;
         var currentCarCurrent = ConnectedCar?.CurrentEntity?.State ?? 0;
 
@@ -90,7 +95,7 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 
         if (ConnectedCar?.CanSetCurrent ?? false)
         {
-            toBeCarCurrent = currentCarCurrent - netGridCurrent;
+            toBeCarCurrent = CurrentCurrentForConnectedCar - netGridCurrent;
             toBeChargerCurrent = toBeCarCurrent;
         }
         else
@@ -99,7 +104,7 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         }
 
         var (chargerCurrent, chargerCurrentChanged) = SetChargerCurrent(ConnectedCar, toBeChargerCurrent, currentChargerCurrent);
-        var (carCurrent, carCurrentChanged) = SetCarCurrentIfSupported(toBeCarCurrent, currentCarCurrent);
+        var (carCurrent, carCurrentChanged) = SetCarCurrentIfSupported(toBeCarCurrent, CurrentCurrentForConnectedCar);
 
         if (!chargerCurrentChanged && !carCurrentChanged)
             return (0, 0);
