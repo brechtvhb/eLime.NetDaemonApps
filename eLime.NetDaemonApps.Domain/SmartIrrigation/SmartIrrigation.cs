@@ -311,6 +311,7 @@ public class SmartIrrigation : IDisposable
             _logger.LogDebug("Setting energy available to: {EnergyAvailable}", state);
             await _mqttEntityManager.SetStateAsync(switchName, state);
             EnergyAvailable = state == "ON";
+            UpdateStateInHomeAssistant().RunSync();
 
             if (EnergyAvailable)
                 DebounceStartWatering();
@@ -419,6 +420,7 @@ public class SmartIrrigation : IDisposable
             _logger.LogDebug("{IrrigationZone}: Setting irrigation zone mode to {State}.", zone.Name, state);
             await _mqttEntityManager.SetStateAsync(selectName, state);
             zone.SetMode(Enum<ZoneMode>.Cast(state));
+            UpdateStateInHomeAssistant(zone).RunSync();
         };
     }
 
