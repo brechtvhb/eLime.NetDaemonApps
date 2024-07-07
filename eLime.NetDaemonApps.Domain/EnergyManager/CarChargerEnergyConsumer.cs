@@ -86,7 +86,6 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
             return (0, 0);
 
         var currentChargerCurrent = CurrentEntity.State ?? 0;
-        var currentCarCurrent = ConnectedCar?.CurrentEntity?.State ?? 0;
 
         var netGridCurrent = GetBalancingAdjustedGridCurrent(netGridUsage, peakUsage);
 
@@ -110,7 +109,7 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
             return (0, 0);
 
         var netCurrentChange = ConnectedCar?.CanSetCurrent ?? false
-            ? carCurrent - currentCarCurrent
+            ? carCurrent - CurrentCurrentForConnectedCar
             : chargerCurrent - currentChargerCurrent;
 
         return (ConnectedCar?.CanSetCurrent ?? false ? carCurrent : chargerCurrent, netCurrentChange * TotalVoltage);
