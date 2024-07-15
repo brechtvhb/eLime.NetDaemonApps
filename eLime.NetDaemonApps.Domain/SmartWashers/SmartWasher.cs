@@ -214,7 +214,7 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers
             await _mqttEntityManager.SetStateAsync($"{baseName}_state", State.ToString());
 
             await _mqttEntityManager.SetStateAsync($"{baseName}_started_at", StartedAt?.ToString("O") ?? "unknown");
-            await _mqttEntityManager.SetStateAsync($"{baseName}_progress", PercentageComplete.ToString() ?? "unknown");
+            await _mqttEntityManager.SetStateAsync($"{baseName}_progress", PercentageComplete?.ToString() ?? "unknown");
             await _mqttEntityManager.SetStateAsync($"{baseName}_eta", Eta?.ToString("O") ?? "unknown");
             await _mqttEntityManager.SetStateAsync($"{baseName}_program", Program?.ToString() ?? "unknown");
             await _mqttEntityManager.SetStateAsync($"{baseName}_last_state_change", LastStateChange?.ToString("O") ?? "unknown");
