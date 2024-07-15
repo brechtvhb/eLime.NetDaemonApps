@@ -419,7 +419,7 @@ public class Room : IAsyncDisposable
         var task1 = _mqttEntityManager.SetAttributesAsync($"switch.flexilights_{Name.MakeHaFriendly()}", attributes);
         var task2 = _mqttEntityManager.SetStateAsync($"switch.flexilights_{Name.MakeHaFriendly()}", Enabled ? "ON" : "OFF");
         var task3 = _mqttEntityManager.SetStateAsync($"{baseName}_initiated_by", InitiatedBy.ToString());
-        var task4 = _mqttEntityManager.SetStateAsync($"{baseName}_last_changed_at", FlexiScenes.Changes.LastOrDefault()?.ChangedAt.ToString("O"));
+        var task4 = _mqttEntityManager.SetStateAsync($"{baseName}_last_changed_at", FlexiScenes.Changes.LastOrDefault()?.ChangedAt.ToString("O") ?? "unknown");
         var task5 = _mqttEntityManager.SetStateAsync($"select.flexilights_{Name.MakeHaFriendly()}_scene", FlexiScenes.Current?.Name ?? "Off");
 
         await Task.WhenAll(task1, task2, task3, task4, task5);
