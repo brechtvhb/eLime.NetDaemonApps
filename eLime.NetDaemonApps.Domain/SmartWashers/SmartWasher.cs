@@ -118,13 +118,13 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers
             await _mqttEntityManager.CreateAsync($"{baseName}_state", new EntityCreationOptions(Name: $"{Name} - state", UniqueId: $"smartwasher_{Name}_state", Persist: true), stateOptions);
 
             var startedAtOptions = new EntityOptions { Icon = "fapro:calendar-day", Device = GetDevice() };
-            await _mqttEntityManager.CreateAsync($"{baseName}_started_at", new EntityCreationOptions(Name: $"{Name} - started at", UniqueId: $"smartwasher_{Name}_started_at", Persist: true), startedAtOptions);
+            await _mqttEntityManager.CreateAsync($"{baseName}_started_at", new EntityCreationOptions(Name: $"{Name} - started at", UniqueId: $"smartwasher_{Name}_started_at", DeviceClass: "timestamp", Persist: true), startedAtOptions);
 
             var etaOptions = new EntityOptions { Icon = "fapro:calendar-day", Device = GetDevice() };
-            await _mqttEntityManager.CreateAsync($"{baseName}_eta", new EntityCreationOptions(Name: $"{Name} - state", UniqueId: $"smartwasher_{Name}_eta", Persist: true), etaOptions);
+            await _mqttEntityManager.CreateAsync($"{baseName}_eta", new EntityCreationOptions(Name: $"{Name} - state", UniqueId: $"smartwasher_{Name}_eta", DeviceClass: "timestamp", Persist: true), etaOptions);
 
             var lastStateChangeOptions = new EntityOptions { Icon = "fapro:calendar-day", Device = GetDevice() };
-            await _mqttEntityManager.CreateAsync($"{baseName}_last_state_change", new EntityCreationOptions(Name: $"{Name} - Last change", UniqueId: $"smartwasher_{Name}_last_state_change", Persist: true), lastStateChangeOptions);
+            await _mqttEntityManager.CreateAsync($"{baseName}_last_state_change", new EntityCreationOptions(Name: $"{Name} - Last change", UniqueId: $"smartwasher_{Name}_last_state_change", DeviceClass: "timestamp", Persist: true), lastStateChangeOptions);
 
             var progressOptions = new EntityOptions { Icon = "mdi:progress-helper", Device = GetDevice() };
             await _mqttEntityManager.CreateAsync($"{baseName}_progress", new EntityCreationOptions(Name: $"{Name} - progress", UniqueId: $"smartwasher_{Name}_progress", Persist: true), progressOptions);
@@ -213,11 +213,11 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers
 
             await _mqttEntityManager.SetStateAsync($"{baseName}_state", State.ToString());
 
-            await _mqttEntityManager.SetStateAsync($"{baseName}_started_at", StartedAt?.ToString("O"));
+            await _mqttEntityManager.SetStateAsync($"{baseName}_started_at", StartedAt?.ToString("O") ?? "unknown");
             await _mqttEntityManager.SetStateAsync($"{baseName}_progress", PercentageComplete.ToString());
-            await _mqttEntityManager.SetStateAsync($"{baseName}_eta", Eta?.ToString("O"));
+            await _mqttEntityManager.SetStateAsync($"{baseName}_eta", Eta?.ToString("O") ?? "unknown");
             await _mqttEntityManager.SetStateAsync($"{baseName}_program", Program?.ToString());
-            await _mqttEntityManager.SetStateAsync($"{baseName}_last_state_change", LastStateChange?.ToString("O"));
+            await _mqttEntityManager.SetStateAsync($"{baseName}_last_state_change", LastStateChange?.ToString("O") ?? "unknown");
 
             _logger.LogTrace("{SmartWasher}: Updated smartwasher sensors in Home assistant.", Name);
 
