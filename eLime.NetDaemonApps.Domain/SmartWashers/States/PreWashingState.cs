@@ -11,10 +11,13 @@ public class PreWashingState : SmartWasherState
     internal override void Enter(ILogger logger, IScheduler scheduler, SmartWasher context)
     {
         context.SetWasherProgram(logger, WasherProgram.Unknown);
+        context.SetStartedAt();
     }
 
     internal override void PowerUsageChanged(ILogger logger, IScheduler scheduler, SmartWasher context)
     {
+        context.CalculateProgress();
+
         if (context.LastStateChange?.Add(minDuration) > scheduler.Now)
             return;
 

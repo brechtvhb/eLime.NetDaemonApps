@@ -17,6 +17,8 @@ public class WashingState : SmartWasherState
 
     internal override void PowerUsageChanged(ILogger logger, IScheduler scheduler, SmartWasher context)
     {
+        context.CalculateProgress();
+
         if (context.LastStateChange?.Add(minDuration) > scheduler.Now)
             return;
 

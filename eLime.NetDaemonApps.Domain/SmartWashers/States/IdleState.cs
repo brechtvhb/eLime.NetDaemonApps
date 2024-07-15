@@ -9,7 +9,7 @@ public class IdleState : SmartWasherState
 
     internal override void Enter(ILogger logger, IScheduler scheduler, SmartWasher context)
     {
-        return;
+        context.ClearStartedAt();
     }
 
     internal override void PowerUsageChanged(ILogger logger, IScheduler scheduler, SmartWasher context)

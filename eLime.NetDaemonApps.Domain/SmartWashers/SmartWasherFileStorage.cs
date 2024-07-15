@@ -8,5 +8,7 @@ internal class SmartWasherFileStorage
 
     public WasherStates State { get; set; }
     public WasherProgram? Program { get; set; }
+    public DateTimeOffset? StartedAt { get; set; }
     public DateTimeOffset? Eta { get; set; }
+    public Int32? PercentageComplete { get; set; }
 }

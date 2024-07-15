@@ -33,7 +33,9 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers
         private SmartWasherState? _state;
 
         public DateTimeOffset? LastStateChange;
+        public DateTimeOffset? StartedAt { get; set; }
         public DateTimeOffset? Eta { get; set; }
+        public Int32? PercentageComplete { get; set; }
         public WasherProgram? Program { get; set; }
 
         private IDisposable SwitchDisposable { get; set; }
@@ -116,11 +118,17 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers
                 await _mqttEntityManager.CreateAsync($"{baseName}_state", new EntityCreationOptions(Name: $"{Name} - state", UniqueId: $"smartwasher_{Name}_state", Persist: true), stateOptions);
                 await _mqttEntityManager.SetStateAsync($"{baseName}_state", State.ToString());
 
+                var startedAtOptions = new EntityOptions { Icon = "fapro:calendar-day", Device = GetDevice() };
+                await _mqttEntityManager.CreateAsync($"{baseName}_started_at", new EntityCreationOptions(Name: $"{Name} - started at", UniqueId: $"smartwasher_{Name}_started_at", Persist: true), startedAtOptions);
+
                 var etaOptions = new EntityOptions { Icon = "fapro:calendar-day", Device = GetDevice() };
                 await _mqttEntityManager.CreateAsync($"{baseName}_eta", new EntityCreationOptions(Name: $"{Name} - state", UniqueId: $"smartwasher_{Name}_eta", Persist: true), etaOptions);
 
                 var lastStateChangeOptions = new EntityOptions { Icon = "fapro:calendar-day", Device = GetDevice() };
                 await _mqttEntityManager.CreateAsync($"{baseName}_last_state_change", new EntityCreationOptions(Name: $"{Name} - state", UniqueId: $"smartwasher_{Name}_last_state_change", Persist: true), lastStateChangeOptions);
+
+                var progressOptions = new EntityOptions { Icon = "mdi:progress-helper", Device = GetDevice() };
+                await _mqttEntityManager.CreateAsync($"{baseName}_progress", new EntityCreationOptions(Name: $"{Name} - progress", UniqueId: $"smartwasher_{Name}_progress", Persist: true), progressOptions);
 
                 var programOptions = new EntityOptions { Icon = "fapro:dial-med", Device = GetDevice() };
                 await _mqttEntityManager.CreateAsync($"{baseName}_program", new EntityCreationOptions(UniqueId: $"{baseName}_program", Name: $"{Name} - Program", Persist: true), programOptions);
@@ -205,6 +213,9 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers
             await _mqttEntityManager.SetStateAsync($"{switchName}_delayed_start_activate", DelayedStartTriggered ? "ON" : "OFF");
 
             await _mqttEntityManager.SetStateAsync($"{baseName}_state", State.ToString());
+
+            await _mqttEntityManager.SetStateAsync($"{baseName}_started_at", StartedAt?.ToString("O"));
+            await _mqttEntityManager.SetStateAsync($"{baseName}_progress", PercentageComplete.ToString());
             await _mqttEntityManager.SetStateAsync($"{baseName}_eta", Eta?.ToString("O"));
             await _mqttEntityManager.SetStateAsync($"{baseName}_program", Program?.ToString());
             await _mqttEntityManager.SetStateAsync($"{baseName}_last_state_change", LastStateChange?.ToString("O"));
@@ -224,10 +235,11 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers
             Enabled = fileStorage?.Enabled ?? false;
             CanDelayStart = fileStorage?.CanDelayStart ?? false;
             DelayedStartTriggered = fileStorage?.DelayedStartTriggered ?? false;
+            StartedAt = fileStorage?.StartedAt;
             Eta = fileStorage?.Eta;
             var state = fileStorage?.State;
             Program = fileStorage?.Program;
-
+            PercentageComplete = fileStorage?.PercentageComplete;
             _logger.LogDebug("{SmartWasher}: Retrieved smart washer state state.", Name);
 
             return state;
@@ -240,8 +252,11 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers
             DelayedStartTriggered = DelayedStartTriggered,
             State = State,
             Program = Program,
-            Eta = Eta
+            StartedAt = StartedAt,
+            Eta = Eta,
+            PercentageComplete = PercentageComplete
         };
+
 
         private void PowerSensor_Changed(object? sender, NumericSensorEventArgs e)
         {
@@ -301,9 +316,37 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers
             UpdateStateInHomeAssistant().RunSync();
         }
 
+        internal void SetStartedAt()
+        {
+            StartedAt = _scheduler.Now;
+        }
+        internal void ClearStartedAt()
+        {
+            StartedAt = null;
+            Program = null;
+        }
+
+        internal void CalculateProgress()
+        {
+            if (StartedAt == null) return;
+            if (Eta == null) return;
+
+            var totalTime = Eta - StartedAt;
+            var passedTime = _scheduler.Now - StartedAt;
+            var percentageComplete = passedTime / totalTime * 100;
+
+            PercentageComplete = percentageComplete > 100
+                ? 100
+                : Convert.ToInt32(percentageComplete);
+        }
+
         internal void SetWasherProgram(ILogger logger, WasherProgram? program)
         {
             Program = program;
+
+            if (program == null)
+                PercentageComplete = 100;
+
             Eta = _state.GetEta(_logger, this);
 
             UpdateStateInHomeAssistant().RunSync();
