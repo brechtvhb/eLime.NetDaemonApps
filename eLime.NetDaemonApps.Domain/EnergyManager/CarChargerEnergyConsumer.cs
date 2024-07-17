@@ -41,10 +41,6 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
             : MinimumCurrent;
 
     private Int32 CurrentCurrentForConnectedCar => CurrentLoad > 0 ? Convert.ToInt32(CurrentLoad / TotalVoltage) : 0;
-    //Tessie's ridiculous way of handling API polling is screwing me here
-    //private Int32 CurrentCurrentForConnectedCar => ConnectedCar == null
-    //    ? Convert.ToInt32(CurrentEntity.State)
-    //    : Convert.ToInt32(ConnectedCar.CurrentEntity?.State);
 
     public DateTimeOffset? _lastCurrentChange;
 
@@ -229,7 +225,9 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         if (_balancingMethodLastChangedAt?.AddMinutes(3) > now)
             return false;
 
-        //Can re-balance
+        if (_lastCurrentChange?.AddMinutes(3) > now)
+            return false;
+
         if (CurrentCurrentForConnectedCar > MinimumCurrentForConnectedCar)
             return false;
 
