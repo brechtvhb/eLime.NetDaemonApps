@@ -333,7 +333,7 @@ public class SmartIrrigation : IDisposable
         var stateName = $"sensor.irrigation_state";
         var stateEnergyManagedName = $"sensor.irrigation_state_energy_managed_zones";
 
-        var entityOptions = new EnumSensorOptions() { Icon = "far:sprinkler", Device = GetGlobalDevice(), Options = Enum<NeedsWatering>.AllValuesAsStringList() };
+        var entityOptions = new EnumSensorOptions() { Icon = "phu:sprinkler", Device = GetGlobalDevice(), Options = Enum<NeedsWatering>.AllValuesAsStringList() };
 
         await _mqttEntityManager.CreateAsync(stateName, new EntityCreationOptions(DeviceClass: "enum", UniqueId: stateName, Name: $"Irrigation state", Persist: true), entityOptions);
         await _mqttEntityManager.CreateAsync(stateEnergyManagedName, new EntityCreationOptions(DeviceClass: "enum", UniqueId: stateEnergyManagedName, Name: $"Irrigation state (energy managed zones)", Persist: true), entityOptions);
