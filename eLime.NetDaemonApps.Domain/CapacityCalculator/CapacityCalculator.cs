@@ -45,7 +45,6 @@ public class CapacityCalculator
         var startTime = new TimeOnly(00, 01);
         var startFrom = startTime.GetUtcDateTimeFromLocalTimeOnly(scheduler.Now.DateTime, "Europe/Brussels").AddDays(1);
 
-        CalculateAveragePeak().RunSync();
         _logger.LogInformation($"Will poll smart meter daily starting from: {startFrom:O}");
 
         GuardTask = _scheduler.RunEvery(TimeSpan.FromDays(1), startFrom, () =>
