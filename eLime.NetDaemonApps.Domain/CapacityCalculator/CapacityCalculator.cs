@@ -46,6 +46,7 @@ public class CapacityCalculator
         var startFrom = startTime.GetUtcDateTimeFromLocalTimeOnly(scheduler.Now.DateTime, "Europe/Brussels").AddDays(1);
 
         _logger.LogInformation($"Will poll smart meter daily starting from: {startFrom:O}");
+
         GuardTask = _scheduler.RunEvery(TimeSpan.FromDays(1), startFrom, () =>
         {
             CalculateAveragePeak().RunSync();
@@ -54,6 +55,7 @@ public class CapacityCalculator
 
     private async Task CalculateAveragePeak()
     {
+        _logger.LogInformation("Will connect to '{SmartMeterUrl}'", SmartGatewayMeterUrl);
         var client = new HttpClient();
         var model = await client.GetFromJsonAsync<SmartGateWayModel>(SmartGatewayMeterUrl);
 

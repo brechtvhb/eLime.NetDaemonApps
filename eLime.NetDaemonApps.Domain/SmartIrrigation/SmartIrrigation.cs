@@ -40,6 +40,14 @@ public class SmartIrrigation : IDisposable
                 ? NeedsWatering.Ongoing
                 : NeedsWatering.No;
 
+    public NeedsWatering StateEnergyManagedZones => Zones.Any(x => x is { State: NeedsWatering.Critical, Mode: ZoneMode.EnergyManaged })
+        ? NeedsWatering.Critical
+        : Zones.Any(x => x is { State: NeedsWatering.Yes, Mode: ZoneMode.EnergyManaged })
+            ? NeedsWatering.Yes
+            : Zones.Any(x => x.State == NeedsWatering.Ongoing)
+                ? NeedsWatering.Ongoing
+                : NeedsWatering.No;
+
     private readonly IHaContext _haContext;
     private readonly ILogger _logger;
     private readonly IScheduler _scheduler;
@@ -323,16 +331,13 @@ public class SmartIrrigation : IDisposable
     private async Task InitializeStateSensor()
     {
         var stateName = $"sensor.irrigation_state";
-        var state = _haContext.Entity(stateName).State;
+        var stateEnergyManagedName = $"sensor.irrigation_state_energy_managed_zones";
 
-        if (state == null)
-        {
-            _logger.LogDebug("Creating Irrigation state sensor in home assistant.");
-            var entityOptions = new EnumSensorOptions() { Icon = "far:sprinkler", Device = GetGlobalDevice(), Options = Enum<NeedsWatering>.AllValuesAsStringList() };
+        var entityOptions = new EnumSensorOptions() { Icon = "phu:sprinkler", Device = GetGlobalDevice(), Options = Enum<NeedsWatering>.AllValuesAsStringList() };
 
-            await _mqttEntityManager.CreateAsync(stateName, new EntityCreationOptions(DeviceClass: "enum", UniqueId: stateName, Name: $"Irrigation state", Persist: true), entityOptions);
-            await _mqttEntityManager.SetStateAsync(stateName, State.ToString());
-        }
+        await _mqttEntityManager.CreateAsync(stateName, new EntityCreationOptions(DeviceClass: "enum", UniqueId: stateName, Name: $"Irrigation state", Persist: true), entityOptions);
+        await _mqttEntityManager.CreateAsync(stateEnergyManagedName, new EntityCreationOptions(DeviceClass: "enum", UniqueId: stateEnergyManagedName, Name: $"Irrigation state (energy managed zones)", Persist: true), entityOptions);
+
     }
     private async Task InitializeModeDropdown(IrrigationZone zone)
     {
@@ -427,6 +432,8 @@ public class SmartIrrigation : IDisposable
     private async Task UpdateStateInHomeAssistant(IrrigationZone? changedZone = null)
     {
         await _mqttEntityManager.SetStateAsync("sensor.irrigation_state", State.ToString());
+        await _mqttEntityManager.SetStateAsync("sensor.irrigation_state_energy_managed_zones", StateEnergyManagedZones.ToString());
+
         var globalAttributes = new SmartIrrigationStateAttributes()
         {
             LastUpdated = DateTime.Now.ToString("O"),
