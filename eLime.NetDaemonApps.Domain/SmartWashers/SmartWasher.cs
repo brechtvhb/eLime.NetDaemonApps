@@ -126,7 +126,7 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers
                 var lastStateChangeOptions = new EntityOptions { Icon = "fapro:calendar-day", Device = GetDevice() };
                 await _mqttEntityManager.CreateAsync($"{baseName}_last_state_change", new EntityCreationOptions(Name: $"{Name} - Last change", UniqueId: $"smartwasher_{Name}_last_state_change", DeviceClass: "timestamp", Persist: true), lastStateChangeOptions);
 
-                var progressOptions = new EntityOptions { Icon = "mdi:progress-helper", Device = GetDevice() };
+                var progressOptions = new NumericSensorOptions { Icon = "mdi:progress-helper", Device = GetDevice(), UnitOfMeasurement = "%" };
                 await _mqttEntityManager.CreateAsync($"{baseName}_progress", new EntityCreationOptions(Name: $"{Name} - Progress", UniqueId: $"smartwasher_{Name}_progress", Persist: true), progressOptions);
 
                 var programOptions = new EntityOptions { Icon = "fapro:dial-med", Device = GetDevice() };
@@ -327,6 +327,7 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers
 
         internal void CalculateProgress()
         {
+            var currentProgress = PercentageComplete;
             if (StartedAt == null) return;
             if (Eta == null) return;
 
@@ -337,14 +338,21 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers
             PercentageComplete = percentageComplete > 100
                 ? 100
                 : Convert.ToInt32(percentageComplete);
+
+            if (currentProgress != PercentageComplete)
+                UpdateStateInHomeAssistant().RunSync();
         }
 
         internal void SetWasherProgram(ILogger logger, WasherProgram? program)
         {
             Program = program;
 
-            if (program == null)
-                PercentageComplete = 100;
+            PercentageComplete = program switch
+            {
+                null => 100,
+                WasherProgram.Unknown => 0,
+                _ => PercentageComplete
+            };
 
             Eta = _state.GetEta(_logger, this);
 
