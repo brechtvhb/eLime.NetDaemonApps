@@ -25,8 +25,7 @@ public class Car
     public Boolean RemainOnAtFullBattery { get; }
     public BinarySensor CableConnectedSensor { get; }
     public DeviceTracker Location { get; }
-
-    public DateTimeOffset? _lastCurrentChange;
+    public DateTimeOffset? LastCurrentChange { get; private set; }
 
     public Car(string name, CarChargingMode mode, BinarySwitch? chargerSwitch, InputNumberEntity? currentEntity, int? minimumCurrent, int? maximumCurrent,
         double batteryCapacity, NumericEntity batteryPercentageSensor, NumericEntity? maxBatteryPercentageSensor, bool remainOnAtFullBattery,
@@ -110,11 +109,11 @@ public class Car
         if (CurrentEntity == null)
             return;
 
-        if (_lastCurrentChange?.Add(TimeSpan.FromSeconds(5)) > _scheduler.Now)
+        if (LastCurrentChange?.Add(TimeSpan.FromSeconds(5)) > _scheduler.Now)
             return;
 
         CurrentEntity.Change(toBeCurrent);
-        _lastCurrentChange = _scheduler.Now;
+        LastCurrentChange = _scheduler.Now;
     }
 
     public void Dispose()

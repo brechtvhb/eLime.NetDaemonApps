@@ -225,7 +225,7 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         if (_balancingMethodLastChangedAt?.AddMinutes(3) > now)
             return false;
 
-        if (_lastCurrentChange?.AddMinutes(3) > now)
+        if (_lastCurrentChange?.AddMinutes(3) > now || ConnectedCar?.LastCurrentChange?.AddMinutes(3) > now)
             return false;
 
         if (CurrentCurrentForConnectedCar > MinimumCurrentForConnectedCar)
