@@ -47,8 +47,6 @@ public class CapacityCalculator
 
         _logger.LogInformation($"Will poll smart meter daily starting from: {startFrom:O}");
 
-        CalculateAveragePeak().RunSync();
-
         GuardTask = _scheduler.RunEvery(TimeSpan.FromDays(1), startFrom, () =>
         {
             CalculateAveragePeak().RunSync();
