@@ -47,6 +47,8 @@ public class CapacityCalculator
 
         _logger.LogInformation($"Will poll smart meter daily starting from: {startFrom:O}");
 
+        CalculateAveragePeak().RunSync();
+
         GuardTask = _scheduler.RunEvery(TimeSpan.FromDays(1), startFrom, () =>
         {
             CalculateAveragePeak().RunSync();
@@ -55,14 +57,26 @@ public class CapacityCalculator
 
     private async Task CalculateAveragePeak()
     {
-        _logger.LogInformation("Will connect to '{SmartMeterUrl}'", SmartGatewayMeterUrl);
-        var client = new HttpClient();
-        var model = await client.GetFromJsonAsync<SmartGateWayModel>(SmartGatewayMeterUrl);
+        try
+        {
+            _logger.LogInformation("Will connect to '{SmartMeterUrl}'", SmartGatewayMeterUrl);
+            var client = new HttpClient();
+            var model = await client.GetFromJsonAsync<SmartGateWayModel>(SmartGatewayMeterUrl);
 
-        //Quick & dirty, Tahon would be proud
-        var peakPerMonth = model.PeakConsumptionLast13Months.Split("*kW)(").Select(x => decimal.Parse(x.Replace("*kW)", "")[(x.LastIndexOf(")(") + 2)..], new NumberFormatInfo { NumberDecimalSeparator = "." })).Skip(1);
-        AverageCapacityPastYear = Math.Round(peakPerMonth.Average(), 3);
-        await UpdateStateInHomeAssistant();
+            //Quick & dirty, Tahon would be proud
+            var peakPerMonth = model.PeakConsumptionLast13Months.Split("*kW)(")
+                .Select(x => decimal.Parse(x.Replace("*kW)", "")[(x.LastIndexOf(")(") + 2)..], new NumberFormatInfo { NumberDecimalSeparator = "." }))
+                .Skip(1);
+
+            _logger.LogInformation($"Past peaks are: {String.Join(", ", peakPerMonth)} kW.");
+            AverageCapacityPastYear = Math.Round(peakPerMonth.Average(), 3);
+            _logger.LogInformation($"Average capacity past year is: {AverageCapacityPastYear} kW.");
+            await UpdateStateInHomeAssistant();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Could not calculate average capacity. Too much Tahon happening here.");
+        }
     }
     public Device GetDevice() => new() { Identifiers = [$"capacity_calculator"], Name = "Capacity calculator", Manufacturer = "Me" };
 
