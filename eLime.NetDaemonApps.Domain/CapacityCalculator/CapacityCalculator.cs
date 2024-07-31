@@ -64,9 +64,12 @@ public class CapacityCalculator
             //Quick & dirty, Tahon would be proud
             var peakPerMonth = model.PeakConsumptionLast13Months.Split("*kW)(")
                 .Select(x => decimal.Parse(x.Replace("*kW)", "")[(x.LastIndexOf(")(") + 2)..], new NumberFormatInfo { NumberDecimalSeparator = "." }))
-                .Skip(1);
+                .Skip(1)
+                .ToList();
 
-            _logger.LogInformation($"Past peaks are: {String.Join(", ", peakPerMonth)} kW.");
+            _logger.LogInformation($"Past peaks are: {String.Join(", ", peakPerMonth)} kW. Replacing values below 2.5 with 2.5");
+            peakPerMonth = ReplaceValuesBelowMinimumPeak(peakPerMonth.ToList());
+
             AverageCapacityPastYear = Math.Round(peakPerMonth.Average(), 3);
             _logger.LogInformation($"Average capacity past year is: {AverageCapacityPastYear} kW.");
             await UpdateStateInHomeAssistant();
@@ -76,6 +79,23 @@ public class CapacityCalculator
             _logger.LogError(ex, "Could not calculate average capacity. Too much Tahon happening here.");
         }
     }
+
+    private List<Decimal> ReplaceValuesBelowMinimumPeak(List<Decimal> peakPerMonth)
+    {
+        var threshold = 2.5m;
+
+        // Replace numbers less than the threshold with 2.5
+        for (var i = 0; i < peakPerMonth.Count; i++)
+        {
+            if (peakPerMonth[i] < threshold)
+            {
+                peakPerMonth[i] = 2.5m;
+            }
+        }
+
+        return peakPerMonth;
+    }
+
     public Device GetDevice() => new() { Identifiers = [$"capacity_calculator"], Name = "Capacity calculator", Manufacturer = "Me" };
 
     private async Task EnsureSensorsExist()
