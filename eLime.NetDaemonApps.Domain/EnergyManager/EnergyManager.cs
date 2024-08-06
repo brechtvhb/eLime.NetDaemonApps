@@ -26,6 +26,8 @@ public class EnergyManager : IDisposable
     private readonly IMqttEntityManager _mqttEntityManager;
     private readonly IFileStorage _fileStorage;
 
+    private DateTimeOffset _lastChange = DateTimeOffset.MinValue;
+
     private IDisposable? GuardTask { get; }
 
     public EnergyConsumerState State => Consumers.Any(x => x.State == EnergyConsumerState.CriticallyNeedsEnergy)
@@ -67,8 +69,11 @@ public class EnergyManager : IDisposable
             UpdateInHomeAssistantDebounceDispatcher = new DebounceDispatcher(TimeSpan.FromSeconds(1));
         }
 
-        GuardTask = _scheduler.RunEvery(TimeSpan.FromSeconds(30), _scheduler.Now, () =>
+        GuardTask = _scheduler.RunEvery(TimeSpan.FromSeconds(5), _scheduler.Now, () =>
         {
+            if (_lastChange.AddSeconds(29) > _scheduler.Now)
+                return;
+
             foreach (var consumer in Consumers)
                 consumer.CheckDesiredState(_scheduler.Now);
 
@@ -111,10 +116,16 @@ public class EnergyManager : IDisposable
 
     private void ManageConsumersIfNeeded()
     {
+        var somethingChanged = false;
         var estimatedLoad = GridMonitor.CurrentLoad;
         var (estimatedAdjustedLoad, loadAdjusted) = AdjustDynamicLoadsIfNeeded(estimatedLoad);
-        StartConsumersIfNeeded(estimatedAdjustedLoad);
-        StopConsumersIfNeeded(loadAdjusted);
+
+        somethingChanged |= loadAdjusted;
+        somethingChanged |= StartConsumersIfNeeded(estimatedAdjustedLoad);
+        somethingChanged |= StopConsumersIfNeeded(loadAdjusted);
+
+        if (somethingChanged)
+            _lastChange = _scheduler.Now;
     }
 
     private (Double estimatedAdjustedLoad, Boolean loadAdjusted) AdjustDynamicLoadsIfNeeded(Double estimatedLoad)
@@ -138,8 +149,9 @@ public class EnergyManager : IDisposable
     }
 
     //TODO: Use linear programming model and estimates of production and consumption to be able to schedule deferred loads in the future.
-    private void StartConsumersIfNeeded(Double currentLoad)
+    private bool StartConsumersIfNeeded(Double currentLoad)
     {
+        var consumerStarted = false;
         var runningConsumers = Consumers.Where(x => x.State == EnergyConsumerState.Running);
         //Keep remaining peak load for running consumers in mind (eg: to avoid turning on devices when washer is prewashing but still has to heat).
         var estimatedLoad = currentLoad + Math.Round(runningConsumers.Where(x => x.PeakLoad > x.CurrentLoad).Sum(x => (x.PeakLoad - x.CurrentLoad)), 0);
@@ -160,6 +172,7 @@ public class EnergyManager : IDisposable
             _logger.LogDebug("{Consumer}: Started consumer, consumer is in critical need of energy. Current load/estimated load was: {CurrentLoad}/{EstimatedLoad}. Switch-on/peak load of consumer is: {SwitchOnLoad}/{PeakLoad}.", criticalConsumer.Name, currentLoad, estimatedLoad, criticalConsumer.SwitchOnLoad, criticalConsumer.PeakLoad);
             estimatedLoad += criticalConsumer.PeakLoad;
             currentLoad += criticalConsumer.PeakLoad;
+            consumerStarted = true;
         }
 
         var consumersThatNeedEnergy = Consumers.Where(x => x is { State: EnergyConsumerState.NeedsEnergy });
@@ -185,11 +198,15 @@ public class EnergyManager : IDisposable
             _logger.LogDebug("{Consumer}: Will start consumer. Current load/estimated load was: {CurrentLoad}/{EstimatedLoad}. Switch-on/peak load of consumer is: {SwitchOnLoad}/{PeakLoad}.", consumer.Name, currentLoad, estimatedLoad, consumer.SwitchOnLoad, consumer.PeakLoad);
             estimatedLoad += consumer.PeakLoad;
             currentLoad += consumer.PeakLoad;
+            consumerStarted = true;
         }
+
+        return consumerStarted;
     }
 
-    private void StopConsumersIfNeeded(Boolean dynamicLoadAdjusted)
+    private bool StopConsumersIfNeeded(Boolean dynamicLoadAdjusted)
     {
+        var consumerStopped = false;
         var currentLoad = GridMonitor.AverageLoadSince(_scheduler.Now, TimeSpan.FromMinutes(3));
         var estimatedLoad = currentLoad;
 
@@ -206,12 +223,13 @@ public class EnergyManager : IDisposable
             if (consumer is IDynamicLoadConsumer && dynamicLoadAdjusted)
             {
                 _logger.LogDebug("{Consumer}: Should stop, but won't do it because dynamic load was adjusted. Current load/estimated load was: {CurrentLoad}/{EstimatedLoad}. Switch-off/peak load of consumer is: {SwitchOffLoad}/{PeakLoad}", consumer.Name, currentLoad, estimatedLoad, consumer.SwitchOffLoad, consumer.PeakLoad);
-                return;
+                continue;
             }
 
             _logger.LogDebug("{Consumer}: Will stop consumer because current load is above switch off load. Current load/estimated load was: {CurrentLoad}/{EstimatedLoad}. Switch-off/peak load of consumer is: {SwitchOffLoad}/{PeakLoad}", consumer.Name, currentLoad, estimatedLoad, consumer.SwitchOffLoad, consumer.PeakLoad);
             consumer.Stop();
             estimatedLoad -= consumer.CurrentLoad;
+            consumerStopped = true;
         }
 
 
@@ -223,17 +241,20 @@ public class EnergyManager : IDisposable
                 if (consumer is IDynamicLoadConsumer && dynamicLoadAdjusted)
                 {
                     _logger.LogDebug("{Consumer}: Should force stop, but won't do it because dynamic load was adjusted. Current load/estimated load was: {CurrentLoad}/{EstimatedLoad}. Switch-off/peak load of consumer is: {SwitchOffLoad}/{PeakLoad}", consumer.Name, currentLoad, estimatedLoad, consumer.SwitchOffLoad, consumer.PeakLoad);
-                    return;
+                    continue;
                 }
 
                 _logger.LogDebug("{Consumer}: Will stop consumer right now because peak load was exceeded. Current load/estimated load was: {CurrentLoad}/{EstimatedLoad}. Switch-off/peak load of consumer is: {SwitchOffLoad}/{PeakLoad}", consumer.Name, currentLoad, estimatedLoad, consumer.SwitchOffLoad, consumer.PeakLoad);
                 consumer.Stop();
                 estimatedLoad -= consumer.CurrentLoad;
+                consumerStopped = true;
 
                 if (estimatedLoad <= GridMonitor.PeakLoad)
                     break;
             }
         }
+
+        return consumerStopped;
     }
 
     private readonly DebounceDispatcher? ManageConsumersDebounceDispatcher;
