@@ -59,7 +59,7 @@ public class EnergyManager : IDisposable
         {
             InitializeState(energyConsumer);
             InitializeConsumerSensors(energyConsumer).RunSync();
-            InitializeBalancingModeDropDown(energyConsumer).RunSync();
+            InitializeDynamicLoadConsumerSensors(energyConsumer).RunSync();
             energyConsumer.StateChanged += EnergyConsumer_StateChanged;
         }
 
@@ -156,6 +156,9 @@ public class EnergyManager : IDisposable
         //Keep remaining peak load for running consumers in mind (eg: to avoid turning on devices when washer is prewashing but still has to heat).
         var estimatedLoad = currentLoad + Math.Round(runningConsumers.Where(x => x.PeakLoad > x.CurrentLoad).Sum(x => (x.PeakLoad - x.CurrentLoad)), 0);
 
+        var dynamicLoadThatCanBeScaledDownOnBehalfOf = Math.Round(runningConsumers.Where(x => x is IDynamicLoadConsumer { BalanceOnBehalfOf: BalanceOnBehalfOf.AllConsumers }).Sum(x => x.CurrentLoad));
+        estimatedLoad -= dynamicLoadThatCanBeScaledDownOnBehalfOf;
+
         var consumersThatCriticallyNeedEnergy = Consumers.Where(x => x is { State: EnergyConsumerState.CriticallyNeedsEnergy });
 
         foreach (var criticalConsumer in consumersThatCriticallyNeedEnergy)
@@ -169,7 +172,7 @@ public class EnergyManager : IDisposable
 
             criticalConsumer.TurnOn();
 
-            _logger.LogDebug("{Consumer}: Started consumer, consumer is in critical need of energy. Current load/estimated load was: {CurrentLoad}/{EstimatedLoad}. Switch-on/peak load of consumer is: {SwitchOnLoad}/{PeakLoad}.", criticalConsumer.Name, currentLoad, estimatedLoad, criticalConsumer.SwitchOnLoad, criticalConsumer.PeakLoad);
+            _logger.LogDebug("{Consumer}: Started consumer, consumer is in critical need of energy. Current load/estimated load (dynamicLoadThatCanBeScaledDownOnBehalfOf) was: {CurrentLoad}/{EstimatedLoad} ({DynamicLoadThatCanBeScaledDownOnBehalfOf}). Switch-on/peak load of consumer is: {SwitchOnLoad}/{PeakLoad}.", criticalConsumer.Name, currentLoad, estimatedLoad, dynamicLoadThatCanBeScaledDownOnBehalfOf, criticalConsumer.SwitchOnLoad, criticalConsumer.PeakLoad);
             estimatedLoad += criticalConsumer.PeakLoad;
             currentLoad += criticalConsumer.PeakLoad;
             consumerStarted = true;
@@ -195,7 +198,7 @@ public class EnergyManager : IDisposable
 
             consumer.TurnOn();
 
-            _logger.LogDebug("{Consumer}: Will start consumer. Current load/estimated load was: {CurrentLoad}/{EstimatedLoad}. Switch-on/peak load of consumer is: {SwitchOnLoad}/{PeakLoad}.", consumer.Name, currentLoad, estimatedLoad, consumer.SwitchOnLoad, consumer.PeakLoad);
+            _logger.LogDebug("{Consumer}: Will start consumer. Current load/estimated (dynamicLoadThatCanBeScaledDownOnBehalfOf) load was: {CurrentLoad}/{EstimatedLoad}. Switch-on/peak load of consumer is: {SwitchOnLoad}/{PeakLoad} ({DynamicLoadThatCanBeScaledDownOnBehalfOf}).", consumer.Name, currentLoad, estimatedLoad, dynamicLoadThatCanBeScaledDownOnBehalfOf, consumer.SwitchOnLoad, consumer.PeakLoad);
             estimatedLoad += consumer.PeakLoad;
             currentLoad += consumer.PeakLoad;
             consumerStarted = true;
@@ -310,25 +313,38 @@ public class EnergyManager : IDisposable
         }
     }
 
-    private async Task InitializeBalancingModeDropDown(EnergyConsumer consumer)
+    private async Task InitializeDynamicLoadConsumerSensors(EnergyConsumer consumer)
     {
         if (consumer is not IDynamicLoadConsumer dynamicLoadConsumer)
             return;
 
-        var selectName = $"select.energy_consumer_{consumer.Name.MakeHaFriendly()}_balancing_method";
+        var balancingMethodDropdownName = $"select.energy_consumer_{consumer.Name.MakeHaFriendly()}_balancing_method";
+        var balanceOnBehalfOfDropdownName = $"select.energy_consumer_{consumer.Name.MakeHaFriendly()}_balance_on_behalf_af";
 
-        var selectOptions = new SelectOptions
+        var balancingMethodDropdownOptions = new SelectOptions
         {
             Icon = "mdi:car-turbocharger",
             Options = Enum<BalancingMethod>.AllValuesAsStringList(),
             Device = GetConsumerDevice(consumer)
         };
+        var balanceOnBehalfOfDropdownOptions = new SelectOptions
+        {
+            Icon = "mdi:car-turbocharger", //TODO
+            Options = Enum<BalanceOnBehalfOf>.AllValuesAsStringList(),
+            Device = GetConsumerDevice(consumer)
+        };
 
-        await _mqttEntityManager.CreateAsync(selectName, new EntityCreationOptions(UniqueId: selectName, Name: $"Dynamic load balancing method - {consumer.Name}", DeviceClass: "select", Persist: true), selectOptions);
-        await _mqttEntityManager.SetStateAsync(selectName, dynamicLoadConsumer.BalancingMethod.ToString());
+        await _mqttEntityManager.CreateAsync(balancingMethodDropdownName, new EntityCreationOptions(UniqueId: balancingMethodDropdownName, Name: $"Dynamic load balancing method - {consumer.Name}", DeviceClass: "select", Persist: true), balancingMethodDropdownOptions);
+        await _mqttEntityManager.SetStateAsync(balancingMethodDropdownName, dynamicLoadConsumer.BalancingMethod.ToString());
 
-        var observer = await _mqttEntityManager.PrepareCommandSubscriptionAsync(selectName);
-        dynamicLoadConsumer.BalancingMethodChangedCommandHandler = observer.SubscribeAsync(SetBalancingMethodHandler(consumer, dynamicLoadConsumer, selectName));
+        await _mqttEntityManager.CreateAsync(balanceOnBehalfOfDropdownName, new EntityCreationOptions(UniqueId: balanceOnBehalfOfDropdownName, Name: $"Balance on behalf of - {consumer.Name}", DeviceClass: "select", Persist: true), balanceOnBehalfOfDropdownOptions);
+        await _mqttEntityManager.SetStateAsync(balanceOnBehalfOfDropdownName, dynamicLoadConsumer.BalanceOnBehalfOf.ToString());
+
+        var balancingMethodObserver = await _mqttEntityManager.PrepareCommandSubscriptionAsync(balancingMethodDropdownName);
+        dynamicLoadConsumer.BalancingMethodChangedCommandHandler = balancingMethodObserver.SubscribeAsync(SetBalancingMethodHandler(consumer, dynamicLoadConsumer, balancingMethodDropdownName));
+
+        var balanceOnBehalfOfObserver = await _mqttEntityManager.PrepareCommandSubscriptionAsync(balanceOnBehalfOfDropdownName);
+        dynamicLoadConsumer.BalanceOnBehalfOfChangedCommandHandler = balanceOnBehalfOfObserver.SubscribeAsync(SetBalanceOnBehalfOfHandler(consumer, dynamicLoadConsumer, balanceOnBehalfOfDropdownName));
     }
 
     private Func<string, Task> SetBalancingMethodHandler(EnergyConsumer consumer, IDynamicLoadConsumer dynamicLoadConsumer, string selectName)
@@ -342,6 +358,18 @@ public class EnergyManager : IDisposable
         };
     }
 
+    private Func<string, Task> SetBalanceOnBehalfOfHandler(EnergyConsumer consumer, IDynamicLoadConsumer dynamicLoadConsumer, string selectName)
+    {
+        return async state =>
+        {
+            _logger.LogDebug("{Consumer}: Setting balance on behalf of to {State}.", consumer.Name, state);
+            await _mqttEntityManager.SetStateAsync(selectName, state);
+            dynamicLoadConsumer.SetBalanceOnBehalfOf(Enum<BalanceOnBehalfOf>.Cast(state));
+            DebounceUpdateInHomeAssistant(consumer).RunSync();
+        };
+    }
+
+
     private void InitializeState(EnergyConsumer consumer)
     {
         var storedEnergyConsumerState = _fileStorage.Get<EnergyConsumerFileStorage>("EnergyManager", $"{consumer.Name.MakeHaFriendly()}");
@@ -351,10 +379,11 @@ public class EnergyManager : IDisposable
 
         consumer.SetState(_scheduler, storedEnergyConsumerState.State, storedEnergyConsumerState.StartedAt, storedEnergyConsumerState.LastRun);
 
-        if (consumer is not IDynamicLoadConsumer dynamicLoadConsumer || storedEnergyConsumerState.BalancingMethod is null)
+        if (consumer is not IDynamicLoadConsumer dynamicLoadConsumer)
             return;
 
         dynamicLoadConsumer.SetBalancingMethod(_scheduler.Now, storedEnergyConsumerState.BalancingMethod ?? BalancingMethod.SolarOnly);
+        dynamicLoadConsumer.SetBalanceOnBehalfOf(storedEnergyConsumerState.BalanceOnBehalfOf ?? BalanceOnBehalfOf.Self);
     }
 
     public eLime.NetDaemonApps.Domain.Mqtt.Device GetGlobalDevice()

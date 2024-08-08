@@ -10,11 +10,13 @@ namespace eLime.NetDaemonApps.Domain.EnergyManager;
 public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 {
     public IDisposable? BalancingMethodChangedCommandHandler { get; set; }
+    public IDisposable? BalanceOnBehalfOfChangedCommandHandler { get; set; }
     private readonly IScheduler _scheduler;
 
     public Int32 MinimumCurrent { get; set; }
     public Int32 MaximumCurrent { get; set; }
     public BalancingMethod BalancingMethod { get; private set; }
+    public BalanceOnBehalfOf BalanceOnBehalfOf { get; private set; }
     public TimeSpan MinimumRebalancingInterval => TimeSpan.FromSeconds(30); //TODO: config setting
     private DateTimeOffset? _balancingMethodLastChangedAt;
 
@@ -74,6 +76,10 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
     {
         BalancingMethod = balancingMethod;
         _balancingMethodLastChangedAt = now;
+    }
+    public void SetBalanceOnBehalfOf(BalanceOnBehalfOf balanceOnBehalfOf)
+    {
+        BalanceOnBehalfOf = balanceOnBehalfOf;
     }
 
     public (Double current, Double netPowerChange) Rebalance(double netGridUsage, double peakUsage)
