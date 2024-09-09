@@ -281,10 +281,10 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         }
     }
 
-    public new void Dispose()
+    public override void DisposeInternal()
     {
-        base.Dispose();
         BalancingMethodChangedCommandHandler?.Dispose();
+        BalanceOnBehalfOfChangedCommandHandler?.Dispose();
         StateSensor.Dispose();
 
         CurrentEntity.Changed -= CurrentEntity_Changed;

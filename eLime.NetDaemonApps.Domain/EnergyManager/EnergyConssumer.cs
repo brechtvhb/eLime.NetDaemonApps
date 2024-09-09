@@ -211,10 +211,13 @@ public abstract class EnergyConsumer : IDisposable
     public abstract void TurnOn();
     public abstract void TurnOff();
 
-    public virtual void Dispose()
+    public abstract void DisposeInternal();
+
+    public void Dispose()
     {
         CriticallyNeeded?.Dispose();
         StopTimer?.Dispose();
+        DisposeInternal();
     }
 }
 

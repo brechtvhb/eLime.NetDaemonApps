@@ -94,10 +94,8 @@ public class CoolingEnergyConsumer : EnergyConsumer
         Socket.TurnOff();
     }
 
-    public new void Dispose()
+    public override void DisposeInternal()
     {
-        base.Dispose();
-
         Socket.TurnedOn -= Socket_TurnedOn;
         Socket.TurnedOn -= Socket_TurnedOff;
         Socket.Dispose();
