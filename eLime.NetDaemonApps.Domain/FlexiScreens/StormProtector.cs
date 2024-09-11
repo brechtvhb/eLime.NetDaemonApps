@@ -170,8 +170,11 @@ public class StormProtector : IDisposable
 
         if (windSpeedIsAboveStormThreshold == true || rainRateIsAboveStormThreshold == true || shortTermRainForecastIsAboveStormThreshold == true)
         {
+            if (StormModeActive == false)
+                Logger.LogInformation($"Storm mode activated: - Wind speed: {WindSpeedSensor?.State} (Over threshold: {windSpeedIsAboveStormThreshold}). Rain rate: {RainRateSensor?.State} (Over threshold: {rainRateIsAboveStormThreshold}). Short term rain forecast: {ShortTermRainForecastSensor?.State} (Over threshold: {shortTermRainForecastIsAboveStormThreshold} ).");
+
             StormModeActive = true;
-            Logger.LogInformation($"Storm mode activated: - Wind speed: {WindSpeedSensor?.State} (Over threshold: {windSpeedIsAboveStormThreshold}). Rain rate: {RainRateSensor?.State} (Over threshold: {rainRateIsAboveStormThreshold}). Short term rain forecast: {ShortTermRainForecastSensor?.State} (Over threshold: {shortTermRainForecastIsAboveStormThreshold} ).");
+
             if (Night)
                 StormyNight = true;
 
