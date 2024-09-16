@@ -82,14 +82,14 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         BalanceOnBehalfOf = balanceOnBehalfOf;
     }
 
-    public (Double current, Double netPowerChange) Rebalance(double netGridUsage, double peakUsage)
+    public (Double current, Double netPowerChange) Rebalance(double netGridUsage, double trailingNetGridUsage, double peakUsage)
     {
         if (_lastCurrentChange?.Add(MinimumRebalancingInterval) > _scheduler.Now)
             return (0, 0);
 
         var currentChargerCurrent = CurrentEntity.State ?? 0;
 
-        var netGridCurrent = GetBalancingAdjustedGridCurrent(netGridUsage, peakUsage);
+        var netGridCurrent = GetBalancingAdjustedGridCurrent(netGridUsage, trailingNetGridUsage, peakUsage);
 
         double toBeChargerCurrent;
         double toBeCarCurrent = 0;
@@ -117,15 +117,17 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         return (ConnectedCar?.CanSetCurrent ?? false ? carCurrent : chargerCurrent, netCurrentChange * TotalVoltage);
     }
 
-    private double GetBalancingAdjustedGridCurrent(double netGridUsage, double peakUsage)
+    private double GetBalancingAdjustedGridCurrent(double netGridUsage, double trailingNetGridUsage, double peakUsage)
     {
         var daKleinBeetjeMagJeNegeren = TotalVoltage * 0.1;
+        var midPoint = TotalVoltage * 0.5;
 
         return BalancingMethod switch
         {
             _ when CriticallyNeeded?.IsOn() == true => Math.Round((netGridUsage - peakUsage) / TotalVoltage, 0, MidpointRounding.ToPositiveInfinity),
             BalancingMethod.NearPeak => Math.Round((netGridUsage - peakUsage) / TotalVoltage, 0, MidpointRounding.ToPositiveInfinity),
             BalancingMethod.SolarPreferred => Math.Round((netGridUsage + daKleinBeetjeMagJeNegeren) / TotalVoltage, 0, MidpointRounding.ToNegativeInfinity),
+            BalancingMethod.MidPoint => Math.Round((trailingNetGridUsage - midPoint) / TotalVoltage, 0, MidpointRounding.ToPositiveInfinity),
             _ => Math.Round((netGridUsage - daKleinBeetjeMagJeNegeren) / TotalVoltage, 0, MidpointRounding.ToPositiveInfinity)
         };
     }
