@@ -71,7 +71,7 @@ public class EnergyManager : IDisposable
 
         GuardTask = _scheduler.RunEvery(TimeSpan.FromSeconds(5), _scheduler.Now, () =>
         {
-            if (_lastChange.AddSeconds(29) > _scheduler.Now)
+            if (_lastChange.AddSeconds(24) > _scheduler.Now)
                 return;
 
             foreach (var consumer in Consumers)

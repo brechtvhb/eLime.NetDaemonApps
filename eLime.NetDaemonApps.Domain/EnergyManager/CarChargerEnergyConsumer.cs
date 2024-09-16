@@ -17,7 +17,7 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
     public Int32 MaximumCurrent { get; set; }
     public BalancingMethod BalancingMethod { get; private set; }
     public BalanceOnBehalfOf BalanceOnBehalfOf { get; private set; }
-    public TimeSpan MinimumRebalancingInterval => TimeSpan.FromSeconds(30); //TODO: config setting
+    public TimeSpan MinimumRebalancingInterval => TimeSpan.FromSeconds(20); //TODO: config setting
     private DateTimeOffset? _balancingMethodLastChangedAt;
 
     public Int32 OffCurrent { get; set; }
@@ -168,6 +168,8 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
             return (carCurrent, false);
 
         ConnectedCar.ChangeCurrent(carCurrent);
+        _lastCurrentChange = _scheduler.Now;
+
         return (carCurrent, true);
     }
 
