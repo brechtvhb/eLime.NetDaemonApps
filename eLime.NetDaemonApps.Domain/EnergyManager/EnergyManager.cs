@@ -135,7 +135,7 @@ public class EnergyManager : IDisposable
 
         foreach (var dynamicLoadConsumer in dynamicLoadConsumers)
         {
-            var (current, netChange) = dynamicLoadConsumer.Rebalance(estimatedLoad, GridMonitor.AverageLoadSince(_scheduler.Now, TimeSpan.FromMinutes(1)), GridMonitor.PeakLoad);
+            var (current, netChange) = dynamicLoadConsumer.Rebalance(estimatedLoad, GridMonitor.AverageLoadSince(_scheduler.Now, dynamicLoadConsumer.MinimumRebalancingInterval), GridMonitor.PeakLoad);
 
             if (netChange == 0)
                 continue;
