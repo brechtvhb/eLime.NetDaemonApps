@@ -8,6 +8,7 @@ internal interface IDynamicLoadConsumer
     public TimeSpan MinimumRebalancingInterval { get; }
     public BalancingMethod BalancingMethod { get; }
     public BalanceOnBehalfOf BalanceOnBehalfOf { get; }
+    public double ReleasablePowerWhenBalancingOnBehalfOf { get; }
 
     public IDisposable? BalancingMethodChangedCommandHandler { get; set; }
     public IDisposable? BalanceOnBehalfOfChangedCommandHandler { get; set; }
@@ -15,6 +16,7 @@ internal interface IDynamicLoadConsumer
     public void SetBalancingMethod(DateTimeOffset now, BalancingMethod balancingMethod);
     public void SetBalanceOnBehalfOf(BalanceOnBehalfOf balanceOnBehalfOf);
     public (Double current, Double netPowerChange) Rebalance(double netGridUsage, double trailingNetGridUsage, double peakUsage);
+
 }
 
 public enum BalancingMethod

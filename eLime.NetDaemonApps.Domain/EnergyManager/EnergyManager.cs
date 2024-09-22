@@ -120,9 +120,9 @@ public class EnergyManager : IDisposable
         var estimatedLoad = GridMonitor.CurrentLoad;
         var (estimatedAdjustedLoad, loadAdjusted) = AdjustDynamicLoadsIfNeeded(estimatedLoad);
 
-        somethingChanged |= loadAdjusted;
-        somethingChanged |= StartConsumersIfNeeded(estimatedAdjustedLoad);
-        somethingChanged |= StopConsumersIfNeeded(loadAdjusted);
+        somethingChanged = somethingChanged || loadAdjusted;
+        somethingChanged = somethingChanged || StartConsumersIfNeeded(estimatedAdjustedLoad);
+        somethingChanged = somethingChanged || StopConsumersIfNeeded(loadAdjusted);
 
         if (somethingChanged)
             _lastChange = _scheduler.Now;
@@ -152,12 +152,15 @@ public class EnergyManager : IDisposable
     private bool StartConsumersIfNeeded(Double currentLoad)
     {
         var consumerStarted = false;
-        var runningConsumers = Consumers.Where(x => x.State == EnergyConsumerState.Running);
+        var runningConsumers = Consumers.Where(x => x.State == EnergyConsumerState.Running).ToList();
         //Keep remaining peak load for running consumers in mind (eg: to avoid turning on devices when washer is prewashing but still has to heat).
         var estimatedLoad = currentLoad + Math.Round(runningConsumers.Where(x => x.PeakLoad > x.CurrentLoad).Sum(x => (x.PeakLoad - x.CurrentLoad)), 0);
 
-        var dynamicLoadThatCanBeScaledDownOnBehalfOf = Math.Round(runningConsumers.Where(x => x is IDynamicLoadConsumer { BalanceOnBehalfOf: BalanceOnBehalfOf.AllConsumers }).Sum(x => x.CurrentLoad));
-        estimatedLoad -= dynamicLoadThatCanBeScaledDownOnBehalfOf;
+        var dynamicLoadThatCanBeScaledDownOnBehalfOf = runningConsumers
+            .OfType<IDynamicLoadConsumer>()
+            .Where(consumer => consumer.BalanceOnBehalfOf == BalanceOnBehalfOf.AllConsumers)
+            .Sum(consumer => consumer.ReleasablePowerWhenBalancingOnBehalfOf);
+        dynamicLoadThatCanBeScaledDownOnBehalfOf = Math.Round(dynamicLoadThatCanBeScaledDownOnBehalfOf);
 
         var consumersThatCriticallyNeedEnergy = Consumers.Where(x => x is { State: EnergyConsumerState.CriticallyNeedsEnergy });
 
@@ -167,7 +170,7 @@ public class EnergyManager : IDisposable
                 continue;
 
             //Will not turn on a load that would exceed current grid import peak
-            if (estimatedLoad + criticalConsumer.PeakLoad > GridMonitor.PeakLoad)
+            if (estimatedLoad - dynamicLoadThatCanBeScaledDownOnBehalfOf + criticalConsumer.PeakLoad > GridMonitor.PeakLoad)
                 continue;
 
             criticalConsumer.TurnOn();
@@ -186,13 +189,14 @@ public class EnergyManager : IDisposable
 
             if (consumer is IDynamicLoadConsumer)
             {
-                if (currentLoad >= consumer.SwitchOnLoad)
+                //TODO: Can another dynamic load start when another dynamic load is already active?. Add BalanceOnBehalfOf = NonDynamicLoadOnly
+                if (currentLoad - dynamicLoadThatCanBeScaledDownOnBehalfOf >= consumer.SwitchOnLoad)
                     continue;
             }
             else
             {
                 //Will not turn on a consumer when it is below the allowed switch on load
-                if (estimatedLoad >= consumer.SwitchOnLoad)
+                if (estimatedLoad - dynamicLoadThatCanBeScaledDownOnBehalfOf >= consumer.SwitchOnLoad)
                     continue;
             }
 
