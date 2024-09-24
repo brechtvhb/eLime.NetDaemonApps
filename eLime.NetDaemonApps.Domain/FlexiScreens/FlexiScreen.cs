@@ -235,7 +235,6 @@ public class FlexiScreen : IDisposable
                 _logger.LogInformation("{Screen}: Changing screen state to {DesiredState}", Name, desiredState);
                 Screen.OpenCover();
                 LastAutomatedStateChange = _scheduler.Now;
-                LastManualStateChange = null;
                 LastStateChangeTriggeredBy = triggeredBy;
                 await UpdateStateInHomeAssistant();
                 break;
@@ -243,7 +242,6 @@ public class FlexiScreen : IDisposable
                 _logger.LogInformation("{Screen}: Changing screen state to {DesiredState}", Name, desiredState);
                 Screen.CloseCover();
                 LastAutomatedStateChange = _scheduler.Now;
-                LastManualStateChange = null;
                 LastStateChangeTriggeredBy = triggeredBy;
                 await UpdateStateInHomeAssistant();
                 break;
@@ -341,9 +339,9 @@ public class FlexiScreen : IDisposable
 
         await _mqttEntityManager.SetStateAsync(switchName, IsEnabled ? "ON" : "OFF");
         await _mqttEntityManager.SetAttributesAsync(switchName, attributes);
-        await _mqttEntityManager.SetStateAsync($"{baseName}_last_state_change_triggered_by", LastStateChangeTriggeredBy?.ToString() ?? "null");
-        await _mqttEntityManager.SetStateAsync($"{baseName}_last_automated_state_change", LastAutomatedStateChange?.ToString("O") ?? "null");
-        await _mqttEntityManager.SetStateAsync($"{baseName}_last_manual_state_change", LastManualStateChange?.ToString("O") ?? "null");
+        await _mqttEntityManager.SetStateAsync($"{baseName}_last_state_change_triggered_by", LastStateChangeTriggeredBy?.ToString()!);
+        await _mqttEntityManager.SetStateAsync($"{baseName}_last_automated_state_change", LastAutomatedStateChange?.ToString("O")!);
+        await _mqttEntityManager.SetStateAsync($"{baseName}_last_manual_state_change", LastManualStateChange?.ToString("O")!);
         await _mqttEntityManager.SetStateAsync($"binary_{baseName}_stormy_night", (StormProtector?.StormyNight ?? false) ? "ON" : "OFF");
 
         _logger.LogTrace("{Screen}: Updated flexiscreen in Home assistant to {Attributes}", Name, attributes);
