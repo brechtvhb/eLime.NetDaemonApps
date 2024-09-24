@@ -321,7 +321,7 @@ public class EnergyManager : IDisposable
             return;
 
         var balancingMethodDropdownName = $"select.energy_consumer_{consumer.Name.MakeHaFriendly()}_balancing_method";
-        var balanceOnBehalfOfDropdownName = $"select.energy_consumer_{consumer.Name.MakeHaFriendly()}_balance_on_behalf_af";
+        var balanceOnBehalfOfDropdownName = $"select.energy_consumer_{consumer.Name.MakeHaFriendly()}_balance_on_behalf_of";
 
         var balancingMethodDropdownOptions = new SelectOptions
         {
