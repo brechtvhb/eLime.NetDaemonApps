@@ -188,27 +188,28 @@ public class SmartVentilation
 
     public Device GetDevice()
     {
-        return new Device { Identifiers = new List<string> { $"smart_ventilation" }, Name = "Smart ventilation", Manufacturer = "Me" };
+        return new Device { Identifiers = ["smart_ventilation"], Name = "Smart ventilation", Manufacturer = "Me" };
     }
 
     private async Task EnsureSensorsExist()
     {
-        var baseName = $"sensor.smart_ventilation";
-        var switchName = $"switch.smart_ventilation";
+        const string baseName = $"sensor.smart_ventilation";
+        const string switchName = $"switch.smart_ventilation";
+
+        _logger.LogDebug("Upserting entities in home assistant.");
+        var enabledSwitchOptions = new EnabledSwitchAttributes { Icon = "fapro:fan", Device = GetDevice() };
+        _mqttEntityManager.CreateAsync(switchName, new EntityCreationOptions(Name: $"Smart ventilation", DeviceClass: "switch", Persist: true), enabledSwitchOptions).RunSync();
+
+        var lastStateChange = new EntityOptions { Icon = "fapro:calendar-day", Device = GetDevice() };
+        await _mqttEntityManager.CreateAsync($"{baseName}_last_state_change", new EntityCreationOptions(UniqueId: $"{baseName}_last_state_change", Name: $"Smart ventilation - Last state change", DeviceClass: "timestamp", Persist: true), lastStateChange);
+
+        var lastStateChangeTriggeredBy = new EnumSensorOptions { Icon = "mdi:state-machine", Device = GetDevice(), Options = Enum<VentilationGuards>.AllValuesAsStringList() };
+        await _mqttEntityManager.CreateAsync($"{baseName}_last_state_change_triggered_by", new EntityCreationOptions(UniqueId: $"{baseName}_last_state_change_triggered_by", Name: $"Smart ventilation - Last state change triggered by", DeviceClass: "enum", Persist: true), lastStateChangeTriggeredBy);
 
         if (_haContext.Entity(switchName).State == null)
         {
-            _logger.LogDebug("Creating entities in home assistant.");
-            var enabledSwitchOptions = new EnabledSwitchAttributes { Icon = "fapro:fan", Device = GetDevice() };
-            _mqttEntityManager.CreateAsync(switchName, new EntityCreationOptions(Name: $"Smart ventilation", DeviceClass: "switch", Persist: true), enabledSwitchOptions).RunSync();
             IsEnabled = true;
             _mqttEntityManager.SetStateAsync(switchName, "ON").RunSync();
-
-            var lastStateChange = new EntityOptions { Icon = "fapro:calendar-day", Device = GetDevice() };
-            await _mqttEntityManager.CreateAsync($"{baseName}_last_state_change", new EntityCreationOptions(UniqueId: $"{baseName}_last_state_change", Name: $"Smart ventilation - Last state change", DeviceClass: "timestamp", Persist: true), lastStateChange);
-
-            var lastStateChangeTriggeredBy = new EnumSensorOptions { Icon = "mdi:state-machine", Device = GetDevice(), Options = Enum<VentilationGuards>.AllValuesAsStringList() };
-            await _mqttEntityManager.CreateAsync($"{baseName}_last_state_change_triggered_by", new EntityCreationOptions(UniqueId: $"{baseName}_last_state_change_triggered_by", Name: $"Smart ventilation - Last state change triggered by", Persist: true), lastStateChangeTriggeredBy);
         }
 
         var observer = await _mqttEntityManager.PrepareCommandSubscriptionAsync(switchName);

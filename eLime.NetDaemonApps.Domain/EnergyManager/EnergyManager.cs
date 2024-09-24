@@ -301,21 +301,18 @@ public class EnergyManager : IDisposable
         _logger.LogDebug("{Consumer}: Initializing", consumer.Name);
 
         var baseName = $"sensor.energy_consumer_{consumer.Name.MakeHaFriendly()}";
-        var state = _haContext.Entity($"{baseName}_state").State;
 
-        if (state == null)
-        {
-            _logger.LogDebug("{Consumer}: Creating energy consumer sensors in home assistant.", consumer.Name);
+        _logger.LogDebug("{Consumer}: Upserting energy consumer sensors in home assistant.", consumer.Name);
 
-            var stateOptions = new EnumSensorOptions { Icon = "fapro:bolt-auto", Device = GetConsumerDevice(consumer), Options = Enum<EnergyConsumerState>.AllValuesAsStringList() };
-            await _mqttEntityManager.CreateAsync($"{baseName}_state", new EntityCreationOptions(DeviceClass: "enum", UniqueId: $"{baseName}_state", Name: $"Consumer {consumer.Name} - state", Persist: true), stateOptions);
+        var stateOptions = new EnumSensorOptions { Icon = "fapro:bolt-auto", Device = GetConsumerDevice(consumer), Options = Enum<EnergyConsumerState>.AllValuesAsStringList() };
+        await _mqttEntityManager.CreateAsync($"{baseName}_state", new EntityCreationOptions(DeviceClass: "enum", UniqueId: $"{baseName}_state", Name: $"Consumer {consumer.Name} - state", Persist: true), stateOptions);
 
-            var startedAtOptions = new EntityOptions { Icon = "mdi:calendar-start-outline", Device = GetConsumerDevice(consumer) };
-            await _mqttEntityManager.CreateAsync($"{baseName}_started_at", new EntityCreationOptions(UniqueId: $"{baseName}_started_at", Name: $"Consumer {consumer.Name} - Started at", DeviceClass: "timestamp", Persist: true), startedAtOptions);
+        var startedAtOptions = new EntityOptions { Icon = "mdi:calendar-start-outline", Device = GetConsumerDevice(consumer) };
+        await _mqttEntityManager.CreateAsync($"{baseName}_started_at", new EntityCreationOptions(UniqueId: $"{baseName}_started_at", Name: $"Consumer {consumer.Name} - Started at", DeviceClass: "timestamp", Persist: true), startedAtOptions);
 
-            var lastRunOptions = new EntityOptions { Icon = "fapro:calendar-day", Device = GetConsumerDevice(consumer) };
-            await _mqttEntityManager.CreateAsync($"{baseName}_last_run", new EntityCreationOptions(UniqueId: $"{baseName}_last_run", Name: $"Consumer {consumer.Name} - Last run", DeviceClass: "timestamp", Persist: true), lastRunOptions);
-        }
+        var lastRunOptions = new EntityOptions { Icon = "fapro:calendar-day", Device = GetConsumerDevice(consumer) };
+        await _mqttEntityManager.CreateAsync($"{baseName}_last_run", new EntityCreationOptions(UniqueId: $"{baseName}_last_run", Name: $"Consumer {consumer.Name} - Last run", DeviceClass: "timestamp", Persist: true), lastRunOptions);
+
     }
 
     private async Task InitializeDynamicLoadConsumerSensors(EnergyConsumer consumer)

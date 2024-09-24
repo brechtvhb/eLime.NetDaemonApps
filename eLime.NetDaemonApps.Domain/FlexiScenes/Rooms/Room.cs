@@ -297,17 +297,13 @@ public class Room : IAsyncDisposable
         var switchName = $"switch.flexilights_{Name.MakeHaFriendly()}";
         var selectName = $"select.flexilights_{Name.MakeHaFriendly()}_scene";
 
-        if (_haContext.Entity(switchName).State == null)
-        {
-            _logger.LogDebug("Creating Entities for room '{room}' in home assistant.", Name);
-            var enabledSwitchOptions = new EnabledSwitchAttributes { Icon = "fapro:palette", Device = GetDevice() };
-            await _mqttEntityManager.CreateAsync(switchName, new EntityCreationOptions(Name: $"Flexi lights - {Name}", DeviceClass: "switch", Persist: true), enabledSwitchOptions);
-            Enabled = true;
-            await _mqttEntityManager.SetStateAsync(switchName, "ON");
+        _logger.LogDebug("Creating Entities for room '{room}' in home assistant.", Name);
+        var enabledSwitchOptions = new EnabledSwitchAttributes { Icon = "fapro:palette", Device = GetDevice() };
+        await _mqttEntityManager.CreateAsync(switchName, new EntityCreationOptions(Name: $"Flexi lights - {Name}", DeviceClass: "switch", Persist: true), enabledSwitchOptions);
 
-            var initiatedByOptions = new EnumSensorOptions { Icon = "hue:motion-sensor-movement", Device = GetDevice(), Options = Enum<InitiatedBy>.AllValuesAsStringList() };
-            await _mqttEntityManager.CreateAsync($"{baseName}_initiated_by", new EntityCreationOptions(UniqueId: $"{baseName}_initiated_by", Name: $"Initiated by", DeviceClass: "enum", Persist: true), initiatedByOptions);
-        }
+        var initiatedByOptions = new EnumSensorOptions { Icon = "hue:motion-sensor-movement", Device = GetDevice(), Options = Enum<InitiatedBy>.AllValuesAsStringList() };
+        await _mqttEntityManager.CreateAsync($"{baseName}_initiated_by", new EntityCreationOptions(UniqueId: $"{baseName}_initiated_by", Name: $"Initiated by", DeviceClass: "enum", Persist: true), initiatedByOptions);
+
 
         var lastChangeOptions = new EntityOptions { Icon = "mdi:calendar-end", Device = GetDevice() };
         await _mqttEntityManager.CreateAsync($"{baseName}_last_changed_at", new EntityCreationOptions(UniqueId: $"{baseName}_last_changed_at", Name: $"Last changed at", Persist: true), lastChangeOptions);
@@ -317,7 +313,13 @@ public class Room : IAsyncDisposable
 
         var selectOptions = new SelectOptions { Icon = "fapro:palette", Options = scenes, Device = GetDevice() };
         await _mqttEntityManager.CreateAsync(selectName, new EntityCreationOptions(UniqueId: selectName, Name: "Scene", DeviceClass: "select", Persist: true), selectOptions);
-        await _mqttEntityManager.SetStateAsync($"select.flexilights_{Name.MakeHaFriendly()}_scene", FlexiScenes.Current?.Name ?? "Off");
+
+        if (_haContext.Entity(switchName).State == null)
+        {
+            Enabled = true;
+            await _mqttEntityManager.SetStateAsync(switchName, "ON");
+            await _mqttEntityManager.SetStateAsync($"select.flexilights_{Name.MakeHaFriendly()}_scene", FlexiScenes.Current?.Name ?? "Off");
+        }
 
         var observer = await _mqttEntityManager.PrepareCommandSubscriptionAsync(switchName);
         SwitchDisposable = observer.SubscribeAsync(EnabledSwitchHandler());
