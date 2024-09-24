@@ -13,6 +13,7 @@ using NetDaemon.HassModel;
 using NetDaemon.HassModel.Entities;
 using System.Reactive.Concurrency;
 using Action = eLime.NetDaemonApps.Domain.FlexiScenes.Actions.Action;
+using EntityOptions = eLime.NetDaemonApps.Domain.Mqtt.EntityOptions;
 
 namespace eLime.NetDaemonApps.Domain.FlexiScenes.Rooms;
 
