@@ -24,12 +24,13 @@ public class Car
     public NumericEntity? MaxBatteryPercentageSensor { get; }
     public Boolean RemainOnAtFullBattery { get; }
     public BinarySensor CableConnectedSensor { get; }
+    public Boolean AutoPowerOnWhenConnecting { get; }
     public DeviceTracker Location { get; }
     public DateTimeOffset? LastCurrentChange { get; private set; }
 
     public Car(string name, CarChargingMode mode, BinarySwitch? chargerSwitch, InputNumberEntity? currentEntity, int? minimumCurrent, int? maximumCurrent,
         double batteryCapacity, NumericEntity batteryPercentageSensor, NumericEntity? maxBatteryPercentageSensor, bool remainOnAtFullBattery,
-        BinarySensor cableConnectedSensor, DeviceTracker location, IScheduler scheduler)
+        BinarySensor cableConnectedSensor, bool autoPowerOnWhenConnecting, DeviceTracker location, IScheduler scheduler)
     {
         _scheduler = scheduler;
         Name = name;
@@ -52,11 +53,15 @@ public class Car
         RemainOnAtFullBattery = remainOnAtFullBattery;
 
         CableConnectedSensor = cableConnectedSensor;
+        CableConnectedSensor.TurnedOn += CableConnectedSensor_TurnedOn;
+        AutoPowerOnWhenConnecting = autoPowerOnWhenConnecting;
+
         Location = location;
     }
 
     public event EventHandler<BinarySensorEventArgs>? ChargerTurnedOn;
     public event EventHandler<BinarySensorEventArgs>? ChargerTurnedOff;
+    public event EventHandler<BinarySensorEventArgs>? CarConnected;
 
     protected void OnChargerSwitchTurnedOn(BinarySensorEventArgs e)
     {
@@ -66,6 +71,14 @@ public class Car
     {
         ChargerTurnedOff?.Invoke(this, e);
     }
+
+    private void CableConnectedSensor_TurnedOn(object? sender, BinarySensorEventArgs e)
+    {
+        //Should check for state changes on location too, but one is always home before being able to connect the cable?
+        if (Location.State == "home")
+            CarConnected?.Invoke(this, e);
+    }
+
 
     private void ChargerSwitchTurnedOn(object? sender, BinarySensorEventArgs e)
     {
@@ -123,6 +136,7 @@ public class Car
         if (ChargerSwitch == null) return;
         ChargerSwitch.TurnedOn -= ChargerSwitchTurnedOn;
         ChargerSwitch.TurnedOff -= ChargerSwitchTurnedOff;
+        CableConnectedSensor.TurnedOn -= CableConnectedSensor_TurnedOn;
         ChargerSwitch.Dispose();
     }
 

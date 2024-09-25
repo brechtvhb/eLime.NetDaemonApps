@@ -71,8 +71,10 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 
             car.ChargerTurnedOn += Car_ChargerTurnedOn;
             car.ChargerTurnedOff += Car_ChargerTurnedOff;
+            car.CarConnected += Car_CarConnected;
         }
     }
+
 
     public void SetBalancingMethod(DateTimeOffset now, BalancingMethod balancingMethod)
     {
@@ -291,23 +293,26 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
     {
         BalancingMethodChangedCommandHandler?.Dispose();
         BalanceOnBehalfOfChangedCommandHandler?.Dispose();
-        StateSensor.Dispose();
 
         CurrentEntity.Changed -= CurrentEntity_Changed;
         CurrentEntity.Dispose();
+
+        StateSensor.Dispose();
 
         foreach (var car in Cars)
         {
             if (car.ChargerSwitch != null)
             {
-                car.ChargerTurnedOn += Car_ChargerTurnedOn;
-                car.ChargerTurnedOff += Car_ChargerTurnedOff;
+                car.ChargerTurnedOn -= Car_ChargerTurnedOn;
+                car.ChargerTurnedOff -= Car_ChargerTurnedOff;
+                car.CarConnected -= Car_CarConnected;
             }
 
             car.Dispose();
         }
     }
 
+    //Needed for when manually changing dropdown in home assistant
     private void CurrentEntity_Changed(object? sender, InputNumberSensorEventArgs e)
     {
         if (e.New.State < MinimumCurrent)
@@ -328,8 +333,6 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 
         if (State != EnergyConsumerState.Running && ConnectedCar.ChargerSwitch.IsOn())
             CheckDesiredState(new EnergyConsumerStartedEvent(this, EnergyConsumerState.Running));
-
-
     }
 
     private void Car_ChargerTurnedOn(object? sender, BinarySensorEventArgs e)
@@ -341,6 +344,12 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
     {
         if (State == EnergyConsumerState.Running)
             CheckDesiredState(new EnergyConsumerStoppedEvent(this, EnergyConsumerState.Off));
+    }
+
+    private void Car_CarConnected(object? sender, BinarySensorEventArgs e)
+    {
+        if (ConnectedCar?.AutoPowerOnWhenConnecting ?? false)
+            TurnOn();
     }
 
 }

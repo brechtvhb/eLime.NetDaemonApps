@@ -29,6 +29,7 @@ public class CarConfig
     public Boolean RemainOnAtFullBattery { get; set; }
 
     public String CableConnectedSensor { get; set; }
+    public Boolean AutoPowerOnWhenConnecting { get; set; }
     public String Location { get; set; }
 }
 

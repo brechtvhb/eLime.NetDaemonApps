@@ -390,12 +390,12 @@ public class EnergyManager : IDisposable
 
     public eLime.NetDaemonApps.Domain.Mqtt.Device GetGlobalDevice()
     {
-        return new eLime.NetDaemonApps.Domain.Mqtt.Device { Identifiers = new List<string> { $"energy_manager" }, Name = "Energy manager", Manufacturer = "Me" };
+        return new eLime.NetDaemonApps.Domain.Mqtt.Device { Identifiers = [$"energy_manager"], Name = "Energy manager", Manufacturer = "Me" };
     }
 
     public eLime.NetDaemonApps.Domain.Mqtt.Device GetConsumerDevice(EnergyConsumer consumer)
     {
-        return new eLime.NetDaemonApps.Domain.Mqtt.Device { Identifiers = new List<string> { $"energy_consumer_{consumer.Name.MakeHaFriendly()}" }, Name = "Energy consumer: " + consumer.Name, Manufacturer = "Me" };
+        return new eLime.NetDaemonApps.Domain.Mqtt.Device { Identifiers = [$"energy_consumer_{consumer.Name.MakeHaFriendly()}"], Name = "Energy consumer: " + consumer.Name, Manufacturer = "Me" };
     }
 
     private async Task DebounceUpdateInHomeAssistant(EnergyConsumer? changedConsumer = null)

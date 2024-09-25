@@ -143,7 +143,7 @@ public class CarChargerEnergyConsumerBuilder
 
     public CarChargerEnergyConsumerBuilder AddCar(String name, CarChargingMode mode, BinarySwitch? chargerSwitch, InputNumberEntity? currentEntity, Int32? minimumCurrent, Int32? maximumCurrent, Double batteryCapacity, NumericEntity batteryPercentageSensor, NumericEntity? maxBatteryPercentageSensor, bool remainOnAtFullBattery, BinarySensor cableConnectedSensor, DeviceTracker location)
     {
-        _cars.Add(new Car(name, mode, chargerSwitch, currentEntity, minimumCurrent, maximumCurrent, batteryCapacity, batteryPercentageSensor, maxBatteryPercentageSensor, remainOnAtFullBattery, cableConnectedSensor, location, _testCtx.Scheduler));
+        _cars.Add(new Car(name, mode, chargerSwitch, currentEntity, minimumCurrent, maximumCurrent, batteryCapacity, batteryPercentageSensor, maxBatteryPercentageSensor, remainOnAtFullBattery, cableConnectedSensor, false, location, _testCtx.Scheduler));
         return this;
     }
 

@@ -68,7 +68,7 @@ public static class ConfigExtensions
                     var location = new DeviceTracker(ha, car.Location);
                     var mode = Enum<CarChargingMode>.Cast(car.Mode);
 
-                    cars.Add(new Car(car.Name, mode, carChargerSwitch, carCurrentEntity, car.MinimumCurrent, car.MaximumCurrent, car.BatteryCapacity, batteryPercentageSensor, maxBatteryPercentageSensor, car.RemainOnAtFullBattery, cableConnectedSensor, location, scheduler));
+                    cars.Add(new Car(car.Name, mode, carChargerSwitch, carCurrentEntity, car.MinimumCurrent, car.MaximumCurrent, car.BatteryCapacity, batteryPercentageSensor, maxBatteryPercentageSensor, car.RemainOnAtFullBattery, cableConnectedSensor, car.AutoPowerOnWhenConnecting, location, scheduler));
                 }
 
                 var currentEntity = InputNumberEntity.Create(ha, consumer.CarCharger.CurrentEntity);
