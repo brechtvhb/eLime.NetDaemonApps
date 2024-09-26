@@ -348,6 +348,8 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 
     private void Car_CarConnected(object? sender, BinarySensorEventArgs e)
     {
+        Logger.LogInformation($"Car '{ConnectedCar?.Name}' connected.");
+
         if (ConnectedCar?.AutoPowerOnWhenConnecting ?? false)
             TurnOn();
     }
