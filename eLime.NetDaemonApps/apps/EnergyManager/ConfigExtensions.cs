@@ -64,7 +64,7 @@ public static class ConfigExtensions
 
                     var batteryPercentageSensor = new NumericEntity(ha, car.BatteryPercentageSensor);
                     var maxBatteryPercentageSensor = !String.IsNullOrWhiteSpace(car.MaxBatteryPercentageSensor) ? new NumericEntity(ha, car.MaxBatteryPercentageSensor) : null;
-                    var cableConnectedSensor = new BinarySensor(ha, car.CableConnectedSensor);
+                    var cableConnectedSensor = BinarySensor.Create(ha, car.CableConnectedSensor);
                     var location = new DeviceTracker(ha, car.Location);
                     var mode = Enum<CarChargingMode>.Cast(car.Mode);
 
