@@ -93,19 +93,19 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 
         var currentChargerCurrent = CurrentEntity.State ?? 0;
 
-        var netGridCurrent = GetBalancingAdjustedGridCurrent(netGridUsage, trailingNetGridUsage, peakUsage);
+        var currentAdjustment = GetBalancingAdjustedGridCurrent(netGridUsage, trailingNetGridUsage, peakUsage);
 
         double toBeChargerCurrent;
         double toBeCarCurrent = 0;
 
         if (ConnectedCar?.CanSetCurrent ?? false)
         {
-            toBeCarCurrent = CurrentCurrentForConnectedCar - netGridCurrent;
+            toBeCarCurrent = CurrentCurrentForConnectedCar - currentAdjustment;
             toBeChargerCurrent = toBeCarCurrent;
         }
         else
         {
-            toBeChargerCurrent = currentChargerCurrent - netGridCurrent;
+            toBeChargerCurrent = currentChargerCurrent - currentAdjustment;
         }
 
         var (chargerCurrent, chargerCurrentChanged) = SetChargerCurrent(ConnectedCar, toBeChargerCurrent, currentChargerCurrent);
@@ -113,6 +113,8 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 
         if (!chargerCurrentChanged && !carCurrentChanged)
             return (0, 0);
+
+        _lastCurrentChange = _scheduler.Now;
 
         var netCurrentChange = ConnectedCar?.CanSetCurrent ?? false
             ? carCurrent - CurrentCurrentForConnectedCar
@@ -123,17 +125,48 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 
     private double GetBalancingAdjustedGridCurrent(double netGridUsage, double trailingNetGridUsage, double peakUsage)
     {
-        var daKleinBeetjeMagJeNegeren = TotalVoltage * 0.1;
-        var midPoint = TotalVoltage * 0.5;
-
-        return BalancingMethod switch
+        var currentAdjustment = BalancingMethod switch
         {
             _ when CriticallyNeeded?.IsOn() == true => Math.Round((netGridUsage - peakUsage) / TotalVoltage, 0, MidpointRounding.ToPositiveInfinity),
             BalancingMethod.NearPeak => Math.Round((netGridUsage - peakUsage) / TotalVoltage, 0, MidpointRounding.ToPositiveInfinity),
-            BalancingMethod.SolarPreferred => Math.Round((netGridUsage + daKleinBeetjeMagJeNegeren) / TotalVoltage, 0, MidpointRounding.ToNegativeInfinity),
-            BalancingMethod.MidPoint => Math.Round((trailingNetGridUsage - midPoint) / TotalVoltage, 0, MidpointRounding.ToPositiveInfinity),
-            _ => Math.Round((netGridUsage - daKleinBeetjeMagJeNegeren) / TotalVoltage, 0, MidpointRounding.ToPositiveInfinity)
+            BalancingMethod.SolarPreferred => GetSolarPreferredAdjustedGridCurrent(trailingNetGridUsage),
+            BalancingMethod.MidPoint => GetMidpointAdjustedGridCurrent(trailingNetGridUsage),
+            _ => GetSolarOnlyAdjustedGridCurrent(trailingNetGridUsage)
         };
+
+        return currentAdjustment;
+    }
+
+    private double GetSolarPreferredAdjustedGridCurrent(double trailingNetGridUsage)
+    {
+        var daKleinBeetjeMagJeNegeren = TotalVoltage * 0.1;
+        var currentDifference = (trailingNetGridUsage + daKleinBeetjeMagJeNegeren) / TotalVoltage;
+
+        return currentDifference is < 0.6d and > -0.6d
+            ? 0
+            : Math.Round(currentDifference, 0, MidpointRounding.ToNegativeInfinity);
+    }
+
+    private double GetMidpointAdjustedGridCurrent(double trailingNetGridUsage)
+    {
+        var midPoint = TotalVoltage * 0.5;
+
+        var currentDifference = (trailingNetGridUsage - midPoint) / TotalVoltage;
+
+        return currentDifference is < 0.6d and > -0.6d
+            ? 0
+            : Math.Round(currentDifference, 0, MidpointRounding.ToPositiveInfinity);
+    }
+
+    private double GetSolarOnlyAdjustedGridCurrent(double trailingNetGridUsage)
+    {
+        var daKleinBeetjeMagJeNegeren = TotalVoltage * 0.1;
+
+        var currentDifference = (trailingNetGridUsage - daKleinBeetjeMagJeNegeren) / TotalVoltage;
+
+        return currentDifference is < 0.6d and > -0.6d
+            ? 0
+            : Math.Round(currentDifference, 0, MidpointRounding.ToPositiveInfinity);
     }
 
     private (double chargercurrent, bool changed) SetChargerCurrent(Car? connectedCar, double chargerCurrent, double currentCurrent)
@@ -174,7 +207,6 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
             return (carCurrent, false);
 
         ConnectedCar.ChangeCurrent(carCurrent);
-        _lastCurrentChange = _scheduler.Now;
 
         return (carCurrent, true);
     }
