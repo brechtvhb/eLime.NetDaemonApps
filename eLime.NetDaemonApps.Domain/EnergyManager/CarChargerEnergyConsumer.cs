@@ -127,14 +127,19 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
     {
         var currentAdjustment = BalancingMethod switch
         {
-            _ when CriticallyNeeded?.IsOn() == true => Math.Round((netGridUsage - peakUsage) / TotalVoltage, 0, MidpointRounding.ToPositiveInfinity),
-            BalancingMethod.NearPeak => Math.Round((netGridUsage - peakUsage) / TotalVoltage, 0, MidpointRounding.ToPositiveInfinity),
+            _ when CriticallyNeeded?.IsOn() == true => GetNearPeakAdjustedGridCurrent(netGridUsage, peakUsage),
+            BalancingMethod.NearPeak => GetNearPeakAdjustedGridCurrent(netGridUsage, peakUsage),
             BalancingMethod.SolarPreferred => GetSolarPreferredAdjustedGridCurrent(trailingNetGridUsage),
             BalancingMethod.MidPoint => GetMidpointAdjustedGridCurrent(trailingNetGridUsage),
             _ => GetSolarOnlyAdjustedGridCurrent(trailingNetGridUsage)
         };
 
         return currentAdjustment;
+    }
+
+    public double GetNearPeakAdjustedGridCurrent(double netGridUsage, double peakUsageThisMonth)
+    {
+        return Math.Round((netGridUsage - peakUsageThisMonth) / TotalVoltage, 0, MidpointRounding.ToPositiveInfinity);
     }
 
     private double GetSolarPreferredAdjustedGridCurrent(double trailingNetGridUsage)
