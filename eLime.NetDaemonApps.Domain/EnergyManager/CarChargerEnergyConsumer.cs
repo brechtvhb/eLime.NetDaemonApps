@@ -142,7 +142,7 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         var daKleinBeetjeMagJeNegeren = TotalVoltage * 0.1;
         var currentDifference = (trailingNetGridUsage + daKleinBeetjeMagJeNegeren) / TotalVoltage;
 
-        return currentDifference is < 0.6d and > -0.6d
+        return currentDifference is < 0.1d and > -1.1d
             ? 0
             : Math.Round(currentDifference, 0, MidpointRounding.ToNegativeInfinity);
     }
@@ -164,7 +164,7 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 
         var currentDifference = (trailingNetGridUsage - daKleinBeetjeMagJeNegeren) / TotalVoltage;
 
-        return currentDifference is < 0.6d and > -0.6d
+        return currentDifference is < 1.1d and > -0.1d
             ? 0
             : Math.Round(currentDifference, 0, MidpointRounding.ToPositiveInfinity);
     }
