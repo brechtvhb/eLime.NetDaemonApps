@@ -14,6 +14,8 @@ namespace eLime.NetDaemonApps.Domain.EnergyManager;
 
 public class EnergyManager : IDisposable
 {
+    private static readonly object _lock = new();
+
     public IGridMonitor GridMonitor { get; set; }
     public NumericEntity SolarProductionRemainingTodaySensor { get; }
 
@@ -117,17 +119,26 @@ public class EnergyManager : IDisposable
 
     private void ManageConsumersIfNeeded()
     {
-        var dynamicNetChange = AdjustDynamicLoadsIfNeeded();
-        if (dynamicNetChange != 0)
-            _lastChange = _scheduler.Now;
+        if (!Monitor.TryEnter(_lock))
+        {
+            _logger.LogInformation("Could not manage consumers because lock object is still locked.");
+            return;
+        }
 
-        var startNetChange = StartConsumersIfNeeded(dynamicNetChange);
-        if (startNetChange != 0)
-            _lastChange = _scheduler.Now;
+        try
+        {
+            var dynamicNetChange = AdjustDynamicLoadsIfNeeded();
+            var startNetChange = StartConsumersIfNeeded(dynamicNetChange);
+            var stopNetChange = StopConsumersIfNeeded(dynamicNetChange, startNetChange);
 
-        var stopNetChange = StopConsumersIfNeeded(dynamicNetChange, startNetChange);
-        if (stopNetChange != 0)
-            _lastChange = _scheduler.Now;
+            if (dynamicNetChange != 0 || startNetChange != 0 || stopNetChange != 0)
+                _lastChange = _scheduler.Now;
+        }
+        finally
+        {
+            Monitor.Exit(_lock);
+        }
+
     }
 
     private Double AdjustDynamicLoadsIfNeeded()
