@@ -1,5 +1,4 @@
 ﻿using eLime.NetDaemonApps.Domain.EnergyManager;
-using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
 using eLime.NetDaemonApps.Domain.Storage;
 using eLime.NetDaemonApps.Tests.Helpers;
 using Microsoft.Extensions.Logging;
@@ -17,33 +16,26 @@ public class EnergyManagerBuilder
     private readonly IFileStorage _fileStorage;
     private readonly IScheduler _scheduler;
 
-    private NumericEntity _gridVoltageSensor;
-    private NumericSensor _gridPowerImportSensor;
-    private NumericSensor _gridPowerExportSensor;
-    private NumericEntity _peakimportSensor;
-
     private NumericEntity _remainingSolarProductionToday;
+
+    public IGridMonitor _gridMonitor;
+
     private String? _phoneToNotify;
 
 
     private List<EnergyConsumer> _consumers;
 
-    public EnergyManagerBuilder(AppTestContext testCtx, ILogger logger, IMqttEntityManager mqttEntityManager, IFileStorage fileStorage, IScheduler scheduler)
+    public EnergyManagerBuilder(AppTestContext testCtx, ILogger logger, IMqttEntityManager mqttEntityManager, IFileStorage fileStorage, IScheduler scheduler, IGridMonitor gridMonitor)
     {
         _testCtx = testCtx;
         _logger = logger;
         _mqttEntityManager = mqttEntityManager;
         _fileStorage = fileStorage;
         _scheduler = scheduler;
-
-        _gridVoltageSensor = new NumericEntity(_testCtx.HaContext, "sensor.grid_voltage");
-        _gridPowerImportSensor = NumericSensor.Create(_testCtx.HaContext, "sensor.electricity_meter_power_consumption_watt");
-        _gridPowerExportSensor = NumericSensor.Create(_testCtx.HaContext, "sensor.electricity_meter_power_production_watt");
-        _peakimportSensor = new NumericEntity(_testCtx.HaContext, "input_number.peak_consumption");
+        _gridMonitor = gridMonitor;
 
         _phoneToNotify = "brecht";
-
-        _consumers = new List<EnergyConsumer> { };
+        _consumers = [];
     }
 
     public EnergyManagerBuilder AddConsumer(EnergyConsumer consumer)
@@ -56,7 +48,7 @@ public class EnergyManagerBuilder
     public EnergyManager Build()
     {
 
-        var x = new EnergyManager(_testCtx.HaContext, _logger, _scheduler, _mqttEntityManager, _fileStorage, new GridMonitor(_scheduler, _gridVoltageSensor, _gridPowerImportSensor, _gridPowerExportSensor, _peakimportSensor), _remainingSolarProductionToday, _consumers, _phoneToNotify, TimeSpan.Zero);
+        var x = new EnergyManager(_testCtx.HaContext, _logger, _scheduler, _mqttEntityManager, _fileStorage, _gridMonitor, _remainingSolarProductionToday, _consumers, _phoneToNotify, TimeSpan.Zero);
         return x;
     }
 }

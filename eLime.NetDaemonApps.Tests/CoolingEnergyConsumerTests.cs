@@ -5,7 +5,6 @@ using eLime.NetDaemonApps.Tests.Helpers;
 using FakeItEasy;
 using Microsoft.Extensions.Logging;
 using NetDaemon.Extensions.MqttEntityManager;
-using NetDaemon.HassModel.Entities;
 using EnergyManager = eLime.NetDaemonApps.Domain.EnergyManager.EnergyManager;
 
 namespace eLime.NetDaemonApps.Tests;
@@ -17,6 +16,7 @@ public class CoolingEnergyConsumerTests
     private ILogger _logger;
     private IMqttEntityManager _mqttEntityManager;
     private IFileStorage _fileStorage;
+    private IGridMonitor _gridMonitor;
 
     [TestInitialize]
     public void Init()
@@ -26,11 +26,11 @@ public class CoolingEnergyConsumerTests
         _logger = A.Fake<ILogger<EnergyManager>>();
         _mqttEntityManager = A.Fake<IMqttEntityManager>();
         _fileStorage = A.Fake<IFileStorage>();
+        _gridMonitor = A.Fake<IGridMonitor>();
 
-        _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.grid_voltage"), "230");
-        _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "input_number.peak_consumption"), "4.0");
-        _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_consumption_watt"), "0");
-        _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_production_watt"), "2000");
+        A.CallTo(() => _gridMonitor.PeakLoad).Returns(4000);
+        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(-2000);
+        A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-2000);
     }
 
 
@@ -41,7 +41,7 @@ public class CoolingEnergyConsumerTests
         var consumer = new CoolingEnergyConsumerBuilder(_logger, _testCtx)
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
             .AddConsumer(consumer)
             .Build();
 
@@ -59,13 +59,13 @@ public class CoolingEnergyConsumerTests
             .Build();
         _testCtx.TriggerStateChange(consumer.TemperatureSensor, "4");
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
             .AddConsumer(consumer)
             .Build();
 
         //Act
         _testCtx.TriggerStateChange(consumer.TemperatureSensor, "7");
-        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(20));
 
         //Assert
         Assert.AreEqual(EnergyConsumerState.NeedsEnergy, energyManager.Consumers.First().State);
@@ -80,7 +80,7 @@ public class CoolingEnergyConsumerTests
             .Build();
         _testCtx.TriggerStateChange(consumer.TemperatureSensor, "4");
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
             .AddConsumer(consumer)
             .Build();
 
@@ -98,8 +98,8 @@ public class CoolingEnergyConsumerTests
     public void VeryHotFridge_HasPriorityOver_HotFridge()
     {
         // Arrange
-
-        _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_production_watt"), "100");
+        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(-100);
+        A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-100);
 
         var consumer = new CoolingEnergyConsumerBuilder(_logger, _testCtx)
             .Build();
@@ -110,7 +110,7 @@ public class CoolingEnergyConsumerTests
 
         _testCtx.TriggerStateChange(consumer.TemperatureSensor, "4");
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
             .AddConsumer(consumer)
             .AddConsumer(consumer2)
             .Build();

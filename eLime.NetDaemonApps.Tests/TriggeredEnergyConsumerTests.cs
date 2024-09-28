@@ -5,7 +5,6 @@ using eLime.NetDaemonApps.Tests.Helpers;
 using FakeItEasy;
 using Microsoft.Extensions.Logging;
 using NetDaemon.Extensions.MqttEntityManager;
-using NetDaemon.HassModel.Entities;
 using EnergyManager = eLime.NetDaemonApps.Domain.EnergyManager.EnergyManager;
 
 namespace eLime.NetDaemonApps.Tests;
@@ -17,6 +16,7 @@ public class TriggeredEnergyConsumerTests
     private ILogger _logger;
     private IMqttEntityManager _mqttEntityManager;
     private IFileStorage _fileStorage;
+    private IGridMonitor _gridMonitor;
 
     [TestInitialize]
     public void Init()
@@ -26,11 +26,11 @@ public class TriggeredEnergyConsumerTests
         _logger = A.Fake<ILogger<EnergyManager>>();
         _mqttEntityManager = A.Fake<IMqttEntityManager>();
         _fileStorage = A.Fake<IFileStorage>();
+        _gridMonitor = A.Fake<IGridMonitor>();
 
-        _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.grid_voltage"), "230");
-        _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "input_number.peak_consumption"), "4.0");
-        _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_consumption_watt"), "0");
-        _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_production_watt"), "2000");
+        A.CallTo(() => _gridMonitor.PeakLoad).Returns(4000);
+        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(-2000);
+        A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-2000);
     }
 
 
@@ -41,7 +41,7 @@ public class TriggeredEnergyConsumerTests
         var consumer = new TriggeredEnergyConsumerBuilder(_logger, _testCtx, "irrigation")
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
             .AddConsumer(consumer)
             .Build();
 
@@ -58,7 +58,7 @@ public class TriggeredEnergyConsumerTests
         var consumer = new TriggeredEnergyConsumerBuilder(_logger, _testCtx, "irrigation")
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
             .AddConsumer(consumer)
             .Build();
 
@@ -78,7 +78,7 @@ public class TriggeredEnergyConsumerTests
         var consumer = new TriggeredEnergyConsumerBuilder(_logger, _testCtx, "irrigation")
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
             .AddConsumer(consumer)
             .Build();
 
@@ -99,7 +99,7 @@ public class TriggeredEnergyConsumerTests
         var consumer = new TriggeredEnergyConsumerBuilder(_logger, _testCtx, "washer")
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
             .AddConsumer(consumer)
             .Build();
 
@@ -119,7 +119,7 @@ public class TriggeredEnergyConsumerTests
         var consumer = new TriggeredEnergyConsumerBuilder(_logger, _testCtx, "washer")
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
             .AddConsumer(consumer)
             .Build();
 
@@ -139,7 +139,7 @@ public class TriggeredEnergyConsumerTests
         var consumer = new TriggeredEnergyConsumerBuilder(_logger, _testCtx, "washer")
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
             .AddConsumer(consumer)
             .Build();
 

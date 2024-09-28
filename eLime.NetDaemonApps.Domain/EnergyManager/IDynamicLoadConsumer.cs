@@ -15,7 +15,7 @@ internal interface IDynamicLoadConsumer
 
     public void SetBalancingMethod(DateTimeOffset now, BalancingMethod balancingMethod);
     public void SetBalanceOnBehalfOf(BalanceOnBehalfOf balanceOnBehalfOf);
-    public (Double current, Double netPowerChange) Rebalance(double netGridUsage, double trailingNetGridUsage, double peakUsage);
+    public (Double current, Double netPowerChange) Rebalance(double netGridUsage, double trailingNetGridUsage, double peakUsage, double totalNetChange);
 
 }
 

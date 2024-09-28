@@ -5,7 +5,7 @@ using System.Reactive.Concurrency;
 
 namespace eLime.NetDaemonApps.Domain.EnergyManager;
 
-public class GridMonitor : IDisposable
+public class GridMonitor : IDisposable, IGridMonitor
 {
     private readonly IScheduler _scheduler;
     public NumericEntity GridVoltageSensor { get; }

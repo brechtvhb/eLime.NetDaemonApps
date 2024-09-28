@@ -6,7 +6,6 @@ using eLime.NetDaemonApps.Tests.Helpers;
 using FakeItEasy;
 using Microsoft.Extensions.Logging;
 using NetDaemon.Extensions.MqttEntityManager;
-using NetDaemon.HassModel.Entities;
 using EnergyManager = eLime.NetDaemonApps.Domain.EnergyManager.EnergyManager;
 
 namespace eLime.NetDaemonApps.Tests;
@@ -18,6 +17,7 @@ public class EnergyManagerTests
     private ILogger _logger;
     private IMqttEntityManager _mqttEntityManager;
     private IFileStorage _fileStorage;
+    private IGridMonitor _gridMonitor;
 
     [TestInitialize]
     public void Init()
@@ -27,9 +27,8 @@ public class EnergyManagerTests
         _logger = A.Fake<ILogger<EnergyManager>>();
         _mqttEntityManager = A.Fake<IMqttEntityManager>();
         _fileStorage = A.Fake<IFileStorage>();
-
-        _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.grid_voltage"), "230");
-        _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "input_number.peak_consumption"), "4.0");
+        _gridMonitor = A.Fake<IGridMonitor>();
+        A.CallTo(() => _gridMonitor.PeakLoad).Returns(4000);
     }
 
 
@@ -40,7 +39,7 @@ public class EnergyManagerTests
         var consumer = new SimpleEnergyConsumerBuilder(_logger, _testCtx)
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
             .AddConsumer(consumer)
             .Build();
 
@@ -57,7 +56,7 @@ public class EnergyManagerTests
         var consumer = new SimpleEnergyConsumerBuilder(_logger, _testCtx)
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
             .AddConsumer(consumer)
             .Build();
 
@@ -77,7 +76,7 @@ public class EnergyManagerTests
         var consumer = new SimpleEnergyConsumerBuilder(_logger, _testCtx)
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
             .AddConsumer(consumer)
             .Build();
 
@@ -100,13 +99,13 @@ public class EnergyManagerTests
         var consumer = new SimpleEnergyConsumerBuilder(_logger, _testCtx)
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
             .AddConsumer(consumer)
             .Build();
 
         //Act
-        _testCtx.TriggerStateChange(energyManager.GridMonitor.GridPowerExportSensor, "2000");
-        _testCtx.TriggerStateChange(energyManager.GridMonitor.GridPowerImportSensor, "0");
+        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(-2000);
+        A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-2000);
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
 
         //Assert
@@ -121,7 +120,7 @@ public class EnergyManagerTests
         var consumer = new SimpleEnergyConsumerBuilder(_logger, _testCtx)
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
             .AddConsumer(consumer)
             .Build();
 
@@ -129,8 +128,8 @@ public class EnergyManagerTests
         _testCtx.TriggerStateChange(consumer.PowerUsage, "40");
 
         //Act
-        _testCtx.TriggerStateChange(energyManager.GridMonitor.GridPowerExportSensor, "0");
-        _testCtx.TriggerStateChange(energyManager.GridMonitor.GridPowerImportSensor, "5000");
+        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(5000);
+        A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(5000);
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(31));
 
         //Assert
@@ -145,7 +144,7 @@ public class EnergyManagerTests
             .WithRuntime(TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(60))
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
             .AddConsumer(consumer)
             .Build();
 
@@ -153,8 +152,8 @@ public class EnergyManagerTests
         _testCtx.TriggerStateChange(consumer.PowerUsage, "40");
 
         //Act
-        _testCtx.TriggerStateChange(energyManager.GridMonitor.GridPowerExportSensor, "0");
-        _testCtx.TriggerStateChange(energyManager.GridMonitor.GridPowerImportSensor, "5000");
+        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(5000);
+        A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(5000);
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(31));
 
         //Assert
@@ -169,7 +168,7 @@ public class EnergyManagerTests
             .WithRuntime(TimeSpan.FromSeconds(55), TimeSpan.FromMinutes(60))
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
             .AddConsumer(consumer)
             .Build();
 
@@ -177,8 +176,8 @@ public class EnergyManagerTests
         _testCtx.TriggerStateChange(consumer.PowerUsage, "40");
 
         //Act
-        _testCtx.TriggerStateChange(energyManager.GridMonitor.GridPowerExportSensor, "0");
-        _testCtx.TriggerStateChange(energyManager.GridMonitor.GridPowerImportSensor, "5000");
+        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(5000);
+        A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(5000);
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(61));
 
         //Assert
@@ -194,7 +193,7 @@ public class EnergyManagerTests
             .WithLoad(-50, 200, 100)
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
             .AddConsumer(consumer)
             .Build();
 
@@ -202,8 +201,8 @@ public class EnergyManagerTests
         _testCtx.TriggerStateChange(consumer.PowerUsage, "40");
 
         //Act
-        _testCtx.TriggerStateChange(energyManager.GridMonitor.GridPowerExportSensor, "0");
-        _testCtx.TriggerStateChange(energyManager.GridMonitor.GridPowerImportSensor, "500");
+        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(500);
+        A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(500);
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(61));
 
         //Assert
@@ -219,7 +218,7 @@ public class EnergyManagerTests
             .WithLoad(-50, 200, 100)
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
             .AddConsumer(consumer)
             .Build();
 
@@ -227,8 +226,8 @@ public class EnergyManagerTests
         _testCtx.TriggerStateChange(consumer.PowerUsage, "40");
 
         //Act
-        _testCtx.TriggerStateChange(energyManager.GridMonitor.GridPowerExportSensor, "0");
-        _testCtx.TriggerStateChange(energyManager.GridMonitor.GridPowerImportSensor, "500");
+        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(500);
+        A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(500);
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(61));
 
         //Assert
@@ -243,7 +242,7 @@ public class EnergyManagerTests
             .WithRuntime(TimeSpan.FromSeconds(55), TimeSpan.FromSeconds(180))
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
             .AddConsumer(consumer)
             .Build();
 
@@ -251,8 +250,8 @@ public class EnergyManagerTests
         _testCtx.TriggerStateChange(consumer.PowerUsage, "40");
 
         //Act
-        _testCtx.TriggerStateChange(energyManager.GridMonitor.GridPowerExportSensor, "1000");
-        _testCtx.TriggerStateChange(energyManager.GridMonitor.GridPowerImportSensor, "0");
+        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(-1000);
+        A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-1000);
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(181));
 
         //Assert
@@ -268,7 +267,7 @@ public class EnergyManagerTests
             .WithTimeout(TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(300))
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
             .AddConsumer(consumer)
             .Build();
 
@@ -276,8 +275,8 @@ public class EnergyManagerTests
         _testCtx.TriggerStateChange(consumer.Socket, "off");
 
         //Act
-        _testCtx.TriggerStateChange(energyManager.GridMonitor.GridPowerExportSensor, "1000");
-        _testCtx.TriggerStateChange(energyManager.GridMonitor.GridPowerImportSensor, "0");
+        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(-1000);
+        A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-1000);
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(31));
 
         //Assert
@@ -293,7 +292,7 @@ public class EnergyManagerTests
             .WithTimeout(TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(300))
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
             .AddConsumer(consumer)
             .Build();
 
@@ -301,8 +300,8 @@ public class EnergyManagerTests
         _testCtx.TriggerStateChange(consumer.Socket, "off");
 
         //Act
-        _testCtx.TriggerStateChange(energyManager.GridMonitor.GridPowerExportSensor, "1000");
-        _testCtx.TriggerStateChange(energyManager.GridMonitor.GridPowerImportSensor, "0");
+        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(-1000);
+        A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-1000);
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(61));
 
         //Assert
@@ -320,14 +319,14 @@ public class EnergyManagerTests
             .WithName("fridge")
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
             .AddConsumer(consumer1)
             .AddConsumer(consumer2)
             .Build();
 
         //Act
-        _testCtx.TriggerStateChange(energyManager.GridMonitor.GridPowerExportSensor, "50");
-        _testCtx.TriggerStateChange(energyManager.GridMonitor.GridPowerImportSensor, "0");
+        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(-50);
+        A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-50);
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
 
         //Assert
@@ -347,14 +346,14 @@ public class EnergyManagerTests
             .WithName("fridge")
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
             .AddConsumer(consumer1)
             .AddConsumer(consumer2)
             .Build();
 
         //Act
-        _testCtx.TriggerStateChange(energyManager.GridMonitor.GridPowerExportSensor, "200");
-        _testCtx.TriggerStateChange(energyManager.GridMonitor.GridPowerImportSensor, "0");
+        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(-200);
+        A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-200);
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
 
         //Assert
@@ -375,14 +374,14 @@ public class EnergyManagerTests
             .WithCriticalSensor("boolean_sensor.fridge_too_hot")
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
             .AddConsumer(consumer1)
             .AddConsumer(consumer2)
             .Build();
 
         //Act
-        _testCtx.TriggerStateChange(energyManager.GridMonitor.GridPowerExportSensor, "50");
-        _testCtx.TriggerStateChange(energyManager.GridMonitor.GridPowerImportSensor, "0");
+        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(-50);
+        A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-50);
         _testCtx.TriggerStateChange(consumer2.CriticallyNeeded, "on");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
 
@@ -402,13 +401,13 @@ public class EnergyManagerTests
             .AddTimeWindow(null, new TimeOnly(09, 00), new TimeOnly(12, 00))
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
             .AddConsumer(consumer)
             .Build();
 
         //Act
-        _testCtx.TriggerStateChange(energyManager.GridMonitor.GridPowerExportSensor, "2000");
-        _testCtx.TriggerStateChange(energyManager.GridMonitor.GridPowerImportSensor, "0");
+        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(-2000);
+        A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-2000);
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
 
         //Assert
@@ -427,13 +426,13 @@ public class EnergyManagerTests
             .AddTimeWindow(active, new TimeOnly(09, 00), new TimeOnly(12, 00))
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
             .AddConsumer(consumer)
             .Build();
 
         //Act
-        _testCtx.TriggerStateChange(energyManager.GridMonitor.GridPowerExportSensor, "2000");
-        _testCtx.TriggerStateChange(energyManager.GridMonitor.GridPowerImportSensor, "0");
+        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(-2000);
+        A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-2000);
         _testCtx.TriggerStateChange(active, "on");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
 
@@ -453,13 +452,13 @@ public class EnergyManagerTests
             .AddTimeWindow(null, new TimeOnly(09, 00), new TimeOnly(12, 00))
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
             .AddConsumer(consumer)
             .Build();
 
         //Act
-        _testCtx.TriggerStateChange(energyManager.GridMonitor.GridPowerExportSensor, "2000");
-        _testCtx.TriggerStateChange(energyManager.GridMonitor.GridPowerImportSensor, "0");
+        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(-2000);
+        A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-2000);
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
 
         //Assert
@@ -478,13 +477,13 @@ public class EnergyManagerTests
             .AddTimeWindow(null, new TimeOnly(09, 00), new TimeOnly(12, 00))
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
             .AddConsumer(consumer)
             .Build();
 
         //Act
-        _testCtx.TriggerStateChange(energyManager.GridMonitor.GridPowerExportSensor, "2000");
-        _testCtx.TriggerStateChange(energyManager.GridMonitor.GridPowerImportSensor, "0");
+        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(-2000);
+        A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-2000);
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
 
         //Assert
@@ -503,13 +502,13 @@ public class EnergyManagerTests
             .AddTimeWindow(null, new TimeOnly(13, 00), new TimeOnly(16, 00))
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
             .AddConsumer(consumer)
             .Build();
 
         //Act
-        _testCtx.TriggerStateChange(energyManager.GridMonitor.GridPowerExportSensor, "2000");
-        _testCtx.TriggerStateChange(energyManager.GridMonitor.GridPowerImportSensor, "0");
+        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(-2000);
+        A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-2000);
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
 
         //Assert
@@ -529,13 +528,13 @@ public class EnergyManagerTests
             .AddTimeWindow(new BinarySensor(_testCtx.HaContext, "input_boolean.away"), new TimeOnly(13, 00), new TimeOnly(16, 00))
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
             .AddConsumer(consumer)
             .Build();
 
         //Act
-        _testCtx.TriggerStateChange(energyManager.GridMonitor.GridPowerExportSensor, "2000");
-        _testCtx.TriggerStateChange(energyManager.GridMonitor.GridPowerImportSensor, "0");
+        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(-2000);
+        A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-2000);
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
 
         //Assert
@@ -554,13 +553,13 @@ public class EnergyManagerTests
             .AddTimeWindow(null, new TimeOnly(13, 30), new TimeOnly(16, 00))
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
             .AddConsumer(consumer)
             .Build();
 
         //Act
-        _testCtx.TriggerStateChange(energyManager.GridMonitor.GridPowerExportSensor, "2000");
-        _testCtx.TriggerStateChange(energyManager.GridMonitor.GridPowerImportSensor, "0");
+        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(-2000);
+        A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-2000);
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
 
         //Assert

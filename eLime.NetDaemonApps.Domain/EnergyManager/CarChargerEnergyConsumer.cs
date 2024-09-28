@@ -86,14 +86,14 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         BalanceOnBehalfOf = balanceOnBehalfOf;
     }
 
-    public (Double current, Double netPowerChange) Rebalance(double netGridUsage, double trailingNetGridUsage, double peakUsage)
+    public (Double current, Double netPowerChange) Rebalance(double netGridUsage, double trailingNetGridUsage, double peakUsage, double totalNetChange)
     {
         if (_lastCurrentChange?.Add(MinimumRebalancingInterval) > _scheduler.Now)
             return (0, 0);
 
         var currentChargerCurrent = CurrentEntity.State ?? 0;
 
-        var currentAdjustment = GetBalancingAdjustedGridCurrent(netGridUsage, trailingNetGridUsage, peakUsage);
+        var currentAdjustment = GetBalancingAdjustedGridCurrent(netGridUsage + totalNetChange, trailingNetGridUsage + totalNetChange, peakUsage);
 
         double toBeChargerCurrent;
         double toBeCarCurrent = 0;

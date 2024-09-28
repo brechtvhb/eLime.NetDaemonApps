@@ -18,6 +18,7 @@ public class CarChargerEnergyConsumerTests
     private ILogger _logger;
     private IMqttEntityManager _mqttEntityManager;
     private IFileStorage _fileStorage;
+    private IGridMonitor _gridMonitor;
 
     [TestInitialize]
     public void Init()
@@ -27,12 +28,11 @@ public class CarChargerEnergyConsumerTests
         _logger = A.Fake<ILogger<EnergyManager>>();
         _mqttEntityManager = A.Fake<IMqttEntityManager>();
         _fileStorage = A.Fake<IFileStorage>();
-
-        _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.grid_voltage"), "230");
+        _gridMonitor = A.Fake<IGridMonitor>();
+        A.CallTo(() => _gridMonitor.PeakLoad).Returns(4000);
+        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(-2000);
+        A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-2000);
         _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.voltage"), "230");
-        _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "input_number.peak_consumption"), "4.0");
-        _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_consumption_watt"), "0");
-        _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_production_watt"), "2000");
     }
 
 
@@ -43,7 +43,7 @@ public class CarChargerEnergyConsumerTests
         var consumer = new CarChargerEnergyConsumerBuilder(_logger, _testCtx)
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
             .AddConsumer(consumer)
             .Build();
 
@@ -61,7 +61,7 @@ public class CarChargerEnergyConsumerTests
         var consumer = new CarChargerEnergyConsumerBuilder(_logger, _testCtx)
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
             .AddConsumer(consumer)
             .Build();
 
@@ -86,7 +86,7 @@ public class CarChargerEnergyConsumerTests
         var consumer = new CarChargerEnergyConsumerBuilder(_logger, _testCtx)
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
             .AddConsumer(consumer)
             .Build();
 
@@ -109,7 +109,7 @@ public class CarChargerEnergyConsumerTests
         var consumer = new CarChargerEnergyConsumerBuilder(_logger, _testCtx)
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
             .AddConsumer(consumer)
             .Build();
 
@@ -134,7 +134,7 @@ public class CarChargerEnergyConsumerTests
         var consumer = new CarChargerEnergyConsumerBuilder(_logger, _testCtx)
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
             .AddConsumer(consumer)
             .Build();
 
@@ -159,7 +159,7 @@ public class CarChargerEnergyConsumerTests
         var consumer = new CarChargerEnergyConsumerBuilder(_logger, _testCtx)
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
             .AddConsumer(consumer)
             .Build();
 
@@ -173,7 +173,8 @@ public class CarChargerEnergyConsumerTests
         //Act
         _testCtx.TriggerStateChange(consumer.CurrentEntity, "6");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(15));
-        _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_production_watt"), "600");
+        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(-600);
+        A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-600);
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(10));
 
         //Assert
@@ -188,7 +189,7 @@ public class CarChargerEnergyConsumerTests
             .WithRuntime(TimeSpan.FromMinutes(5), null)
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
             .AddConsumer(consumer)
             .Build();
 
@@ -201,8 +202,8 @@ public class CarChargerEnergyConsumerTests
         //Act
         _testCtx.TriggerStateChange(consumer.CurrentEntity, "16");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(15));
-        _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_production_watt"), "0");
-        _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_consumption_watt"), "800");
+        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(800);
+        A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(800);
 
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(10));
 
@@ -218,7 +219,7 @@ public class CarChargerEnergyConsumerTests
             .WithRuntime(TimeSpan.FromMinutes(5), null)
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
             .AddConsumer(consumer)
             .Build();
 
@@ -231,8 +232,8 @@ public class CarChargerEnergyConsumerTests
 
         //Act
         _testCtx.TriggerStateChange(consumer.CurrentEntity, "6");
-        _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_production_watt"), "0");
-        _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_consumption_watt"), "1200");
+        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(1200);
+        A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(1200);
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(25));
 
         //Assert
@@ -249,7 +250,7 @@ public class CarChargerEnergyConsumerTests
             .WithRuntime(TimeSpan.FromMinutes(5), null)
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
             .AddConsumer(consumer)
             .Build();
 
@@ -261,12 +262,12 @@ public class CarChargerEnergyConsumerTests
 
         //Act
         _testCtx.TriggerStateChange(consumer.CurrentEntity, "6");
-        _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_production_watt"), "0");
-        _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_consumption_watt"), "1200");
+        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(1200);
+        A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(1200);
         _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(3));
 
-        _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_production_watt"), "0");
-        _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_consumption_watt"), "1201");
+        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(1201);
+        A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(1201);
         _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(3));
 
         //Assert
@@ -282,7 +283,7 @@ public class CarChargerEnergyConsumerTests
         var consumer = new CarChargerEnergyConsumerBuilder(_logger, _testCtx)
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
             .AddConsumer(consumer)
             .Build();
 
@@ -294,15 +295,15 @@ public class CarChargerEnergyConsumerTests
 
         _testCtx.TriggerStateChange(consumer.CurrentEntity, "16");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(10));
-        _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_production_watt"), "0");
-        _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_consumption_watt"), "800");
+        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(800);
+        A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(800);
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(15));
 
         //Act
         _testCtx.TriggerStateChange(consumer.CurrentEntity, "12");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(10));
-        _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_production_watt"), "0");
-        _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_consumption_watt"), "-110");
+        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(-110);
+        A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-110);
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(15));
 
         //Assert
@@ -318,7 +319,7 @@ public class CarChargerEnergyConsumerTests
         var consumer = new CarChargerEnergyConsumerBuilder(_logger, _testCtx)
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
             .AddConsumer(consumer)
             .Build();
 
@@ -347,7 +348,7 @@ public class CarChargerEnergyConsumerTests
             .InitTeslaTests()
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
             .AddConsumer(consumer)
             .Build();
 
@@ -381,7 +382,7 @@ public class CarChargerEnergyConsumerTests
             .InitTeslaTests(true)
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
             .AddConsumer(consumer)
             .Build();
 
@@ -415,7 +416,7 @@ public class CarChargerEnergyConsumerTests
             .InitTeslaTests()
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
             .AddConsumer(consumer)
             .Build();
 
@@ -433,7 +434,8 @@ public class CarChargerEnergyConsumerTests
 
         //Act
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(15));
-        _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_production_watt"), "900");
+        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(800);
+        A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-900);
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(10));
 
         //Assert
@@ -450,7 +452,7 @@ public class CarChargerEnergyConsumerTests
             .InitTeslaTests()
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
             .AddConsumer(consumer)
             .Build();
 
@@ -480,7 +482,7 @@ public class CarChargerEnergyConsumerTests
             .InitTeslaTests()
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
             .AddConsumer(consumer)
             .Build();
 
@@ -498,7 +500,8 @@ public class CarChargerEnergyConsumerTests
 
         //Act
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(15));
-        _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_production_watt"), "900");
+        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(-900);
+        A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-900);
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(10));
 
         //Assert
@@ -513,7 +516,7 @@ public class CarChargerEnergyConsumerTests
             .InitTeslaTests()
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
             .AddConsumer(consumer)
             .Build();
 
@@ -530,7 +533,8 @@ public class CarChargerEnergyConsumerTests
 
         //Act
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(10));
-        _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_production_watt"), "1500");
+        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(-1500);
+        A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-1500);
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(15));
 
         //Assert
@@ -547,7 +551,7 @@ public class CarChargerEnergyConsumerTests
             .InitTeslaTests()
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
             .AddConsumer(consumer)
             .Build();
 
@@ -564,8 +568,8 @@ public class CarChargerEnergyConsumerTests
 
         //Act
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(10));
-        _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_production_watt"), "0");
-        _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_consumption_watt"), "900");
+        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(900);
+        A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(900);
 
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(15));
 
@@ -583,7 +587,7 @@ public class CarChargerEnergyConsumerTests
             .InitTeslaTests()
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
             .AddConsumer(consumer)
             .Build();
 
@@ -600,8 +604,8 @@ public class CarChargerEnergyConsumerTests
 
         //Act
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(15));
-        _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_production_watt"), "0");
-        _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_consumption_watt"), "900");
+        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(900);
+        A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(900);
 
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(10));
 
@@ -618,7 +622,7 @@ public class CarChargerEnergyConsumerTests
             .InitTeslaTests()
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
             .AddConsumer(consumer)
             .Build();
 
@@ -636,8 +640,8 @@ public class CarChargerEnergyConsumerTests
         _testCtx.TriggerStateChange(consumer.PowerUsage, "4000");
 
         //Act
-        _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_production_watt"), "0");
-        _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_consumption_watt"), "800");
+        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(800);
+        A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(800);
 
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(30));
 
@@ -654,7 +658,7 @@ public class CarChargerEnergyConsumerTests
             .InitTeslaTests()
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
             .AddConsumer(consumer)
             .Build();
 
@@ -673,8 +677,8 @@ public class CarChargerEnergyConsumerTests
 
         //Act
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(10));
-        _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_production_watt"), "900");
-        _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_consumption_watt"), "0");
+        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(-900);
+        A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-900);
 
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(15));
 
@@ -691,7 +695,7 @@ public class CarChargerEnergyConsumerTests
             .InitTeslaTests()
             .Build();
 
-        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
             .AddConsumer(consumer)
             .Build();
 
@@ -709,16 +713,16 @@ public class CarChargerEnergyConsumerTests
         _testCtx.TriggerStateChange(consumer.Cars.First().ChargerSwitch, "on");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(10));
         _testCtx.TriggerStateChange(consumer.PowerUsage, "4000");
-        _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_production_watt"), "900");
-        _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_consumption_watt"), "0");
+        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(-900);
+        A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-900);
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(15));
 
         //Act
         _testCtx.TriggerStateChange(consumer.Cars.First().CurrentEntity, "8");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(10));
         _testCtx.TriggerStateChange(consumer.PowerUsage, "5400");
-        _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_production_watt"), "-600");
-        _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_consumption_watt"), "0");
+        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(600);
+        A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(600);
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(15));
 
         //Assert
