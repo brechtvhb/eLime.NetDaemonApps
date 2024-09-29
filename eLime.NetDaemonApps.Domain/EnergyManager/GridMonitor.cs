@@ -14,7 +14,10 @@ public class GridMonitor : IDisposable, IGridMonitor
     public NumericEntity PeakImportSensor { get; }
 
     public double CurrentLoad => GridPowerImportSensor.State - GridPowerExportSensor.State ?? 0;
-    public Double PeakLoad => PeakImportSensor.State * 1000 ?? 0;
+
+    public Double PeakLoad => (PeakImportSensor.State * 1000 ?? 0) > 2.5
+        ? PeakImportSensor.State * 1000 ?? 0
+        : 2.5;
 
     private readonly FixedSizeConcurrentQueue<(DateTimeOffset Moment, double Value)> _lastImportValues = new(200);
     private readonly FixedSizeConcurrentQueue<(DateTimeOffset Moment, double Value)> _lastExportValues = new(200);
