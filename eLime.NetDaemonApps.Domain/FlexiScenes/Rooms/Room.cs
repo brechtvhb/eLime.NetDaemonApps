@@ -400,7 +400,7 @@ public class Room : IAsyncDisposable
             }
         }
 
-        _logger.LogDebug("Retrieved flexilight state from file storage for room '{room}'.", Name);
+        _logger.LogTrace("Retrieved flexilight state from file storage for room '{room}'.", Name);
 
         await ScheduleTurnOffAt();
         await ScheduleClearIgnorePresence();
