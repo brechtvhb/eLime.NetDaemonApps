@@ -72,7 +72,7 @@ public class CarChargerEnergyConsumerTests
         _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "5");
         _testCtx.TriggerStateChange(consumer.Cars.First().Location, "home");
 
-        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(25));
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(20));
 
         //Assert
         Assert.AreEqual(EnergyConsumerState.Running, energyManager.Consumers.First().State);
@@ -228,13 +228,13 @@ public class CarChargerEnergyConsumerTests
         _testCtx.TriggerStateChange(consumer.Cars.First().CableConnectedSensor, "on");
         _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "5");
         _testCtx.TriggerStateChange(consumer.Cars.First().Location, "home");
-        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(25));
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(20));
 
         //Act
         _testCtx.TriggerStateChange(consumer.CurrentEntity, "6");
         A.CallTo(() => _gridMonitor.CurrentLoad).Returns(1200);
         A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(1200);
-        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(25));
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(10));
 
         //Assert
         Assert.AreEqual(EnergyConsumerState.Running, energyManager.Consumers.First().State);
@@ -366,7 +366,7 @@ public class CarChargerEnergyConsumerTests
         _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "80");
         _testCtx.TriggerStateChange(consumer.Cars.First().ChargerSwitch, "on");
         _testCtx.TriggerStateChange(consumer.Cars.First().CurrentEntity, "2");
-        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(25));
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(20));
 
         //Assert
         Assert.AreEqual(EnergyConsumerState.Off, energyManager.Consumers.First().State);
@@ -464,7 +464,7 @@ public class CarChargerEnergyConsumerTests
         _testCtx.TriggerStateChange(consumer.Cars.First().MaxBatteryPercentageSensor, "80");
         _testCtx.TriggerStateChange(consumer.Cars.First().Location, "home");
 
-        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(25));
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(20));
 
         //Assert
         Assert.AreEqual(EnergyConsumerState.NeedsEnergy, energyManager.Consumers.First().State);
