@@ -144,10 +144,9 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 
     private double GetSolarPreferredAdjustedGridCurrent(double trailingNetGridUsage)
     {
-        var daKleinBeetjeMagJeNegeren = TotalVoltage * 0.1;
-        var currentDifference = (trailingNetGridUsage + daKleinBeetjeMagJeNegeren) / TotalVoltage;
+        var currentDifference = trailingNetGridUsage / TotalVoltage;
 
-        return currentDifference is < 1.1d and > -0.1d
+        return currentDifference is < 1.15d and > -0.20d
             ? 0
             : Math.Round(currentDifference, 0, MidpointRounding.ToNegativeInfinity);
     }
@@ -158,18 +157,16 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 
         var currentDifference = (trailingNetGridUsage - midPoint) / TotalVoltage;
 
-        return currentDifference is < 0.6d and > -0.6d
+        return currentDifference is < 0.65d and > -0.65d
             ? 0
             : Math.Round(currentDifference, 0, MidpointRounding.ToPositiveInfinity);
     }
 
     private double GetSolarOnlyAdjustedGridCurrent(double trailingNetGridUsage)
     {
-        var daKleinBeetjeMagJeNegeren = TotalVoltage * 0.1;
+        var currentDifference = trailingNetGridUsage / TotalVoltage;
 
-        var currentDifference = (trailingNetGridUsage - daKleinBeetjeMagJeNegeren) / TotalVoltage;
-
-        return currentDifference is < 0.1d and > -1.1d
+        return currentDifference is < 0.20 and > -1.15d
             ? 0
             : Math.Round(currentDifference, 0, MidpointRounding.ToPositiveInfinity);
     }
