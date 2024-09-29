@@ -28,7 +28,7 @@ public class EnergyManager : IDisposable
     private readonly IScheduler _scheduler;
     private readonly IMqttEntityManager _mqttEntityManager;
     private readonly IFileStorage _fileStorage;
-    private readonly TimeSpan _minimumChangeInterval = TimeSpan.FromSeconds(24);
+    private readonly TimeSpan _minimumChangeInterval = TimeSpan.FromSeconds(20);
 
     private DateTimeOffset _lastChange = DateTimeOffset.MinValue;
     private IDisposable? GuardTask { get; }
@@ -305,8 +305,6 @@ public class EnergyManager : IDisposable
 
     private async Task InitializeConsumerSensors(EnergyConsumer consumer)
     {
-        _logger.LogDebug("{Consumer}: Initializing", consumer.Name);
-
         var baseName = $"sensor.energy_consumer_{consumer.Name.MakeHaFriendly()}";
 
         _logger.LogDebug("{Consumer}: Upserting energy consumer sensors in home assistant.", consumer.Name);
