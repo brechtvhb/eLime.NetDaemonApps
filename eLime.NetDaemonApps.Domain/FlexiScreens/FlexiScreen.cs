@@ -319,7 +319,7 @@ public class FlexiScreen : IDisposable
 
         IsEnabled = storedState.Enabled;
 
-        _logger.LogDebug("Retrieved flexiscreen state for screen '{screen}'.", Name);
+        _logger.LogTrace("Retrieved flexiscreen state for screen '{screen}'.", Name);
     }
 
     private async Task UpdateStateInHomeAssistant()
