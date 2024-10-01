@@ -90,6 +90,8 @@ public class EnergyManager : IDisposable
             if (consumer is { State: EnergyConsumerState.Running, StartedAt: null })
                 consumer.Started(_scheduler);
         }
+
+        _logger.LogInformation("EnergyManager: Current peak load is: {PeakLoad}", gridMonitor.PeakLoad);
     }
 
 
