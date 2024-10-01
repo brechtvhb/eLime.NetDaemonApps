@@ -91,7 +91,7 @@ public class EnergyManager : IDisposable
                 consumer.Started(_scheduler);
         }
 
-        _logger.LogInformation("EnergyManager: Current peak load is: {PeakLoad} kW.", gridMonitor.PeakLoad);
+        _logger.LogInformation("EnergyManager: Current peak load is: {PeakLoad} W.", gridMonitor.PeakLoad);
     }
 
 
