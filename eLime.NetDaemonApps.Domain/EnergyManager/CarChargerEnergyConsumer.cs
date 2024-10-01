@@ -66,11 +66,12 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 
         foreach (var car in Cars)
         {
-            if (car.ChargerSwitch == null)
-                continue;
+            if (car.ChargerSwitch != null)
+            {
+                car.ChargerTurnedOn += Car_ChargerTurnedOn;
+                car.ChargerTurnedOff += Car_ChargerTurnedOff;
+            }
 
-            car.ChargerTurnedOn += Car_ChargerTurnedOn;
-            car.ChargerTurnedOff += Car_ChargerTurnedOff;
             car.CarConnected += Car_CarConnected;
         }
     }
@@ -291,6 +292,10 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         if (CurrentCurrentForConnectedCar > MinimumCurrentForConnectedCar)
             return false;
 
+        //Just rebalanced, give it one cycle
+        if (_lastCurrentChange?.Add(MinimumRebalancingInterval) > now || ConnectedCar?.LastCurrentChange?.Add(MinimumRebalancingInterval) > now)
+            return false;
+
         return true;
     }
 
@@ -339,9 +344,9 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
             {
                 car.ChargerTurnedOn -= Car_ChargerTurnedOn;
                 car.ChargerTurnedOff -= Car_ChargerTurnedOff;
-                car.CarConnected -= Car_CarConnected;
             }
 
+            car.CarConnected -= Car_CarConnected;
             car.Dispose();
         }
     }

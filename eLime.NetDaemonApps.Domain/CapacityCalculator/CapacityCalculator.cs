@@ -27,8 +27,7 @@ public class CapacityCalculator
 
     public Decimal AverageCapacityPastYear { get; private set; }
 
-    public CapacityCalculator(IHaContext haContext, ILogger logger, IScheduler scheduler, IMqttEntityManager mqttEntityManager, IFileStorage fileStorage,
-        String smartMeterUrl)
+    public CapacityCalculator(IHaContext haContext, ILogger logger, IScheduler scheduler, IMqttEntityManager mqttEntityManager, IFileStorage fileStorage, String smartMeterUrl)
     {
         _haContext = haContext;
         _logger = logger;
