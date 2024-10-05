@@ -165,12 +165,12 @@ public class EnergyManager : IDisposable
     //TODO: Use linear programming model and estimates of production and consumption to be able to schedule deferred loads in the future.
     private Double StartConsumersIfNeeded(Double dynamicLoadNetChange)
     {
-        var estimatedLoad = GridMonitor.AverageLoadSince(_scheduler.Now, _minimumChangeInterval) + dynamicLoadNetChange;
+        var preStartEstimatedLoad = GridMonitor.AverageLoadSince(_scheduler.Now, _minimumChangeInterval) + dynamicLoadNetChange;
         var startNetChange = 0d;
 
         var runningConsumers = Consumers.Where(x => x.State == EnergyConsumerState.Running).ToList();
         //Keep remaining peak load for running consumers in mind (eg: to avoid turning on devices when washer is prewashing but still has to heat).
-        estimatedLoad += Math.Round(runningConsumers.Where(x => x.PeakLoad > x.CurrentLoad).Sum(x => (x.PeakLoad - x.CurrentLoad)), 0);
+        var estimatedLoad = preStartEstimatedLoad + Math.Round(runningConsumers.Where(x => x.PeakLoad > x.CurrentLoad).Sum(x => (x.PeakLoad - x.CurrentLoad)), 0);
 
         var dynamicLoadThatCanBeScaledDownOnBehalfOf = runningConsumers
             .OfType<IDynamicLoadConsumer>()
@@ -205,7 +205,7 @@ public class EnergyManager : IDisposable
             if (consumer is IDynamicLoadConsumer)
             {
                 //TODO: Can another dynamic load start when another dynamic load is already active?. Add BalanceOnBehalfOf = NonDynamicLoadOnly
-                if (estimatedLoad - dynamicLoadThatCanBeScaledDownOnBehalfOf >= consumer.SwitchOnLoad)
+                if (preStartEstimatedLoad - dynamicLoadThatCanBeScaledDownOnBehalfOf >= consumer.SwitchOnLoad)
                     continue;
             }
             else
@@ -255,7 +255,7 @@ public class EnergyManager : IDisposable
         var consumersThatShouldForceStopped = Consumers.Where(x => x.CanForceStopOnPeakLoad(_scheduler.Now) && x.Running);
         foreach (var consumer in consumersThatShouldForceStopped)
         {
-            if (consumer is IDynamicLoadConsumer && dynamicLoadNetChange < 0)
+            if (consumer is IDynamicLoadConsumer && dynamicLoadNetChange != 0)
             {
                 _logger.LogDebug("{Consumer}: Should force stop, but won't do it because dynamic load was adjusted. Current load/estimated load was: {CurrentLoad}/{EstimatedLoad}. Switch-off/peak load of consumer is: {SwitchOffLoad}/{PeakLoad}", consumer.Name, GridMonitor.CurrentLoad, estimatedLoad, consumer.SwitchOffLoad, consumer.PeakLoad);
                 continue;
