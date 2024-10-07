@@ -44,27 +44,28 @@ namespace eLime.NetDaemonApps.Tests.Builders
 
         public RoomBuilder WithMultipleActions()
         {
-            _config.FlexiScenes = new List<FlexiSceneConfig>
-            {
+            _config.FlexiScenes =
+            [
                 new()
                 {
                     Name = "default",
-                    Actions = new List<ActionConfig>
-                    {
+                    Actions =
+                    [
                         new() {LightAction = LightAction.TurnOn, Light = "light.light1"},
-                        new() {LightAction = LightAction.TurnOn, Lights = new List<string> {"light.light2"}},
-                        new() {LightAction = LightAction.TurnOn, Lights = new List<string> {"light.light3", "light.light4"}},
+                        new() {LightAction = LightAction.TurnOn, Light = "light.light2"},
+                        new() {LightAction = LightAction.TurnOn, Light = "light.light3"},
+                        new() {LightAction = LightAction.TurnOn, Light = "light.light4"},
 
-                    },
+                    ],
                 },
-            };
+            ];
 
-            _config.OffActions = new List<ActionConfig>
-            {
+            _config.OffActions =
+            [
                 new() {LightAction = LightAction.TurnOff, Light = "light.light1"},
                 new() {LightAction = LightAction.TurnOff, Light = "light.light2"},
                 new() {LightAction = LightAction.TurnOff, Light = "light.light3"}
-            };
+            ];
 
             return this;
         }

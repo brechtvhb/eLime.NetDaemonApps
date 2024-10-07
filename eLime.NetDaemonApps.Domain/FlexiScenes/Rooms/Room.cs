@@ -44,7 +44,7 @@ public class Room : IAsyncDisposable
 
     public InitiatedBy InitiatedBy { get; private set; } = InitiatedBy.NoOne;
 
-    private readonly List<BinarySensor> _offSensors = new();
+    private readonly List<BinarySensor> _offSensors = [];
     public IReadOnlyCollection<BinarySensor> OffSensors => _offSensors.AsReadOnly();
 
     public void AddOffSensor(BinarySensor sensor)
@@ -53,7 +53,7 @@ public class Room : IAsyncDisposable
         _offSensors.Add(sensor);
     }
 
-    private readonly List<IlluminanceSensor> _illuminanceSensors = new();
+    private readonly List<IlluminanceSensor> _illuminanceSensors = [];
     public IReadOnlyCollection<IlluminanceSensor> IlluminanceSensors => _illuminanceSensors.AsReadOnly();
 
     public void AddIlluminanceSensor(IlluminanceSensor sensor)
@@ -62,7 +62,7 @@ public class Room : IAsyncDisposable
         _illuminanceSensors.Add(sensor);
     }
 
-    private readonly List<MotionSensor> _motionSensors = new();
+    private readonly List<MotionSensor> _motionSensors = [];
     public IReadOnlyCollection<MotionSensor> MotionSensors => _motionSensors.AsReadOnly();
 
     public void AddMotionSensor(MotionSensor sensor)
@@ -72,7 +72,7 @@ public class Room : IAsyncDisposable
         _motionSensors.Add(sensor);
     }
 
-    private readonly List<ISwitch> _switches = new();
+    private readonly List<ISwitch> _switches = [];
     public IReadOnlyCollection<ISwitch> Switches => _switches.AsReadOnly();
 
     public void AddSwitches(List<ISwitch> switches)

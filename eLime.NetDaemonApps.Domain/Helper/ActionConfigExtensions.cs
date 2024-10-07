@@ -63,7 +63,6 @@ internal static class ActionConfigExtensions
         {
             { ExecuteOffActions: true } => config.ConvertToExecuteOffActionsActionDomainModel(haContext),
             { Light: not null, LightAction: not Config.FlexiLights.LightAction.Unknown } => config.ConvertToLightActionDomainModel(haContext),
-            { Lights: not null, LightAction: not Config.FlexiLights.LightAction.Unknown } => config.ConvertToLightActionDomainModel(haContext),
             { Scene: not null } => config.ConvertToSceneActionDomainModel(haContext),
             { Script: not null } => config.ConvertToScriptActionDomainModel(haContext),
             { Switch: not null, SwitchAction: not SwitchAction.Unknown } => config.ConvertToSwitchActionDomainModel(haContext),
@@ -74,24 +73,15 @@ internal static class ActionConfigExtensions
 
     internal static Action ConvertToLightActionDomainModel(this ActionConfig config, IHaContext haContext)
     {
-        if ((config.Light == null && config.Lights == null) || config.LightAction == Config.FlexiLights.LightAction.Unknown)
+        if (config.Light == null || config.LightAction == Config.FlexiLights.LightAction.Unknown)
             throw new ArgumentException("Light or light action not set");
 
-        var lights = new List<Light>();
-
-        if (config.Light != null)
-        {
-            lights.Add(new Light(haContext, config.Light));
-        }
-        else
-        {
-            lights.AddRange(config.Lights.Select(x => new Light(haContext, x)));
-        }
+        var light = new Light(haContext, config.Light);
 
         return config.LightAction switch
         {
-            Config.FlexiLights.LightAction.TurnOn => new LightTurnOnAction(lights, config.TransitionDuration, config.AutoTransitionDuration, config.Profile, config.Color, config.Brightness, config.Flash, config.Effect),
-            Config.FlexiLights.LightAction.TurnOff => new LightTurnOffAction(lights, config.TransitionDuration, config.AutoTransitionDuration),
+            Config.FlexiLights.LightAction.TurnOn => new LightTurnOnAction(light, config.TransitionDuration, config.AutoTransitionDuration, config.Profile, config.Color, config.Brightness, config.Flash, config.Effect),
+            Config.FlexiLights.LightAction.TurnOff => new LightTurnOffAction(light, config.TransitionDuration, config.AutoTransitionDuration),
         };
     }
 

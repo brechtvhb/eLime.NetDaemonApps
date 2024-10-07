@@ -4,7 +4,6 @@ public class ActionConfig
 {
     public bool ExecuteOffActions { get; set; }
     public string? Light { get; set; }
-    public List<string> Lights { get; set; }
     public LightAction LightAction { get; set; }
     public string? Scene { get; set; }
     public string? Script { get; set; }

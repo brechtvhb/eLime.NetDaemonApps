@@ -6,13 +6,13 @@ namespace eLime.NetDaemonApps.Domain.FlexiScenes.Actions;
 public abstract class LightAction : Action
 {
 
-    public List<Light> Lights { get; init; }
+    public Light Light { get; init; }
     public TimeSpan? TransitionDuration { get; init; }
     public TimeSpan? AutoTransitionDuration { get; init; }
 
-    protected LightAction(List<Light> lights, TimeSpan? transitionDuration, TimeSpan? autoTransitionDuration)
+    protected LightAction(Light light, TimeSpan? transitionDuration, TimeSpan? autoTransitionDuration)
     {
-        Lights = lights;
+        Light = light;
         TransitionDuration = transitionDuration;
         AutoTransitionDuration = autoTransitionDuration;
     }
@@ -38,9 +38,9 @@ public class LightTurnOnAction : LightAction
     public string? Flash { get; init; }
     public string? Effect { get; init; }
 
-    public LightTurnOnAction(List<Light> lights, TimeSpan? transitionDuration, TimeSpan? autoTransitionDuration, string? profile,
+    public LightTurnOnAction(Light light, TimeSpan? transitionDuration, TimeSpan? autoTransitionDuration, string? profile,
         Color? color, string? brightness, string? flash, string? effect)
-        : base(lights, transitionDuration, autoTransitionDuration)
+        : base(light, transitionDuration, autoTransitionDuration)
     {
         Profile = profile;
 
@@ -105,7 +105,10 @@ public class LightTurnOnAction : LightAction
     public override Task Execute(bool isAutoTransition = false)
     {
         var transitionDuration = (long?)(isAutoTransition ? AutoTransitionDuration ?? TransitionDuration : TransitionDuration)?.TotalSeconds;
-        Lights.TurnOn(new LightTurnOnParameters
+
+        //var isOn = Light.IsOn(); //For mixin, to know if light was turned on by mixin scene
+
+        Light.TurnOn(new LightTurnOnParameters
         {
             Transition = transitionDuration,
             Profile = Profile,
@@ -132,15 +135,15 @@ public class LightTurnOnAction : LightAction
 public class LightTurnOffAction : LightAction
 {
 
-    public LightTurnOffAction(List<Light> lights, TimeSpan? transitionDuration, TimeSpan? autoTransitionDuration)
-        : base(lights, transitionDuration, autoTransitionDuration)
+    public LightTurnOffAction(Light light, TimeSpan? transitionDuration, TimeSpan? autoTransitionDuration)
+        : base(light, transitionDuration, autoTransitionDuration)
     {
 
     }
     public override Task Execute(bool isAutoTransition = false)
     {
         var transitionDuration = (isAutoTransition ? AutoTransitionDuration ?? TransitionDuration : TransitionDuration)?.TotalSeconds;
-        Lights.TurnOff(new LightTurnOffParameters
+        Light.TurnOff(new LightTurnOffParameters
         {
             Transition = transitionDuration
         });
