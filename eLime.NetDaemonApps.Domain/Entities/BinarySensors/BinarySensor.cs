@@ -20,11 +20,11 @@ public record BinarySensor : Entity<BinarySensor, EntityState<BinarySensorAttrib
         _subscribeDisposable = StateChanges()
             .Subscribe(x =>
             {
-                if (x.New != null && x.New.IsOn())
+                if (x.New != null && x.New.IsOn() && x.Old?.State != "unavailable")
                 {
                     OnTurnedOn(new BinarySensorEventArgs(x));
                 }
-                if (x.New != null && x.New.IsOff())
+                if (x.New != null && x.New.IsOff() && x.Old?.State != "unavailable")
                 {
                     OnTurnedOff(new BinarySensorEventArgs(x));
                 }
