@@ -595,10 +595,16 @@ public class Room : IAsyncDisposable
     private async Task ScheduleTurnOffMixinAt(FlexiSceneMotionSensor flexiSceneMotionSensor)
     {
         if (flexiSceneMotionSensor.TurnOffAt == null)
+        {
+            _logger.LogInformation("{Room}: Will not schedule turn off for mixin '{Scene}' because TurnOffAt is null.", Name, flexiSceneMotionSensor.MixinScene);
             return;
+        }
 
         if (flexiSceneMotionSensor.ActionsToExecuteOnTurnOff.Count == 0)
+        {
+            _logger.LogInformation("{Room}: Will not schedule turn off for mixin '{Scene}' because there are not actions to execute on turn off.", Name, flexiSceneMotionSensor.MixinScene);
             return;
+        }
 
         var remainingTime = flexiSceneMotionSensor.TurnOffAt.Value - _scheduler.Now;
 
@@ -641,7 +647,7 @@ public class Room : IAsyncDisposable
         _logger.LogTrace("{Room}: Reverse mixin actions will no longer be executed. Probably because the OFF actions were just executed or a motion sensor is active.", Name);
     }
 
-    private async Task<(Boolean offActionsExecuted, List<Action> reverseActions)> ExecuteActions(IReadOnlyCollection<Action> actions)
+    private async Task<(Boolean offActionsExecuted, List<Action> reverseActions)> ExecuteActions(IReadOnlyCollection<Action> actions, bool detectStateChange = false)
     {
         var offActionsExecuted = false;
         List<Action> reverseActions = [];
@@ -654,7 +660,7 @@ public class Room : IAsyncDisposable
             }
             else
             {
-                var stateChanged = await action.Execute();
+                var stateChanged = await action.Execute(detectStateChange);
                 if (stateChanged ?? false)
                 {
                     var reverseAction = action.Reverse();
@@ -726,9 +732,9 @@ public class Room : IAsyncDisposable
             _logger.LogDebug("{Room}: Mixin should have triggered  because motion sensor saw something moving but did not turn on lights because presence is ignored until {IgnorePresenceUntil}", Name, IgnorePresenceUntil?.ToString("T"));
             return;
         }
-        _logger.LogInformation("{Room}: Mixin will activate scene '{Scene}'.", Name, flexiScene.Name);
-        var (_, reverseActions) = await ExecuteActions(flexiScene.Actions);
 
+        var (_, reverseActions) = await ExecuteActions(flexiScene.Actions, true);
+        _logger.LogInformation("{Room}: Mixin will activate scene '{Scene}'. Wll need to schedule {ReverseActionCount} actions to reverse mixin.", Name, flexiScene.Name, reverseActions.Count);
         flexiSceneMotionSensor.SetActionsToExecuteOnTurnOff(reverseActions);
     }
 
