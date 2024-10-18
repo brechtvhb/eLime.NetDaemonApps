@@ -465,7 +465,7 @@ public class Room : IAsyncDisposable
         var task3 = _mqttEntityManager.SetStateAsync($"{baseName}_initiated_by", InitiatedBy.ToString());
         var task4 = _mqttEntityManager.SetStateAsync($"{baseName}_last_changed_at", FlexiScenes.Changes.LastOrDefault()?.ChangedAt.ToString("O") ?? "None");
         var task5 = _mqttEntityManager.SetStateAsync($"select.flexilights_{Name.MakeHaFriendly()}_scene", FlexiScenes.Current?.Name ?? "Off");
-        var task6 = _mqttEntityManager.SetStateAsync($"binary_sensor.flexilights_{Name.MakeHaFriendly()}_mixin_active", MotionSensors.Any(x => x.TurnOffAt != null) ? "ON" : "OFF");
+        var task6 = _mqttEntityManager.SetStateAsync($"binary_sensor.flexilights_{Name.MakeHaFriendly()}_mixin_active", MotionSensors.Any(x => x.ActionsToExecuteOnTurnOff.Any()) ? "ON" : "OFF");
         await Task.WhenAll(task1, task2, task3, task4, task5, task6);
 
         _fileStorage.Save("FlexiScenes", Name.MakeHaFriendly(), ToFileStorage());
@@ -614,11 +614,11 @@ public class Room : IAsyncDisposable
                 flexiSceneMotionSensor.TurnedOff();
             });
 
-            _logger.LogTrace("{Room}: Reverse actions for mixin will be executed at {TurnOffAt}.", Name, flexiSceneMotionSensor.TurnOffAt?.ToString("T"));
+            _logger.LogInformation("{Room}: Reverse actions for mixin will be executed at {TurnOffAt}.", Name, flexiSceneMotionSensor.TurnOffAt?.ToString("T"));
         }
         else
         {
-            _logger.LogDebug("{Room}: Reverse actions for mixin  should have been executed at {TurnOffAt} will execute them now.", Name, flexiSceneMotionSensor.TurnOffAt?.ToString("T"));
+            _logger.LogInformation("{Room}: Reverse actions for mixin  should have been executed at {TurnOffAt} will execute them now.", Name, flexiSceneMotionSensor.TurnOffAt?.ToString("T"));
             await ExecuteActions(flexiSceneMotionSensor.ActionsToExecuteOnTurnOff);
             flexiSceneMotionSensor.TurnedOff();
         }
@@ -701,6 +701,7 @@ public class Room : IAsyncDisposable
 
         if (flexiSceneMotionSensor.TurnOffAt != null)
         {
+            _logger.LogInformation("{Room}: Mixin scene '{Scene}' is already active clearing turn off at.", Name, flexiSceneMotionSensor.MixinScene);
             ClearAutoTurnOffMixin(flexiSceneMotionSensor);
             return;
         }
@@ -708,7 +709,10 @@ public class Room : IAsyncDisposable
 
         var flexiScene = FlexiScenes.GetByName(flexiSceneMotionSensor.MixinScene);
         if (flexiScene == null)
+        {
+            _logger.LogInformation("{Room}: Should execute mixin scene '{Scene}' but it was not found", Name, flexiSceneMotionSensor.MixinScene);
             return;
+        }
 
         if (IlluminanceLowerThreshold != null && IlluminanceSensors.All(x => x.State > IlluminanceLowerThreshold))
         {
