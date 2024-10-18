@@ -343,7 +343,7 @@ public class Room : IAsyncDisposable
         await _mqttEntityManager.CreateAsync(selectName, new EntityCreationOptions(UniqueId: selectName, Name: "Scene", DeviceClass: "select", Persist: true), selectOptions);
 
         var mixinActiveOptions = new EnabledSwitchAttributes { Icon = "phu:scene-dynamic", Device = GetDevice() };
-        await _mqttEntityManager.CreateAsync(switchName, new EntityCreationOptions(UniqueId: mixinActiveName, Name: $"Mixin active", DeviceClass: "occupancy", Persist: true), mixinActiveOptions);
+        await _mqttEntityManager.CreateAsync(mixinActiveName, new EntityCreationOptions(UniqueId: mixinActiveName, Name: $"Mixin active", DeviceClass: "occupancy", Persist: true), mixinActiveOptions);
 
         if (_haContext.Entity(switchName).State == null)
         {
@@ -609,6 +609,7 @@ public class Room : IAsyncDisposable
             flexiSceneMotionSensor.TurnOffSchedule = _scheduler.ScheduleAsync(remainingTime, async (_, _)
                 =>
             {
+                _logger.LogInformation("{Room}: Mixin will reverse to original state.", Name);
                 await ExecuteActions(flexiSceneMotionSensor.ActionsToExecuteOnTurnOff);
                 flexiSceneMotionSensor.TurnedOff();
             });
@@ -720,6 +721,7 @@ public class Room : IAsyncDisposable
             _logger.LogDebug("{Room}: Mixin should have triggered  because motion sensor saw something moving but did not turn on lights because presence is ignored until {IgnorePresenceUntil}", Name, IgnorePresenceUntil?.ToString("T"));
             return;
         }
+        _logger.LogInformation("{Room}: Mixin will activate scene '{Scene}'.", Name, flexiScene.Name);
         var (_, reverseActions) = await ExecuteActions(flexiScene.Actions);
 
         flexiSceneMotionSensor.SetActionsToExecuteOnTurnOff(reverseActions);
