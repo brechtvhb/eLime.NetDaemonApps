@@ -862,8 +862,12 @@ public class Room : IAsyncDisposable
             return;
 
         var flexiSceneMotionSensor = MotionSensors.Single(x => x.Sensor.EntityId == e.Sensor.EntityId);
-        flexiSceneMotionSensor.TurnOffAt = _scheduler.Now.Add(FlexiScenes.GetByName(flexiSceneMotionSensor.MixinScene).TurnOffAfterIfTriggeredByMotionSensor);
-        await ScheduleTurnOffMixinAt(flexiSceneMotionSensor);
+
+        if (!String.IsNullOrWhiteSpace(flexiSceneMotionSensor.MixinScene))
+        {
+            flexiSceneMotionSensor.TurnOffAt = _scheduler.Now.Add(FlexiScenes.GetByName(flexiSceneMotionSensor.MixinScene).TurnOffAfterIfTriggeredByMotionSensor);
+            await ScheduleTurnOffMixinAt(flexiSceneMotionSensor);
+        }
 
         var allMotionSensorsOff = MotionSensors.All(x => x.Sensor.IsOff());
 
