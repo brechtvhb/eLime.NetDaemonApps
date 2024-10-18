@@ -438,8 +438,8 @@ public class EnergyManager : IDisposable
             var baseName = $"sensor.energy_consumer_{consumer.Name.MakeHaFriendly()}";
 
             await _mqttEntityManager.SetStateAsync($"{baseName}_state", consumer.State.ToString());
-            await _mqttEntityManager.SetStateAsync($"{baseName}_started_at", consumer.StartedAt?.ToString("O") ?? "unknown");
-            await _mqttEntityManager.SetStateAsync($"{baseName}_last_run", consumer.LastRun?.ToString("O") ?? "unknown");
+            await _mqttEntityManager.SetStateAsync($"{baseName}_started_at", consumer.StartedAt?.ToString("O") ?? "None");
+            await _mqttEntityManager.SetStateAsync($"{baseName}_last_run", consumer.LastRun?.ToString("O") ?? "None");
 
             _fileStorage.Save("EnergyManager", $"{consumer.Name.MakeHaFriendly()}", consumer.ToFileStorage());
 

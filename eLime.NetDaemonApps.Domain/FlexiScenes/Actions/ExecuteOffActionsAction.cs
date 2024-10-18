@@ -2,15 +2,15 @@
 
 public class ExecuteOffActionsAction : Action
 {
-    public ExecuteOffActionsAction()
+    //ExecuteOffActions Domain event?
+    public override Task<bool?> Execute(bool detectStateChange = false)
     {
-
+        bool? initialState = null;
+        return Task.FromResult(initialState);
     }
 
-
-    //ExecuteOffActions Domain event?
-    public override Task Execute(bool isAutoTransition = false)
+    public override Action Reverse()
     {
-        return Task.CompletedTask;
+        return null;
     }
 }

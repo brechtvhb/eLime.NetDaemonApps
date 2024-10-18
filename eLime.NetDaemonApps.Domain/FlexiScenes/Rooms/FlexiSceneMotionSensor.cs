@@ -1,26 +1,50 @@
 ﻿using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
+using Action = eLime.NetDaemonApps.Domain.FlexiScenes.Actions.Action;
 
-namespace eLime.NetDaemonApps.Domain.FlexiScenes.Rooms
+namespace eLime.NetDaemonApps.Domain.FlexiScenes.Rooms;
+
+public class FlexiSceneMotionSensor
 {
-    public class FlexiSceneMotionSensor
+    public static FlexiSceneMotionSensor Create(MotionSensor sensor)
     {
-        public static FlexiSceneMotionSensor Create(MotionSensor sensor, String mixinScene)
-        {
-            return new FlexiSceneMotionSensor { Sensor = sensor, MixinScene = mixinScene };
-        }
-
-        public void SetTurnOffAt(DateTime? turnOffAt, List<String> thingsToTurnOff)
-        {
-            TurnOffAt = turnOffAt;
-            ThingsToTurnOff = thingsToTurnOff;
-            //Add handler to actually turn off?
-
-        }
-
-        public MotionSensor Sensor { get; private set; }
-        public String MixinScene { get; private set; }
-        public DateTime? TurnOffAt { get; set; }
-        //Should only turn off things that were off before mixin
-        public List<String> ThingsToTurnOff { get; set; } = [];
+        return new FlexiSceneMotionSensor { Sensor = sensor };
     }
+
+    public MotionSensor Sensor { get; private set; }
+    public String? MixinScene { get; private set; }
+    public DateTimeOffset? TurnOffAt { get; set; }
+    internal IDisposable? TurnOffSchedule { get; set; }
+
+    //Should only turn off things that were off before mixin
+    public List<Action> ActionsToExecuteOnTurnOff { get; set; } = [];
+
+
+    public void SetTurnOffAt(DateTimeOffset turnOffAt)
+    {
+        TurnOffAt = turnOffAt;
+    }
+    public void ClearTurnOffAt()
+    {
+        TurnOffAt = null;
+        TurnOffSchedule?.Dispose();
+        TurnOffSchedule = null;
+    }
+
+    public void SetActionsToExecuteOnTurnOff(List<Action> actionsToExecuteOnTurnOff)
+    {
+        ActionsToExecuteOnTurnOff = actionsToExecuteOnTurnOff;
+    }
+
+    public void TurnedOff()
+    {
+        ClearTurnOffAt();
+        ActionsToExecuteOnTurnOff = [];
+    }
+
+    public void SetMixinScene(String scene)
+    {
+        MixinScene = scene;
+    }
+
+
 }

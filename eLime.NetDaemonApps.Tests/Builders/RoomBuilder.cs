@@ -27,7 +27,7 @@ namespace eLime.NetDaemonApps.Tests.Builders
             {
                 Name = name ?? "Toilet +1",
                 Enabled = true,
-                MotionSensors = new List<string> { "binary_sensor.motion" },
+                MotionSensors = new List<MotionSensorConfig> { new MotionSensorConfig { Sensor = "binary_sensor.motion", MixinScene = null } },
                 OffActions = new List<ActionConfig> { new() { LightAction = LightAction.TurnOff, Light = "light.test" } },
                 IgnorePresenceAfterOffDuration = TimeSpan.FromSeconds(5),
                 FlexiScenes = new List<FlexiSceneConfig>
@@ -213,7 +213,7 @@ namespace eLime.NetDaemonApps.Tests.Builders
                     Name = "default",
                     Actions = new List<ActionConfig>
                     {
-                        new() {Scene = "scene.SOHO", TransitionDuration = TimeSpan.FromSeconds(5)}
+                        new() {Scene = "scene.SOHO"}
                     },
                 },
             };
@@ -258,7 +258,7 @@ namespace eLime.NetDaemonApps.Tests.Builders
                 {
                     Name = "morning",
                     Conditions = new List<ConditionConfig> {new() {Binary = "binary_sensor.operating_mode_morning"}},
-                    Actions = new List<ActionConfig> {new() {LightAction = LightAction.TurnOn, Light = "light.morning", TransitionDuration = TimeSpan.FromSeconds(2), AutoTransitionDuration = TimeSpan.FromSeconds(10)}},
+                    Actions = new List<ActionConfig> {new() {LightAction = LightAction.TurnOn, Light = "light.morning"}},
                     TurnOffAfterIfTriggeredByMotionSensor = TimeSpan.FromMinutes(15),
                     TurnOffAfterIfTriggeredBySwitch = TimeSpan.FromHours(2)
                 },
@@ -266,7 +266,7 @@ namespace eLime.NetDaemonApps.Tests.Builders
                 {
                     Name = "day",
                     Conditions = new List<ConditionConfig> {new() {Binary = "binary_sensor.operating_mode_day"}},
-                    Actions = new List<ActionConfig> {new() {LightAction = LightAction.TurnOn, Light = "light.day", TransitionDuration = TimeSpan.FromSeconds(2), AutoTransitionDuration = TimeSpan.FromSeconds(10) } },
+                    Actions = new List<ActionConfig> {new() {LightAction = LightAction.TurnOn, Light = "light.day" } },
                     TurnOffAfterIfTriggeredByMotionSensor = TimeSpan.FromMinutes(5),
                     TurnOffAfterIfTriggeredBySwitch = TimeSpan.FromHours(4)
                 },
@@ -274,7 +274,7 @@ namespace eLime.NetDaemonApps.Tests.Builders
                 {
                     Name = "evening",
                     Conditions = new List<ConditionConfig> {new() {Binary = "binary_sensor.operating_mode_evening"}},
-                    Actions = new List<ActionConfig> {new() {LightAction = LightAction.TurnOn, Light = "light.evening", TransitionDuration = TimeSpan.FromSeconds(2), AutoTransitionDuration = TimeSpan.FromSeconds(10) } },
+                    Actions = new List<ActionConfig> {new() {LightAction = LightAction.TurnOn, Light = "light.evening" } },
                     TurnOffAfterIfTriggeredByMotionSensor = TimeSpan.FromMinutes(60),
                     TurnOffAfterIfTriggeredBySwitch = TimeSpan.FromHours(1)
                 }
@@ -298,14 +298,14 @@ namespace eLime.NetDaemonApps.Tests.Builders
                 {
                     Name = "day",
                     Conditions = new List<ConditionConfig> {new() {Binary = "!binary_sensor.operating_mode_morning" } },
-                    Actions = new List<ActionConfig> {new() {LightAction = LightAction.TurnOn, Light = "light.day", TransitionDuration = TimeSpan.FromSeconds(2), AutoTransitionDuration = TimeSpan.FromSeconds(10) } },
+                    Actions = new List<ActionConfig> {new() {LightAction = LightAction.TurnOn, Light = "light.day" } },
                     TurnOffAfterIfTriggeredByMotionSensor = TimeSpan.FromMinutes(5),
                     TurnOffAfterIfTriggeredBySwitch = TimeSpan.FromHours(4)
                 },
                 new()
                 {
                     Name = "morning",
-                    Actions = new List<ActionConfig> {new() {LightAction = LightAction.TurnOn, Light = "light.morning", TransitionDuration = TimeSpan.FromSeconds(2), AutoTransitionDuration = TimeSpan.FromSeconds(10)}},
+                    Actions = new List<ActionConfig> {new() {LightAction = LightAction.TurnOn, Light = "light.morning"}},
                     TurnOffAfterIfTriggeredByMotionSensor = TimeSpan.FromMinutes(15),
                     TurnOffAfterIfTriggeredBySwitch = TimeSpan.FromHours(2)
                 },
@@ -341,14 +341,14 @@ namespace eLime.NetDaemonApps.Tests.Builders
                             }
                         }
                     },
-                    Actions = new List<ActionConfig> {new() {LightAction = LightAction.TurnOn, Light = "light.night", TransitionDuration = TimeSpan.FromSeconds(2), AutoTransitionDuration = TimeSpan.FromSeconds(10) } },
+                    Actions = new List<ActionConfig> {new() {LightAction = LightAction.TurnOn, Light = "light.night" } },
                     TurnOffAfterIfTriggeredByMotionSensor = TimeSpan.FromMinutes(5),
                     TurnOffAfterIfTriggeredBySwitch = TimeSpan.FromHours(4)
                 },
                 new()
                 {
                     Name = "default",
-                    Actions = new List<ActionConfig> {new() {LightAction = LightAction.TurnOn, Light = "light.day", TransitionDuration = TimeSpan.FromSeconds(2), AutoTransitionDuration = TimeSpan.FromSeconds(10)}},
+                    Actions = new List<ActionConfig> {new() {LightAction = LightAction.TurnOn, Light = "light.day"}},
                     TurnOffAfterIfTriggeredByMotionSensor = TimeSpan.FromMinutes(15),
                     TurnOffAfterIfTriggeredBySwitch = TimeSpan.FromHours(2)
                 },
@@ -371,7 +371,7 @@ namespace eLime.NetDaemonApps.Tests.Builders
                 {
                     Name = "morning",
                     Conditions = new List<ConditionConfig> {new() {Binary = "binary_sensor.operating_mode_morning"}},
-                    Actions = new List<ActionConfig> {new() {LightAction = LightAction.TurnOn, Light = "light.morning", TransitionDuration = TimeSpan.FromSeconds(2), AutoTransitionDuration = TimeSpan.FromSeconds(10)}},
+                    Actions = new List<ActionConfig> {new() {LightAction = LightAction.TurnOn, Light = "light.morning"}},
                     TurnOffAfterIfTriggeredByMotionSensor = TimeSpan.FromMinutes(15),
                     TurnOffAfterIfTriggeredBySwitch = TimeSpan.FromHours(2),
                 },
@@ -379,7 +379,7 @@ namespace eLime.NetDaemonApps.Tests.Builders
                 {
                     Name = "day",
                     Conditions = new List<ConditionConfig> {new() {Binary = "binary_sensor.operating_mode_day"}},
-                    Actions = new List<ActionConfig> {new() {LightAction = LightAction.TurnOn, Light = "light.day", TransitionDuration = TimeSpan.FromSeconds(2), AutoTransitionDuration = TimeSpan.FromSeconds(10) } },
+                    Actions = new List<ActionConfig> {new() {LightAction = LightAction.TurnOn, Light = "light.day" } },
                     TurnOffAfterIfTriggeredByMotionSensor = TimeSpan.FromMinutes(5),
                     TurnOffAfterIfTriggeredBySwitch = TimeSpan.FromHours(4),
                     NextFlexiScenes = new List<string> { "morning" }
@@ -388,7 +388,7 @@ namespace eLime.NetDaemonApps.Tests.Builders
                 {
                     Name = "evening",
                     Conditions = new List<ConditionConfig> {new() {Binary = "binary_sensor.operating_mode_evening"}},
-                    Actions = new List<ActionConfig> {new() {LightAction = LightAction.TurnOn, Light = "light.evening", TransitionDuration = TimeSpan.FromSeconds(2), AutoTransitionDuration = TimeSpan.FromSeconds(10) } },
+                    Actions = new List<ActionConfig> {new() {LightAction = LightAction.TurnOn, Light = "light.evening" } },
                     TurnOffAfterIfTriggeredByMotionSensor = TimeSpan.FromMinutes(60),
                     TurnOffAfterIfTriggeredBySwitch = TimeSpan.FromHours(1)
                 }
@@ -425,7 +425,7 @@ namespace eLime.NetDaemonApps.Tests.Builders
                     Actions = new List<ActionConfig>
                     {
 
-                        new() {Scene = "scene.kevin_mccallister",  TransitionDuration = TimeSpan.FromSeconds(2)}
+                        new() {Scene = "scene.kevin_mccallister"}
                     },
                 },
                 new()
@@ -435,39 +435,39 @@ namespace eLime.NetDaemonApps.Tests.Builders
                     Actions = new List<ActionConfig>
                     {
 
-                        new() {Scene = "scene.morning", TransitionDuration = TimeSpan.FromSeconds(2)},
-                        new() {LightAction = LightAction.TurnOn, Light = "light.christmas_tree",  TransitionDuration = TimeSpan.FromSeconds(2)}
+                        new() {Scene = "scene.morning"},
+                        new() {LightAction = LightAction.TurnOn, Light = "light.christmas_tree"}
                     },
                 },
                 new()
                 {
                     Name = "morning",
                     Conditions = new List<ConditionConfig> {new() {Binary = "binary_sensor.operating_mode_morning"}},
-                    Actions = new List<ActionConfig> {new() { Scene = "scene.morning", TransitionDuration = TimeSpan.FromSeconds(2) }},
+                    Actions = new List<ActionConfig> {new() { Scene = "scene.morning" }},
                 },
                 new()
                 {
                     Name = "day",
                     Conditions = new List<ConditionConfig> {new() {Binary = "binary_sensor.operating_mode_day"}},
-                    Actions = new List<ActionConfig> {new() {LightAction = LightAction.TurnOn, Light = "light.day", TransitionDuration = TimeSpan.FromSeconds(2) } },
+                    Actions = new List<ActionConfig> {new() {LightAction = LightAction.TurnOn, Light = "light.day" } },
                 },
                 new()
                 {
                     Name = "evening - Party",
-                    Conditions = new List<ConditionConfig> {new () { And =  new List<ConditionConfig> {new() {Binary = "binary_sensor.operating_mode_evening"}, new() { Binary = "binary_sensor.operating_mode_party" }} } },
-                    Actions = new List<ActionConfig> {new() {Scene = "scene.party", TransitionDuration = TimeSpan.FromSeconds(2) } },
+                    Conditions = new List<ConditionConfig> {new () { And = [new() {Binary = "binary_sensor.operating_mode_evening"}, new() {Binary = "binary_sensor.operating_mode_party"}]} },
+                    Actions = new List<ActionConfig> {new() {Scene = "scene.party" } },
                 },
                 new()
                 {
                     Name = "evening - TV",
-                    Conditions = new List<ConditionConfig> {new () { And =  new List<ConditionConfig> {new() {Binary = "binary_sensor.operating_mode_evening"}, new() { Binary = "binary_sensor.watching_tv" }} } },
-                    Actions = new List<ActionConfig> {new() {Scene = "scene.tv", TransitionDuration = TimeSpan.FromSeconds(10) } },
+                    Conditions = new List<ConditionConfig> {new () { And = [new() {Binary = "binary_sensor.operating_mode_evening"}, new() {Binary = "binary_sensor.watching_tv"}]} },
+                    Actions = new List<ActionConfig> {new() {Scene = "scene.tv" } },
                 },
                 new()
                 {
                     Name = "evening",
                     Conditions = new List<ConditionConfig> {new() {Binary = "binary_sensor.operating_mode_evening"}},
-                    Actions = new List<ActionConfig> {new() { Scene = "scene.evening", TransitionDuration = TimeSpan.FromSeconds(2) } },
+                    Actions = new List<ActionConfig> {new() { Scene = "scene.evening" } },
                 }
             };
 
@@ -572,7 +572,7 @@ namespace eLime.NetDaemonApps.Tests.Builders
         public RoomBuilder FullyAutomated()
         {
             _config.AutoTransition = true;
-            _config.MotionSensors = new List<string>();
+            _config.MotionSensors = new List<MotionSensorConfig>();
 
             return this;
         }

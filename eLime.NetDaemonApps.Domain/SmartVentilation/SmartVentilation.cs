@@ -261,8 +261,8 @@ public class SmartVentilation
 
         await _mqttEntityManager.SetStateAsync(switchName, IsEnabled ? "ON" : "OFF");
         await _mqttEntityManager.SetAttributesAsync(switchName, attributes);
-        await _mqttEntityManager.SetStateAsync($"{baseName}_last_state_change_triggered_by", LastStateChangeTriggeredBy?.ToString() ?? "unknown");
-        await _mqttEntityManager.SetStateAsync($"{baseName}_last_state_change", LastStateChange?.ToString("O") ?? "unknown");
+        await _mqttEntityManager.SetStateAsync($"{baseName}_last_state_change_triggered_by", LastStateChangeTriggeredBy?.ToString() ?? "None");
+        await _mqttEntityManager.SetStateAsync($"{baseName}_last_state_change", LastStateChange?.ToString("O") ?? "None");
 
         _logger.LogTrace("Updated smart ventilation in Home assistant to {Attributes}", attributes);
 

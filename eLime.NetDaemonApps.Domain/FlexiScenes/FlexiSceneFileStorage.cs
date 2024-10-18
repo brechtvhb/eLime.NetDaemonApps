@@ -11,7 +11,7 @@ internal class FlexiSceneFileStorage
     public String? InitialFlexiScene { get; set; }
     public String? ActiveFlexiScene { get; set; }
 
-    public List<FlexiSceneChange> Changes { get; set; } = new();
+    public List<FlexiSceneChange> Changes { get; set; } = [];
 
     public bool Equals(FlexiSceneFileStorage? r)
     {

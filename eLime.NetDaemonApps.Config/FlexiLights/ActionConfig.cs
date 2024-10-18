@@ -8,8 +8,6 @@ public class ActionConfig
     public string? Scene { get; set; }
     public string? Script { get; set; }
     public Dictionary<String, String>? ScriptData { get; set; }
-    public TimeSpan? TransitionDuration { get; set; }
-    public TimeSpan? AutoTransitionDuration { get; set; }
     public string? Profile { get; set; }
     public Color? Color { get; set; }
     public string? Brightness { get; set; }

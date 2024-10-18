@@ -207,25 +207,6 @@ public class FlexiLightTests
         _testCtx.VerifyLightTurnOff(new Light(_testCtx.HaContext, "light.day"), Moq.Times.Never);
     }
 
-
-    [TestMethod]
-    public void AutoTransition_WithCorrectDuration()
-    {
-        // Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).WithMultipleFlexiScenes().WithAutoTransition().Build();
-        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
-        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
-        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "off");
-
-        //Act
-        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "off");
-        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_evening"), "on");
-
-        //Assert
-        Assert.AreEqual("evening", room.FlexiScenes.Current.Name);
-        _testCtx.VerifyLightTurnOn(new Light(_testCtx.HaContext, "light.evening"), new LightTurnOnParameters { Transition = 10 }, Moq.Times.Once);
-    }
-
     [TestMethod]
     public void AutoTransition_TurnOffIfNoValidSceneFound()
     {
@@ -458,7 +439,7 @@ public class FlexiLightTests
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
 
         //Assert
-        _testCtx.VerifySceneTurnOn(new Scene(_testCtx.HaContext, "scene.SOHO"), new SceneTurnOnParameters { Transition = 5 }, Moq.Times.Once);
+        _testCtx.VerifySceneTurnOn(new Scene(_testCtx.HaContext, "scene.SOHO"), new SceneTurnOnParameters { }, Moq.Times.Once);
     }
 
     [TestMethod]

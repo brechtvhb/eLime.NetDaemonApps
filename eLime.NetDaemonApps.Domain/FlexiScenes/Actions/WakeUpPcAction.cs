@@ -16,7 +16,7 @@ public class WakeUpPcAction : Action
         BroadcastAddress = broadcastAddress;
     }
 
-    public override Task Execute(bool isAutoTransition = false)
+    public override Task<bool?> Execute(bool detectStateChange = false)
     {
         Script.WakeUpPc(new WakeUpPcParameters()
         {
@@ -24,6 +24,12 @@ public class WakeUpPcAction : Action
             BroadcastAddress = BroadcastAddress,
         });
 
-        return Task.CompletedTask;
+        bool? initialState = null;
+        return Task.FromResult(initialState);
+    }
+
+    public override Action Reverse()
+    {
+        return null;
     }
 }

@@ -10,10 +10,20 @@ public class SwitchTurnOnAction : Action
     {
         Switch = @switch;
     }
-    public override Task Execute(bool isAutoTransition = false)
+    public override Task<bool?> Execute(bool detectStateChange = false)
     {
+        bool? stateChanged = null;
+        if (detectStateChange)
+            stateChanged = Switch.IsOff();
+
         Switch.TurnOn();
-        return Task.CompletedTask;
+
+        return Task.FromResult(stateChanged);
+    }
+
+    public override Action Reverse()
+    {
+        return new SwitchTurnOffAction(Switch);
     }
 }
 
@@ -25,10 +35,20 @@ public class SwitchTurnOffAction : Action
     {
         Switch = @switch;
     }
-    public override Task Execute(bool isAutoTransition = false)
+    public override Task<bool?> Execute(bool detectStateChange = false)
     {
+        bool? initialState = null;
+        if (detectStateChange)
+            initialState = Switch.IsOn();
+
         Switch.TurnOff();
-        return Task.CompletedTask;
+
+        return Task.FromResult(initialState);
+    }
+
+    public override Action Reverse()
+    {
+        return new SwitchTurnOnAction(Switch);
     }
 }
 
@@ -41,10 +61,19 @@ public class SwitchToggleAction : Action
         Switch = @switch;
     }
 
-    public override Task Execute(bool isAutoTransition = false)
+    public override Task<bool?> Execute(bool detectStateChange = false)
     {
+        bool? stateChanged = null;
+        if (detectStateChange)
+            stateChanged = Switch.IsOn() || Switch.IsOff();
+
         Switch.Toggle();
-        return Task.CompletedTask;
+        return Task.FromResult(stateChanged);
+    }
+
+    public override Action Reverse()
+    {
+        return new SwitchToggleAction(Switch);
     }
 }
 
@@ -58,8 +87,15 @@ public class SwitchPulseAction : Action
         Switch = @switch;
         Duration = duration ?? TimeSpan.FromMilliseconds(200);
     }
-    public override async Task Execute(bool isAutoTransition = false)
+    public override async Task<bool?> Execute(bool detectStateChange = false)
     {
         await Switch.Pulse(Duration);
+
+        return null;
+    }
+
+    public override Action Reverse()
+    {
+        return null;
     }
 }

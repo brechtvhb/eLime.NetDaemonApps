@@ -1,5 +1,6 @@
 ﻿using eLime.NetDaemonApps.Config.FlexiLights;
 using eLime.NetDaemonApps.Domain.Entities.Lights;
+using NetDaemon.HassModel.Entities;
 
 namespace eLime.NetDaemonApps.Domain.FlexiScenes.Actions;
 
@@ -7,14 +8,10 @@ public abstract class LightAction : Action
 {
 
     public Light Light { get; init; }
-    public TimeSpan? TransitionDuration { get; init; }
-    public TimeSpan? AutoTransitionDuration { get; init; }
 
-    protected LightAction(Light light, TimeSpan? transitionDuration, TimeSpan? autoTransitionDuration)
+    protected LightAction(Light light)
     {
         Light = light;
-        TransitionDuration = transitionDuration;
-        AutoTransitionDuration = autoTransitionDuration;
     }
 
 }
@@ -38,9 +35,8 @@ public class LightTurnOnAction : LightAction
     public string? Flash { get; init; }
     public string? Effect { get; init; }
 
-    public LightTurnOnAction(Light light, TimeSpan? transitionDuration, TimeSpan? autoTransitionDuration, string? profile,
-        Color? color, string? brightness, string? flash, string? effect)
-        : base(light, transitionDuration, autoTransitionDuration)
+    public LightTurnOnAction(Light light, string? profile, Color? color, string? brightness, string? flash, string? effect)
+        : base(light)
     {
         Profile = profile;
 
@@ -102,15 +98,16 @@ public class LightTurnOnAction : LightAction
         Flash = flash;
         Effect = effect;
     }
-    public override Task Execute(bool isAutoTransition = false)
-    {
-        var transitionDuration = (long?)(isAutoTransition ? AutoTransitionDuration ?? TransitionDuration : TransitionDuration)?.TotalSeconds;
 
-        //var isOn = Light.IsOn(); //For mixin, to know if light was turned on by mixin scene
+    public override Task<bool?> Execute(bool detectStateChange = false)
+    {
+        bool? stateChanged = null;
+
+        if (detectStateChange)
+            stateChanged = Light.IsOff(); //For mixin, to know if light was turned on by mixin scene
 
         Light.TurnOn(new LightTurnOnParameters
         {
-            Transition = transitionDuration,
             Profile = Profile,
             HsColor = HsColor != null ? new List<int> { HsColor.Value.hue, HsColor.Value.saturation } : null,
             XyColor = XyColor != null ? new List<int> { XyColor.Value.x, XyColor.Value.y } : null,
@@ -128,25 +125,40 @@ public class LightTurnOnAction : LightAction
             Flash = Flash,
             Effect = Effect
         });
-        return Task.CompletedTask;
+        return Task.FromResult(stateChanged);
+    }
+
+    public override Action Reverse()
+    {
+        return new LightTurnOffAction(Light);
     }
 }
 
 public class LightTurnOffAction : LightAction
 {
 
-    public LightTurnOffAction(Light light, TimeSpan? transitionDuration, TimeSpan? autoTransitionDuration)
-        : base(light, transitionDuration, autoTransitionDuration)
+    public LightTurnOffAction(Light light)
+        : base(light)
     {
 
     }
-    public override Task Execute(bool isAutoTransition = false)
+    public override Task<bool?> Execute(bool detectStateChange = false)
     {
-        var transitionDuration = (isAutoTransition ? AutoTransitionDuration ?? TransitionDuration : TransitionDuration)?.TotalSeconds;
+        bool? stateChanged = null;
+
+        if (detectStateChange)
+            stateChanged = Light.IsOn(); //For mixin, to know if light was turned on by mixin scene
+
+
         Light.TurnOff(new LightTurnOffParameters
         {
-            Transition = transitionDuration
         });
-        return Task.CompletedTask;
+
+        return Task.FromResult(stateChanged);
+    }
+
+    public override Action Reverse()
+    {
+        return new LightTurnOnAction(Light, null, null, null, null, null);
     }
 }

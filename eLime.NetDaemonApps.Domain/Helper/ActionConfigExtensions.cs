@@ -80,8 +80,8 @@ internal static class ActionConfigExtensions
 
         return config.LightAction switch
         {
-            Config.FlexiLights.LightAction.TurnOn => new LightTurnOnAction(light, config.TransitionDuration, config.AutoTransitionDuration, config.Profile, config.Color, config.Brightness, config.Flash, config.Effect),
-            Config.FlexiLights.LightAction.TurnOff => new LightTurnOffAction(light, config.TransitionDuration, config.AutoTransitionDuration),
+            Config.FlexiLights.LightAction.TurnOn => new LightTurnOnAction(light, config.Profile, config.Color, config.Brightness, config.Flash, config.Effect),
+            Config.FlexiLights.LightAction.TurnOff => new LightTurnOffAction(light)
         };
     }
 
@@ -122,7 +122,7 @@ internal static class ActionConfigExtensions
 
         var scene = new Scene(haContext, config.Scene);
 
-        return new SceneTurnOnAction(scene, config.TransitionDuration, config.AutoTransitionDuration);
+        return new SceneTurnOnAction(scene);
     }
 
     internal static Action ConvertToExecuteOffActionsActionDomainModel(this ActionConfig config, IHaContext haContext)

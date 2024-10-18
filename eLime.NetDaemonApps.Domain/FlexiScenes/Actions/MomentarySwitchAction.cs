@@ -14,13 +14,19 @@ public class MomentarySwitchAction : Action
         EntityId = entityId ?? throw new ArgumentNullException("scriptData.entityId");
     }
 
-    public override Task Execute(bool isAutoTransition = false)
+    public override Task<bool?> Execute(bool detectStateChange = false)
     {
         Script.MomentarySwitch(new MomentarySwitchParameters()
         {
             EntityId = EntityId
         });
 
-        return Task.CompletedTask;
+        bool? initialState = null;
+        return Task.FromResult(initialState);
+    }
+
+    public override Action Reverse()
+    {
+        return null;
     }
 }

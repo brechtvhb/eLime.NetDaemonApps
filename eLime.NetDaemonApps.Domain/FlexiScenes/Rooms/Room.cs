@@ -27,6 +27,7 @@ public class Room : IAsyncDisposable
     public bool AutoTransitionTurnOffIfNoValidSceneFound { get; }
     private bool FullyAutomated { get; }
     private readonly DebounceDispatcher? AutoTransitionDebounceDispatcher;
+    private readonly DebounceDispatcher? UpdateInHomeAssistantDebounceDispatcher;
 
     public InitialClickAfterMotionBehaviour InitialClickAfterMotionBehaviour { get; }
     public Int32? IlluminanceThreshold { get; }
@@ -62,14 +63,24 @@ public class Room : IAsyncDisposable
         _illuminanceSensors.Add(sensor);
     }
 
-    private readonly List<MotionSensor> _motionSensors = [];
-    public IReadOnlyCollection<MotionSensor> MotionSensors => _motionSensors.AsReadOnly();
+    private readonly List<FlexiSceneMotionSensor> _motionSensors = [];
+    public IReadOnlyCollection<FlexiSceneMotionSensor> MotionSensors => _motionSensors.AsReadOnly();
 
     public void AddMotionSensor(MotionSensor sensor)
     {
         sensor.TurnedOn += MotionSensor_TurnedOn;
         sensor.TurnedOff += MotionSensor_TurnedOff;
-        _motionSensors.Add(sensor);
+        _motionSensors.Add(FlexiSceneMotionSensor.Create(sensor));
+    }
+
+    public void AddMotionSensorMixinScene(FlexiSceneMotionSensor flexiSceneMotionSensor, String mixinScene)
+    {
+        String scene = null;
+
+        if (FlexiScenes.GetByName(mixinScene) != null)
+            scene = mixinScene;
+
+        flexiSceneMotionSensor.SetMixinScene(scene);
     }
 
     private readonly List<ISwitch> _switches = [];
@@ -91,32 +102,32 @@ public class Room : IAsyncDisposable
     public BinarySensor? SimulatePresenceSensor;
     public TimeSpan SimulatePresenceIgnoreDuration;
 
-    private readonly List<Action> _offActions = new();
+    private readonly List<Action> _offActions = [];
     public IReadOnlyCollection<Action> OffActions => _offActions.AsReadOnly();
     public void AddOffActions(List<Action> action) => _offActions.AddRange(action);
 
 
-    private readonly List<Action> _doubleClickActions = new();
+    private readonly List<Action> _doubleClickActions = [];
     public IReadOnlyCollection<Action> DoubleClickActions => _doubleClickActions.AsReadOnly();
     public void AddDoubleClickActions(List<Action> action) => _doubleClickActions.AddRange(action);
 
 
-    private readonly List<Action> _tripleClickActions = new();
+    private readonly List<Action> _tripleClickActions = [];
     public IReadOnlyCollection<Action> TripleClickActions => _tripleClickActions.AsReadOnly();
     public void AddTripleClickActions(List<Action> action) => _tripleClickActions.AddRange(action);
 
 
-    private readonly List<Action> _longClickActions = new();
+    private readonly List<Action> _longClickActions = [];
     public IReadOnlyCollection<Action> LongClickActions => _longClickActions.AsReadOnly();
     public void AddLongClickActions(List<Action> action) => _longClickActions.AddRange(action);
 
 
-    private readonly List<Action> _uberLongClickActions = new();
+    private readonly List<Action> _uberLongClickActions = [];
     public IReadOnlyCollection<Action> UberLongClickActions => _uberLongClickActions.AsReadOnly();
     public void AddUberLongClickActions(List<Action> action) => _uberLongClickActions.AddRange(action);
 
 
-    private readonly List<Entity> _flexiSceneSensors = new();
+    private readonly List<Entity> _flexiSceneSensors = [];
     public IReadOnlyCollection<Entity> FlexiSceneSensors => _flexiSceneSensors.AsReadOnly();
 
     public void AddFlexiSceneSensor(Entity sensor)
@@ -161,11 +172,14 @@ public class Room : IAsyncDisposable
         Name = config.Name;
 
         if (autoTransitionDebounce != TimeSpan.Zero)
+        {
             AutoTransitionDebounceDispatcher = new(autoTransitionDebounce);
+            UpdateInHomeAssistantDebounceDispatcher = new DebounceDispatcher(TimeSpan.FromSeconds(1));
+        }
 
         if (!(config.Enabled ?? true))
         {
-            FlexiScenes = new FlexiScenes(new List<FlexiScene>());
+            FlexiScenes = new FlexiScenes([]);
             return;
         }
 
@@ -205,12 +219,12 @@ public class Room : IAsyncDisposable
 
         if (config.MotionSensors != null && config.MotionSensors.Any())
         {
-            foreach (var sensorId in config.MotionSensors)
+            foreach (var motionSensor in config.MotionSensors)
             {
-                if (MotionSensors.Any(x => x.EntityId == sensorId))
+                if (MotionSensors.Any(x => x.Sensor.EntityId == motionSensor.Sensor))
                     continue;
 
-                var sensor = MotionSensor.Create(_haContext, sensorId);
+                var sensor = MotionSensor.Create(_haContext, motionSensor.Sensor);
                 AddMotionSensor(sensor);
             }
         }
@@ -269,6 +283,20 @@ public class Room : IAsyncDisposable
 
         FlexiScenes = new FlexiScenes(flexiScenes);
 
+
+        if (config.MotionSensors != null && config.MotionSensors.Any())
+        {
+            foreach (var motionSensor in config.MotionSensors)
+            {
+                var sensor = MotionSensors.SingleOrDefault(x => x.Sensor.EntityId == motionSensor.Sensor);
+                if (sensor == null)
+                    continue;
+
+                AddMotionSensorMixinScene(sensor, motionSensor.MixinScene);
+            }
+        }
+
+
         if (!Switches.Any() && !MotionSensors.Any() && AutoTransition == false)
             throw new Exception("Define at least one switch or motion sensor or run in full automation mode (auto transition true and at least one flexiscene with conditions)");
 
@@ -296,6 +324,7 @@ public class Room : IAsyncDisposable
         var baseName = $"sensor.flexilights_{Name.MakeHaFriendly()}";
         var switchName = $"switch.flexilights_{Name.MakeHaFriendly()}";
         var selectName = $"select.flexilights_{Name.MakeHaFriendly()}_scene";
+        var mixinActiveName = $"binary_sensor.flexilights_{Name.MakeHaFriendly()}_mixin_active";
 
         _logger.LogDebug("Creating Entities for room '{room}' in home assistant.", Name);
         var enabledSwitchOptions = new EnabledSwitchAttributes { Icon = "fapro:palette", Device = GetDevice() };
@@ -303,7 +332,6 @@ public class Room : IAsyncDisposable
 
         var initiatedByOptions = new EnumSensorOptions { Icon = "hue:motion-sensor-movement", Device = GetDevice(), Options = Enum<InitiatedBy>.AllValuesAsStringList() };
         await _mqttEntityManager.CreateAsync($"{baseName}_initiated_by", new EntityCreationOptions(UniqueId: $"{baseName}_initiated_by", Name: $"Initiated by", DeviceClass: "enum", Persist: true), initiatedByOptions);
-
 
         var lastChangeOptions = new EntityOptions { Icon = "mdi:calendar-end", Device = GetDevice() };
         await _mqttEntityManager.CreateAsync($"{baseName}_last_changed_at", new EntityCreationOptions(UniqueId: $"{baseName}_last_changed_at", Name: $"Last changed at", Persist: true), lastChangeOptions);
@@ -313,6 +341,9 @@ public class Room : IAsyncDisposable
 
         var selectOptions = new SelectOptions { Icon = "fapro:palette", Options = scenes, Device = GetDevice() };
         await _mqttEntityManager.CreateAsync(selectName, new EntityCreationOptions(UniqueId: selectName, Name: "Scene", DeviceClass: "select", Persist: true), selectOptions);
+
+        var mixinActiveOptions = new EnabledSwitchAttributes { Icon = "phu:scene-dynamic", Device = GetDevice() };
+        await _mqttEntityManager.CreateAsync(switchName, new EntityCreationOptions(UniqueId: mixinActiveName, Name: $"Mixin active", DeviceClass: "occupancy", Persist: true), mixinActiveOptions);
 
         if (_haContext.Entity(switchName).State == null)
         {
@@ -343,7 +374,7 @@ public class Room : IAsyncDisposable
                 InitiatedBy = InitiatedBy.NoOne;
             }
             Enabled = state == "ON";
-            await UpdateStateInHomeAssistant();
+            await DebounceUpdateInHomeAssistant();
         };
     }
 
@@ -362,20 +393,20 @@ public class Room : IAsyncDisposable
             if (flexiScene == null)
                 return;
 
-            var offActionsExecuted = await ExecuteFlexiScene(flexiScene, InitiatedBy.Switch);
+            var (offActionsExecuted, _) = await ExecuteFlexiScene(flexiScene, InitiatedBy.Switch);
 
             if (offActionsExecuted)
                 return;
 
             await SetTurnOffAt(flexiScene);
-            await UpdateStateInHomeAssistant();
+            await DebounceUpdateInHomeAssistant();
         };
     }
 
 
-    public eLime.NetDaemonApps.Domain.Mqtt.Device GetDevice()
+    public Mqtt.Device GetDevice()
     {
-        return new eLime.NetDaemonApps.Domain.Mqtt.Device { Identifiers = new List<string> { $"flexiscene.{Name.MakeHaFriendly()}" }, Name = "Flexi scene: " + Name, Manufacturer = "Me" };
+        return new Mqtt.Device { Identifiers = [$"flexiscene.{Name.MakeHaFriendly()}"], Name = "Flexi scene: " + Name, Manufacturer = "Me" };
     }
 
 
@@ -388,7 +419,7 @@ public class Room : IAsyncDisposable
         IgnorePresenceUntil = flexiSceneFileStorage?.IgnorePresenceUntil;
         TurnOffAt = flexiSceneFileStorage?.TurnOffAt;
         InitiatedBy = flexiSceneFileStorage?.InitiatedBy ?? InitiatedBy.NoOne;
-        FlexiScenes.Changes = flexiSceneFileStorage?.Changes.ToList() ?? new List<FlexiSceneChange>();
+        FlexiScenes.Changes = flexiSceneFileStorage?.Changes.ToList() ?? [];
 
         if (!String.IsNullOrWhiteSpace(flexiSceneFileStorage?.ActiveFlexiScene))
         {
@@ -406,6 +437,16 @@ public class Room : IAsyncDisposable
         await ScheduleClearIgnorePresence();
     }
 
+    private async Task DebounceUpdateInHomeAssistant()
+    {
+        if (UpdateInHomeAssistantDebounceDispatcher == null)
+        {
+            await UpdateStateInHomeAssistant();
+            return;
+        }
+
+        await UpdateInHomeAssistantDebounceDispatcher.DebounceAsync(UpdateStateInHomeAssistant);
+    }
 
     private async Task UpdateStateInHomeAssistant()
     {
@@ -422,10 +463,10 @@ public class Room : IAsyncDisposable
         var task1 = _mqttEntityManager.SetAttributesAsync($"switch.flexilights_{Name.MakeHaFriendly()}", attributes);
         var task2 = _mqttEntityManager.SetStateAsync($"switch.flexilights_{Name.MakeHaFriendly()}", Enabled ? "ON" : "OFF");
         var task3 = _mqttEntityManager.SetStateAsync($"{baseName}_initiated_by", InitiatedBy.ToString());
-        var task4 = _mqttEntityManager.SetStateAsync($"{baseName}_last_changed_at", FlexiScenes.Changes.LastOrDefault()?.ChangedAt.ToString("O") ?? "unknown");
+        var task4 = _mqttEntityManager.SetStateAsync($"{baseName}_last_changed_at", FlexiScenes.Changes.LastOrDefault()?.ChangedAt.ToString("O") ?? "None");
         var task5 = _mqttEntityManager.SetStateAsync($"select.flexilights_{Name.MakeHaFriendly()}_scene", FlexiScenes.Current?.Name ?? "Off");
-
-        await Task.WhenAll(task1, task2, task3, task4, task5);
+        var task6 = _mqttEntityManager.SetStateAsync($"binary_sensor.flexilights_{Name.MakeHaFriendly()}_mixin_active", MotionSensors.Any(x => x.TurnOffAt != null) ? "ON" : "OFF");
+        await Task.WhenAll(task1, task2, task3, task4, task5, task6);
 
         _fileStorage.Save("FlexiScenes", Name.MakeHaFriendly(), ToFileStorage());
         _logger.LogTrace("Updated flexilight state for room '{room}' in Home assistant.", Name);
@@ -445,13 +486,13 @@ public class Room : IAsyncDisposable
         };
     }
 
-    private async Task<bool> ExecuteFlexiScene(FlexiScene flexiScene, InitiatedBy initiatedBy, Boolean autoTransition = false, Boolean overwriteInitialScene = true)
+    private async Task<(Boolean offActionsExecuted, List<Action> reverseActions)> ExecuteFlexiScene(FlexiScene flexiScene, InitiatedBy initiatedBy, Boolean overwriteInitialScene = true)
     {
         _logger.LogInformation("{Room}: Will execute flexi scene {flexiScene}. Triggered by {InitiatedBy}.", Name, flexiScene.Name, initiatedBy);
         FlexiScenes.SetCurrentScene(_scheduler.Now, flexiScene, overwriteInitialScene);
         InitiatedBy = initiatedBy;
 
-        return await ExecuteActions(flexiScene.Actions, autoTransition);
+        return await ExecuteActions(flexiScene.Actions);
     }
 
     private async Task ExecuteOffActions(bool triggeredByManualAction = true)
@@ -469,7 +510,7 @@ public class Room : IAsyncDisposable
 
         await ExecuteActions(OffActions);
         ClearAutoTurnOff();
-        await UpdateStateInHomeAssistant();
+        await DebounceUpdateInHomeAssistant();
     }
 
     private async Task ScheduleClearIgnorePresence()
@@ -492,8 +533,6 @@ public class Room : IAsyncDisposable
             await RemoveIgnorePresence();
         }
     }
-
-
 
     private async Task ExecuteDoubleClickActions()
     {
@@ -553,6 +592,37 @@ public class Room : IAsyncDisposable
         }
     }
 
+    private async Task ScheduleTurnOffMixinAt(FlexiSceneMotionSensor flexiSceneMotionSensor)
+    {
+        if (flexiSceneMotionSensor.TurnOffAt == null)
+            return;
+
+        if (flexiSceneMotionSensor.ActionsToExecuteOnTurnOff.Count == 0)
+            return;
+
+        var remainingTime = flexiSceneMotionSensor.TurnOffAt.Value - DateTime.Now;
+
+        if (remainingTime > TimeSpan.Zero)
+        {
+            flexiSceneMotionSensor.SetTurnOffAt(_scheduler.Now.Add(FlexiScenes.GetByName(flexiSceneMotionSensor.MixinScene).TurnOffAfterIfTriggeredByMotionSensor));
+            flexiSceneMotionSensor.TurnOffSchedule?.Dispose();
+            flexiSceneMotionSensor.TurnOffSchedule = _scheduler.ScheduleAsync(remainingTime, async (_, _)
+                =>
+            {
+                await ExecuteActions(flexiSceneMotionSensor.ActionsToExecuteOnTurnOff);
+                flexiSceneMotionSensor.TurnedOff();
+            });
+
+            _logger.LogTrace("{Room}: Reverse actions for mixin will be executed at {TurnOffAt}.", Name, flexiSceneMotionSensor.TurnOffAt?.ToString("T"));
+        }
+        else
+        {
+            _logger.LogDebug("{Room}: Reverse actions for mixin  should have been executed at {TurnOffAt} will execute them now.", Name, flexiSceneMotionSensor.TurnOffAt?.ToString("T"));
+            await ExecuteActions(flexiSceneMotionSensor.ActionsToExecuteOnTurnOff);
+            flexiSceneMotionSensor.TurnedOff();
+        }
+    }
+
     private void ClearAutoTurnOff()
     {
         _logger.LogTrace("{Room}: Off actions will no longer be executed. Probably because the OFF actions were just executed or a motion sensor is active.", Name);
@@ -560,10 +630,19 @@ public class Room : IAsyncDisposable
         TurnOffSchedule?.Dispose();
         TurnOffSchedule = null;
     }
+    private void ClearAutoTurnOffMixin(FlexiSceneMotionSensor flexiSceneMotionSensor)
+    {
+        if (flexiSceneMotionSensor.TurnOffAt == null)
+            return;
 
-    private async Task<Boolean> ExecuteActions(IReadOnlyCollection<Action> actions, Boolean autoTransition = false)
+        flexiSceneMotionSensor.ClearTurnOffAt();
+        _logger.LogTrace("{Room}: Reverse mixin actions will no longer be executed. Probably because the OFF actions were just executed or a motion sensor is active.", Name);
+    }
+
+    private async Task<(Boolean offActionsExecuted, List<Action> reverseActions)> ExecuteActions(IReadOnlyCollection<Action> actions)
     {
         var offActionsExecuted = false;
+        List<Action> reverseActions = [];
         foreach (var action in actions)
         {
             if (action is ExecuteOffActionsAction)
@@ -572,10 +651,18 @@ public class Room : IAsyncDisposable
                 offActionsExecuted = true;
             }
             else
-                await action.Execute(autoTransition);
+            {
+                var stateChanged = await action.Execute();
+                if (stateChanged ?? false)
+                {
+                    var reverseAction = action.Reverse();
+                    if (reverseAction != null)
+                        reverseActions.Add(reverseAction);
+                }
+            }
         }
 
-        return offActionsExecuted;
+        return (offActionsExecuted, reverseActions);
     }
     private async void OffSensor_TurnedOn(object? sender, BinarySensorEventArgs e)
     {
@@ -594,11 +681,49 @@ public class Room : IAsyncDisposable
         if (FlexiScenes.Current != null)
         {
             ClearAutoTurnOff();
-            await UpdateStateInHomeAssistant();
+            await ExecuteMixinScene(e.Sensor.EntityId);
+            await DebounceUpdateInHomeAssistant();
             return;
         }
 
         await ExecuteFlexiSceneOnMotion();
+        await ExecuteMixinScene(e.Sensor.EntityId);
+        await DebounceUpdateInHomeAssistant();
+    }
+
+    private async Task ExecuteMixinScene(String sensorId)
+    {
+        var flexiSceneMotionSensor = MotionSensors.Single(x => x.Sensor.EntityId == sensorId);
+
+        if (flexiSceneMotionSensor.MixinScene == null)
+            return;
+
+        if (flexiSceneMotionSensor.TurnOffAt != null)
+        {
+            flexiSceneMotionSensor.ClearTurnOffAt();
+            return;
+        }
+
+
+        var flexiScene = FlexiScenes.GetByName(flexiSceneMotionSensor.MixinScene);
+        if (flexiScene == null)
+            return;
+
+        if (IlluminanceLowerThreshold != null && IlluminanceSensors.All(x => x.State > IlluminanceLowerThreshold))
+        {
+            _logger.LogTrace("{Room}: Mixin should have triggered because motion sensor saw something moving but did not turn on lights because all illuminance sensors [{IlluminanceSensorValues}] are above threshold of {IlluminanceThreshold} lux.", Name, String.Join(", ", IlluminanceSensors.Select(x => $"{x.EntityId} - {x.State} lux")), IlluminanceLowerThreshold);
+            return;
+        }
+
+        if (IgnorePresenceUntil != null && IgnorePresenceUntil > DateTime.Now)
+        {
+            _logger.LogDebug("{Room}: Mixin should have triggered  because motion sensor saw something moving but did not turn on lights because presence is ignored until {IgnorePresenceUntil}", Name, IgnorePresenceUntil?.ToString("T"));
+            return;
+        }
+        var (_, reverseActions) = await ExecuteActions(flexiScene.Actions);
+
+        //TODO: Turnoff att should be set when motion is no longer detected
+        flexiSceneMotionSensor.SetActionsToExecuteOnTurnOff(reverseActions);
     }
 
     private async void Switch_Clicked(object? sender, SwitchEventArgs e)
@@ -611,13 +736,13 @@ public class Room : IAsyncDisposable
         {
             if (FlexiSceneThatShouldActivate != null)
             {
-                var offActionsExecuted = await ExecuteFlexiScene(FlexiSceneThatShouldActivate, InitiatedBy.Switch);
+                var (offActionsExecuted, _) = await ExecuteFlexiScene(FlexiSceneThatShouldActivate, InitiatedBy.Switch);
 
                 if (offActionsExecuted)
                     return;
 
                 await SetTurnOffAt(FlexiSceneThatShouldActivate);
-                await UpdateStateInHomeAssistant();
+                await DebounceUpdateInHomeAssistant();
             }
             else
             {
@@ -635,7 +760,7 @@ public class Room : IAsyncDisposable
         else
         {
             var nextFlexiScene = FlexiScenes.Next;
-            var offActionsExecuted = await ExecuteFlexiScene(nextFlexiScene, InitiatedBy.Switch, false, false);
+            var (offActionsExecuted, _) = await ExecuteFlexiScene(nextFlexiScene, InitiatedBy.Switch, false);
 
             if (offActionsExecuted)
                 return;
@@ -643,7 +768,7 @@ public class Room : IAsyncDisposable
             await SetTurnOffAt(nextFlexiScene);
         }
 
-        await UpdateStateInHomeAssistant();
+        await DebounceUpdateInHomeAssistant();
     }
 
     private async void Switch_DoubleClicked(object? sender, SwitchEventArgs e)
@@ -722,7 +847,7 @@ public class Room : IAsyncDisposable
         if (FlexiSceneThatShouldActivate != null)
         {
             await ExecuteFlexiScene(FlexiSceneThatShouldActivate, InitiatedBy.Motion);
-            await UpdateStateInHomeAssistant();
+            await DebounceUpdateInHomeAssistant();
         }
         else
         {
@@ -735,12 +860,15 @@ public class Room : IAsyncDisposable
         if (!Enabled)
             return;
 
-        var allMotionSensorsOff = MotionSensors.All(x => x.IsOff());
+        var flexiSceneMotionSensor = MotionSensors.Single(x => x.Sensor.EntityId == e.Sensor.EntityId);
+        await ScheduleTurnOffMixinAt(flexiSceneMotionSensor);
+
+        var allMotionSensorsOff = MotionSensors.All(x => x.Sensor.IsOff());
 
         if (allMotionSensorsOff && FlexiScenes.Current != null)
         {
             await SetTurnOffAt(FlexiScenes.Current);
-            await UpdateStateInHomeAssistant();
+            await DebounceUpdateInHomeAssistant();
         }
     }
 
@@ -794,13 +922,13 @@ public class Room : IAsyncDisposable
             }
         }
 
-        await UpdateStateInHomeAssistant();
+        await DebounceUpdateInHomeAssistant();
     }
 
     private async Task RemoveIgnorePresence()
     {
         IgnorePresenceUntil = null;
-        await UpdateStateInHomeAssistant();
+        await DebounceUpdateInHomeAssistant();
     }
 
     private async void CheckForMotion()
@@ -808,10 +936,10 @@ public class Room : IAsyncDisposable
         if (!Enabled)
             return;
 
-        if (MotionSensors.All(x => x.IsOff()))
+        if (MotionSensors.All(x => x.Sensor.IsOff()))
             return;
 
-        if (MotionSensors.Any(x => x.State == "unavailable"))
+        if (MotionSensors.Any(x => x.Sensor.State == "unavailable"))
             return;
 
         if (FlexiScenes.Current != null)
@@ -847,13 +975,13 @@ public class Room : IAsyncDisposable
         }
 
         _logger.LogDebug("{Room}: Simulating presence.", Name);
-        var offActionsExecuted = await ExecuteFlexiScene(flexiSceneToSimulate, InitiatedBy.FullyAutomated);
+        var (offActionsExecuted, _) = await ExecuteFlexiScene(flexiSceneToSimulate, InitiatedBy.FullyAutomated);
 
         if (offActionsExecuted)
             return;
 
         await SetTurnOffAt(flexiSceneToSimulate);
-        await UpdateStateInHomeAssistant();
+        await DebounceUpdateInHomeAssistant();
     }
 
 
@@ -875,9 +1003,9 @@ public class Room : IAsyncDisposable
 
         foreach (var sensor in _motionSensors)
         {
-            sensor.TurnedOn -= MotionSensor_TurnedOn;
-            sensor.TurnedOff -= MotionSensor_TurnedOff;
-            sensor.Dispose();
+            sensor.Sensor.TurnedOn -= MotionSensor_TurnedOn;
+            sensor.Sensor.TurnedOff -= MotionSensor_TurnedOff;
+            sensor.Sensor.Dispose();
         }
 
         foreach (var sensor in _switches)
