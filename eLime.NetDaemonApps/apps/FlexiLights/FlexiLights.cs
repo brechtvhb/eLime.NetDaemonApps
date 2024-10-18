@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace eLime.NetDaemonApps.apps.FlexiLights;
 
-[NetDaemonApp(Id = "flexilights")]
+[NetDaemonApp(Id = "flexilights"), Focus]
 public class FlexiLights : IAsyncInitializable, IAsyncDisposable
 {
     private readonly IHaContext _ha;

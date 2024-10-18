@@ -10,7 +10,6 @@ using System.Threading.Tasks;
 
 namespace eLime.NetDaemonApps.apps.CapacityCalculator;
 
-[Focus]
 [NetDaemonApp(Id = "capacityCalculator")]
 public class CapacityCalculator : IAsyncInitializable, IAsyncDisposable
 {

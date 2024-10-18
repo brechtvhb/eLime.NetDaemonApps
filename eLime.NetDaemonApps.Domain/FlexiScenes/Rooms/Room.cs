@@ -722,7 +722,6 @@ public class Room : IAsyncDisposable
         }
         var (_, reverseActions) = await ExecuteActions(flexiScene.Actions);
 
-        //TODO: Turnoff att should be set when motion is no longer detected
         flexiSceneMotionSensor.SetActionsToExecuteOnTurnOff(reverseActions);
     }
 
@@ -1006,6 +1005,7 @@ public class Room : IAsyncDisposable
             sensor.Sensor.TurnedOn -= MotionSensor_TurnedOn;
             sensor.Sensor.TurnedOff -= MotionSensor_TurnedOff;
             sensor.Sensor.Dispose();
+            sensor.TurnOffSchedule?.Dispose();
         }
 
         foreach (var sensor in _switches)

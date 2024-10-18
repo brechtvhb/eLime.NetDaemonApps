@@ -16,7 +16,7 @@
       lights:
       - light.toilet_1
       motionSensors:
-      - input_boolean.fake_binary_sensor
+      - sensor: input_boolean.fake_binary_sensor
       illuminanceSensors:
       - input_number.fake_illuminance_sensor
       switches:
