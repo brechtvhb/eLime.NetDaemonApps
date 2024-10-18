@@ -612,6 +612,7 @@ public class Room : IAsyncDisposable
                 _logger.LogInformation("{Room}: Mixin will reverse to original state.", Name);
                 await ExecuteActions(flexiSceneMotionSensor.ActionsToExecuteOnTurnOff);
                 flexiSceneMotionSensor.TurnedOff();
+                await DebounceUpdateInHomeAssistant();
             });
 
             _logger.LogInformation("{Room}: Reverse actions for mixin will be executed at {TurnOffAt}.", Name, flexiSceneMotionSensor.TurnOffAt?.ToString("T"));
@@ -871,6 +872,7 @@ public class Room : IAsyncDisposable
         {
             flexiSceneMotionSensor.TurnOffAt = _scheduler.Now.Add(FlexiScenes.GetByName(flexiSceneMotionSensor.MixinScene).TurnOffAfterIfTriggeredByMotionSensor);
             await ScheduleTurnOffMixinAt(flexiSceneMotionSensor);
+            await DebounceUpdateInHomeAssistant();
         }
 
         var allMotionSensorsOff = MotionSensors.All(x => x.Sensor.IsOff());
