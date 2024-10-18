@@ -615,7 +615,7 @@ public class Room : IAsyncDisposable
             flexiSceneMotionSensor.TurnOffSchedule = _scheduler.ScheduleAsync(remainingTime, async (_, _)
                 =>
             {
-                _logger.LogInformation("{Room}: Mixin will reverse to original state.", Name);
+                _logger.LogInformation("{Room}: Mixin scene '{Scene}' will reverse to original state.", Name, flexiSceneMotionSensor.MixinScene);
                 await ExecuteActions(flexiSceneMotionSensor.ActionsToExecuteOnTurnOff);
                 flexiSceneMotionSensor.TurnedOff();
                 await DebounceUpdateInHomeAssistant();
