@@ -504,7 +504,7 @@ public class Room : IAsyncDisposable
 
         //Only ignore presence if triggered by manual action
         if (triggeredByManualAction && IgnorePresenceAfterOffDuration != TimeSpan.Zero)
-            IgnorePresenceUntil = DateTime.Now.Add(IgnorePresenceAfterOffDuration);
+            IgnorePresenceUntil = _scheduler.Now.Add(IgnorePresenceAfterOffDuration);
 
         await ScheduleClearIgnorePresence();
 
@@ -518,7 +518,7 @@ public class Room : IAsyncDisposable
         if (IgnorePresenceUntil == null)
             return;
 
-        var remainingTime = IgnorePresenceUntil.Value - DateTime.Now;
+        var remainingTime = IgnorePresenceUntil.Value - _scheduler.Now;
 
         if (remainingTime > TimeSpan.Zero)
         {
@@ -567,7 +567,7 @@ public class Room : IAsyncDisposable
             _ => throw new ArgumentOutOfRangeException()
         };
 
-        TurnOffAt = DateTime.Now.Add(timeSpan);
+        TurnOffAt = _scheduler.Now.Add(timeSpan);
         await ScheduleTurnOffAt();
     }
 
@@ -576,7 +576,7 @@ public class Room : IAsyncDisposable
         if (TurnOffAt == null)
             return;
 
-        var remainingTime = TurnOffAt.Value - DateTime.Now;
+        var remainingTime = TurnOffAt.Value - _scheduler.Now;
 
         if (remainingTime > TimeSpan.Zero)
         {
@@ -600,7 +600,7 @@ public class Room : IAsyncDisposable
         if (flexiSceneMotionSensor.ActionsToExecuteOnTurnOff.Count == 0)
             return;
 
-        var remainingTime = flexiSceneMotionSensor.TurnOffAt.Value - DateTime.Now;
+        var remainingTime = flexiSceneMotionSensor.TurnOffAt.Value - _scheduler.Now;
 
         if (remainingTime > TimeSpan.Zero)
         {
@@ -701,7 +701,7 @@ public class Room : IAsyncDisposable
 
         if (flexiSceneMotionSensor.TurnOffAt != null)
         {
-            flexiSceneMotionSensor.ClearTurnOffAt();
+            ClearAutoTurnOffMixin(flexiSceneMotionSensor);
             return;
         }
 
@@ -716,7 +716,7 @@ public class Room : IAsyncDisposable
             return;
         }
 
-        if (IgnorePresenceUntil != null && IgnorePresenceUntil > DateTime.Now)
+        if (IgnorePresenceUntil != null && IgnorePresenceUntil > _scheduler.Now)
         {
             _logger.LogDebug("{Room}: Mixin should have triggered  because motion sensor saw something moving but did not turn on lights because presence is ignored until {IgnorePresenceUntil}", Name, IgnorePresenceUntil?.ToString("T"));
             return;
@@ -839,7 +839,7 @@ public class Room : IAsyncDisposable
             return;
         }
 
-        if (IgnorePresenceUntil != null && IgnorePresenceUntil > DateTime.Now)
+        if (IgnorePresenceUntil != null && IgnorePresenceUntil > _scheduler.Now)
         {
             _logger.LogDebug("{Room}: Motion sensor saw something moving but did not turn on lights because presence is ignored until {IgnorePresenceUntil}", Name, IgnorePresenceUntil?.ToString("T"));
             return;
@@ -862,6 +862,7 @@ public class Room : IAsyncDisposable
             return;
 
         var flexiSceneMotionSensor = MotionSensors.Single(x => x.Sensor.EntityId == e.Sensor.EntityId);
+        flexiSceneMotionSensor.TurnOffAt = _scheduler.Now.Add(FlexiScenes.GetByName(flexiSceneMotionSensor.MixinScene).TurnOffAfterIfTriggeredByMotionSensor);
         await ScheduleTurnOffMixinAt(flexiSceneMotionSensor);
 
         var allMotionSensorsOff = MotionSensors.All(x => x.Sensor.IsOff());
