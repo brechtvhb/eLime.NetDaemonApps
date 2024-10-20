@@ -21,7 +21,8 @@ public class FlexiSceneMotionSensor
 
     public void SetTurnOffAt(DateTimeOffset turnOffAt)
     {
-        TurnOffAt = turnOffAt;
+        if (ActionsToExecuteOnTurnOff.Count > 0)
+            TurnOffAt = turnOffAt;
     }
     public void ClearTurnOffAt()
     {

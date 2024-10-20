@@ -602,7 +602,7 @@ public class Room : IAsyncDisposable
 
         if (flexiSceneMotionSensor.ActionsToExecuteOnTurnOff.Count == 0)
         {
-            _logger.LogInformation("{Room}: Will not schedule turn off for mixin '{Scene}' because there are not actions to execute on turn off.", Name, flexiSceneMotionSensor.MixinScene);
+            _logger.LogInformation("{Room}: Will not schedule turn off for mixin '{Scene}' because there are no actions to execute on turn off.", Name, flexiSceneMotionSensor.MixinScene);
             return;
         }
 
@@ -706,14 +706,6 @@ public class Room : IAsyncDisposable
         if (flexiSceneMotionSensor.MixinScene == null)
             return;
 
-        if (flexiSceneMotionSensor.TurnOffAt != null)
-        {
-            _logger.LogInformation("{Room}: Mixin scene '{Scene}' is already active clearing turn off at.", Name, flexiSceneMotionSensor.MixinScene);
-            ClearAutoTurnOffMixin(flexiSceneMotionSensor);
-            return;
-        }
-
-
         var flexiScene = FlexiScenes.GetByName(flexiSceneMotionSensor.MixinScene);
         if (flexiScene == null)
         {
@@ -730,6 +722,12 @@ public class Room : IAsyncDisposable
         if (IgnorePresenceUntil != null && IgnorePresenceUntil > _scheduler.Now)
         {
             _logger.LogDebug("{Room}: Mixin should have triggered  because motion sensor saw something moving but did not turn on lights because presence is ignored until {IgnorePresenceUntil}", Name, IgnorePresenceUntil?.ToString("T"));
+            return;
+        }
+        if (flexiSceneMotionSensor.TurnOffAt != null)
+        {
+            _logger.LogInformation("{Room}: Mixin scene '{Scene}' is already active clearing turn off at.", Name, flexiSceneMotionSensor.MixinScene);
+            ClearAutoTurnOffMixin(flexiSceneMotionSensor);
             return;
         }
 
