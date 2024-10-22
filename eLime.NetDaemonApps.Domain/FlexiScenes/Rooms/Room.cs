@@ -603,6 +603,7 @@ public class Room : IAsyncDisposable
         if (flexiSceneMotionSensor.ActionsToExecuteOnTurnOff.Count == 0)
         {
             _logger.LogInformation("{Room}: Will not schedule turn off for mixin '{Scene}' because there are no actions to execute on turn off.", Name, flexiSceneMotionSensor.MixinScene);
+            flexiSceneMotionSensor.ClearTurnOffAt();
             return;
         }
 
