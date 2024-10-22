@@ -638,14 +638,6 @@ public class Room : IAsyncDisposable
         TurnOffSchedule?.Dispose();
         TurnOffSchedule = null;
     }
-    private void ClearAutoTurnOffMixin(FlexiSceneMotionSensor flexiSceneMotionSensor)
-    {
-        if (flexiSceneMotionSensor.TurnOffAt == null)
-            return;
-
-        flexiSceneMotionSensor.ClearTurnOffAt();
-        _logger.LogTrace("{Room}: Reverse mixin actions will no longer be executed. Probably because the OFF actions were just executed or a motion sensor is active.", Name);
-    }
 
     private async Task<(Boolean offActionsExecuted, List<Action> reverseActions)> ExecuteActions(IReadOnlyCollection<Action> actions, bool detectStateChange = false)
     {
@@ -701,7 +693,7 @@ public class Room : IAsyncDisposable
 
     private async Task ExecuteMixinScene(String sensorId)
     {
-        var flexiSceneMotionSensor = MotionSensors.Single(x => x.Sensor.EntityId == sensorId);
+        var flexiSceneMotionSensor = _motionSensors.Single(x => x.Sensor.EntityId == sensorId);
 
         if (flexiSceneMotionSensor.MixinScene == null)
             return;
@@ -726,8 +718,8 @@ public class Room : IAsyncDisposable
         }
         if (flexiSceneMotionSensor.TurnOffAt != null)
         {
-            _logger.LogInformation("{Room}: Mixin scene '{Scene}' is already active clearing turn off at.", Name, flexiSceneMotionSensor.MixinScene);
-            ClearAutoTurnOffMixin(flexiSceneMotionSensor);
+            _logger.LogInformation("{Room}: Mixin scene '{Scene}' is already active clearing turn off at. Turn of att as {TurnOffAt}", Name, flexiSceneMotionSensor.MixinScene, flexiSceneMotionSensor.TurnOffAt?.ToString("O"));
+            flexiSceneMotionSensor.ClearTurnOffAt();
             return;
         }
 
