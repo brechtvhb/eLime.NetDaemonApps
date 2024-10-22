@@ -718,7 +718,7 @@ public class Room : IAsyncDisposable
         }
         if (flexiSceneMotionSensor.TurnOffAt != null)
         {
-            _logger.LogInformation("{Room}: Mixin scene '{Scene}' is already active clearing turn off at. Turn of att as {TurnOffAt}", Name, flexiSceneMotionSensor.MixinScene, flexiSceneMotionSensor.TurnOffAt?.ToString("O"));
+            _logger.LogInformation("{Room}: Mixin scene '{Scene}' is already active clearing turn off at. Turn off at as '{TurnOffAt}'", Name, flexiSceneMotionSensor.MixinScene, flexiSceneMotionSensor.TurnOffAt?.ToString("O"));
             flexiSceneMotionSensor.ClearTurnOffAt();
             return;
         }
