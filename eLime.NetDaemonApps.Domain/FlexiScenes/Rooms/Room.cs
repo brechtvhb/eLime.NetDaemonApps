@@ -303,6 +303,9 @@ public class Room : IAsyncDisposable
         if (!Switches.Any() && !MotionSensors.Any() && AutoTransition)
             FullyAutomated = true;
 
+        if (AutoTransition && FlexiScenes.All.Any(x => x.FullyAutomatedConditions.Any()))
+            FullyAutomated = true;
+
         if (FullyAutomated && FlexiScenes.All.All(x => !x.FullyAutomatedConditions.Any()))
             throw new Exception("Define at least one flexi scene with fully automated conditions when running in full automation mode (no switches & motion sensors defined & auto transition: true)");
 
