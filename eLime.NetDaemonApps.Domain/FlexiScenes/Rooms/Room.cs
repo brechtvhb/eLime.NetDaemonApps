@@ -152,7 +152,7 @@ public class Room : IAsyncDisposable
 
     public FlexiScenes FlexiScenes { get; }
     public FlexiScene? FlexiSceneThatShouldActivate => FlexiScenes.GetSceneThatShouldActivate(FlexiSceneSensors);
-
+    public FlexiScene? FlexiSceneThatShouldActivateFullyAutomated => FlexiScenes.GetSceneThatShouldActivateFullyAutomated(FlexiSceneSensors);
 
     private readonly IHaContext _haContext;
     private readonly ILogger _logger;
@@ -297,14 +297,14 @@ public class Room : IAsyncDisposable
         }
 
 
-        if (!Switches.Any() && !MotionSensors.Any() && AutoTransition == false)
+        if (!Switches.Any() && !MotionSensors.Any() && !AutoTransition)
             throw new Exception("Define at least one switch or motion sensor or run in full automation mode (auto transition true and at least one flexiscene with conditions)");
 
         if (!Switches.Any() && !MotionSensors.Any() && AutoTransition)
             FullyAutomated = true;
 
-        if (FullyAutomated && FlexiScenes.All.All(x => !x.Conditions.Any()))
-            throw new Exception("Define at least one flexi scene with conditions when running in full automation mode (no switches & motion sensors defined & auto transition: true)");
+        if (FullyAutomated && FlexiScenes.All.All(x => !x.FullyAutomatedConditions.Any()))
+            throw new Exception("Define at least one flexi scene with fully automated conditions when running in full automation mode (no switches & motion sensors defined & auto transition: true)");
 
         RetrieveSate().RunSync();
         EnsureSensorsExist().RunSync();
@@ -901,33 +901,73 @@ public class Room : IAsyncDisposable
         if (!AutoTransition)
             return;
 
-        if (FlexiScenes.Current == null && !FullyAutomated)
-            return;
-
-        //current flexi scene still valid
-        if (FlexiScenes.Current != null && FlexiScenes.Current.CanActivate(FlexiSceneSensors))
+        var initiateFullyAutomated = false;
+        switch (FlexiScenes.Current)
         {
-            _logger.LogInformation("{Room}: Operating mode of a scene changed but current scene is still valid. Will not auto transition", Name);
-            return;
+            case null when !FullyAutomated:
+                return;
+            case null when FullyAutomated:
+                initiateFullyAutomated = true;
+                break;
         }
 
-        if (FlexiSceneThatShouldActivate != null)
+
+        if (InitiatedBy == InitiatedBy.FullyAutomated || initiateFullyAutomated)
         {
-            _logger.LogInformation("{Room}: Auto transition was triggered.", Name);
-            await ExecuteFlexiScene(FlexiSceneThatShouldActivate, FullyAutomated ? InitiatedBy.FullyAutomated : InitiatedBy, true);
+            //current flexi scene still valid
+            if (FlexiScenes.Current != null && FlexiScenes.Current.CanActivateFullyAutomated(FlexiSceneSensors))
+            {
+                _logger.LogInformation("{Room}: Operating mode of a scene changed but current scene is still valid. Will not auto transition", Name);
+                return;
+            }
+
+            if (FlexiSceneThatShouldActivateFullyAutomated != null)
+            {
+                _logger.LogInformation("{Room}: Auto transition was triggered.", Name);
+                await ExecuteFlexiScene(FlexiSceneThatShouldActivateFullyAutomated, InitiatedBy.FullyAutomated, true);
+            }
+            else
+            {
+                switch (AutoTransitionTurnOffIfNoValidSceneFound)
+                {
+                    case true when FlexiScenes.Current != null:
+                        await ExecuteOffActions(triggeredByManualAction: false);
+                        break;
+                    case true when FlexiScenes.Current == null:
+                        break;
+                    default:
+                        _logger.LogInformation("{Room}: Auto transition was triggered but no flexi scene was found to transition to.", Name);
+                        break;
+                }
+            }
         }
         else
         {
-            switch (AutoTransitionTurnOffIfNoValidSceneFound)
+            //current flexi scene still valid
+            if (FlexiScenes.Current != null && FlexiScenes.Current.CanActivate(FlexiSceneSensors))
             {
-                case true when FlexiScenes.Current != null:
-                    await ExecuteOffActions(triggeredByManualAction: false);
-                    break;
-                case true when FlexiScenes.Current == null:
-                    break;
-                default:
-                    _logger.LogInformation("{Room}: Auto transition was triggered but no flexi scene was found to transition to.", Name);
-                    break;
+                _logger.LogInformation("{Room}: Operating mode of a scene changed but current scene is still valid. Will not auto transition", Name);
+                return;
+            }
+
+            if (FlexiSceneThatShouldActivate != null)
+            {
+                _logger.LogInformation("{Room}: Auto transition was triggered.", Name);
+                await ExecuteFlexiScene(FlexiSceneThatShouldActivate, InitiatedBy, true);
+            }
+            else
+            {
+                switch (AutoTransitionTurnOffIfNoValidSceneFound)
+                {
+                    case true when FlexiScenes.Current != null:
+                        await ExecuteOffActions(triggeredByManualAction: false);
+                        break;
+                    case true when FlexiScenes.Current == null:
+                        break;
+                    default:
+                        _logger.LogInformation("{Room}: Auto transition was triggered but no flexi scene was found to transition to.", Name);
+                        break;
+                }
             }
         }
 

@@ -574,6 +574,81 @@ namespace eLime.NetDaemonApps.Tests.Builders
             _config.AutoTransition = true;
             _config.MotionSensors = new List<MotionSensorConfig>();
 
+            _config.FlexiScenes = new List<FlexiSceneConfig>
+            {
+                new()
+                {
+                    Name = "morning",
+                    FullyAutomatedConditions = new List<ConditionConfig> {new() {Binary = "binary_sensor.operating_mode_morning"}},
+                    Actions = new List<ActionConfig> {new() {LightAction = LightAction.TurnOn, Light = "light.morning"}},
+                    TurnOffAfterIfTriggeredByMotionSensor = TimeSpan.FromMinutes(15),
+                    TurnOffAfterIfTriggeredBySwitch = TimeSpan.FromHours(2)
+                },
+                new()
+                {
+                    Name = "day",
+                    FullyAutomatedConditions = new List<ConditionConfig> {new() {Binary = "binary_sensor.operating_mode_day"}},
+                    Actions = new List<ActionConfig> {new() {LightAction = LightAction.TurnOn, Light = "light.day" } },
+                    TurnOffAfterIfTriggeredByMotionSensor = TimeSpan.FromMinutes(5),
+                    TurnOffAfterIfTriggeredBySwitch = TimeSpan.FromHours(4)
+                },
+                new()
+                {
+                    Name = "evening",
+                    FullyAutomatedConditions = new List<ConditionConfig> {new() {Binary = "binary_sensor.operating_mode_evening"}},
+                    Actions = new List<ActionConfig> {new() {LightAction = LightAction.TurnOn, Light = "light.evening" } },
+                    TurnOffAfterIfTriggeredByMotionSensor = TimeSpan.FromMinutes(60),
+                    TurnOffAfterIfTriggeredBySwitch = TimeSpan.FromHours(1)
+                }
+            };
+
+            _config.OffActions = new List<ActionConfig>
+            {
+                new() {LightAction = LightAction.TurnOff, Light = "light.morning"},
+                new() {LightAction = LightAction.TurnOff, Light = "light.day"},
+                new() {LightAction = LightAction.TurnOff, Light = "light.evening"}
+            };
+
+            return this;
+        }
+
+        public RoomBuilder FullyAutomatedWithoutFullyAutomatedConditions()
+        {
+            _config.AutoTransition = true;
+            _config.MotionSensors = new List<MotionSensorConfig>();
+
+            _config.FlexiScenes = new List<FlexiSceneConfig>
+            {
+                new()
+                {
+                    Name = "morning",
+                    Actions = new List<ActionConfig> {new() {LightAction = LightAction.TurnOn, Light = "light.morning"}},
+                    TurnOffAfterIfTriggeredByMotionSensor = TimeSpan.FromMinutes(15),
+                    TurnOffAfterIfTriggeredBySwitch = TimeSpan.FromHours(2)
+                },
+                new()
+                {
+                    Name = "day",
+                    Actions = new List<ActionConfig> {new() {LightAction = LightAction.TurnOn, Light = "light.day" } },
+                    TurnOffAfterIfTriggeredByMotionSensor = TimeSpan.FromMinutes(5),
+                    TurnOffAfterIfTriggeredBySwitch = TimeSpan.FromHours(4)
+                },
+                new()
+                {
+                    Name = "evening",
+                    Actions = new List<ActionConfig> {new() {LightAction = LightAction.TurnOn, Light = "light.evening" } },
+                    TurnOffAfterIfTriggeredByMotionSensor = TimeSpan.FromMinutes(60),
+                    TurnOffAfterIfTriggeredBySwitch = TimeSpan.FromHours(1)
+                }
+            };
+
+            _config.OffActions = new List<ActionConfig>
+            {
+                new() {LightAction = LightAction.TurnOff, Light = "light.morning"},
+                new() {LightAction = LightAction.TurnOff, Light = "light.day"},
+                new() {LightAction = LightAction.TurnOff, Light = "light.evening"}
+            };
+
             return this;
         }
 

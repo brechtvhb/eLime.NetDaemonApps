@@ -12,10 +12,12 @@ public class FlexiScene
 {
     public string Name { get; private init; }
 
-    private List<ICondition> _conditions = new();
+    private List<ICondition> _conditions = [];
     public IReadOnlyCollection<ICondition> Conditions => _conditions.AsReadOnly();
+    private List<ICondition> _fullyAutomatedConditions = [];
+    public IReadOnlyCollection<ICondition> FullyAutomatedConditions => _fullyAutomatedConditions.AsReadOnly();
 
-    private List<Action> _actions = new();
+    private List<Action> _actions = [];
     public IReadOnlyCollection<Action> Actions => _actions.AsReadOnly();
 
     public TimeSpan TurnOffAfterIfTriggeredBySwitch { get; private init; }
@@ -33,10 +35,11 @@ public class FlexiScene
         {
             Name = config.Name,
             _conditions = config.Conditions.ConvertToDomainModel(),
+            _fullyAutomatedConditions = config.FullyAutomatedConditions.ConvertToDomainModel(),
             _actions = config.Actions.ConvertToDomainModel(haContext),
             TurnOffAfterIfTriggeredByMotionSensor = config.TurnOffAfterIfTriggeredByMotionSensor ?? TimeSpan.FromMinutes(5),
             TurnOffAfterIfTriggeredBySwitch = config.TurnOffAfterIfTriggeredBySwitch ?? TimeSpan.FromHours(8),
-            _nextFlexiScenes = config.NextFlexiScenes?.ToList() ?? new List<string>()
+            _nextFlexiScenes = config.NextFlexiScenes?.ToList() ?? []
         };
 
         return flexiScene;
@@ -46,12 +49,17 @@ public class FlexiScene
     {
         return Conditions.All(x => x.Evaluate(flexiSceneSensors));
     }
+    public bool CanActivateFullyAutomated(IReadOnlyCollection<Entity> flexiSceneSensors)
+    {
+        return FullyAutomatedConditions.All(x => x.Evaluate(flexiSceneSensors));
+    }
 
     public IReadOnlyCollection<(string, ConditionSensorType)> GetSensorsIds()
     {
-        return Conditions
-            .SelectMany(x => x.GetSensorsIds())
-            .Distinct()
-            .ToList();
+        var mergedConditionSensors = new List<(string, ConditionSensorType)>();
+        mergedConditionSensors.AddRange(Conditions.SelectMany(x => x.GetSensorsIds()));
+        mergedConditionSensors.AddRange(FullyAutomatedConditions.SelectMany(x => x.GetSensorsIds()));
+
+        return mergedConditionSensors.Distinct().ToList();
     }
 }

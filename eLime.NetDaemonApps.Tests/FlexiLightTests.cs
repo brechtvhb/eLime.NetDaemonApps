@@ -246,7 +246,7 @@ public class FlexiLightTests
     public void FullyAutomated_Turns_on()
     {
         //Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).FullyAutomated().WithMultipleFlexiScenes().Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).FullyAutomated().Build();
 
         //Act
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
@@ -266,7 +266,7 @@ public class FlexiLightTests
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
 
         //Act
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).FullyAutomated().WithMultipleFlexiScenes().Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).FullyAutomated().Build();
 
         //Assert
         Assert.IsNotNull(room.FlexiScenes.Current);
@@ -281,7 +281,7 @@ public class FlexiLightTests
     public void FullyAutomated_Transitions()
     {
         //Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).FullyAutomated().WithMultipleFlexiScenes().Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).FullyAutomated().Build();
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
 
         //Act
@@ -298,7 +298,7 @@ public class FlexiLightTests
     public void FullyAutomated_Turns_Off_IfConfigured()
     {
         //Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).FullyAutomated().WithAutoTransitionTurnOfIfNoValidSceneFound().WithMultipleFlexiScenes().Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).FullyAutomated().WithAutoTransitionTurnOfIfNoValidSceneFound().Build();
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
 
         //Act
@@ -313,7 +313,7 @@ public class FlexiLightTests
     public void FullyAutomated_Does_Not_Turn_Off_If_Not_Configured()
     {
         //Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).FullyAutomated().WithMultipleFlexiScenes().Build();
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).FullyAutomated().Build();
         _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
 
         //Act
@@ -326,7 +326,7 @@ public class FlexiLightTests
     }
 
     [TestMethod]
-    public void FullyAutomated_Throws_Exception_If_No_Scene_With_Conditions()
+    public void FullyAutomated_Throws_Exception_If_No_Scene_With_Fully_Automated_Conditions()
     {
         //Arrange
         Exception exception = null;
@@ -334,13 +334,13 @@ public class FlexiLightTests
         // Act
         try
         {
-            var _ = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).FullyAutomated().Build();
+            var _ = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).FullyAutomatedWithoutFullyAutomatedConditions().Build();
         }
         catch (Exception ex) { exception = ex; }
 
         //Assert
         Assert.IsNotNull(exception);
-        Assert.IsTrue(exception.Message.Contains("Define at least one flexi scene with conditions"));
+        Assert.IsTrue(exception.Message.Contains("Define at least one flexi scene with fully automated conditions"));
     }
 
     [TestMethod]

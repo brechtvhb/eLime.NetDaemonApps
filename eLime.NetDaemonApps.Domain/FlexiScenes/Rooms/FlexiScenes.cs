@@ -22,6 +22,7 @@ public class FlexiScenes
 
     public IReadOnlyList<FlexiScene> All => _flexiScenes.AsReadOnly();
     internal FlexiScene? GetSceneThatShouldActivate(IReadOnlyCollection<Entity> flexiSceneSensors) => All.FirstOrDefault(x => x.CanActivate(flexiSceneSensors));
+    internal FlexiScene? GetSceneThatShouldActivateFullyAutomated(IReadOnlyCollection<Entity> flexiSceneSensors) => All.FirstOrDefault(x => x.CanActivateFullyAutomated(flexiSceneSensors));
     public FlexiScene? Current => All.SingleOrDefault(x => x.Name == CurrentFlexiScene);
     public FlexiScene? Initial => All.SingleOrDefault(x => x.Name == InitialFlexiScene);
 
