@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="MediatR" Version="12.4.1" />
     <PackageReference Include="NetDaemon.Extensions.Scheduling" Version="24.37.1" />
     <PackageReference Include="NetDaemon.Extensions.Mqtt" Version="24.37.1" />
     <PackageReference Include="NetDaemon.HassModel" Version="24.37.1" />

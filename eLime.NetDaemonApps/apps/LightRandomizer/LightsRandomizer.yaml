@@ -1,0 +1,12 @@
+﻿eLime.netDaemonApps.Config.LightsRandomizerConfig:
+  amountOfZonesToLight: 2
+  lightingAllowedSensor: "binary_sensor.outdoorlightingallowed"
+  zones:
+  - name: "Terrace"
+    scenes:
+    - "Default"
+    - "Border"
+    - "Shed wall"
+  - name: "Pond"
+    scenes:
+    - "Default"

@@ -1,4 +1,5 @@
 using eLime.NetDaemonApps.apps;
+using eLime.NetDaemonApps.Domain.Extensions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using NetDaemon.Extensions.Logging;
@@ -31,6 +32,7 @@ try
         .ConfigureServices((_, services) =>
             services
                 .AddAppsFromAssembly(Assembly.GetExecutingAssembly())
+                .RegisterRequestHandlers()
                 .AddNetDaemonStateManager()
                 .AddNetDaemonScheduler()
         )

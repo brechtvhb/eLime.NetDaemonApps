@@ -951,7 +951,8 @@ public class Room : IAsyncDisposable
             {
                 if (FlexiScenes.Current.CanActivateFullyAutomated(FlexiSceneSensors))
                 {
-                    _logger.LogInformation("{Room}: Operating mode of a scene changed but is still valid although it was initially triggered by motion. Will cancel auto turn off", Name);
+                    _logger.LogInformation("{Room}: Operating mode of a scene changed but is still valid although it was initially triggered by motion. Will cancel auto turn off.", Name);
+                    ClearAutoTurnOff();
                     await ExecuteFlexiScene(FlexiScenes.Current, InitiatedBy.FullyAutomated, true);
                     return;
                 }
