@@ -15,7 +15,7 @@ public class TurnOnZoneLightsCommandHandler(ILogger<TurnOnZoneLightsCommandHandl
         var sensorName = $"binary_sensor.light_randomizer_{command.Zone.MakeHaFriendly()}_{command.Scene.MakeHaFriendly()}";
         await mqttEntityManager.SetStateAsync(sensorName, "ON");
 
-        logger.LogDebug("TurnOnZoneLightsCommandHandler: Automated turn on of zone {Zone} ({Scene}).", command.Zone, command.Scene);
+        logger.LogDebug("TurnOnZoneLightsCommandHandler: Automated turn on for zone {Zone} ({Scene}).", command.Zone, command.Scene);
     }
 
 }

@@ -15,7 +15,7 @@ public class TurnOffZoneLightsCommandHandler(ILogger<TurnOffZoneLightsCommandHan
         var sensorName = $"binary_sensor.light_randomizer_{command.Zone.MakeHaFriendly()}_{command.Scene.MakeHaFriendly()}";
         await mqttEntityManager.SetStateAsync(sensorName, "OFF");
 
-        logger.LogDebug("TurnOffZoneLightsCommandHandler: Automated turn off of zone {Zone} ({Scene}).", command.Zone, command.Scene);
+        logger.LogDebug("TurnOffZoneLightsCommandHandler: Automated turn off for zone {Zone} ({Scene}).", command.Zone, command.Scene);
     }
 
 }
