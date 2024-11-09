@@ -186,6 +186,10 @@ public class Room : IAsyncDisposable
         AutoTransition = config.AutoTransition;
         AutoTransitionTurnOffIfNoValidSceneFound = config.AutoTransitionTurnOffIfNoValidSceneFound;
         SimulatePresenceSensor = !String.IsNullOrWhiteSpace(config.SimulatePresenceSensor) ? new BinarySensor(_haContext, config.SimulatePresenceSensor) : null;
+
+        if (SimulatePresenceSensor != null)
+            SimulatePresenceSensor.TurnedOff += SimulatePresenceSensor_TurnedOff;
+
         SimulatePresenceIgnoreDuration = config.SimulatePresenceIgnoreDuration ?? TimeSpan.FromMinutes(3);
         InitialClickAfterMotionBehaviour = config.InitialClickAfterMotionBehaviour == Config.FlexiLights.InitialClickAfterMotionBehaviour.ChangeOffDurationOnly ? InitialClickAfterMotionBehaviour.ChangeOffDurationOnly : InitialClickAfterMotionBehaviour.ChangeOFfDurationAndGoToNextFlexiScene;
         IlluminanceThreshold = config.IlluminanceThreshold;
@@ -1043,6 +1047,18 @@ public class Room : IAsyncDisposable
         await SetTurnOffAt(flexiSceneToSimulate);
         await DebounceUpdateInHomeAssistant();
     }
+    private async void SimulatePresenceSensor_TurnedOff(object? sender, BinarySensorEventArgs e)
+    {
+        //Set simulated lights to turned on by motion sensor so they turn off after x minutes
+        _logger.LogDebug("{Room}: Presence simulation no longer needed.", Name);
+        if (FlexiScenes.Current != null && FlexiScenes.Current.Name != FlexiScenes.GetSceneThatShouldActivateFullyAutomated(FlexiSceneSensors)?.Name)
+        {
+            await ExecuteFlexiScene(FlexiScenes.Current, InitiatedBy.Motion, true);
+            ClearAutoTurnOff();
+            await SetTurnOffAt(FlexiScenes.Current);
+            await DebounceUpdateInHomeAssistant();
+        }
+    }
 
 
     public ValueTask DisposeAsync()
@@ -1091,7 +1107,12 @@ public class Room : IAsyncDisposable
 
         GuardTask?.Dispose();
 
-        SimulatePresenceSensor?.Dispose();
+        if (SimulatePresenceSensor != null)
+        {
+            SimulatePresenceSensor.TurnedOff -= SimulatePresenceSensor_TurnedOff;
+            SimulatePresenceSensor.Dispose();
+        }
+
         SimulateTask?.Dispose();
 
         ClearIgnorePresenceSchedule?.Dispose();
