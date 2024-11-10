@@ -12,17 +12,19 @@ public class GridMonitor : IDisposable, IGridMonitor
     public NumericSensor GridPowerImportSensor { get; }
     public NumericSensor GridPowerExportSensor { get; }
     public NumericEntity PeakImportSensor { get; }
-
+    public NumericEntity CurrentAverageDemandEntity { get; }
     public double CurrentLoad => GridPowerImportSensor.State - GridPowerExportSensor.State ?? 0;
 
     public Double PeakLoad => (PeakImportSensor.State * 1000 ?? 0) > 2500
         ? PeakImportSensor.State * 1000 ?? 0
         : 2500;
 
+    public Double CurrentAverageDemand => CurrentAverageDemandEntity.State * 1000 ?? 0;
+
     private readonly FixedSizeConcurrentQueue<(DateTimeOffset Moment, double Value)> _lastImportValues = new(200);
     private readonly FixedSizeConcurrentQueue<(DateTimeOffset Moment, double Value)> _lastExportValues = new(200);
 
-    public GridMonitor(IScheduler scheduler, NumericEntity gridVoltageSensor, NumericSensor gridPowerImportSensor, NumericSensor gridPowerExportSensor, NumericEntity peakImportSensor)
+    public GridMonitor(IScheduler scheduler, NumericEntity gridVoltageSensor, NumericSensor gridPowerImportSensor, NumericSensor gridPowerExportSensor, NumericEntity peakImportSensor, NumericEntity currentAverageDemandEntity)
     {
         _scheduler = scheduler;
         GridVoltageSensor = gridVoltageSensor;
@@ -31,6 +33,7 @@ public class GridMonitor : IDisposable, IGridMonitor
         GridPowerExportSensor = gridPowerExportSensor;
         GridPowerExportSensor.Changed += GridPowerExportSensor_Changed;
         PeakImportSensor = peakImportSensor;
+        CurrentAverageDemandEntity = currentAverageDemandEntity;
     }
 
     private void GridPowerImportSensor_Changed(object? sender, NumericSensorEventArgs e)

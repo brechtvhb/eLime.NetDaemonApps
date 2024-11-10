@@ -87,14 +87,14 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         BalanceOnBehalfOf = balanceOnBehalfOf;
     }
 
-    public (Double current, Double netPowerChange) Rebalance(double netGridUsage, double trailingNetGridUsage, double peakUsage, double totalNetChange)
+    public (Double current, Double netPowerChange) Rebalance(double netGridUsage, double trailingNetGridUsage, double peakUsage, double currentAverageDemand, double totalNetChange)
     {
         if (_lastCurrentChange?.Add(MinimumRebalancingInterval) > _scheduler.Now)
             return (0, 0);
 
         var currentChargerCurrent = CurrentEntity.State ?? 0;
 
-        var currentAdjustment = GetBalancingAdjustedGridCurrent(netGridUsage + totalNetChange, trailingNetGridUsage + totalNetChange, peakUsage);
+        var currentAdjustment = GetBalancingAdjustedGridCurrent(netGridUsage + totalNetChange, trailingNetGridUsage + totalNetChange, peakUsage, currentAverageDemand);
 
         double toBeChargerCurrent;
         double toBeCarCurrent = 0;
@@ -124,7 +124,7 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         return (ConnectedCar?.CanSetCurrent ?? false ? carCurrent : chargerCurrent, netCurrentChange * TotalVoltage);
     }
 
-    private double GetBalancingAdjustedGridCurrent(double netGridUsage, double trailingNetGridUsage, double peakUsage)
+    private double GetBalancingAdjustedGridCurrent(double netGridUsage, double trailingNetGridUsage, double peakUsage, double currentAverageDemand)
     {
         var currentAdjustment = BalancingMethod switch
         {
@@ -132,10 +132,24 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
             BalancingMethod.NearPeak => GetNearPeakAdjustedGridCurrent(netGridUsage, peakUsage),
             BalancingMethod.SolarPreferred => GetSolarPreferredAdjustedGridCurrent(trailingNetGridUsage),
             BalancingMethod.MidPoint => GetMidpointAdjustedGridCurrent(trailingNetGridUsage),
+            BalancingMethod.MaximizeQuarterPeak => GetMaximizeQuarterPeakAdjustedGridCurrent(netGridUsage, peakUsage, currentAverageDemand),
             _ => GetSolarOnlyAdjustedGridCurrent(trailingNetGridUsage)
         };
 
         return currentAdjustment;
+    }
+
+    public double GetMaximizeQuarterPeakAdjustedGridCurrent(double netGridUsage, double peakUsageThisMonth, double currentAverageDemand)
+    {
+        var availableLoadToReachPeak = peakUsageThisMonth - currentAverageDemand;
+        var remainingMinutesThisQuarter = Math.Ceiling((((_scheduler.Now.Minute * 60) + _scheduler.Now.Second) % (15 * 60)) / 60d);
+        var adjustedLoadForRemainingTime = 15 / remainingMinutesThisQuarter * availableLoadToReachPeak;
+
+        Logger.LogDebug($"Available load to reach peak: {availableLoadToReachPeak}W. Remaining minutes this quarter: {remainingMinutesThisQuarter}. Adjusted load for remaining time: {adjustedLoadForRemainingTime:N0}W. ");
+        var adjustedCurrent = Math.Round((netGridUsage - adjustedLoadForRemainingTime) / TotalVoltage, 0, MidpointRounding.ToPositiveInfinity);
+        Logger.LogDebug($"Adjusted current: {adjustedCurrent}A");
+
+        return adjustedCurrent;
     }
 
     public double GetNearPeakAdjustedGridCurrent(double netGridUsage, double peakUsageThisMonth)

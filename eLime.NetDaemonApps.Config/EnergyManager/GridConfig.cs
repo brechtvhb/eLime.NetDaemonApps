@@ -6,4 +6,5 @@ public class GridConfig
     public string ImportEntity { get; set; }
     public string ExportEntity { get; set; }
     public string PeakImportEntity { get; set; }
+    public string CurrentAverageDemandEntity { get; set; }
 }
