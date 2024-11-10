@@ -142,7 +142,7 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
     public double GetMaximizeQuarterPeakAdjustedGridCurrent(double netGridUsage, double peakUsageThisMonth, double currentAverageDemand)
     {
         var availableLoadToReachPeak = peakUsageThisMonth - currentAverageDemand;
-        var remainingMinutesThisQuarter = Math.Ceiling((((_scheduler.Now.Minute * 60) + _scheduler.Now.Second) % (15 * 60)) / 60d);
+        var remainingMinutesThisQuarter = 15 - Math.Ceiling((((_scheduler.Now.Minute * 60) + _scheduler.Now.Second) % (15 * 60)) / 60d);
         var adjustedLoadForRemainingTime = 15 / remainingMinutesThisQuarter * availableLoadToReachPeak;
 
         Logger.LogDebug($"Available load to reach peak: {availableLoadToReachPeak}W. Remaining minutes this quarter: {remainingMinutesThisQuarter}. Adjusted load for remaining time: {adjustedLoadForRemainingTime:N0}W. ");
