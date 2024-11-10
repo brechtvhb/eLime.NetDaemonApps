@@ -185,7 +185,7 @@ public class Room : IAsyncDisposable
 
         AutoTransition = config.AutoTransition;
         AutoTransitionTurnOffIfNoValidSceneFound = config.AutoTransitionTurnOffIfNoValidSceneFound;
-        SimulatePresenceSensor = !String.IsNullOrWhiteSpace(config.SimulatePresenceSensor) ? new BinarySensor(_haContext, config.SimulatePresenceSensor) : null;
+        SimulatePresenceSensor = !String.IsNullOrWhiteSpace(config.SimulatePresenceSensor) ? BinarySensor.Create(_haContext, config.SimulatePresenceSensor) : null;
 
         if (SimulatePresenceSensor != null)
             SimulatePresenceSensor.TurnedOff += SimulatePresenceSensor_TurnedOff;
