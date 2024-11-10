@@ -145,7 +145,7 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         var remainingMinutesThisQuarter = 15 - Math.Ceiling((((_scheduler.Now.Minute * 60) + _scheduler.Now.Second) % (15 * 60)) / 60d);
         var adjustedLoadForRemainingTime = 15 / remainingMinutesThisQuarter * availableLoadToReachPeak;
 
-        Logger.LogDebug($"Available load to reach peak: {availableLoadToReachPeak}W. Remaining minutes this quarter: {remainingMinutesThisQuarter}. Adjusted load for remaining time: {adjustedLoadForRemainingTime:#####}W. ");
+        Logger.LogDebug($"Peak this month: {peakUsageThisMonth}W. Average load this quarter: {currentAverageDemand}W. Available load to reach peak: {availableLoadToReachPeak}W. Remaining minutes this quarter: {remainingMinutesThisQuarter}. Adjusted load for remaining time: {adjustedLoadForRemainingTime:#####}W. ");
         var adjustedCurrent = Math.Round((netGridUsage - adjustedLoadForRemainingTime) / TotalVoltage, 0, MidpointRounding.ToPositiveInfinity);
         Logger.LogDebug($"Adjusted current: {adjustedCurrent}A");
 
