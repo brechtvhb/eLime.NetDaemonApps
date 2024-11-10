@@ -143,6 +143,10 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
     {
         var availableLoadToReachPeak = peakUsageThisMonth - currentAverageDemand;
         var remainingMinutesThisQuarter = 15 - ((((_scheduler.Now.Minute * 60) + _scheduler.Now.Second) % (15 * 60)) / 60d);
+
+        if (remainingMinutesThisQuarter < 0.5)
+            remainingMinutesThisQuarter = 0.5;
+
         var adjustedLoadForRemainingTime = 15 / remainingMinutesThisQuarter * availableLoadToReachPeak;
 
         Logger.LogDebug($"Peak this month: {peakUsageThisMonth}W. Average load this quarter: {currentAverageDemand}W. Available load to reach peak: {availableLoadToReachPeak}W. Remaining minutes this quarter: {remainingMinutesThisQuarter:N1}. Adjusted load for remaining time: {adjustedLoadForRemainingTime:#####}W. ");
@@ -306,8 +310,8 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         if (CurrentCurrentForConnectedCar > MinimumCurrentForConnectedCar)
             return false;
 
-        //Just rebalanced, give it one cycle
-        if (_lastCurrentChange?.Add(MinimumRebalancingInterval) > now || ConnectedCar?.LastCurrentChange?.Add(MinimumRebalancingInterval) > now)
+        //Just rebalanced, give it one cycle (might need more time as peak load is validated over past 3 minutes, hence * 2 for the moment
+        if (_lastCurrentChange?.Add(MinimumRebalancingInterval * 2) > now || ConnectedCar?.LastCurrentChange?.Add(MinimumRebalancingInterval * 2) > now)
             return false;
 
         return true;
