@@ -67,7 +67,7 @@ jobs:
             type=ref,event=pr
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
-      - uses: actions/delete-package-versions@v4
+      - uses: actions/delete-package-versions@v5
         with: 
           package-name: 'elime.netdaemonapps'
           package-type: 'container'
