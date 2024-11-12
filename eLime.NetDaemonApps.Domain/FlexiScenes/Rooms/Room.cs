@@ -1049,15 +1049,19 @@ public class Room : IAsyncDisposable
     }
     private async void SimulatePresenceSensor_TurnedOff(object? sender, BinarySensorEventArgs e)
     {
+        if (FlexiScenes.Current == null)
+            return;
+
+        if (FullyAutomated && FlexiScenes.Current.Name == FlexiScenes.GetSceneThatShouldActivateFullyAutomated(FlexiSceneSensors)?.Name)
+            return;
+
         //Set simulated lights to turned on by motion sensor so they turn off after x minutes
         _logger.LogDebug("{Room}: Presence simulation no longer needed.", Name);
-        if (FlexiScenes.Current != null && FlexiScenes.Current.Name != FlexiScenes.GetSceneThatShouldActivateFullyAutomated(FlexiSceneSensors)?.Name)
-        {
-            await ExecuteFlexiScene(FlexiScenes.Current, InitiatedBy.Motion, true);
-            ClearAutoTurnOff();
-            await SetTurnOffAt(FlexiScenes.Current);
-            await DebounceUpdateInHomeAssistant();
-        }
+
+        await ExecuteFlexiScene(FlexiScenes.Current, InitiatedBy.Motion, true);
+        ClearAutoTurnOff();
+        await SetTurnOffAt(FlexiScenes.Current);
+        await DebounceUpdateInHomeAssistant();
     }
 
 
