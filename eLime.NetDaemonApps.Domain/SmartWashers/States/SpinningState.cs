@@ -8,7 +8,7 @@ public class SpinningState : SmartWasherState
     internal static readonly TimeSpan EstimatedDuration = TimeSpan.FromMinutes(15);
 
     private readonly TimeSpan minDuration = TimeSpan.FromMinutes(5);
-    private readonly TimeSpan maxDuration = TimeSpan.FromMinutes(20);
+    private readonly TimeSpan maxDuration = TimeSpan.FromMinutes(25);
     private DateTimeOffset? belowThresholdSince = null;
 
     internal override void Enter(ILogger logger, IScheduler scheduler, SmartWasher context)
