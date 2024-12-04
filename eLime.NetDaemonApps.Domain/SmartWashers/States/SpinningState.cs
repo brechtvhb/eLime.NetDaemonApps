@@ -5,7 +5,7 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers.States;
 
 public class SpinningState : SmartWasherState
 {
-    internal static readonly TimeSpan EstimatedDuration = TimeSpan.FromMinutes(15);
+    internal static readonly TimeSpan EstimatedDuration = TimeSpan.FromMinutes(20);
 
     private readonly TimeSpan minDuration = TimeSpan.FromMinutes(5);
     private readonly TimeSpan maxDuration = TimeSpan.FromMinutes(25);

@@ -5,15 +5,15 @@ namespace eLime.NetDaemonApps.Domain.FlexiScenes.Rooms;
 
 public class FlexiScenes
 {
-    internal List<FlexiSceneChange> Changes { get; set; } = new();
-    public TimeSpan SaveChangesFor = TimeSpan.FromDays(7);
+    internal List<FlexiSceneChange> Changes { get; set; } = [];
+    public TimeSpan SaveChangesFor = TimeSpan.FromDays(8);
 
     private string? CurrentFlexiScene { get; set; }
 
     //used when cycling through scenes
     private string? InitialFlexiScene { get; set; }
 
-    private readonly CircularReadOnlyList<FlexiScene> _flexiScenes = new();
+    private readonly CircularReadOnlyList<FlexiScene> _flexiScenes = [];
 
     internal FlexiScenes(IEnumerable<FlexiScene> flexiScenes)
     {
@@ -93,7 +93,14 @@ public class FlexiScenes
 
     internal FlexiScene? GetFlexiSceneToSimulate(DateTimeOffset? now)
     {
-        var change = Changes.LastOrDefault(x => x.ChangedAt < now - SaveChangesFor);
+        var changeSince = now?.DayOfWeek switch
+        {
+            DayOfWeek.Tuesday => TimeSpan.FromDays(1),
+            DayOfWeek.Thursday => TimeSpan.FromDays(1),
+            _ => TimeSpan.FromDays(7),
+        };
+
+        var change = Changes.LastOrDefault(x => x.ChangedAt < now - changeSince);
 
         return change?.Scene == null ? null : GetByName(change.Scene);
     }
