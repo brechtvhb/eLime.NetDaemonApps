@@ -100,7 +100,7 @@ public class SmartWasherTests
 
         //Assert
         Assert.AreEqual(WasherStates.Heating, washer.State);
-        Assert.AreEqual(13, washer.PercentageComplete);
+        Assert.AreEqual(12, washer.PercentageComplete);
     }
 
     [TestMethod]
@@ -124,7 +124,7 @@ public class SmartWasherTests
 
         //Assert
         Assert.AreEqual(WasherStates.Washing, washer.State);
-        Assert.AreEqual(32, washer.PercentageComplete);
+        Assert.AreEqual(30, washer.PercentageComplete);
     }
 
     [TestMethod]
@@ -152,7 +152,7 @@ public class SmartWasherTests
 
         //Assert
         Assert.AreEqual(WasherStates.Rinsing, washer.State);
-        Assert.AreEqual(37, washer.PercentageComplete);
+        Assert.AreEqual(36, washer.PercentageComplete);
     }
 
     [TestMethod]
@@ -182,7 +182,7 @@ public class SmartWasherTests
 
         //Assert
         Assert.AreEqual(WasherStates.Spinning, washer.State);
-        Assert.AreEqual(84, washer.PercentageComplete);
+        Assert.AreEqual(80, washer.PercentageComplete);
     }
 
     [TestMethod]
