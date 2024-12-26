@@ -978,6 +978,8 @@ public class FlexiLightTests
     public void PresenceSensor_Simulates_Presence()
     {
         // Arrange
+        var thisWeeksMonday = DateTime.Today.AddDays(-((int)DateTime.Today.DayOfWeek - (int)DayOfWeek.Monday)); // Calculate the difference between today and this week's Monday
+        _testCtx = AppTestContext.Create(thisWeeksMonday);
         _testCtx.TriggerStateChange(new BinarySensor(_testCtx.HaContext, "input_boolean.away"), "on");
         A.CallTo(() => _fileStorage.Get<FlexiSceneFileStorage>("FlexiScenes", "office")).Returns(new FlexiSceneFileStorage
         {
@@ -1005,6 +1007,8 @@ public class FlexiLightTests
     public void PresenceSensor_DoesNotTurnOffImmediatelyAfterManualTrigger()
     {
         // Arrange
+        var thisWeeksMonday = DateTime.Today.AddDays(-((int)DateTime.Today.DayOfWeek - (int)DayOfWeek.Monday)); // Calculate the difference between today and this week's Monday
+        _testCtx = AppTestContext.Create(thisWeeksMonday);
         _testCtx.TriggerStateChange(new BinarySensor(_testCtx.HaContext, "input_boolean.away"), "on");
         A.CallTo(() => _fileStorage.Get<FlexiSceneFileStorage>("FlexiScenes", "office")).Returns(new FlexiSceneFileStorage
         {
@@ -1036,16 +1040,18 @@ public class FlexiLightTests
     public void PresenceSensor_Simulates_OffActions()
     {
         // Arrange
+        var thisWeeksMonday = DateTime.Today.AddDays(-((int)DateTime.Today.DayOfWeek - (int)DayOfWeek.Monday)); // Calculate the difference between today and this week's Monday
+        _testCtx = AppTestContext.Create(thisWeeksMonday);
         _testCtx.TriggerStateChange(new BinarySensor(_testCtx.HaContext, "input_boolean.away"), "on");
         A.CallTo(() => _fileStorage.Get<FlexiSceneFileStorage>("FlexiScenes", "office")).Returns(new FlexiSceneFileStorage
         {
             Enabled = true,
-            Changes = new List<FlexiSceneChange>
-            {
-                new() { ChangedAt = _testCtx.Scheduler.Now.AddDays(-7).AddHours(-1), Scene = "morning"},
-                new() { ChangedAt = _testCtx.Scheduler.Now.AddDays(-7).AddHours(1), Scene = "off"},
-                new() { ChangedAt = _testCtx.Scheduler.Now.AddDays(-7).AddHours(2), Scene = "day"}
-            }
+            Changes =
+            [
+                new FlexiSceneChange { ChangedAt = _testCtx.Scheduler.Now.AddDays(-7).AddHours(-1), Scene = "morning" },
+                new FlexiSceneChange { ChangedAt = _testCtx.Scheduler.Now.AddDays(-7).AddHours(1), Scene = "off" },
+                new FlexiSceneChange { ChangedAt = _testCtx.Scheduler.Now.AddDays(-7).AddHours(2), Scene = "day" }
+            ]
         });
 
         var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, "office").WithSimulatePresenceSensor().WithMultipleFlexiScenes().Build();
