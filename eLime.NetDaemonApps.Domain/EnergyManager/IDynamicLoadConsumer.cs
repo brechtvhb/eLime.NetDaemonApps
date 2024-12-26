@@ -24,6 +24,7 @@ public enum BalancingMethod
     SolarOnly,
     MidPoint,
     SolarPreferred,
+    MidPeak,
     NearPeak,
     MaximizeQuarterPeak
 }

@@ -13,7 +13,7 @@ public class GridMonitor : IDisposable, IGridMonitor
     public NumericSensor GridPowerExportSensor { get; }
     public NumericEntity PeakImportSensor { get; }
     public NumericEntity CurrentAverageDemandEntity { get; }
-    public double CurrentLoad => GridPowerImportSensor.State - GridPowerExportSensor.State ?? 0;
+    public double CurrentLoad => (GridPowerImportSensor.State - GridPowerExportSensor.State) ?? 2500; //Could happen if the sensor is unavailable, we don't want infinite power consumption then, which is the case when we would set the default value to 0 
 
     public Double PeakLoad => (PeakImportSensor.State * 1000 ?? 0) > 2500
         ? PeakImportSensor.State * 1000 ?? 0

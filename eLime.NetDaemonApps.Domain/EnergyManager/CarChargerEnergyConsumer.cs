@@ -130,6 +130,7 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         {
             _ when CriticallyNeeded?.IsOn() == true => GetNearPeakAdjustedGridCurrent(netGridUsage, peakUsage),
             BalancingMethod.NearPeak => GetNearPeakAdjustedGridCurrent(netGridUsage, peakUsage),
+            BalancingMethod.MidPeak => GetMidPeakAdjustedGridCurrent(netGridUsage, peakUsage),
             BalancingMethod.SolarPreferred => GetSolarPreferredAdjustedGridCurrent(trailingNetGridUsage),
             BalancingMethod.MidPoint => GetMidpointAdjustedGridCurrent(trailingNetGridUsage),
             BalancingMethod.MaximizeQuarterPeak => GetMaximizeQuarterPeakAdjustedGridCurrent(netGridUsage, peakUsage, currentAverageDemand),
@@ -159,6 +160,11 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
     public double GetNearPeakAdjustedGridCurrent(double netGridUsage, double peakUsageThisMonth)
     {
         return Math.Round((netGridUsage - peakUsageThisMonth) / TotalVoltage, 0, MidpointRounding.ToPositiveInfinity);
+    }
+
+    public double GetMidPeakAdjustedGridCurrent(double netGridUsage, double peakUsageThisMonth)
+    {
+        return Math.Round((netGridUsage - (peakUsageThisMonth / 2)) / TotalVoltage, 0, MidpointRounding.ToPositiveInfinity);
     }
 
     private double GetSolarPreferredAdjustedGridCurrent(double trailingNetGridUsage)
@@ -286,7 +292,7 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         if (CriticallyNeeded?.EntityState?.LastUpdated?.AddMinutes(3) > now)
             return false;
 
-        if (BalancingMethod == BalancingMethod.NearPeak)
+        if (BalancingMethod is BalancingMethod.MaximizeQuarterPeak or BalancingMethod.NearPeak or BalancingMethod.MidPeak)
             return false;
 
         if (_balancingMethodLastChangedAt?.AddMinutes(3) > now)
