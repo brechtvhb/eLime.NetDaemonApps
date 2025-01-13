@@ -164,7 +164,12 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 
     public double GetMidPeakAdjustedGridCurrent(double netGridUsage, double peakUsageThisMonth)
     {
-        return Math.Round((netGridUsage - (peakUsageThisMonth / 2)) / TotalVoltage, 0, MidpointRounding.ToPositiveInfinity);
+        var midPoint = TotalVoltage * 0.5;
+        var currentDifference = ((peakUsageThisMonth / 2) - midPoint) / TotalVoltage;
+
+        return currentDifference is < 0.65d and > -0.65d
+            ? 0
+            : Math.Round(currentDifference, 0, MidpointRounding.ToPositiveInfinity);
     }
 
     private double GetSolarPreferredAdjustedGridCurrent(double trailingNetGridUsage)
