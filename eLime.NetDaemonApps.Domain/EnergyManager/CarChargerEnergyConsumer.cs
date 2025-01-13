@@ -166,7 +166,7 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
     {
         var currentDifference = (peakUsageThisMonth / 2) / TotalVoltage;
 
-        return currentDifference is < 0.65d and > -0.65d
+        return currentDifference is < 0.70 and > -0.70d
             ? 0
             : Math.Round(currentDifference, 0, MidpointRounding.ToPositiveInfinity);
     }
