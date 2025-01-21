@@ -48,10 +48,15 @@ public static class ConfigExtensions
             if (consumer.Triggered != null)
             {
                 var socket = BinarySwitch.Create(ha, consumer.Triggered.SocketEntity);
+                BinarySwitch pauseSwitch = null;
+
+                if (!String.IsNullOrWhiteSpace(consumer.Triggered.PauseSwitch))
+                    pauseSwitch = BinarySwitch.Create(ha, consumer.Triggered.SocketEntity);
+
                 var stateSensor = TextSensor.Create(ha, consumer.Triggered.StateSensor);
                 var stateMap = consumer.Triggered.PeakLoads.Select(x => (x.State, x.PeakLoad)).ToList();
 
-                energyConsumer = new TriggeredEnergyConsumer(logger, consumer.Name, powerUsageEntity, criticallyNeededEntity, consumer.SwitchOnLoad, consumer.SwitchOffLoad, consumer.MinimumRuntime, consumer.MaximumRuntime, consumer.MinimumTimeout, consumer.MaximumTimeout, timeWindows, config.Timezone, socket, stateMap, stateSensor, consumer.Triggered.StartState, consumer.Triggered.CompletedState, consumer.Triggered.CriticalState, consumer.Triggered.CanForceShutdown, consumer.Triggered.ShutDownOnComplete);
+                energyConsumer = new TriggeredEnergyConsumer(logger, consumer.Name, powerUsageEntity, criticallyNeededEntity, consumer.SwitchOnLoad, consumer.SwitchOffLoad, consumer.MinimumRuntime, consumer.MaximumRuntime, consumer.MinimumTimeout, consumer.MaximumTimeout, timeWindows, config.Timezone, socket, pauseSwitch, stateMap, stateSensor, consumer.Triggered.StartState, consumer.Triggered.PausedState, consumer.Triggered.CompletedState, consumer.Triggered.CriticalState, consumer.Triggered.CanPause, consumer.Triggered.ShutDownOnComplete);
             }
 
             if (consumer.CarCharger != null)

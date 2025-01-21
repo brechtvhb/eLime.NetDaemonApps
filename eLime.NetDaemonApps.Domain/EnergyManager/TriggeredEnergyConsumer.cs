@@ -8,15 +8,16 @@ namespace eLime.NetDaemonApps.Domain.EnergyManager;
 public class TriggeredEnergyConsumer : EnergyConsumer
 {
     public BinarySwitch Socket { get; }
-
+    public BinarySwitch? PauseSwitch { get; }
     public override bool Running => Socket.IsOn();
 
 
     public TextSensor StateSensor { get; }
     public String StartState { get; }
+    public String? PausedState { get; }
     public String CompletedState { get; }
     public String? CriticalState { get; }
-    public Boolean CanForceShutdown { get; }
+    public Boolean CanPause { get; }
     public Boolean ShutDownOnComplete { get; }
 
     public List<(String State, Double PeakLoad)> StatePeakLoads { get; }
@@ -42,22 +43,25 @@ public class TriggeredEnergyConsumer : EnergyConsumer
     }
 
     public TriggeredEnergyConsumer(ILogger logger, String name, NumericEntity powerUsage, BinarySensor? criticallyNeeded, Double switchOnLoad, Double switchOffLoad, TimeSpan? minimumRuntime, TimeSpan? maximumRuntime, TimeSpan? minimumTimeout,
-        TimeSpan? maximumTimeout, List<TimeWindow> timeWindows, String timezone, BinarySwitch socket, List<(String State, Double PeakLoad)> peakLoads, TextSensor stateSensor, String startState, String completedState, String criticalState, bool canForceShutdown, bool shutDownOnComplete)
+        TimeSpan? maximumTimeout, List<TimeWindow> timeWindows, String timezone, BinarySwitch socket, BinarySwitch? pauseSwitch, List<(String State, Double PeakLoad)> peakLoads, TextSensor stateSensor, String startState, String? pausedState, String completedState, String criticalState, bool canPause, bool shutDownOnComplete)
     {
         SetCommonFields(logger, name, powerUsage, criticallyNeeded, switchOnLoad, switchOffLoad, minimumRuntime, maximumRuntime, minimumTimeout, maximumTimeout, timeWindows, timezone);
         Socket = socket;
         Socket.TurnedOn += Socket_TurnedOn;
         Socket.TurnedOff += Socket_TurnedOff;
 
+        PauseSwitch = pauseSwitch;
+
         StateSensor = stateSensor;
         StateSensor.StateChanged += StateSensor_StateChanged;
 
         StartState = startState;
+        PausedState = pausedState;
         CompletedState = completedState;
         CriticalState = criticalState;
 
         StatePeakLoads = peakLoads;
-        CanForceShutdown = canForceShutdown;
+        CanPause = canPause;
         ShutDownOnComplete = shutDownOnComplete;
     }
 
@@ -66,10 +70,11 @@ public class TriggeredEnergyConsumer : EnergyConsumer
         return Running switch
         {
             true when StateSensor.State == CompletedState => EnergyConsumerState.Off,
+            true when StateSensor.State == PausedState => EnergyConsumerState.NeedsEnergy,
             true => EnergyConsumerState.Running,
-            false when StateSensor.State == StartState && CriticallyNeeded != null && CriticallyNeeded.IsOn() => EnergyConsumerState.CriticallyNeedsEnergy,
+            false when (StateSensor.State == StartState || StateSensor.State == PausedState) && CriticallyNeeded != null && CriticallyNeeded.IsOn() => EnergyConsumerState.CriticallyNeedsEnergy,
             false when StateSensor.State == CriticalState && !String.IsNullOrWhiteSpace(CriticalState) => EnergyConsumerState.CriticallyNeedsEnergy,
-            false when StateSensor.State == StartState => EnergyConsumerState.NeedsEnergy,
+            false when (StateSensor.State == StartState || StateSensor.State == PausedState) => EnergyConsumerState.NeedsEnergy,
             false => EnergyConsumerState.Off,
         };
     }
@@ -77,6 +82,9 @@ public class TriggeredEnergyConsumer : EnergyConsumer
 
     public override bool CanStart(DateTimeOffset now)
     {
+        if (StateSensor.State == PausedState)
+            return true;
+
         if (State is EnergyConsumerState.Running or EnergyConsumerState.Off)
             return false;
 
@@ -97,7 +105,7 @@ public class TriggeredEnergyConsumer : EnergyConsumer
         if (CriticallyNeeded != null && CriticallyNeeded.IsOn())
             return false;
 
-        if (!CanForceShutdown)
+        if (!CanPause)
             return false;
 
         return true;
@@ -108,7 +116,7 @@ public class TriggeredEnergyConsumer : EnergyConsumer
         if (MinimumRuntime != null && StartedAt?.Add(MinimumRuntime.Value) > now)
             return false;
 
-        if (!CanForceShutdown)
+        if (!CanPause)
             return false;
 
         return true;
@@ -116,13 +124,35 @@ public class TriggeredEnergyConsumer : EnergyConsumer
 
     public override void TurnOn()
     {
+        if (StateSensor.State == PausedState && PauseSwitch != null)
+        {
+            PauseSwitch.TurnOn();
+            return;
+        }
+
         Socket.TurnOn();
     }
 
     public override void TurnOff()
     {
-        if (CanForceShutdown || (ShutDownOnComplete && StateSensor.State == CompletedState))
-            Socket.TurnOff();
+        switch (ShutDownOnComplete)
+        {
+            case true when StateSensor.State == CompletedState:
+                Socket.TurnOff();
+                break;
+            case false when StateSensor.State == CompletedState:
+                return;
+        }
+
+        switch (CanPause)
+        {
+            case true when PauseSwitch != null:
+                PauseSwitch.TurnOff();
+                break;
+            case true:
+                Socket.TurnOff();
+                break;
+        }
     }
 
     public override void DisposeInternal()
@@ -130,6 +160,8 @@ public class TriggeredEnergyConsumer : EnergyConsumer
         Socket.TurnedOn -= Socket_TurnedOn;
         Socket.TurnedOn -= Socket_TurnedOff;
         Socket.Dispose();
+
+        PauseSwitch?.Dispose();
 
         StateSensor.StateChanged -= StateSensor_StateChanged;
         StateSensor.Dispose();

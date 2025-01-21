@@ -2,19 +2,21 @@
 
 public class TriggeredEnergyConsumerConfig
 {
-    public String SocketEntity { get; set; }
-    public String StateSensor { get; set; }
-    public String StartState { get; set; }
-    public String CompletedState { get; set; }
-    public String CriticalState { get; set; }
-    public Boolean CanForceShutdown { get; set; }
-    public Boolean ShutDownOnComplete { get; set; }
+    public string SocketEntity { get; set; }
+    public string PauseSwitch { get; set; }
+    public string StateSensor { get; set; }
+    public string StartState { get; set; }
+    public string PausedState { get; set; }
+    public string CompletedState { get; set; }
+    public string CriticalState { get; set; }
+    public bool CanPause { get; set; }
+    public bool ShutDownOnComplete { get; set; }
     public List<TriggeredStatePeakLoad> PeakLoads { get; set; }
 
 }
 
 public class TriggeredStatePeakLoad
 {
-    public String State { get; set; }
-    public Double PeakLoad { get; set; }
+    public string State { get; set; }
+    public double PeakLoad { get; set; }
 }

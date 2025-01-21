@@ -27,9 +27,11 @@ public class TriggeredEnergyConsumerBuilder
     private string _timezone;
 
     private BinarySwitch _socket;
+    private BinarySwitch? _pauseSwitch;
 
     private TextSensor _stateSensor;
     private String _startState;
+    private String? _pausedState;
     private String _completedState;
     private String _criticalState;
     private Boolean _canForceShutdown;
@@ -51,7 +53,7 @@ public class TriggeredEnergyConsumerBuilder
 
             _socket = BinarySwitch.Create(_testCtx.HaContext, "switch.irrigation_energy_available");
 
-            WithStateSensor(TextSensor.Create(_testCtx.HaContext, "sensor.irrigation_state"), "Yes", "No", "Critical");
+            WithStateSensor(TextSensor.Create(_testCtx.HaContext, "sensor.irrigation_state"), "Yes", null, "No", "Critical");
             WithCanForceShutdown();
             AddStatePeakLoad("No", 1);
             AddStatePeakLoad("Yes", 1);
@@ -68,7 +70,7 @@ public class TriggeredEnergyConsumerBuilder
 
             _socket = BinarySwitch.Create(_testCtx.HaContext, "switch.smartwasher_smartwasher_delayed_start_activate");
 
-            WithStateSensor(TextSensor.Create(_testCtx.HaContext, "sensor.smartwasher_smartwasher_state"), "DelayedStart", "Ready", "Critical");
+            WithStateSensor(TextSensor.Create(_testCtx.HaContext, "sensor.smartwasher_smartwasher_state"), "DelayedStart", null, "Ready", "Critical");
             WithCanForceShutdown();
             AddStatePeakLoad("Idle", 0);
             AddStatePeakLoad("DelayedStart", 0);
@@ -77,6 +79,27 @@ public class TriggeredEnergyConsumerBuilder
             AddStatePeakLoad("Washing", 170);
             AddStatePeakLoad("Rinsing", 330);
             AddStatePeakLoad("Spinning", 420);
+        }
+        if (baseType == "dishwasher")
+        {
+            _name = "Dishwasher";
+            _powerUsage = new NumericEntity(_testCtx.HaContext, "sensor.socket_dishwasher");
+            _switchOnLoad = -700;
+            _switchOffLoad = 3000;
+
+            _socket = BinarySwitch.Create(_testCtx.HaContext, "switch.dishwasher_program_auto2");
+            _pauseSwitch = BinarySwitch.Create(_testCtx.HaContext, "switch.dishwasher_power");
+
+            WithStateSensor(TextSensor.Create(_testCtx.HaContext, "sensor.dishwasher_operation_state_enhanced"), "DelayedStart", "Paused", "Ready", "Critical");
+            WithCanForceShutdown();
+            AddStatePeakLoad("Inactive", 1);
+            AddStatePeakLoad("Aborting", 1);
+            AddStatePeakLoad("DelayedStart", 1);
+            AddStatePeakLoad("RemoteStart", 1);
+            AddStatePeakLoad("Ready", 1);
+            AddStatePeakLoad("Running", 1500);
+            AddStatePeakLoad("Drying", 15);
+            AddStatePeakLoad("Finished", 1);
         }
 
         WithShutdownOnComplete();
@@ -133,10 +156,11 @@ public class TriggeredEnergyConsumerBuilder
         return this;
     }
 
-    public TriggeredEnergyConsumerBuilder WithStateSensor(TextSensor stateSensor, String startState, String completedState, String criticalState)
+    public TriggeredEnergyConsumerBuilder WithStateSensor(TextSensor stateSensor, String startState, String? pausedState, String completedState, String criticalState)
     {
         _stateSensor = stateSensor;
         _startState = startState;
+        _pausedState = pausedState;
         _completedState = completedState;
         _criticalState = criticalState;
         return this;
@@ -161,7 +185,7 @@ public class TriggeredEnergyConsumerBuilder
 
     public TriggeredEnergyConsumer Build()
     {
-        var x = new TriggeredEnergyConsumer(_logger, _name, _powerUsage, _criticallyNeeded, _switchOnLoad, _switchOffLoad, _minimumRuntime, _maximumRuntime, _minimumTimeout, _maximumTimeout, _timeWindows, _timezone, _socket, _statePeakLoads, _stateSensor, _startState, _completedState, _criticalState, _canForceShutdown, _shutDownOnComplete);
+        var x = new TriggeredEnergyConsumer(_logger, _name, _powerUsage, _criticallyNeeded, _switchOnLoad, _switchOffLoad, _minimumRuntime, _maximumRuntime, _minimumTimeout, _maximumTimeout, _timeWindows, _timezone, _socket, _pauseSwitch, _statePeakLoads, _stateSensor, _startState, _pausedState, _completedState, _criticalState, _canForceShutdown, _shutDownOnComplete);
         return x;
     }
 }

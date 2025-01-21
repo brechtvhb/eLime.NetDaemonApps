@@ -155,4 +155,54 @@ public class TriggeredEnergyConsumerTests
         Assert.AreEqual(EnergyConsumerState.Off, energyManager.Consumers.First().State);
         _testCtx.VerifySwitchTurnOff(consumer.Socket, Moq.Times.AtLeastOnce);
     }
+
+    [TestMethod]
+    public void PeakLoad_Triggers_Pause()
+    {
+        // Arrange
+        var consumer = new TriggeredEnergyConsumerBuilder(_logger, _testCtx, "dishwasher")
+            .Build();
+
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
+            .AddConsumer(consumer)
+            .Build();
+
+        _testCtx.TriggerStateChange(consumer.Socket, "on");
+        _testCtx.TriggerStateChange(consumer.StateSensor, "Running");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
+
+        //Act
+        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(3500);
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(20));
+
+        //Assert
+        _testCtx.VerifySwitchTurnOff(consumer.PauseSwitch, Moq.Times.AtLeastOnce);
+    }
+
+    [TestMethod]
+    public void ReducedLoad_Triggers_Resume()
+    {
+        // Arrange
+        var consumer = new TriggeredEnergyConsumerBuilder(_logger, _testCtx, "dishwasher")
+            .Build();
+
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
+            .AddConsumer(consumer)
+            .Build();
+
+        _testCtx.TriggerStateChange(consumer.Socket, "on");
+        _testCtx.TriggerStateChange(consumer.StateSensor, "Running");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
+
+        _testCtx.TriggerStateChange(consumer.StateSensor, "Paused");
+        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(3500);
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(20));
+
+        //Act
+        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(-1000);
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(20));
+
+        //Assert
+        _testCtx.VerifySwitchTurnOn(consumer.PauseSwitch, Moq.Times.AtLeastOnce);
+    }
 }
