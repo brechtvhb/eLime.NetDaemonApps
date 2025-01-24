@@ -7,7 +7,7 @@ public class BackingUpDataState : SolarBackupState
 {
     internal override Task Enter(ILogger logger, IScheduler scheduler, SolarBackup context)
     {
-        //SSH stuff to call proxmox backup client script
+        logger.LogInformation("Solar backup: Backing up data stores through SSH / proxmox backup client.");
         return context.TransitionTo(logger, new VerifyingBackupsState());
     }
 

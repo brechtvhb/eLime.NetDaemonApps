@@ -9,7 +9,7 @@ public class BackingUpWorkloadState : SolarBackupState
 
     internal override async Task Enter(ILogger logger, IScheduler scheduler, SolarBackup context)
     {
-        //API call to trigger backup for all VM & LXC workloads
+        logger.LogInformation("Solar backup: Starting backup of VMs and LXC workloads.");
         _taskId = await context.PveClient.StartBackup();
     }
 
@@ -21,7 +21,7 @@ public class BackingUpWorkloadState : SolarBackupState
             return;
         }
 
-        //Check if backup task is completed (through API call)
+        logger.LogDebug("Solar backup: Checking if backup was completed.");
         var backupCompleted = await context.PveClient.CheckIfTaskCompleted(_taskId);
         if (backupCompleted)
             await context.TransitionTo(logger, new BackingUpDataState());

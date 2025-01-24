@@ -9,6 +9,7 @@ public class PruningBackupsState : SolarBackupState
 
     internal override async Task Enter(ILogger logger, IScheduler scheduler, SolarBackup context)
     {
+        logger.LogInformation("Solar backup: Starting prune task.");
         _taskId = await context.PbsClient.StartPruneTask();
     }
 
@@ -21,6 +22,7 @@ public class PruningBackupsState : SolarBackupState
         }
 
         //check if prune task completed (through API call)
+        logger.LogInformation("Solar backup: Checking if prune task completed.");
         var taskCompleted = await context.PbsClient.CheckIfTaskCompleted(_taskId);
         if (taskCompleted)
             await context.TransitionTo(logger, new GarbageCollectingState());

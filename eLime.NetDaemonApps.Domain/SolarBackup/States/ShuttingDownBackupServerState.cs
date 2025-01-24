@@ -7,6 +7,7 @@ public class ShuttingDownBackupServerState : SolarBackupState
 {
     internal override Task Enter(ILogger logger, IScheduler scheduler, SolarBackup context)
     {
+        logger.LogInformation("Solar backup: Shut down PBS.");
         return context.PbsClient.Shutdown();
     }
 
