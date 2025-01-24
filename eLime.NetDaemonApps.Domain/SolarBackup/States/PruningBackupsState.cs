@@ -5,14 +5,24 @@ namespace eLime.NetDaemonApps.Domain.SolarBackup.States;
 
 public class PruningBackupsState : SolarBackupState
 {
-    internal override void Enter(ILogger logger, IScheduler scheduler, SolarBackup context)
+    private string? _taskId;
+
+    internal override async Task Enter(ILogger logger, IScheduler scheduler, SolarBackup context)
     {
-        //API call to prune backups
+        _taskId = await context.PbsClient.StartPruneTask();
     }
 
-    internal override void CheckProgress(ILogger logger, IScheduler scheduler, SolarBackup context)
+    internal override async Task CheckProgress(ILogger logger, IScheduler scheduler, SolarBackup context)
     {
+        if (_taskId == null)
+        {
+            _taskId = await context.PveClient.StartBackup();
+            return;
+        }
+
         //check if prune task completed (through API call)
-        context.TransitionTo(logger, new GarbageCollectingState());
+        var taskCompleted = await context.PbsClient.CheckIfTaskCompleted(_taskId);
+        if (taskCompleted)
+            await context.TransitionTo(logger, new GarbageCollectingState());
     }
 }

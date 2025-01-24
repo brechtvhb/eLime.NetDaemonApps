@@ -1,5 +1,7 @@
-﻿using eLime.NetDaemonApps.Domain.Helper;
+﻿using eLime.NetDaemonApps.Domain.Entities.Scripts;
+using eLime.NetDaemonApps.Domain.Helper;
 using eLime.NetDaemonApps.Domain.Mqtt;
+using eLime.NetDaemonApps.Domain.SolarBackup.Clients;
 using eLime.NetDaemonApps.Domain.SolarBackup.States;
 using eLime.NetDaemonApps.Domain.Storage;
 using Microsoft.Extensions.Logging;
@@ -42,23 +44,26 @@ namespace eLime.NetDaemonApps.Domain.SolarBackup
         private IDisposable StartBackupSwitchListener { get; set; }
         private IDisposable? GuardTask { get; }
 
-        //PVE client & settings (storage id)
-        private HttpClient _pveHttpClient { get; set; }
-
-        //PBS client & settings (verify job id, prune job id)
-        private HttpClient _pbsHttpClient { get; set; }
+        private string SynologyMacAddress { get; set; }
+        internal Script Script { get; set; }
+        internal PveClient PveClient { get; set; }
+        internal PbsClient PbsClient { get; set; }
         //ShutdownButton
 
         private readonly TimeSpan _minimumChangeInterval = TimeSpan.FromSeconds(20);
 
 
-        public SolarBackup(ILogger logger, IHaContext haContext, IScheduler scheduler, IFileStorage fileStorage, IMqttEntityManager mqttEntityManager)
+        public SolarBackup(ILogger logger, IHaContext haContext, IScheduler scheduler, IFileStorage fileStorage, IMqttEntityManager mqttEntityManager, string synologyMacAddress, PveClient pveClient, PbsClient pbsClient)
         {
             _logger = logger;
             _haContext = haContext;
             _scheduler = scheduler;
             _fileStorage = fileStorage;
             _mqttEntityManager = mqttEntityManager;
+
+            Script = new Script(haContext);
+            PveClient = pveClient;
+            PbsClient = pbsClient;
 
             EnsureSensorsExist().RunSync();
             var state = RetrieveState();
@@ -77,7 +82,7 @@ namespace eLime.NetDaemonApps.Domain.SolarBackup
                 _ => new IdleState()
             };
 
-            TransitionTo(_logger, initState);
+            TransitionTo(_logger, initState).RunSync();
 
             GuardTask = _scheduler.RunEvery(_minimumChangeInterval, _scheduler.Now, () =>
             {
@@ -106,16 +111,24 @@ namespace eLime.NetDaemonApps.Domain.SolarBackup
                 _logger.LogDebug("Solar backup: Setting setting start triggered to {state}.", state);
 
                 if (state == "ON" && State == SolarBackupStatus.Idle)
-                    StartBackup();
+                    await StartBackup();
 
                 await UpdateStateInHomeAssistant();
             };
         }
 
-        private void StartBackup()
+        private Task StartBackup()
         {
             _logger.LogDebug("Solar backup is starting");
-            TransitionTo(_logger, new StartingBackupServerState());
+            return TransitionTo(_logger, new StartingBackupServerState());
+        }
+
+        internal void BootServer()
+        {
+            Script.WakeUpPc(new WakeUpPcParameters
+            {
+                MacAddress = SynologyMacAddress
+            });
         }
 
         public Device GetDevice()
@@ -153,7 +166,7 @@ namespace eLime.NetDaemonApps.Domain.SolarBackup
             StartedAt = StartedAt,
         };
 
-        internal void TransitionTo(ILogger logger, SolarBackupState state)
+        internal async Task TransitionTo(ILogger logger, SolarBackupState state)
         {
             logger.LogDebug(
                 _state != null
@@ -161,7 +174,7 @@ namespace eLime.NetDaemonApps.Domain.SolarBackup
                     : $"Initialized in {state.GetType().Name.Replace("State", "")} state.");
 
             _state = state;
-            _state.Enter(logger, _scheduler, this);
+            await _state.Enter(logger, _scheduler, this);
 
             UpdateStateInHomeAssistant().RunSync();
         }

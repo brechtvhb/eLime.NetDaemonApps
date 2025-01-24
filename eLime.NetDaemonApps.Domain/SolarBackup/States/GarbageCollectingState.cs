@@ -5,14 +5,24 @@ namespace eLime.NetDaemonApps.Domain.SolarBackup.States;
 
 public class GarbageCollectingState : SolarBackupState
 {
-    internal override void Enter(ILogger logger, IScheduler scheduler, SolarBackup context)
+    private string? _taskId;
+
+    internal override async Task Enter(ILogger logger, IScheduler scheduler, SolarBackup context)
     {
-        //API call to garbage collect data store
+        _taskId = await context.PbsClient.StartGarbageCollectTask();
     }
 
-    internal override void CheckProgress(ILogger logger, IScheduler scheduler, SolarBackup context)
+    internal override async Task CheckProgress(ILogger logger, IScheduler scheduler, SolarBackup context)
     {
+        if (_taskId == null)
+        {
+            _taskId = await context.PveClient.StartBackup();
+            return;
+        }
+
         //check if garbage collection task completed(through API call)
-        context.TransitionTo(logger, new ShuttingDownBackupServerState());
+        var taskCompleted = await context.PbsClient.CheckIfTaskCompleted(_taskId);
+        if (taskCompleted)
+            await context.TransitionTo(logger, new ShuttingDownBackupServerState());
     }
 }

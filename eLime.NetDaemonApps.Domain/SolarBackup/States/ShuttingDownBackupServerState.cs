@@ -5,14 +5,14 @@ namespace eLime.NetDaemonApps.Domain.SolarBackup.States;
 
 public class ShuttingDownBackupServerState : SolarBackupState
 {
-    internal override void Enter(ILogger logger, IScheduler scheduler, SolarBackup context)
+    internal override Task Enter(ILogger logger, IScheduler scheduler, SolarBackup context)
     {
-        //API call to shut down PBS
+        return context.PbsClient.Shutdown();
     }
 
-    internal override void CheckProgress(ILogger logger, IScheduler scheduler, SolarBackup context)
+    internal override async Task CheckProgress(ILogger logger, IScheduler scheduler, SolarBackup context)
     {
-        //Check status of PBS, wait one loop, then progress
-        context.TransitionTo(logger, new ShuttingDownHardwareState());
+        //TODO: missing API call to check if PBS is down
+        await context.TransitionTo(logger, new ShuttingDownHardwareState());
     }
 }
