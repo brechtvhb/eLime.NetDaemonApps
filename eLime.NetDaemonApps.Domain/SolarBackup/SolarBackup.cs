@@ -1,4 +1,5 @@
-﻿using eLime.NetDaemonApps.Domain.Entities.Scripts;
+﻿using eLime.NetDaemonApps.Domain.Entities.Buttons;
+using eLime.NetDaemonApps.Domain.Entities.Scripts;
 using eLime.NetDaemonApps.Domain.Helper;
 using eLime.NetDaemonApps.Domain.Mqtt;
 using eLime.NetDaemonApps.Domain.SolarBackup.Clients;
@@ -46,6 +47,8 @@ namespace eLime.NetDaemonApps.Domain.SolarBackup
 
         private string SynologyMacAddress { get; set; }
         internal Script Script { get; set; }
+        private Button ShutDownButton { get; set; }
+
         internal PveClient PveClient { get; set; }
         internal PbsClient PbsClient { get; set; }
         //ShutdownButton
@@ -53,7 +56,7 @@ namespace eLime.NetDaemonApps.Domain.SolarBackup
         private readonly TimeSpan _minimumChangeInterval = TimeSpan.FromSeconds(20);
 
 
-        public SolarBackup(ILogger logger, IHaContext haContext, IScheduler scheduler, IFileStorage fileStorage, IMqttEntityManager mqttEntityManager, string synologyMacAddress, PveClient pveClient, PbsClient pbsClient)
+        public SolarBackup(ILogger logger, IHaContext haContext, IScheduler scheduler, IFileStorage fileStorage, IMqttEntityManager mqttEntityManager, string synologyMacAddress, PveClient pveClient, PbsClient pbsClient, Button shutdownButton)
         {
             _logger = logger;
             _haContext = haContext;
@@ -62,8 +65,11 @@ namespace eLime.NetDaemonApps.Domain.SolarBackup
             _mqttEntityManager = mqttEntityManager;
 
             Script = new Script(haContext);
+            SynologyMacAddress = synologyMacAddress;
+
             PveClient = pveClient;
             PbsClient = pbsClient;
+            ShutDownButton = shutdownButton;
 
             EnsureSensorsExist().RunSync();
             var state = RetrieveState();
@@ -129,6 +135,12 @@ namespace eLime.NetDaemonApps.Domain.SolarBackup
             {
                 MacAddress = SynologyMacAddress
             });
+            SetStartedAt();
+        }
+
+        internal void ShutDownServer()
+        {
+            ShutDownButton.Press();
         }
 
         public Device GetDevice()

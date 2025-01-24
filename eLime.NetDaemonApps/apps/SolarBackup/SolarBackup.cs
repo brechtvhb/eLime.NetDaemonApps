@@ -1,4 +1,5 @@
 using eLime.NetDaemonApps.Config;
+using eLime.NetDaemonApps.Domain.Entities.Buttons;
 using eLime.NetDaemonApps.Domain.SolarBackup.Clients;
 using eLime.NetDaemonApps.Domain.Storage;
 using NetDaemon.Extensions.MqttEntityManager;
@@ -40,7 +41,9 @@ public class SolarBackup : IAsyncInitializable, IAsyncDisposable
         {
             var pveClient = new PveClient(_logger, _config.Pve.Url, _config.Pve.Token, _config.Pve.Cluster, _config.Pve.StorageName);
             var pbsClient = new PbsClient(_logger, _config.Pbs.Url, _config.Pbs.Token, _config.Pbs.DataStore, _config.Pbs.VerifyJobId, _config.Pbs.PruneJobId);
-            _solarBackup = new Domain.SolarBackup.SolarBackup(_logger, _ha, _scheduler, _fileStorage, _mqttEntityManager, _config.Synology.Mac, pveClient, pbsClient);
+            var shutDownButton = new Button(_ha, _config.Synology.ShutDownButton);
+
+            _solarBackup = new Domain.SolarBackup.SolarBackup(_logger, _ha, _scheduler, _fileStorage, _mqttEntityManager, _config.Synology.Mac, pveClient, pbsClient, shutDownButton);
         }
         catch (Exception ex)
         {

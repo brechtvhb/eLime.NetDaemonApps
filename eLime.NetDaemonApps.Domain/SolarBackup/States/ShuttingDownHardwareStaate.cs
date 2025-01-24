@@ -8,7 +8,7 @@ public class ShuttingDownHardwareState : SolarBackupState
     internal override Task Enter(ILogger logger, IScheduler scheduler, SolarBackup context)
     {
         logger.LogInformation("Solar backup: Shut down hardware");
-        //Use home assistant to shutdown synology
+        context.ShutDownServer();
         return Task.CompletedTask;
     }
 
