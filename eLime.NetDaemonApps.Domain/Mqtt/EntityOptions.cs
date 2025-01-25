@@ -10,3 +10,9 @@ public class EntityOptions
     [JsonPropertyName("icon")]
     public string Icon { get; set; }
 }
+
+public class ButtonOptions : EntityOptions
+{
+    [JsonPropertyName("payload_press")]
+    public string PayloadPress { get; set; }
+}

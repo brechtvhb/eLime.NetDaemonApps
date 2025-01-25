@@ -3,9 +3,9 @@
 public class DataStore
 {
     public required string Id { get; set; }
-    public required string Storage { get; set; }
+    public string? Storage { get; set; }
     public required DataStoreStatus Status { get; set; }
-    public required string Content { get; set; }
+    public string? Content { get; set; }
 }
 
 public class DataStoreList

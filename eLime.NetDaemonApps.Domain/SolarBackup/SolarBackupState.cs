@@ -5,8 +5,8 @@ namespace eLime.NetDaemonApps.Domain.SolarBackup
 {
     public abstract class SolarBackupState
     {
-        internal abstract void Enter(ILogger logger, IScheduler scheduler, SolarBackup context);
-        internal abstract void CheckProgress(ILogger logger, IScheduler scheduler, SolarBackup context);
+        internal abstract Task Enter(ILogger logger, IScheduler scheduler, SolarBackup context);
+        internal abstract Task CheckProgress(ILogger logger, IScheduler scheduler, SolarBackup context);
 
     }
 }
