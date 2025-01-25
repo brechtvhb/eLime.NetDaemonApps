@@ -10,6 +10,7 @@ public class SolarBackupConfig
 public class SolarBackupSynologyConfig
 {
     public string Mac { get; set; }
+    public string BroadcastAddress { get; set; }
     public string ShutDownButton { get; set; }
 }
 public class SolarBackupPveConfig
@@ -17,6 +18,7 @@ public class SolarBackupPveConfig
     public string Url { get; set; }
     public string Token { get; set; }
     public string Cluster { get; set; }
+    public string StorageId { get; set; }
     public string StorageName { get; set; }
 }
 public class SolarBackupPbsConfig

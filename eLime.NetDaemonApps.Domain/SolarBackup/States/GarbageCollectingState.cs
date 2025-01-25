@@ -17,7 +17,7 @@ public class GarbageCollectingState : SolarBackupState
     {
         if (_taskId == null)
         {
-            _taskId = await context.PveClient.StartBackup();
+            _taskId = await context.PbsClient.StartGarbageCollectTask();
             return;
         }
 

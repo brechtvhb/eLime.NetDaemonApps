@@ -20,7 +20,6 @@ public class BackingUpWorkloadState : SolarBackupState
             _taskId = await context.PveClient.StartBackup();
             return;
         }
-
         logger.LogDebug("Solar backup: Checking if backup was completed.");
         var backupCompleted = await context.PveClient.CheckIfTaskCompleted(_taskId);
         if (backupCompleted)

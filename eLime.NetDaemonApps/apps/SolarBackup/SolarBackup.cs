@@ -39,11 +39,11 @@ public class SolarBackup : IAsyncInitializable, IAsyncDisposable
         _ct = cancellationToken;
         try
         {
-            var pveClient = new PveClient(_logger, _config.Pve.Url, _config.Pve.Token, _config.Pve.Cluster, _config.Pve.StorageName);
+            var pveClient = new PveClient(_logger, _config.Pve.Url, _config.Pve.Token, _config.Pve.Cluster, _config.Pve.StorageId, _config.Pve.StorageName);
             var pbsClient = new PbsClient(_logger, _config.Pbs.Url, _config.Pbs.Token, _config.Pbs.DataStore, _config.Pbs.VerifyJobId, _config.Pbs.PruneJobId);
             var shutDownButton = new Button(_ha, _config.Synology.ShutDownButton);
 
-            _solarBackup = new Domain.SolarBackup.SolarBackup(_logger, _ha, _scheduler, _fileStorage, _mqttEntityManager, _config.Synology.Mac, pveClient, pbsClient, shutDownButton);
+            _solarBackup = new Domain.SolarBackup.SolarBackup(_logger, _ha, _scheduler, _fileStorage, _mqttEntityManager, _config.Synology.Mac, _config.Synology.BroadcastAddress, pveClient, pbsClient, shutDownButton);
         }
         catch (Exception ex)
         {

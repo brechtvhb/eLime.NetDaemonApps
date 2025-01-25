@@ -17,7 +17,7 @@ public class PruningBackupsState : SolarBackupState
     {
         if (_taskId == null)
         {
-            _taskId = await context.PveClient.StartBackup();
+            _taskId = await context.PbsClient.StartPruneTask();
             return;
         }
 

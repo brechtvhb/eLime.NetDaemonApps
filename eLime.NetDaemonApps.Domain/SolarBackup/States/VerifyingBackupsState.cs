@@ -17,7 +17,7 @@ public class VerifyingBackupsState : SolarBackupState
     {
         if (_taskId == null)
         {
-            _taskId = await context.PveClient.StartBackup();
+            _taskId = await context.PbsClient.StartVerifyTask();
             return;
         }
 
