@@ -1,7 +1,6 @@
 ﻿using eLime.NetDaemonApps.Domain.SolarBackup.Clients.Models;
 using Microsoft.Extensions.Logging;
 using System.Net.Http.Json;
-using TaskStatus = eLime.NetDaemonApps.Domain.SolarBackup.Clients.Models.TaskStatus;
 
 namespace eLime.NetDaemonApps.Domain.SolarBackup.Clients;
 
@@ -20,62 +19,119 @@ public class PbsClient
         _verifyId = verifyId;
         _pruneId = pruneId;
 
-        _httpClient = new HttpClient();
+        _httpClient = new HttpClient(new HttpClientHandler
+        {
+            ClientCertificateOptions = ClientCertificateOption.Manual,
+            ServerCertificateCustomValidationCallback = (_, _, _, _) => true
+        });
         _httpClient.BaseAddress = new Uri(baseUrl);
-        _httpClient.DefaultRequestHeaders.Add("Authorization", authToken);
-
+        _httpClient.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", authToken);
     }
 
     public async Task<string?> StartVerifyTask()
     {
-        var result = await _httpClient.PostAsync($"/api2/json/admin/verify/{_verifyId}/run", new StringContent(""));
-        if (!result.IsSuccessStatusCode)
+        try
+        {
+            var result = await _httpClient.PostAsync($"/api2/json/admin/verify/{_verifyId}/run", null);
+            if (!result.IsSuccessStatusCode)
+                return null;
+
+            var response = await result.Content.ReadFromJsonAsync<TaskResponse>();
+
+            return response?.Data;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to start verify task.");
             return null;
-
-        var response = await result.Content.ReadFromJsonAsync<TaskResponse>();
-
-        return response?.Data;
+        }
     }
 
     public async Task<string?> StartPruneTask()
     {
-        var result = await _httpClient.PostAsync($"/api2/json/admin/prune/{_pruneId}/run", new StringContent(""));
-        if (!result.IsSuccessStatusCode)
+        try
+        {
+            var result = await _httpClient.PostAsync($"/api2/json/admin/prune/{_pruneId}/run", null);
+            if (!result.IsSuccessStatusCode)
+                return null;
+
+            var response = await result.Content.ReadFromJsonAsync<TaskResponse>();
+
+            return response?.Data;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to start prune task.");
             return null;
-
-        var response = await result.Content.ReadFromJsonAsync<TaskResponse>();
-
-        return response?.Data;
+        }
     }
 
     public async Task<string?> StartGarbageCollectTask()
     {
-        var result = await _httpClient.PostAsync($"/api2/json/admin/datastore/{_datastore}/gc", new StringContent(""));
-        if (!result.IsSuccessStatusCode)
+        try
+        {
+            var result = await _httpClient.PostAsync($"/api2/json/admin/datastore/{_datastore}/gc", null);
+            if (!result.IsSuccessStatusCode)
+                return null;
+
+            var response = await result.Content.ReadFromJsonAsync<TaskResponse>();
+
+            return response?.Data;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to start garbage collect task.");
             return null;
-
-        var response = await result.Content.ReadFromJsonAsync<TaskResponse>();
-
-        return response?.Data;
+        }
     }
 
     public async Task<string?> Shutdown()
     {
-        var result = await _httpClient.PostAsJsonAsync($"/api2/json/nodes/localhost/status", new StatusCommand { Command = Command.Shutdown });
+        try
+        {
+            var result = await _httpClient.PostAsJsonAsync($"/api2/json/nodes/localhost/status", new StatusCommand { Command = Command.Shutdown });
 
-        if (!result.IsSuccessStatusCode)
+            if (!result.IsSuccessStatusCode)
+                return null;
+
+            var response = await result.Content.ReadFromJsonAsync<TaskResponse>();
+
+            return response?.Data;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to shut down PBS.");
             return null;
+        }
+    }
 
-        var response = await result.Content.ReadFromJsonAsync<TaskResponse>();
+    public async Task<bool> IsOnline()
+    {
+        try
+        {
+            var result = await _httpClient.GetAsync($"/api2/json/nodes/localhost/status");
 
-        return response?.Data;
+            return result.IsSuccessStatusCode;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
     }
 
     public async Task<bool> CheckIfTaskCompleted(string taskId)
     {
-        var response = await _httpClient.GetFromJsonAsync<TaskList>("/api2/json/nodes/localhost/tasks");
-        var task = response?.Data.SingleOrDefault(x => x.Upid == taskId);
+        try
+        {
+            var response = await _httpClient.GetFromJsonAsync<TaskList>("/api2/json/nodes/localhost/tasks");
+            var task = response?.Data.SingleOrDefault(x => x.Upid == taskId);
 
-        return task?.Status is TaskStatus.Ok;
+            return task?.Status == "OK";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to check if task was completed.");
+            return false;
+        }
     }
 }

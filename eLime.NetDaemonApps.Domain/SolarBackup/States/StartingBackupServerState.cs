@@ -5,14 +5,26 @@ namespace eLime.NetDaemonApps.Domain.SolarBackup.States;
 
 public class StartingBackupServerState : SolarBackupState
 {
-    internal override void Enter(ILogger logger, IScheduler scheduler, SolarBackup context)
+    internal override Task Enter(ILogger logger, IScheduler scheduler, SolarBackup context)
     {
-        //Call wake on lan script
+        logger.LogInformation("Solar backup: Starting server");
+        context.BootServer();
+        return Task.CompletedTask;
     }
 
-    internal override void CheckProgress(ILogger logger, IScheduler scheduler, SolarBackup context)
+    internal override async Task CheckProgress(ILogger logger, IScheduler scheduler, SolarBackup context)
     {
+        if (context.StartedAt?.AddMinutes(5) < scheduler.Now)
+        {
+            logger.LogInformation("Solar backup: Taking too long before server is online, trying wake on lan again");
+            context.BootServer();
+            return;
+        }
+
         //Check if PBS storage came online (API call)
-        context.TransitionTo(logger, new BackingUpWorkloadState());
+        var isOnline = await context.PveClient.CheckPbsStorageStatus();
+
+        if (isOnline)
+            await context.TransitionTo(logger, new BackingUpWorkloadState());
     }
 }

@@ -5,14 +5,27 @@ namespace eLime.NetDaemonApps.Domain.SolarBackup.States;
 
 public class ShuttingDownBackupServerState : SolarBackupState
 {
-    internal override void Enter(ILogger logger, IScheduler scheduler, SolarBackup context)
+    private DateTimeOffset _offlineSince = DateTimeOffset.MaxValue;
+    internal override Task Enter(ILogger logger, IScheduler scheduler, SolarBackup context)
     {
-        //API call to shut down PBS
+        logger.LogInformation("Solar backup: Shut down PBS.");
+        return context.PbsClient.Shutdown();
     }
 
-    internal override void CheckProgress(ILogger logger, IScheduler scheduler, SolarBackup context)
+    internal override async Task CheckProgress(ILogger logger, IScheduler scheduler, SolarBackup context)
     {
-        //Check status of PBS, wait one loop, then progress
-        context.TransitionTo(logger, new ShuttingDownHardwareState());
+        if (_offlineSince > scheduler.Now)
+        {
+            var isOnline = await context.PbsClient.IsOnline();
+
+            if (!isOnline)
+                _offlineSince = scheduler.Now.UtcDateTime;
+        }
+
+        if (_offlineSince.AddMinutes(1) < scheduler.Now)
+        {
+            logger.LogInformation("Solar backup: No HTTP response since one minute, shutting down.");
+            await context.TransitionTo(logger, new ShuttingDownHardwareState());
+        }
     }
 }

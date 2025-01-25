@@ -5,14 +5,24 @@ namespace eLime.NetDaemonApps.Domain.SolarBackup.States;
 
 public class BackingUpWorkloadState : SolarBackupState
 {
-    internal override void Enter(ILogger logger, IScheduler scheduler, SolarBackup context)
+    private string? _taskId;
+
+    internal override async Task Enter(ILogger logger, IScheduler scheduler, SolarBackup context)
     {
-        //API call to trigger backup for all VM & LXC workloads
+        logger.LogInformation("Solar backup: Starting backup of VMs and LXC workloads.");
+        _taskId = await context.PveClient.StartBackup();
     }
 
-    internal override void CheckProgress(ILogger logger, IScheduler scheduler, SolarBackup context)
+    internal override async Task CheckProgress(ILogger logger, IScheduler scheduler, SolarBackup context)
     {
-        //Check if backup task is completed (through API call)
-        context.TransitionTo(logger, new BackingUpDataState());
+        if (_taskId == null)
+        {
+            _taskId = await context.PveClient.StartBackup();
+            return;
+        }
+        logger.LogDebug("Solar backup: Checking if backup was completed.");
+        var backupCompleted = await context.PveClient.CheckIfTaskCompleted(_taskId);
+        if (backupCompleted)
+            await context.TransitionTo(logger, new BackingUpDataState());
     }
 }
