@@ -135,24 +135,12 @@ public class TriggeredEnergyConsumer : EnergyConsumer
 
     public override void TurnOff()
     {
-        switch (ShutDownOnComplete)
-        {
-            case true when StateSensor.State == CompletedState:
-                Socket.TurnOff();
-                break;
-            case false when StateSensor.State == CompletedState:
-                return;
-        }
-
-        switch (CanPause)
-        {
-            case true when PauseSwitch != null:
-                PauseSwitch.TurnOff();
-                break;
-            case true:
-                Socket.TurnOff();
-                break;
-        }
+        if (ShutDownOnComplete && StateSensor.State == CompletedState)
+            Socket.TurnOff();
+        else if (CanPause && PauseSwitch != null)
+            PauseSwitch.TurnOff();
+        else
+            Socket.TurnOff();
     }
 
     public override void DisposeInternal()
