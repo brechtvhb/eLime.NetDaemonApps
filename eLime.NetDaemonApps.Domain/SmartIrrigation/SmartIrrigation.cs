@@ -409,12 +409,12 @@ public class SmartIrrigation : IDisposable
 
     public Device GetZoneDevice(IrrigationZone zone)
     {
-        return new Device { Identifiers = new List<string> { $"irrigation_zone.{zone.Name.MakeHaFriendly()}" }, Name = "Irrigation zone: " + zone.Name, Manufacturer = "Me" };
+        return new Device { Identifiers = [$"irrigation_zone.{zone.Name.MakeHaFriendly()}"], Name = "Irrigation zone: " + zone.Name, Manufacturer = "Me" };
     }
 
     public Device GetGlobalDevice()
     {
-        return new Device { Identifiers = new List<string> { $"smart_irrigation" }, Name = "Smart Irrigation", Manufacturer = "Me" };
+        return new Device { Identifiers = [$"smart_irrigation"], Name = "Smart Irrigation", Manufacturer = "Me" };
     }
 
 
@@ -453,8 +453,8 @@ public class SmartIrrigation : IDisposable
             var baseName = $"sensor.irrigation_zone_{zone.Name.MakeHaFriendly()}";
 
             await _mqttEntityManager.SetStateAsync($"{baseName}_state", zone.State.ToString());
-            await _mqttEntityManager.SetStateAsync($"{baseName}_started_at", zone.WateringStartedAt?.ToString("O")!);
-            await _mqttEntityManager.SetStateAsync($"{baseName}_last_watering", zone.LastWatering?.ToString("O")!);
+            await _mqttEntityManager.SetStateAsync($"{baseName}_started_at", zone.WateringStartedAt != null ? zone.WateringStartedAt.Value.ToString("O") : "None");
+            await _mqttEntityManager.SetStateAsync($"{baseName}_last_watering", zone.LastWatering != null ? zone.LastWatering.Value.ToString("O") : "None");
 
             _fileStorage.Save("SmartIrrigation", $"{zone.Name.MakeHaFriendly()}", zone.ToFileStorage());
 
