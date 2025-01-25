@@ -7,3 +7,4 @@ appsettings.development.json
 /eLime.NetDaemonApps/Properties/launchSettings.json
 *.user
 /eLime.NetDaemonApps/apps/.storage
+/eLime.NetDaemonApps/apps/SolarBackup/SolarBackup.yaml
