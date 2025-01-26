@@ -130,7 +130,7 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         {
             _ when CriticallyNeeded?.IsOn() == true => GetNearPeakAdjustedGridCurrent(netGridUsage, peakUsage),
             BalancingMethod.NearPeak => GetNearPeakAdjustedGridCurrent(netGridUsage, peakUsage),
-            BalancingMethod.MidPeak => GetMidPeakAdjustedGridCurrent(netGridUsage, peakUsage),
+            BalancingMethod.MidPeak => GetMidPeakAdjustedGridCurrent(trailingNetGridUsage, peakUsage),
             BalancingMethod.SolarPreferred => GetSolarPreferredAdjustedGridCurrent(trailingNetGridUsage),
             BalancingMethod.MidPoint => GetMidpointAdjustedGridCurrent(trailingNetGridUsage),
             BalancingMethod.MaximizeQuarterPeak => GetMaximizeQuarterPeakAdjustedGridCurrent(netGridUsage, peakUsage, currentAverageDemand),
@@ -166,9 +166,9 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
             : Math.Round(currentDifference, 0, MidpointRounding.ToPositiveInfinity);
     }
 
-    public double GetMidPeakAdjustedGridCurrent(double netGridUsage, double peakUsageThisMonth)
+    public double GetMidPeakAdjustedGridCurrent(double trailingNetGridUsage, double peakUsageThisMonth)
     {
-        var currentDifference = (peakUsageThisMonth / 2) / TotalVoltage;
+        var currentDifference = (trailingNetGridUsage - (peakUsageThisMonth / 2)) / TotalVoltage;
 
         return currentDifference is < 0.70 and > -0.70d
             ? 0
