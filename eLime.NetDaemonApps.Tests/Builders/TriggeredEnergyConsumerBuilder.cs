@@ -185,7 +185,7 @@ public class TriggeredEnergyConsumerBuilder
 
     public TriggeredEnergyConsumer Build()
     {
-        var x = new TriggeredEnergyConsumer(_logger, _name, _powerUsage, _criticallyNeeded, _switchOnLoad, _switchOffLoad, _minimumRuntime, _maximumRuntime, _minimumTimeout, _maximumTimeout, _timeWindows, _timezone, _socket, _pauseSwitch, _statePeakLoads, _stateSensor, _startState, _pausedState, _completedState, _criticalState, _canForceShutdown, _shutDownOnComplete);
+        var x = new TriggeredEnergyConsumer(_logger, _name, _powerUsage, _criticallyNeeded, _switchOnLoad, _switchOffLoad, _minimumRuntime, _maximumRuntime, _minimumTimeout, _maximumTimeout, _timeWindows, _timezone, _socket, _pauseSwitch, _statePeakLoads, 0, _stateSensor, _startState, _pausedState, _completedState, _criticalState, _canForceShutdown, _shutDownOnComplete);
         return x;
     }
 }

@@ -21,12 +21,17 @@ public class TriggeredEnergyConsumer : EnergyConsumer
     public Boolean ShutDownOnComplete { get; }
 
     public List<(String State, Double PeakLoad)> StatePeakLoads { get; }
+    public double defaultLoad;
 
     public override double PeakLoad
     {
         get
         {
             var currentState = StateSensor.State;
+
+            if (StatePeakLoads.All(x => x.State != currentState))
+                return defaultLoad;
+
             var currentStatePassed = false;
             var maxPeakLoad = 0d;
 
@@ -43,7 +48,7 @@ public class TriggeredEnergyConsumer : EnergyConsumer
     }
 
     public TriggeredEnergyConsumer(ILogger logger, String name, NumericEntity powerUsage, BinarySensor? criticallyNeeded, Double switchOnLoad, Double switchOffLoad, TimeSpan? minimumRuntime, TimeSpan? maximumRuntime, TimeSpan? minimumTimeout,
-        TimeSpan? maximumTimeout, List<TimeWindow> timeWindows, String timezone, BinarySwitch socket, BinarySwitch? pauseSwitch, List<(String State, Double PeakLoad)> peakLoads, TextSensor stateSensor, String startState, String? pausedState, String completedState, String criticalState, bool canPause, bool shutDownOnComplete)
+        TimeSpan? maximumTimeout, List<TimeWindow> timeWindows, String timezone, BinarySwitch socket, BinarySwitch? pauseSwitch, List<(String State, Double PeakLoad)> peakLoads, double defaultLoad, TextSensor stateSensor, String startState, String? pausedState, String completedState, String criticalState, bool canPause, bool shutDownOnComplete)
     {
         SetCommonFields(logger, name, powerUsage, criticallyNeeded, switchOnLoad, switchOffLoad, minimumRuntime, maximumRuntime, minimumTimeout, maximumTimeout, timeWindows, timezone);
         Socket = socket;

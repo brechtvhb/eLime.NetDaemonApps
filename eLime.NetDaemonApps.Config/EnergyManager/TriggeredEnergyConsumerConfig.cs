@@ -12,6 +12,7 @@ public class TriggeredEnergyConsumerConfig
     public bool CanPause { get; set; }
     public bool ShutDownOnComplete { get; set; }
     public List<TriggeredStatePeakLoad> PeakLoads { get; set; }
+    public double? DefaultLoad { get; set; }
 
 }
 
