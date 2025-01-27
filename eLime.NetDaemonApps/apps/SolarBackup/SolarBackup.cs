@@ -43,7 +43,7 @@ public class SolarBackup : IAsyncInitializable, IAsyncDisposable
             var pbsClient = new PbsClient(_logger, _config.Pbs.Url, _config.Pbs.Token, _config.Pbs.DataStore, _config.Pbs.VerifyJobId, _config.Pbs.PruneJobId);
             var shutDownButton = new Button(_ha, _config.Synology.ShutDownButton);
 
-            _solarBackup = new Domain.SolarBackup.SolarBackup(_logger, _ha, _scheduler, _fileStorage, _mqttEntityManager, _config.Synology.Mac, _config.Synology.BroadcastAddress, pveClient, pbsClient, shutDownButton);
+            _solarBackup = new Domain.SolarBackup.SolarBackup(_logger, _ha, _scheduler, _fileStorage, _mqttEntityManager, _config.Synology.Mac, _config.Synology.BroadcastAddress, pveClient, pbsClient, shutDownButton, _config.CriticalBackupInterval);
         }
         catch (Exception ex)
         {

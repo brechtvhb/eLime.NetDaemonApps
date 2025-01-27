@@ -7,7 +7,6 @@ public class IdleState : SolarBackupState
 {
     internal override Task Enter(ILogger logger, IScheduler scheduler, SolarBackup context)
     {
-        context.ClearStartedAt();
         return Task.CompletedTask;
     }
 

@@ -23,12 +23,14 @@ namespace eLime.NetDaemonApps.Domain.SolarBackup
         private readonly IScheduler _scheduler;
         private readonly IFileStorage _fileStorage;
         private readonly IMqttEntityManager _mqttEntityManager;
+        private readonly TimeSpan _criticalBackupInterval;
 
         private SolarBackupState _state;
 
         public SolarBackupStatus State => _state switch
         {
-            IdleState => SolarBackupStatus.Idle,
+            IdleState when LastBackupCompletedAt?.Add(CriticalBackupInterval) >= _scheduler.Now => SolarBackupStatus.Idle,
+            IdleState when LastBackupCompletedAt?.Add(CriticalBackupInterval) < _scheduler.Now => SolarBackupStatus.CriticalBackupNeeded,
             StartingBackupServerState => SolarBackupStatus.StartingBackupServer,
             BackingUpWorkloadState => SolarBackupStatus.BackingUpWorkload,
             BackingUpDataState => SolarBackupStatus.BackingUpData,
@@ -41,6 +43,7 @@ namespace eLime.NetDaemonApps.Domain.SolarBackup
         };
 
         public DateTimeOffset? StartedAt { get; set; }
+        public DateTimeOffset? LastBackupCompletedAt { get; set; }
 
         private IDisposable StartBackupButtonListener { get; set; }
         private IDisposable StartBackupSwitchListener { get; set; }
@@ -50,20 +53,21 @@ namespace eLime.NetDaemonApps.Domain.SolarBackup
         private string SynologyBroadcastAddress { get; }
         internal Script Script { get; set; }
         private Button ShutDownButton { get; }
+        private TimeSpan CriticalBackupInterval { get; }
 
         internal PveClient PveClient { get; set; }
         internal PbsClient PbsClient { get; set; }
 
         private readonly TimeSpan _minimumChangeInterval = TimeSpan.FromSeconds(20);
 
-
-        public SolarBackup(ILogger logger, IHaContext haContext, IScheduler scheduler, IFileStorage fileStorage, IMqttEntityManager mqttEntityManager, string synologyMacAddress, string synologyBroadcastAddress, PveClient pveClient, PbsClient pbsClient, Button shutdownButton)
+        public SolarBackup(ILogger logger, IHaContext haContext, IScheduler scheduler, IFileStorage fileStorage, IMqttEntityManager mqttEntityManager, string synologyMacAddress, string synologyBroadcastAddress, PveClient pveClient, PbsClient pbsClient, Button shutdownButton, TimeSpan criticalBackupInterval)
         {
             _logger = logger;
             _haContext = haContext;
             _scheduler = scheduler;
             _fileStorage = fileStorage;
             _mqttEntityManager = mqttEntityManager;
+            _criticalBackupInterval = criticalBackupInterval;
 
             Script = new Script(haContext);
             SynologyMacAddress = synologyMacAddress;
@@ -79,6 +83,7 @@ namespace eLime.NetDaemonApps.Domain.SolarBackup
             SolarBackupState initState = state switch
             {
                 SolarBackupStatus.Idle => new IdleState(),
+                SolarBackupStatus.CriticalBackupNeeded => new IdleState(),
                 SolarBackupStatus.StartingBackupServer => new StartingBackupServerState(),
                 SolarBackupStatus.BackingUpWorkload => new BackingUpWorkloadState(),
                 SolarBackupStatus.BackingUpData => new BackingUpDataState(),
@@ -103,13 +108,16 @@ namespace eLime.NetDaemonApps.Domain.SolarBackup
             var solarBackupButtonEntityOptions = new ButtonOptions() { Icon = "mdi:solar-power", Device = GetDevice(), PayloadPress = "START" };
             await _mqttEntityManager.CreateAsync("button.solar_backup_start", new EntityCreationOptions(Name: $"Start solar backup", Persist: true), solarBackupButtonEntityOptions);
 
-            var solarBackupEntityOptions = new ButtonOptions() { Icon = "mdi:solar-power", Device = GetDevice(), };
+            var solarBackupEntityOptions = new EntityOptions { Icon = "mdi:solar-power", Device = GetDevice(), };
             await _mqttEntityManager.CreateAsync("switch.solar_backup_start", new EntityCreationOptions(Name: $"Start solar backup", DeviceClass: "switch", Persist: true), solarBackupEntityOptions);
 
             var stateOptions = new EntityOptions { Icon = "mdi:progress-helper", Device = GetDevice() };
             await _mqttEntityManager.CreateAsync($"sensor.solar_backup_state", new EntityCreationOptions(Name: $"Solar backup state", UniqueId: $"sensor.solar_backup_state", Persist: true), stateOptions);
+
             var startedAtOptions = new EntityOptions { Icon = "fapro:calendar-day", Device = GetDevice() };
             await _mqttEntityManager.CreateAsync($"sensor.solar_backup_started_at", new EntityCreationOptions(Name: $"Solar backup Started at", UniqueId: $"sensor.solar_backup_started_at", DeviceClass: "timestamp", Persist: true), startedAtOptions);
+            var lastBackupCompletedAtOptions = new EntityOptions { Icon = "fapro:calendar-day", Device = GetDevice() };
+            await _mqttEntityManager.CreateAsync($"sensor.solar_last_backup_completed_at", new EntityCreationOptions(Name: $"Solar backup last backup completed at", UniqueId: $"sensor.solar_backup_last_backup_completed_at", DeviceClass: "timestamp", Persist: true), lastBackupCompletedAtOptions);
 
             var delayedStartButtonTriggerObserver = await _mqttEntityManager.PrepareCommandSubscriptionAsync("button.solar_backup_start");
             StartBackupButtonListener = delayedStartButtonTriggerObserver.SubscribeAsync(StartBackupButtonTriggeredHandler());
@@ -124,7 +132,7 @@ namespace eLime.NetDaemonApps.Domain.SolarBackup
             {
                 _logger.LogDebug("Solar backup: Setting setting start triggered to {state}.", state);
 
-                if ((state == "START" || state == "ON") && State == SolarBackupStatus.Idle)
+                if (state == "START" && State == SolarBackupStatus.Idle)
                     await StartBackup();
 
                 await UpdateStateInHomeAssistant();
@@ -146,6 +154,7 @@ namespace eLime.NetDaemonApps.Domain.SolarBackup
         private Task StartBackup()
         {
             _logger.LogDebug("Solar backup is starting");
+            StartedAt = _scheduler.Now;
             return TransitionTo(_logger, new StartingBackupServerState());
         }
 
@@ -156,12 +165,16 @@ namespace eLime.NetDaemonApps.Domain.SolarBackup
                 MacAddress = SynologyMacAddress,
                 BroadcastAddress = SynologyBroadcastAddress
             });
-            SetStartedAt();
         }
 
         internal void ShutDownServer()
         {
             ShutDownButton.Press();
+        }
+        internal void FinishBackup()
+        {
+            StartedAt = null;
+            LastBackupCompletedAt = _scheduler.Now;
         }
 
         public Device GetDevice()
@@ -172,7 +185,9 @@ namespace eLime.NetDaemonApps.Domain.SolarBackup
         private async Task UpdateStateInHomeAssistant()
         {
             await _mqttEntityManager.SetStateAsync($"sensor.solar_backup_state", State.ToString());
+            await _mqttEntityManager.SetStateAsync($"switch.solar_backup_start", State == SolarBackupStatus.Idle ? "OFF" : "ON");
             await _mqttEntityManager.SetStateAsync($"sensor.solar_backup_started_at", StartedAt?.ToString("O") ?? "None");
+            await _mqttEntityManager.SetStateAsync($"sensor.solar_last_backup_completed_at", LastBackupCompletedAt?.ToString("O") ?? "None");
             _logger.LogTrace("Update solar backup sensors in home assistant.");
 
             _fileStorage.Save("SolarBackup", "SolarBackup", ToFileStorage());
@@ -185,8 +200,10 @@ namespace eLime.NetDaemonApps.Domain.SolarBackup
             if (fileStorage == null)
                 return null;
 
-            StartedAt = fileStorage?.StartedAt;
-            var state = fileStorage?.State;
+            StartedAt = fileStorage.StartedAt;
+            LastBackupCompletedAt = fileStorage.LastBackupCompletedAt;
+            var state = fileStorage.State;
+
             _logger.LogDebug("Retrieved solar backup state.");
 
             return state;
@@ -211,15 +228,6 @@ namespace eLime.NetDaemonApps.Domain.SolarBackup
             await UpdateStateInHomeAssistant();
         }
 
-        internal void SetStartedAt()
-        {
-            StartedAt = _scheduler.Now;
-        }
-        internal void ClearStartedAt()
-        {
-            StartedAt = null;
-        }
-
         public void Dispose()
         {
             _logger.LogInformation($"Solar backup disposing.");
@@ -234,6 +242,7 @@ namespace eLime.NetDaemonApps.Domain.SolarBackup
 public enum SolarBackupStatus
 {
     Idle,
+    CriticalBackupNeeded,
     StartingBackupServer,
     BackingUpWorkload,
     BackingUpData,
