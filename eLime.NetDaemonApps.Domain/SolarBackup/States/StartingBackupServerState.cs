@@ -14,17 +14,19 @@ public class StartingBackupServerState : SolarBackupState
 
     internal override async Task CheckProgress(ILogger logger, IScheduler scheduler, SolarBackup context)
     {
-        if (context.StartedAt?.AddMinutes(5) < scheduler.Now)
-        {
-            logger.LogInformation("Solar backup: Taking too long before server is online, trying wake on lan again");
-            context.BootServer();
-            return;
-        }
-
         //Check if PBS storage came online (API call)
         var isOnline = await context.PveClient.CheckPbsStorageStatus();
 
         if (isOnline)
+        {
             await context.TransitionTo(logger, new BackingUpWorkloadState());
+            return;
+        }
+
+        if (context.StartedAt?.AddMinutes(5) < scheduler.Now)
+        {
+            logger.LogInformation("Solar backup: Taking too long before server is online, trying wake on lan again");
+            context.BootServer();
+        }
     }
 }
