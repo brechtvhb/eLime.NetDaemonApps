@@ -142,7 +142,7 @@ namespace eLime.NetDaemonApps.Domain.SolarBackup
             {
                 _logger.LogDebug("Solar backup: Setting setting start triggered to {state}.", state);
 
-                if (state == "ON" && State == SolarBackupStatus.Idle)
+                if (state == "ON" && State is SolarBackupStatus.Idle or SolarBackupStatus.CriticalBackupNeeded)
                     await StartBackup();
 
                 await UpdateStateInHomeAssistant();
@@ -183,7 +183,7 @@ namespace eLime.NetDaemonApps.Domain.SolarBackup
         private async Task UpdateStateInHomeAssistant()
         {
             await _mqttEntityManager.SetStateAsync($"sensor.solar_backup_state", State.ToString());
-            await _mqttEntityManager.SetStateAsync($"switch.solar_backup_start", State == SolarBackupStatus.Idle ? "OFF" : "ON");
+            await _mqttEntityManager.SetStateAsync($"switch.solar_backup_start", State is SolarBackupStatus.Idle or SolarBackupStatus.CriticalBackupNeeded ? "OFF" : "ON");
             await _mqttEntityManager.SetStateAsync($"sensor.solar_backup_started_at", StartedAt?.ToString("O") ?? "None");
             await _mqttEntityManager.SetStateAsync($"sensor.solar_last_backup_completed_at", LastBackupCompletedAt?.ToString("O") ?? "None");
             _logger.LogTrace("Update solar backup sensors in home assistant.");
