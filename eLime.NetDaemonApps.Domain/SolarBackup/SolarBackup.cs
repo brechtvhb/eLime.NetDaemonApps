@@ -23,8 +23,6 @@ namespace eLime.NetDaemonApps.Domain.SolarBackup
         private readonly IScheduler _scheduler;
         private readonly IFileStorage _fileStorage;
         private readonly IMqttEntityManager _mqttEntityManager;
-        private readonly TimeSpan _criticalBackupInterval;
-
         private SolarBackupState _state;
 
         public SolarBackupStatus State => _state switch
@@ -67,7 +65,6 @@ namespace eLime.NetDaemonApps.Domain.SolarBackup
             _scheduler = scheduler;
             _fileStorage = fileStorage;
             _mqttEntityManager = mqttEntityManager;
-            _criticalBackupInterval = criticalBackupInterval;
 
             Script = new Script(haContext);
             SynologyMacAddress = synologyMacAddress;
@@ -76,6 +73,7 @@ namespace eLime.NetDaemonApps.Domain.SolarBackup
             PveClient = pveClient;
             PbsClient = pbsClient;
             ShutDownButton = shutdownButton;
+            CriticalBackupInterval = criticalBackupInterval;
 
             EnsureSensorsExist().RunSync();
             var state = RetrieveState();

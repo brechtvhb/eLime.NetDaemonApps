@@ -17,12 +17,13 @@ public class VerifyingBackupsState : SolarBackupState
     {
         if (_taskId == null)
         {
+            logger.LogInformation("Solar backup: No verify task ID was found. Starting verify task.");
             _taskId = await context.PbsClient.StartVerifyTask();
             return;
         }
 
         //check if verify task completed (through API call)
-        logger.LogInformation("Solar backup: Checking if verify task was completed.");
+        logger.LogTrace("Solar backup: Checking if verify task was completed.");
         var taskCompleted = await context.PbsClient.CheckIfTaskCompleted(_taskId);
         if (taskCompleted)
             await context.TransitionTo(logger, new PruningBackupsState());

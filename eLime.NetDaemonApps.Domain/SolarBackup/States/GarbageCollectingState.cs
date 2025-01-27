@@ -9,7 +9,7 @@ public class GarbageCollectingState : SolarBackupState
 
     internal override async Task Enter(ILogger logger, IScheduler scheduler, SolarBackup context)
     {
-        logger.LogInformation("Solar backup: Checking garbage collection task.");
+        logger.LogInformation("Solar backup: Starting garbage collection task.");
         _taskId = await context.PbsClient.StartGarbageCollectTask();
     }
 
@@ -17,12 +17,13 @@ public class GarbageCollectingState : SolarBackupState
     {
         if (_taskId == null)
         {
+            logger.LogInformation("Solar backup: No garbage collection task was found. Starting garbage collection task.");
             _taskId = await context.PbsClient.StartGarbageCollectTask();
             return;
         }
 
         //check if garbage collection task completed(through API call)
-        logger.LogInformation("Solar backup: Checking if garbage collection was completed.");
+        logger.LogTrace("Solar backup: Checking if garbage collection was completed.");
         var taskCompleted = await context.PbsClient.CheckIfTaskCompleted(_taskId);
         if (taskCompleted)
             await context.TransitionTo(logger, new ShuttingDownBackupServerState());

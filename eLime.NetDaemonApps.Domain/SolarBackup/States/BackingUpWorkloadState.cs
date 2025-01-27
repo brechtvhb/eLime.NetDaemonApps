@@ -17,10 +17,12 @@ public class BackingUpWorkloadState : SolarBackupState
     {
         if (_taskId == null)
         {
+            logger.LogInformation("Solar backup: Found no task ID for backup. Starting backup of VMs and LXC workloads again.");
             _taskId = await context.PveClient.StartBackup();
             return;
         }
-        logger.LogDebug("Solar backup: Checking if backup was completed.");
+
+        logger.LogTrace("Solar backup: Checking if backup was completed.");
         var backupCompleted = await context.PveClient.CheckIfTaskCompleted(_taskId);
         if (backupCompleted)
             await context.TransitionTo(logger, new BackingUpDataState());

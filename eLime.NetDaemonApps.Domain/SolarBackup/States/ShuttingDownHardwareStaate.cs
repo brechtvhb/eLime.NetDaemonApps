@@ -17,7 +17,7 @@ public class ShuttingDownHardwareState : SolarBackupState
 
     internal override Task CheckProgress(ILogger logger, IScheduler scheduler, SolarBackup context)
     {
-        if (_shutDownStartedAt.AddMinutes(2) >= scheduler.Now)
+        if (_shutDownStartedAt.AddMinutes(1) >= scheduler.Now)
             return Task.CompletedTask;
 
         context.FinishBackup();

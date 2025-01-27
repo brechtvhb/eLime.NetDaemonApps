@@ -17,12 +17,13 @@ public class PruningBackupsState : SolarBackupState
     {
         if (_taskId == null)
         {
+            logger.LogInformation("Solar backup: No prune task Id was found. Starting prune task.");
             _taskId = await context.PbsClient.StartPruneTask();
             return;
         }
 
         //check if prune task completed (through API call)
-        logger.LogInformation("Solar backup: Checking if prune task completed.");
+        logger.LogTrace("Solar backup: Checking if prune task completed.");
         var taskCompleted = await context.PbsClient.CheckIfTaskCompleted(_taskId);
         if (taskCompleted)
             await context.TransitionTo(logger, new GarbageCollectingState());
