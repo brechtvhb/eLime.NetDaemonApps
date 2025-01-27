@@ -11,7 +11,7 @@ public class TriggeredEnergyConsumerConfig
     public string CriticalState { get; set; }
     public bool CanPause { get; set; }
     public bool ShutDownOnComplete { get; set; }
-    public List<TriggeredStatePeakLoad> PeakLoads { get; set; }
+    public List<TriggeredStatePeakLoad> PeakLoads { get; set; } = [];
     public double? DefaultLoad { get; set; }
 
 }
