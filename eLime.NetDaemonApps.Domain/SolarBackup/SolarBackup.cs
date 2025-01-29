@@ -211,6 +211,7 @@ namespace eLime.NetDaemonApps.Domain.SolarBackup
         {
             State = State,
             StartedAt = StartedAt,
+            LastBackupCompletedAt = LastBackupCompletedAt
         };
 
         internal async Task TransitionTo(ILogger logger, SolarBackupState state)
