@@ -175,10 +175,13 @@ public class EnergyManager : IDisposable
         var estimatedLoad = preStartEstimatedLoad + expectedLoad;
         var estimatedAverageLoad = preStartEstimatedAveragedLoad + expectedLoad;
 
-        var dynamicLoadThatCanBeScaledDownOnBehalfOf = runningConsumers
-            .OfType<IDynamicLoadConsumer>()
-            .Where(consumer => consumer.BalanceOnBehalfOf == BalanceOnBehalfOf.AllConsumers)
-            .Sum(consumer => consumer.ReleasablePowerWhenBalancingOnBehalfOf);
+        var dynamicLoadThatCanBeScaledDownOnBehalfOf = dynamicLoadNetChange > 0
+            ? 0 //Dynamic load already changed, skip changing more until next pass.
+            : runningConsumers
+                .OfType<IDynamicLoadConsumer>()
+                .Where(consumer => consumer.BalanceOnBehalfOf == BalanceOnBehalfOf.AllConsumers)
+                .Sum(consumer => consumer.ReleasablePowerWhenBalancingOnBehalfOf);
+
         dynamicLoadThatCanBeScaledDownOnBehalfOf = Math.Round(dynamicLoadThatCanBeScaledDownOnBehalfOf);
 
         var consumersThatCriticallyNeedEnergy = Consumers.Where(x => x is { State: EnergyConsumerState.CriticallyNeedsEnergy });
