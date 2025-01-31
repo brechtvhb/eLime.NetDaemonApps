@@ -175,7 +175,7 @@ public class EnergyManager : IDisposable
         var estimatedLoad = preStartEstimatedLoad + expectedLoad;
         var estimatedAverageLoad = preStartEstimatedAveragedLoad + expectedLoad;
 
-        var dynamicLoadThatCanBeScaledDownOnBehalfOf = dynamicLoadNetChange > 0
+        var dynamicLoadThatCanBeScaledDownOnBehalfOf = dynamicLoadNetChange != 0
             ? 0 //Dynamic load already changed, skip changing more until next pass.
             : runningConsumers
                 .OfType<IDynamicLoadConsumer>()
