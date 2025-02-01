@@ -230,7 +230,7 @@ public class EnergyManager : IDisposable
 
             consumer.TurnOn();
 
-            _logger.LogDebug("{Consumer}: Will start consumer. Current load/estimated (dynamicLoadThatCanBeScaledDownOnBehalfOf) load was: {CurrentLoad}/{EstimatedLoad} ({DynamicLoadThatCanBeScaledDownOnBehalfOf}). Switch-on/peak load of consumer is: {SwitchOnLoad}/{PeakLoad}. Last change was at: {LastChange}", consumer.Name, GridMonitor.CurrentLoad, estimatedLoad, dynamicLoadThatCanBeScaledDownOnBehalfOf, consumer.SwitchOnLoad, consumer.PeakLoad, _lastChange.ToString("O"));
+            _logger.LogDebug("{Consumer}: Will start consumer. Current load/estimated (expectedLoad/dynamicLoadThatCanBeScaledDownOnBehalfOf) load was: {CurrentLoad}/{EstimatedLoad} ({ExpectedLoad}/{DynamicLoadThatCanBeScaledDownOnBehalfOf}). Switch-on/peak load of consumer is: {SwitchOnLoad}/{PeakLoad}. Last change was at: {LastChange}", consumer.Name, GridMonitor.CurrentLoad, estimatedLoad, expectedLoad, dynamicLoadThatCanBeScaledDownOnBehalfOf, consumer.SwitchOnLoad, consumer.PeakLoad, _lastChange.ToString("O"));
             estimatedLoad += consumer.PeakLoad;
             estimatedAverageLoad += consumer.PeakLoad;
             startNetChange += consumer.PeakLoad;
