@@ -112,6 +112,28 @@ public class TriggeredEnergyConsumerTests
         Assert.AreEqual(2200, energyManager.Consumers.First().PeakLoad);
     }
 
+
+    [TestMethod]
+    public void Heating_Renders_PeakLoad()
+    {
+        // Arrange
+        var consumer = new TriggeredEnergyConsumerBuilder(_logger, _testCtx, "washer")
+            .Build();
+
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
+            .AddConsumer(consumer)
+            .Build();
+
+        //Act
+        _testCtx.TriggerStateChange(consumer.Socket, "on");
+        _testCtx.TriggerStateChange(consumer.StateSensor, "Heating");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
+
+        //Assert
+        Assert.AreEqual(2200, energyManager.Consumers.First().PeakLoad);
+    }
+
+
     [TestMethod]
     public void PostHeating_Renders_LowerPeakLoad()
     {

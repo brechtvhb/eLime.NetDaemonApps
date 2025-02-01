@@ -48,10 +48,10 @@ public static class ConfigExtensions
             if (consumer.Triggered != null)
             {
                 var socket = BinarySwitch.Create(ha, consumer.Triggered.SocketEntity);
-                BinarySwitch pauseSwitch = null;
+                BinarySwitch? pauseSwitch = null;
 
                 if (!String.IsNullOrWhiteSpace(consumer.Triggered.PauseSwitch))
-                    pauseSwitch = BinarySwitch.Create(ha, consumer.Triggered.SocketEntity);
+                    pauseSwitch = BinarySwitch.Create(ha, consumer.Triggered.PauseSwitch);
 
                 var stateSensor = TextSensor.Create(ha, consumer.Triggered.StateSensor);
                 var stateMap = consumer.Triggered.PeakLoads.Select(x => (x.State, x.PeakLoad)).ToList();
