@@ -75,8 +75,8 @@ public class Car
     private void CableConnectedSensor_TurnedOn(object? sender, BinarySensorEventArgs e)
     {
         //Should check for state changes on location too, but one is always home before being able to connect the cable?
-        if (Location.State == "home")
-            CarConnected?.Invoke(this, e);
+        //if (Location.State == "home")
+        //    CarConnected?.Invoke(this, e);
     }
 
 
