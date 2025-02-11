@@ -288,6 +288,9 @@ public class EnergyManager : IDisposable
 
             if (estimatedAverageLoad <= GridMonitor.PeakLoad)
                 break;
+
+            if (estimatedLoad <= GridMonitor.PeakLoad)
+                break;
         }
 
 
