@@ -241,8 +241,8 @@ public class EnergyManager : IDisposable
 
     private Double StopConsumersIfNeeded(Double dynamicLoadNetChange, Double startLoadNetChange)
     {
-        var consumerStopped = false;
-        var estimatedLoad = GridMonitor.AverageLoadSince(_scheduler.Now, TimeSpan.FromMinutes(3)) + dynamicLoadNetChange + startLoadNetChange;
+        var estimatedLoad = GridMonitor.CurrentLoad + dynamicLoadNetChange + startLoadNetChange;
+        var estimatedAverageLoad = GridMonitor.AverageLoadSince(_scheduler.Now, TimeSpan.FromMinutes(3)) + dynamicLoadNetChange + startLoadNetChange;
         var stopNetChange = 0d;
 
         var consumersThatNoLongerNeedEnergy = Consumers.Where(x => x is { State: EnergyConsumerState.Off, Running: true });
@@ -251,36 +251,42 @@ public class EnergyManager : IDisposable
             _logger.LogDebug("{Consumer}: Will stop consumer because it no longer needs energy.", consumer.Name);
             consumer.Stop();
             estimatedLoad -= consumer.CurrentLoad;
+            estimatedAverageLoad -= consumer.CurrentLoad;
             stopNetChange -= consumer.CurrentLoad;
         }
 
-        var consumersThatPreferSolar = Consumers.OrderByDescending(x => x.SwitchOffLoad).Where(x => x.CanForceStop(_scheduler.Now) && x is { Running: true } && x.SwitchOffLoad < estimatedLoad).ToList();
-        foreach (var consumer in consumersThatPreferSolar.TakeWhile(consumer => consumer.SwitchOffLoad < estimatedLoad))
+        var consumersThatPreferSolar = Consumers.OrderByDescending(x => x.SwitchOffLoad).Where(x => x.CanForceStop(_scheduler.Now) && x is { Running: true } && x.SwitchOffLoad < estimatedAverageLoad && x.SwitchOffLoad < estimatedLoad).ToList();
+        foreach (var consumer in consumersThatPreferSolar.TakeWhile(consumer => consumer.SwitchOffLoad < estimatedAverageLoad))
         {
-            _logger.LogDebug("{Consumer}: Will stop consumer because current load is above switch off load. Current load/estimated load was: {CurrentLoad}/{EstimatedLoad}. Switch-off/peak load of consumer is: {SwitchOffLoad}/{PeakLoad}", consumer.Name, GridMonitor.CurrentLoad, estimatedLoad, consumer.SwitchOffLoad, consumer.PeakLoad);
+            _logger.LogDebug("{Consumer}: Will stop consumer because current load is above switch off load. Current load/estimated load was: {CurrentLoad}/{EstimatedLoad}. Switch-off/peak load of consumer is: {SwitchOffLoad}/{PeakLoad}", consumer.Name, GridMonitor.CurrentLoad, estimatedAverageLoad, consumer.SwitchOffLoad, consumer.PeakLoad);
             consumer.Stop();
             estimatedLoad -= consumer.CurrentLoad;
+            estimatedAverageLoad -= consumer.CurrentLoad;
             stopNetChange -= consumer.CurrentLoad;
         }
 
+        if (!(estimatedAverageLoad > GridMonitor.PeakLoad))
+            return stopNetChange;
 
-        if (!(estimatedLoad > GridMonitor.PeakLoad)) return stopNetChange;
+        if (!(estimatedLoad > GridMonitor.PeakLoad))
+            return stopNetChange;
 
         var consumersThatShouldForceStopped = Consumers.Where(x => x.CanForceStopOnPeakLoad(_scheduler.Now) && x.Running);
         foreach (var consumer in consumersThatShouldForceStopped)
         {
             if (consumer is IDynamicLoadConsumer && dynamicLoadNetChange != 0)
             {
-                _logger.LogDebug("{Consumer}: Should force stop, but won't do it because dynamic load was adjusted. Current load/estimated load was: {CurrentLoad}/{EstimatedLoad}. Switch-off/peak load of consumer is: {SwitchOffLoad}/{PeakLoad}", consumer.Name, GridMonitor.CurrentLoad, estimatedLoad, consumer.SwitchOffLoad, consumer.PeakLoad);
+                _logger.LogDebug("{Consumer}: Should force stop, but won't do it because dynamic load was adjusted. Current load/estimated load was: {CurrentLoad}/{EstimatedLoad}. Switch-off/peak load of consumer is: {SwitchOffLoad}/{PeakLoad}", consumer.Name, GridMonitor.CurrentLoad, estimatedAverageLoad, consumer.SwitchOffLoad, consumer.PeakLoad);
                 continue;
             }
 
-            _logger.LogDebug("{Consumer}: Will stop consumer right now because peak load was exceeded. Current load/estimated load was: {CurrentLoad}/{EstimatedLoad}. Switch-off/peak load of consumer is: {SwitchOffLoad}/{PeakLoad}", consumer.Name, GridMonitor.CurrentLoad, estimatedLoad, consumer.SwitchOffLoad, consumer.PeakLoad);
+            _logger.LogDebug("{Consumer}: Will stop consumer right now because peak load was exceeded. Current load/estimated load was: {CurrentLoad}/{EstimatedLoad}. Switch-off/peak load of consumer is: {SwitchOffLoad}/{PeakLoad}", consumer.Name, GridMonitor.CurrentLoad, estimatedAverageLoad, consumer.SwitchOffLoad, consumer.PeakLoad);
             consumer.Stop();
             estimatedLoad -= consumer.CurrentLoad;
+            estimatedAverageLoad -= consumer.CurrentLoad;
             stopNetChange -= consumer.CurrentLoad;
 
-            if (estimatedLoad <= GridMonitor.PeakLoad)
+            if (estimatedAverageLoad <= GridMonitor.PeakLoad)
                 break;
         }
 
