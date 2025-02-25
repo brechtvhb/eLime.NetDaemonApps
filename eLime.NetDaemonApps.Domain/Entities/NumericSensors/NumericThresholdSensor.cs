@@ -25,8 +25,9 @@ public record NumericThresholdSensor : NumericEntity, IDisposable
     {
         Threshold = threshold;
         BelowThreshold = belowThreshold ?? threshold;
+        ThresholdTimeSpan = thresholdTimeSpan;
 
-        if (thresholdTimeSpan != TimeSpan.Zero && scheduler != null)
+        if (ThresholdTimeSpan != TimeSpan.Zero && scheduler != null)
         {
             _subscribeBelowForDisposable = StateChanges()
                 .WhenStateIsFor(x => x?.State < Threshold, ThresholdTimeSpan, scheduler)
