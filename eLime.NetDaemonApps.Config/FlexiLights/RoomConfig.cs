@@ -12,6 +12,7 @@ public class RoomConfig
     public IList<string>? IlluminanceSensors { get; set; }
     public int? IlluminanceThreshold { get; set; }
     public int? IlluminanceLowerThreshold { get; set; }
+    public TimeSpan IlluminanceThresholdTimeSpan { get; set; }
     public bool AutoSwitchOffAboveIlluminance { get; set; }
     public IList<MotionSensorConfig>? MotionSensors { get; set; }
     public TimeSpan? IgnorePresenceAfterOffDuration { get; set; }

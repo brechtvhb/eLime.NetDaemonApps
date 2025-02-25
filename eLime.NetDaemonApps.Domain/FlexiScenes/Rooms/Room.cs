@@ -216,7 +216,9 @@ public class Room : IAsyncDisposable
                 if (IlluminanceSensors.Any(x => x.EntityId == sensorId))
                     continue;
 
-                var sensor = IlluminanceSensor.Create(_haContext, sensorId, config.IlluminanceThreshold, config.IlluminanceLowerThreshold);
+                var sensor = config.IlluminanceLowerThreshold != null
+                    ? IlluminanceSensor.Create(_haContext, sensorId, config.IlluminanceThreshold, config.IlluminanceLowerThreshold)
+                    : IlluminanceSensor.Create(_haContext, sensorId, config.IlluminanceThreshold, config.IlluminanceThresholdTimeSpan, scheduler);
                 AddIlluminanceSensor(sensor);
             }
         }
