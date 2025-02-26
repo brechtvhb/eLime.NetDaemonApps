@@ -251,7 +251,7 @@ public class EnergyManager : IDisposable
                 .Where(consumer => consumer.BalanceOnBehalfOf == BalanceOnBehalfOf.AllConsumers)
                 .Sum(consumer => consumer.ReleasablePowerWhenBalancingOnBehalfOf) + dynamicLoadNetChange;
 
-        dynamicLoadThatCanBeScaledDownOnBehalfOf = Math.Round(dynamicLoadThatCanBeScaledDownOnBehalfOf);
+        dynamicLoadThatCanBeScaledDownOnBehalfOf = Math.Round(dynamicLoadThatCanBeScaledDownOnBehalfOf < 0 ? 0 : dynamicLoadThatCanBeScaledDownOnBehalfOf);
 
         var consumersThatNoLongerNeedEnergy = Consumers.Where(x => x is { State: EnergyConsumerState.Off, Running: true });
         foreach (var consumer in consumersThatNoLongerNeedEnergy)
