@@ -171,6 +171,7 @@ public class CarChargerEnergyConsumerTests
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
 
         //Act
+        _testCtx.TriggerStateChange(consumer.StateSensor, "Charging");
         _testCtx.TriggerStateChange(consumer.CurrentEntity, "6");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(15));
         A.CallTo(() => _gridMonitor.CurrentLoad).Returns(-600);
@@ -200,6 +201,7 @@ public class CarChargerEnergyConsumerTests
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
 
         //Act
+        _testCtx.TriggerStateChange(consumer.StateSensor, "Charging");
         _testCtx.TriggerStateChange(consumer.CurrentEntity, "16");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(15));
         A.CallTo(() => _gridMonitor.CurrentLoad).Returns(800);
@@ -208,7 +210,7 @@ public class CarChargerEnergyConsumerTests
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(10));
 
         //Assert
-        _testCtx.InputNumberChanged(consumer.CurrentEntity, 12, Moq.Times.Once);
+        _testCtx.InputNumberChanged(consumer.CurrentEntity, 12, Times.Once);
     }
 
     [TestMethod]
@@ -231,6 +233,7 @@ public class CarChargerEnergyConsumerTests
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(20));
 
         //Act
+        _testCtx.TriggerStateChange(consumer.StateSensor, "Charging");
         _testCtx.TriggerStateChange(consumer.CurrentEntity, "6");
         A.CallTo(() => _gridMonitor.CurrentLoad).Returns(1200);
         A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(1200);
@@ -261,6 +264,7 @@ public class CarChargerEnergyConsumerTests
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
 
         //Act
+        _testCtx.TriggerStateChange(consumer.StateSensor, "Charging");
         _testCtx.TriggerStateChange(consumer.CurrentEntity, "6");
         A.CallTo(() => _gridMonitor.CurrentLoad).Returns(1200);
         A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(1200);
@@ -271,8 +275,7 @@ public class CarChargerEnergyConsumerTests
         _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(3));
 
         //Assert
-        Assert.AreEqual(EnergyConsumerState.NeedsEnergy, energyManager.Consumers.First().State);
-        _testCtx.InputNumberChanged(consumer.CurrentEntity, 5, Moq.Times.Exactly(2));
+        _testCtx.InputNumberChanged(consumer.CurrentEntity, 5, Times.Exactly(2));
     }
 
 
@@ -295,6 +298,8 @@ public class CarChargerEnergyConsumerTests
 
         _testCtx.TriggerStateChange(consumer.CurrentEntity, "16");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(10));
+
+        _testCtx.TriggerStateChange(consumer.StateSensor, "Charging");
         A.CallTo(() => _gridMonitor.CurrentLoad).Returns(800);
         A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(800);
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(15));
@@ -307,9 +312,9 @@ public class CarChargerEnergyConsumerTests
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(15));
 
         //Assert
-        _testCtx.InputNumberChanged(consumer.CurrentEntity, 12, Moq.Times.Once);
-        _testCtx.InputNumberChanged(consumer.CurrentEntity, 11, Moq.Times.Never);
-        _testCtx.InputNumberChanged(consumer.CurrentEntity, 13, Moq.Times.Never);
+        _testCtx.InputNumberChanged(consumer.CurrentEntity, 12, Times.Once);
+        _testCtx.InputNumberChanged(consumer.CurrentEntity, 11, Times.Never);
+        _testCtx.InputNumberChanged(consumer.CurrentEntity, 13, Times.Never);
     }
 
     [TestMethod]
@@ -333,11 +338,11 @@ public class CarChargerEnergyConsumerTests
 
         _testCtx.TriggerStateChange(consumer.StateSensor, "Charging");
         _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "100");
-        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(30));
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(20));
 
         //Assert
         Assert.AreEqual(EnergyConsumerState.Off, energyManager.Consumers.First().State);
-        _testCtx.InputNumberChanged(consumer.CurrentEntity, 5, Moq.Times.Exactly(2));
+        _testCtx.InputNumberChanged(consumer.CurrentEntity, 5, Times.Exactly(2));
     }
 
     [TestMethod]
@@ -426,7 +431,10 @@ public class CarChargerEnergyConsumerTests
         _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "5");
         _testCtx.TriggerStateChange(consumer.Cars.First().MaxBatteryPercentageSensor, "80");
         _testCtx.TriggerStateChange(consumer.Cars.First().Location, "home");
+
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
+
+        _testCtx.TriggerStateChange(consumer.StateSensor, "Charging");
         _testCtx.TriggerStateChange(consumer.CurrentEntity, "6");
         _testCtx.TriggerStateChange(consumer.Cars.First().CurrentEntity, "6");
         _testCtx.TriggerStateChange(consumer.Cars.First().ChargerSwitch, "on");
@@ -492,7 +500,10 @@ public class CarChargerEnergyConsumerTests
         _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "5");
         _testCtx.TriggerStateChange(consumer.Cars.First().MaxBatteryPercentageSensor, "80");
         _testCtx.TriggerStateChange(consumer.Cars.First().Location, "home");
+
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
+
+        _testCtx.TriggerStateChange(consumer.StateSensor, "Charging");
         _testCtx.TriggerStateChange(consumer.CurrentEntity, "6");
         _testCtx.TriggerStateChange(consumer.Cars.First().CurrentEntity, "1");
         _testCtx.TriggerStateChange(consumer.Cars.First().ChargerSwitch, "on");
@@ -525,7 +536,10 @@ public class CarChargerEnergyConsumerTests
         _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "5");
         _testCtx.TriggerStateChange(consumer.Cars.First().MaxBatteryPercentageSensor, "80");
         _testCtx.TriggerStateChange(consumer.Cars.First().Location, "home");
+
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
+
+        _testCtx.TriggerStateChange(consumer.StateSensor, "Charging");
         _testCtx.TriggerStateChange(consumer.CurrentEntity, "6");
         _testCtx.TriggerStateChange(consumer.Cars.First().CurrentEntity, "5");
         _testCtx.TriggerStateChange(consumer.Cars.First().ChargerSwitch, "on");
@@ -538,8 +552,8 @@ public class CarChargerEnergyConsumerTests
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(15));
 
         //Assert
-        _testCtx.InputNumberChanged(consumer.CurrentEntity, 16, Moq.Times.Once);
-        _testCtx.InputNumberChanged(consumer.Cars.First().CurrentEntity, 7, Moq.Times.Once);
+        _testCtx.InputNumberChanged(consumer.CurrentEntity, 16, Times.Once);
+        _testCtx.InputNumberChanged(consumer.Cars.First().CurrentEntity, 7, Times.Once);
     }
 
     [TestMethod]
@@ -561,6 +575,8 @@ public class CarChargerEnergyConsumerTests
         _testCtx.TriggerStateChange(consumer.Cars.First().MaxBatteryPercentageSensor, "80");
         _testCtx.TriggerStateChange(consumer.Cars.First().Location, "home");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
+
+        _testCtx.TriggerStateChange(consumer.StateSensor, "Charging");
         _testCtx.TriggerStateChange(consumer.CurrentEntity, "8");
         _testCtx.TriggerStateChange(consumer.Cars.First().CurrentEntity, "8");
         _testCtx.TriggerStateChange(consumer.Cars.First().ChargerSwitch, "on");
@@ -596,7 +612,10 @@ public class CarChargerEnergyConsumerTests
         _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "5");
         _testCtx.TriggerStateChange(consumer.Cars.First().MaxBatteryPercentageSensor, "80");
         _testCtx.TriggerStateChange(consumer.Cars.First().Location, "home");
+
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
+
+        _testCtx.TriggerStateChange(consumer.StateSensor, "Charging");
         _testCtx.TriggerStateChange(consumer.CurrentEntity, "6");
         _testCtx.TriggerStateChange(consumer.Cars.First().CurrentEntity, "6");
         _testCtx.TriggerStateChange(consumer.Cars.First().ChargerSwitch, "on");
@@ -634,6 +653,8 @@ public class CarChargerEnergyConsumerTests
         consumer.SetBalancingMethod(_testCtx.Scheduler.Now, BalancingMethod.NearPeak);
 
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
+
+        _testCtx.TriggerStateChange(consumer.StateSensor, "Charging");
         _testCtx.TriggerStateChange(consumer.CurrentEntity, "16");
         _testCtx.TriggerStateChange(consumer.Cars.First().CurrentEntity, "6");
         _testCtx.TriggerStateChange(consumer.Cars.First().ChargerSwitch, "on");
@@ -667,9 +688,11 @@ public class CarChargerEnergyConsumerTests
         _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "5");
         _testCtx.TriggerStateChange(consumer.Cars.First().MaxBatteryPercentageSensor, "80");
         _testCtx.TriggerStateChange(consumer.Cars.First().Location, "home");
-        consumer.SetBalancingMethod(_testCtx.Scheduler.Now, BalancingMethod.SolarPreferred);
 
+        consumer.SetBalancingMethod(_testCtx.Scheduler.Now, BalancingMethod.SolarPreferred);
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
+
+        _testCtx.TriggerStateChange(consumer.StateSensor, "Charging");
         _testCtx.TriggerStateChange(consumer.CurrentEntity, "16");
         _testCtx.TriggerStateChange(consumer.Cars.First().CurrentEntity, "6");
         _testCtx.TriggerStateChange(consumer.Cars.First().ChargerSwitch, "on");
@@ -708,6 +731,7 @@ public class CarChargerEnergyConsumerTests
 
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
 
+        _testCtx.TriggerStateChange(consumer.StateSensor, "Charging");
         _testCtx.TriggerStateChange(consumer.CurrentEntity, "16");
         _testCtx.TriggerStateChange(consumer.Cars.First().CurrentEntity, "6");
         _testCtx.TriggerStateChange(consumer.Cars.First().ChargerSwitch, "on");

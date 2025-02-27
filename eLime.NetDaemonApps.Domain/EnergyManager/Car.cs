@@ -100,6 +100,7 @@ public class Car
             : BatteryPercentageSensor.State < 100
         );
 
+    //TODO: Check if car has "charging" state
     public Boolean IsRunning => ChargerSwitch == null
         ? CanSetCurrent
             ? CurrentEntity.State >= MinimumCurrent
