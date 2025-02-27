@@ -6,3 +6,12 @@ public enum CarChargerStates
     Occupied,
     Charging
 }
+public enum CarChargingStates
+{
+    disconnected,
+    no_power,
+    stopped,
+    starting,
+    charging,
+    complete
+}

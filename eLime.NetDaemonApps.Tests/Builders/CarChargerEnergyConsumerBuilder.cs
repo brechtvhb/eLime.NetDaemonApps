@@ -56,7 +56,7 @@ public class CarChargerEnergyConsumerBuilder
         _currentEntity = InputNumberEntity.Create(_testCtx.HaContext, "input_number.y");
         _voltageEntity = new NumericEntity(_testCtx.HaContext, "sensor.voltage");
         WithStateSensor(TextSensor.Create(_testCtx.HaContext, "sensor.z"));
-        AddCar("Passat GTE", CarChargingMode.Ac1Phase, null, null, 6, 16, 11.5, new NumericEntity(_testCtx.HaContext, "sensor.a"), null, false, new BinarySensor(_testCtx.HaContext, "binary_sensor.b"), new DeviceTracker(_testCtx.HaContext, "device_tracker.passat_gte_position"));
+        AddCar("Passat GTE", CarChargingMode.Ac1Phase, null, null, 6, 16, null, 11.5, new NumericEntity(_testCtx.HaContext, "sensor.a"), null, false, new BinarySensor(_testCtx.HaContext, "binary_sensor.b"), new DeviceTracker(_testCtx.HaContext, "device_tracker.passat_gte_position"));
     }
 
     public CarChargerEnergyConsumerBuilder InitTeslaTests(bool remainOffAtFullBattery = false)
@@ -75,8 +75,8 @@ public class CarChargerEnergyConsumerBuilder
         _cars = [];
         var _carCurrentEntity = InputNumberEntity.Create(_testCtx.HaContext, "input_number.my2024");
         var _carChargerSwitch = BinarySwitch.Create(_testCtx.HaContext, "switch.my2024_charge");
-
-        AddCar("MY2024", CarChargingMode.Ac3Phase, _carChargerSwitch, _carCurrentEntity, 1, 16, 75, new NumericEntity(_testCtx.HaContext, "sensor.my2024_battery"), new NumericEntity(_testCtx.HaContext, "sensor.my2024_battery_max_charge"), remainOffAtFullBattery, new BinarySensor(_testCtx.HaContext, "binary_sensor.my2024_cable_connected"), new DeviceTracker(_testCtx.HaContext, "device_tracker.my2024_position"));
+        var carChargingState = TextSensor.Create(_testCtx.HaContext, "sensor.my2024_charging");
+        AddCar("MY2024", CarChargingMode.Ac3Phase, _carChargerSwitch, _carCurrentEntity, 1, 16, carChargingState, 75, new NumericEntity(_testCtx.HaContext, "sensor.my2024_battery"), new NumericEntity(_testCtx.HaContext, "sensor.my2024_battery_max_charge"), remainOffAtFullBattery, new BinarySensor(_testCtx.HaContext, "binary_sensor.my2024_cable_connected"), new DeviceTracker(_testCtx.HaContext, "device_tracker.my2024_position"));
         return this;
     }
 
@@ -141,9 +141,9 @@ public class CarChargerEnergyConsumerBuilder
         return this;
     }
 
-    public CarChargerEnergyConsumerBuilder AddCar(String name, CarChargingMode mode, BinarySwitch? chargerSwitch, InputNumberEntity? currentEntity, Int32? minimumCurrent, Int32? maximumCurrent, Double batteryCapacity, NumericEntity batteryPercentageSensor, NumericEntity? maxBatteryPercentageSensor, bool remainOnAtFullBattery, BinarySensor cableConnectedSensor, DeviceTracker location)
+    public CarChargerEnergyConsumerBuilder AddCar(String name, CarChargingMode mode, BinarySwitch? chargerSwitch, InputNumberEntity? currentEntity, Int32? minimumCurrent, Int32? maximumCurrent, TextSensor? carChargingState, Double batteryCapacity, NumericEntity batteryPercentageSensor, NumericEntity? maxBatteryPercentageSensor, bool remainOnAtFullBattery, BinarySensor cableConnectedSensor, DeviceTracker location)
     {
-        _cars.Add(new Car(name, mode, chargerSwitch, currentEntity, minimumCurrent, maximumCurrent, batteryCapacity, batteryPercentageSensor, maxBatteryPercentageSensor, remainOnAtFullBattery, cableConnectedSensor, false, location, _testCtx.Scheduler));
+        _cars.Add(new Car(name, mode, chargerSwitch, currentEntity, minimumCurrent, maximumCurrent, carChargingState, batteryCapacity, batteryPercentageSensor, maxBatteryPercentageSensor, remainOnAtFullBattery, cableConnectedSensor, false, location, _testCtx.Scheduler));
         return this;
     }
 

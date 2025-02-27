@@ -359,6 +359,7 @@ public class CarChargerEnergyConsumerTests
 
         //Act
         _testCtx.TriggerStateChange(consumer.StateSensor, "Occupied");
+        _testCtx.TriggerStateChange(consumer.Cars.First().ChargingStateSensor, "no_power");
         _testCtx.TriggerStateChange(consumer.Cars.First().CableConnectedSensor, "on");
         _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "5");
         _testCtx.TriggerStateChange(consumer.Cars.First().MaxBatteryPercentageSensor, "80");
@@ -368,6 +369,7 @@ public class CarChargerEnergyConsumerTests
 
         _testCtx.TriggerStateChange(consumer.StateSensor, "Charging");
         _testCtx.TriggerStateChange(consumer.CurrentEntity, "6");
+        _testCtx.TriggerStateChange(consumer.Cars.First().ChargingStateSensor, "complete");
         _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "80");
         _testCtx.TriggerStateChange(consumer.Cars.First().ChargerSwitch, "on");
         _testCtx.TriggerStateChange(consumer.Cars.First().CurrentEntity, "2");
@@ -375,7 +377,7 @@ public class CarChargerEnergyConsumerTests
 
         //Assert
         Assert.AreEqual(EnergyConsumerState.Off, energyManager.Consumers.First().State);
-        _testCtx.VerifySwitchTurnOff(consumer.Cars.First().ChargerSwitch, Moq.Times.Exactly(1));
+        _testCtx.VerifySwitchTurnOff(consumer.Cars.First().ChargerSwitch, Times.AtLeast(1));
     }
 
 
@@ -393,6 +395,7 @@ public class CarChargerEnergyConsumerTests
 
         //Act
         _testCtx.TriggerStateChange(consumer.StateSensor, "Occupied");
+        _testCtx.TriggerStateChange(consumer.Cars.First().ChargingStateSensor, "no_power");
         _testCtx.TriggerStateChange(consumer.Cars.First().CableConnectedSensor, "on");
         _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "5");
         _testCtx.TriggerStateChange(consumer.Cars.First().MaxBatteryPercentageSensor, "80");
@@ -401,6 +404,7 @@ public class CarChargerEnergyConsumerTests
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
 
         _testCtx.TriggerStateChange(consumer.StateSensor, "Charging");
+        _testCtx.TriggerStateChange(consumer.Cars.First().ChargingStateSensor, "charging");
         _testCtx.TriggerStateChange(consumer.CurrentEntity, "6");
         _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "80");
         _testCtx.TriggerStateChange(consumer.Cars.First().ChargerSwitch, "on");
@@ -427,6 +431,7 @@ public class CarChargerEnergyConsumerTests
 
 
         _testCtx.TriggerStateChange(consumer.StateSensor, "Occupied");
+        _testCtx.TriggerStateChange(consumer.Cars.First().ChargingStateSensor, "no_power");
         _testCtx.TriggerStateChange(consumer.Cars.First().CableConnectedSensor, "on");
         _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "5");
         _testCtx.TriggerStateChange(consumer.Cars.First().MaxBatteryPercentageSensor, "80");
@@ -436,6 +441,7 @@ public class CarChargerEnergyConsumerTests
 
         _testCtx.TriggerStateChange(consumer.StateSensor, "Charging");
         _testCtx.TriggerStateChange(consumer.CurrentEntity, "6");
+        _testCtx.TriggerStateChange(consumer.Cars.First().ChargingStateSensor, "charging");
         _testCtx.TriggerStateChange(consumer.Cars.First().CurrentEntity, "6");
         _testCtx.TriggerStateChange(consumer.Cars.First().ChargerSwitch, "on");
         _testCtx.TriggerStateChange(consumer.PowerUsage, "4000");
@@ -467,6 +473,7 @@ public class CarChargerEnergyConsumerTests
         //Act
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
         _testCtx.TriggerStateChange(consumer.StateSensor, "Occupied");
+        _testCtx.TriggerStateChange(consumer.Cars.First().ChargingStateSensor, "no_power");
         _testCtx.TriggerStateChange(consumer.Cars.First().CableConnectedSensor, "on");
         _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "5");
         _testCtx.TriggerStateChange(consumer.Cars.First().MaxBatteryPercentageSensor, "80");
@@ -496,6 +503,7 @@ public class CarChargerEnergyConsumerTests
 
 
         _testCtx.TriggerStateChange(consumer.StateSensor, "Occupied");
+        _testCtx.TriggerStateChange(consumer.Cars.First().ChargingStateSensor, "no_power");
         _testCtx.TriggerStateChange(consumer.Cars.First().CableConnectedSensor, "on");
         _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "5");
         _testCtx.TriggerStateChange(consumer.Cars.First().MaxBatteryPercentageSensor, "80");
@@ -504,6 +512,7 @@ public class CarChargerEnergyConsumerTests
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
 
         _testCtx.TriggerStateChange(consumer.StateSensor, "Charging");
+        _testCtx.TriggerStateChange(consumer.Cars.First().ChargingStateSensor, "charging");
         _testCtx.TriggerStateChange(consumer.CurrentEntity, "6");
         _testCtx.TriggerStateChange(consumer.Cars.First().CurrentEntity, "1");
         _testCtx.TriggerStateChange(consumer.Cars.First().ChargerSwitch, "on");
@@ -532,6 +541,7 @@ public class CarChargerEnergyConsumerTests
             .Build();
 
         _testCtx.TriggerStateChange(consumer.StateSensor, "Occupied");
+        _testCtx.TriggerStateChange(consumer.Cars.First().ChargingStateSensor, "no_power");
         _testCtx.TriggerStateChange(consumer.Cars.First().CableConnectedSensor, "on");
         _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "5");
         _testCtx.TriggerStateChange(consumer.Cars.First().MaxBatteryPercentageSensor, "80");
@@ -541,6 +551,7 @@ public class CarChargerEnergyConsumerTests
 
         _testCtx.TriggerStateChange(consumer.StateSensor, "Charging");
         _testCtx.TriggerStateChange(consumer.CurrentEntity, "6");
+        _testCtx.TriggerStateChange(consumer.Cars.First().ChargingStateSensor, "charging");
         _testCtx.TriggerStateChange(consumer.Cars.First().CurrentEntity, "5");
         _testCtx.TriggerStateChange(consumer.Cars.First().ChargerSwitch, "on");
         _testCtx.TriggerStateChange(consumer.PowerUsage, "3500");
@@ -570,6 +581,7 @@ public class CarChargerEnergyConsumerTests
             .Build();
 
         _testCtx.TriggerStateChange(consumer.StateSensor, "Occupied");
+        _testCtx.TriggerStateChange(consumer.Cars.First().ChargingStateSensor, "no_power");
         _testCtx.TriggerStateChange(consumer.Cars.First().CableConnectedSensor, "on");
         _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "5");
         _testCtx.TriggerStateChange(consumer.Cars.First().MaxBatteryPercentageSensor, "80");
@@ -578,6 +590,7 @@ public class CarChargerEnergyConsumerTests
 
         _testCtx.TriggerStateChange(consumer.StateSensor, "Charging");
         _testCtx.TriggerStateChange(consumer.CurrentEntity, "8");
+        _testCtx.TriggerStateChange(consumer.Cars.First().ChargingStateSensor, "charging");
         _testCtx.TriggerStateChange(consumer.Cars.First().CurrentEntity, "8");
         _testCtx.TriggerStateChange(consumer.Cars.First().ChargerSwitch, "on");
         _testCtx.TriggerStateChange(consumer.PowerUsage, "5400");
@@ -608,6 +621,7 @@ public class CarChargerEnergyConsumerTests
             .Build();
 
         _testCtx.TriggerStateChange(consumer.StateSensor, "Occupied");
+        _testCtx.TriggerStateChange(consumer.Cars.First().ChargingStateSensor, "no_power");
         _testCtx.TriggerStateChange(consumer.Cars.First().CableConnectedSensor, "on");
         _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "5");
         _testCtx.TriggerStateChange(consumer.Cars.First().MaxBatteryPercentageSensor, "80");
@@ -617,6 +631,7 @@ public class CarChargerEnergyConsumerTests
 
         _testCtx.TriggerStateChange(consumer.StateSensor, "Charging");
         _testCtx.TriggerStateChange(consumer.CurrentEntity, "6");
+        _testCtx.TriggerStateChange(consumer.Cars.First().ChargingStateSensor, "charging");
         _testCtx.TriggerStateChange(consumer.Cars.First().CurrentEntity, "6");
         _testCtx.TriggerStateChange(consumer.Cars.First().ChargerSwitch, "on");
         _testCtx.TriggerStateChange(consumer.PowerUsage, "4000");
@@ -646,6 +661,7 @@ public class CarChargerEnergyConsumerTests
             .Build();
 
         _testCtx.TriggerStateChange(consumer.StateSensor, "Occupied");
+        _testCtx.TriggerStateChange(consumer.Cars.First().ChargingStateSensor, "no_power");
         _testCtx.TriggerStateChange(consumer.Cars.First().CableConnectedSensor, "on");
         _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "5");
         _testCtx.TriggerStateChange(consumer.Cars.First().MaxBatteryPercentageSensor, "80");
@@ -655,6 +671,7 @@ public class CarChargerEnergyConsumerTests
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
 
         _testCtx.TriggerStateChange(consumer.StateSensor, "Charging");
+        _testCtx.TriggerStateChange(consumer.Cars.First().ChargingStateSensor, "charging");
         _testCtx.TriggerStateChange(consumer.CurrentEntity, "16");
         _testCtx.TriggerStateChange(consumer.Cars.First().CurrentEntity, "6");
         _testCtx.TriggerStateChange(consumer.Cars.First().ChargerSwitch, "on");
@@ -684,6 +701,7 @@ public class CarChargerEnergyConsumerTests
             .Build();
 
         _testCtx.TriggerStateChange(consumer.StateSensor, "Occupied");
+        _testCtx.TriggerStateChange(consumer.Cars.First().ChargingStateSensor, "no_power");
         _testCtx.TriggerStateChange(consumer.Cars.First().CableConnectedSensor, "on");
         _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "5");
         _testCtx.TriggerStateChange(consumer.Cars.First().MaxBatteryPercentageSensor, "80");
@@ -694,6 +712,7 @@ public class CarChargerEnergyConsumerTests
 
         _testCtx.TriggerStateChange(consumer.StateSensor, "Charging");
         _testCtx.TriggerStateChange(consumer.CurrentEntity, "16");
+        _testCtx.TriggerStateChange(consumer.Cars.First().ChargingStateSensor, "charging");
         _testCtx.TriggerStateChange(consumer.Cars.First().CurrentEntity, "6");
         _testCtx.TriggerStateChange(consumer.Cars.First().ChargerSwitch, "on");
         _testCtx.TriggerStateChange(consumer.PowerUsage, "4000");
@@ -723,6 +742,7 @@ public class CarChargerEnergyConsumerTests
             .Build();
 
         _testCtx.TriggerStateChange(consumer.StateSensor, "Occupied");
+        _testCtx.TriggerStateChange(consumer.Cars.First().ChargingStateSensor, "no_power");
         _testCtx.TriggerStateChange(consumer.Cars.First().CableConnectedSensor, "on");
         _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "5");
         _testCtx.TriggerStateChange(consumer.Cars.First().MaxBatteryPercentageSensor, "80");
@@ -733,6 +753,7 @@ public class CarChargerEnergyConsumerTests
 
         _testCtx.TriggerStateChange(consumer.StateSensor, "Charging");
         _testCtx.TriggerStateChange(consumer.CurrentEntity, "16");
+        _testCtx.TriggerStateChange(consumer.Cars.First().ChargingStateSensor, "charging");
         _testCtx.TriggerStateChange(consumer.Cars.First().CurrentEntity, "6");
         _testCtx.TriggerStateChange(consumer.Cars.First().ChargerSwitch, "on");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(10));

@@ -1,6 +1,7 @@
 ﻿using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 using eLime.NetDaemonApps.Domain.Entities.DeviceTracker;
 using eLime.NetDaemonApps.Domain.Entities.Input;
+using eLime.NetDaemonApps.Domain.Entities.TextSensors;
 using NetDaemon.HassModel.Entities;
 using System.Reactive.Concurrency;
 
@@ -17,7 +18,7 @@ public class Car
     public InputNumberEntity? CurrentEntity { get; set; }
     public int? MinimumCurrent { get; }
     public int? MaximumCurrent { get; }
-
+    public TextSensor? ChargingStateSensor { get; set; }
     public Double BatteryCapacity { get; }
 
     public NumericEntity BatteryPercentageSensor { get; }
@@ -28,7 +29,7 @@ public class Car
     public DeviceTracker Location { get; }
     public DateTimeOffset? LastCurrentChange { get; private set; }
 
-    public Car(string name, CarChargingMode mode, BinarySwitch? chargerSwitch, InputNumberEntity? currentEntity, int? minimumCurrent, int? maximumCurrent,
+    public Car(string name, CarChargingMode mode, BinarySwitch? chargerSwitch, InputNumberEntity? currentEntity, int? minimumCurrent, int? maximumCurrent, TextSensor? chargingStateSensor,
         double batteryCapacity, NumericEntity batteryPercentageSensor, NumericEntity? maxBatteryPercentageSensor, bool remainOnAtFullBattery,
         BinarySensor cableConnectedSensor, bool autoPowerOnWhenConnecting, DeviceTracker location, IScheduler scheduler)
     {
@@ -46,6 +47,7 @@ public class Car
         CurrentEntity = currentEntity;
         MinimumCurrent = minimumCurrent;
         MaximumCurrent = maximumCurrent;
+        ChargingStateSensor = chargingStateSensor;
 
         BatteryCapacity = batteryCapacity;
         BatteryPercentageSensor = batteryPercentageSensor;
@@ -95,19 +97,23 @@ public class Car
     public Boolean CanSetCurrent => IsConnectedToHomeCharger && CurrentEntity != null;
 
     public Boolean NeedsEnergy => RemainOnAtFullBattery ||
-        (MaxBatteryPercentageSensor != null
-            ? BatteryPercentageSensor.State < MaxBatteryPercentageSensor.State
-            : BatteryPercentageSensor.State < 100
+        (
+            ChargingStateSensor != null
+                ? ChargingStateSensor.State == CarChargingStates.starting.ToString() || ChargingStateSensor.State == CarChargingStates.stopped.ToString() || ChargingStateSensor.State == CarChargingStates.charging.ToString() || ChargingStateSensor.State == CarChargingStates.no_power.ToString()
+                : MaxBatteryPercentageSensor != null
+                    ? BatteryPercentageSensor.State < MaxBatteryPercentageSensor.State
+                    : BatteryPercentageSensor.State < 100
         );
 
-    //TODO: Check if car has "charging" state
-    public Boolean IsRunning => ChargerSwitch == null
-        ? CanSetCurrent
-            ? CurrentEntity.State >= MinimumCurrent
-            : true
-        : CanSetCurrent
-          ? ChargerSwitch.IsOn() && CurrentEntity.State >= MinimumCurrent
-          : ChargerSwitch.IsOn();
+    public Boolean IsRunning => ChargingStateSensor != null
+        ? ChargingStateSensor.State == CarChargingStates.charging.ToString()
+        : ChargerSwitch == null
+            ? CanSetCurrent
+                ? CurrentEntity.State >= MinimumCurrent
+                : true
+            : CanSetCurrent
+              ? ChargerSwitch.IsOn() && CurrentEntity.State >= MinimumCurrent
+              : ChargerSwitch.IsOn();
 
     public void TurnOnCharger()
     {
