@@ -98,9 +98,10 @@ public class Car
 
     public Boolean NeedsEnergy => RemainOnAtFullBattery ||
         (
-            ChargingStateSensor != null
-                ? ChargingStateSensor.State == CarChargingStates.starting.ToString() || ChargingStateSensor.State == CarChargingStates.stopped.ToString() || ChargingStateSensor.State == CarChargingStates.charging.ToString() || ChargingStateSensor.State == CarChargingStates.no_power.ToString()
-                : MaxBatteryPercentageSensor != null
+                //ChargingStateSensor != null
+                //    ? ChargingStateSensor.State == CarChargingStates.starting.ToString() || ChargingStateSensor.State == CarChargingStates.stopped.ToString() || ChargingStateSensor.State == CarChargingStates.charging.ToString() || ChargingStateSensor.State == CarChargingStates.no_power.ToString()
+                //    :
+                MaxBatteryPercentageSensor != null
                     ? BatteryPercentageSensor.State < MaxBatteryPercentageSensor.State
                     : BatteryPercentageSensor.State < 100
         );
