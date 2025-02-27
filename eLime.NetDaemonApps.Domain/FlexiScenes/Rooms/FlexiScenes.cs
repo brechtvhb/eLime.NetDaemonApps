@@ -102,7 +102,7 @@ public class FlexiScenes
 
         var change = Changes.LastOrDefault(x => x.ChangedAt < now - changeSince);
 
-        return change?.Scene == null ? null : GetByName(change.Scene);
+        return change?.Scene is null or "Off" ? null : GetByName(change.Scene);
     }
 
     private void CleanUpOldChanges(DateTimeOffset now)
