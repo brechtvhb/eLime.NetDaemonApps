@@ -129,7 +129,7 @@ public class TriggeredEnergyConsumer : EnergyConsumer
 
     public override void TurnOn()
     {
-        if (StateSensor.State == PausedState && PauseSwitch != null)
+        if (StateSensor.State == PausedState && CanPause && PauseSwitch != null)
         {
             PauseSwitch.TurnOn();
             return;
@@ -140,11 +140,13 @@ public class TriggeredEnergyConsumer : EnergyConsumer
 
     public override void TurnOff()
     {
-        if (ShutDownOnComplete && StateSensor.State == CompletedState)
-            Socket.TurnOff();
-        else if (CanPause && PauseSwitch != null)
+        if (StateSensor.State != CompletedState && CanPause && PauseSwitch != null)
+        {
             PauseSwitch.TurnOff();
-        else
+            return;
+        }
+
+        if (ShutDownOnComplete)
             Socket.TurnOff();
     }
 

@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace eLime.NetDaemonApps.apps.EnergyManager;
 
-[NetDaemonApp(Id = "energyManager")]
+[NetDaemonApp(Id = "energyManager"), Focus]
 public class EnergyManager : IAsyncInitializable, IAsyncDisposable
 {
     private readonly IHaContext _ha;

@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace eLime.NetDaemonApps.apps.SolarBackup;
 
-[NetDaemonApp(Id = "solarBackup"), Focus]
+[NetDaemonApp(Id = "solarBackup")]
 public class SolarBackup : IAsyncInitializable, IAsyncDisposable
 {
     private readonly IHaContext _ha;
