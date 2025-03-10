@@ -12,6 +12,7 @@ public class SimpleEnergyConsumerBuilder
     private readonly ILogger _logger;
     private readonly AppTestContext _testCtx;
     private String _name;
+    private List<string> _consumerGroups = [];
 
     private NumericEntity _powerUsage;
     private BinarySensor _criticallyNeeded;
@@ -22,7 +23,7 @@ public class SimpleEnergyConsumerBuilder
     private TimeSpan? _maximumRuntime;
     private TimeSpan? _minimumTimeout;
     private TimeSpan? _maximumTimeout;
-    private List<TimeWindow> _timeWindows = new();
+    private List<TimeWindow> _timeWindows = [];
     private string _timezone;
 
     private BinarySwitch _socket;
@@ -50,6 +51,12 @@ public class SimpleEnergyConsumerBuilder
         _socket = BinarySwitch.Create(_testCtx.HaContext, $"switch.socket_{name.MakeHaFriendly()}");
         _powerUsage = new NumericEntity(_testCtx.HaContext, $"sensor.socket_{name.MakeHaFriendly()}_power");
 
+        return this;
+    }
+
+    public SimpleEnergyConsumerBuilder AddConsumerGroup(string consumerGroup)
+    {
+        _consumerGroups.Add(consumerGroup);
         return this;
     }
 
@@ -99,7 +106,7 @@ public class SimpleEnergyConsumerBuilder
 
     public SimpleEnergyConsumer Build()
     {
-        var x = new SimpleEnergyConsumer(_logger, _name, _powerUsage, _criticallyNeeded, _switchOnLoad, _switchOffLoad, _minimumRuntime, _maximumRuntime, _minimumTimeout, _maximumTimeout, _timeWindows, _timezone, _socket, _peakLoad);
+        var x = new SimpleEnergyConsumer(_logger, _name, _consumerGroups, _powerUsage, _criticallyNeeded, _switchOnLoad, _switchOffLoad, _minimumRuntime, _maximumRuntime, _minimumTimeout, _maximumTimeout, _timeWindows, _timezone, _socket, _peakLoad);
         return x;
     }
 }

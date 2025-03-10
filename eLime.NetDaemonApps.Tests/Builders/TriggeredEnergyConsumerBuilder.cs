@@ -13,6 +13,7 @@ public class TriggeredEnergyConsumerBuilder
     private readonly ILogger _logger;
     private readonly AppTestContext _testCtx;
     private String _name;
+    private List<string> _consumerGroups = [];
 
     private NumericEntity _powerUsage;
     private BinarySensor? _criticallyNeeded;
@@ -52,6 +53,7 @@ public class TriggeredEnergyConsumerBuilder
             _switchOffLoad = 200;
 
             _socket = BinarySwitch.Create(_testCtx.HaContext, "switch.irrigation_energy_available");
+            AddConsumerGroup("Deferrable");
 
             WithStateSensor(TextSensor.Create(_testCtx.HaContext, "sensor.irrigation_state"), "Yes", null, "No", "Critical");
             WithCanForceShutdown();
@@ -59,6 +61,7 @@ public class TriggeredEnergyConsumerBuilder
             AddStatePeakLoad("Yes", 1);
             AddStatePeakLoad("Critical", 1);
             AddStatePeakLoad("Ongoing", 700);
+
         }
 
         if (baseType == "washer")
@@ -69,6 +72,7 @@ public class TriggeredEnergyConsumerBuilder
             _switchOffLoad = 5000;
 
             _socket = BinarySwitch.Create(_testCtx.HaContext, "switch.smartwasher_smartwasher_delayed_start_activate");
+            AddConsumerGroup("Deferrable");
 
             WithStateSensor(TextSensor.Create(_testCtx.HaContext, "sensor.smartwasher_smartwasher_state"), "DelayedStart", null, "Ready", "Critical");
             WithCanForceShutdown();
@@ -89,6 +93,7 @@ public class TriggeredEnergyConsumerBuilder
 
             _socket = BinarySwitch.Create(_testCtx.HaContext, "switch.dishwasher_program_auto2");
             _pauseSwitch = BinarySwitch.Create(_testCtx.HaContext, "switch.dishwasher_power");
+            AddConsumerGroup("Deferrable");
 
             WithStateSensor(TextSensor.Create(_testCtx.HaContext, "sensor.dishwasher_operation_state_enhanced"), "DelayedStart", "Paused", "Ready", "Critical");
             WithCanForceShutdown();
@@ -111,6 +116,11 @@ public class TriggeredEnergyConsumerBuilder
         _socket = BinarySwitch.Create(_testCtx.HaContext, $"switch.socket_{name.MakeHaFriendly()}");
         _powerUsage = new NumericEntity(_testCtx.HaContext, $"sensor.socket_{name.MakeHaFriendly()}_power");
 
+        return this;
+    }
+    public TriggeredEnergyConsumerBuilder AddConsumerGroup(String consumerGroup)
+    {
+        _consumerGroups.Add(consumerGroup);
         return this;
     }
 
@@ -185,7 +195,7 @@ public class TriggeredEnergyConsumerBuilder
 
     public TriggeredEnergyConsumer Build()
     {
-        var x = new TriggeredEnergyConsumer(_logger, _name, _powerUsage, _criticallyNeeded, _switchOnLoad, _switchOffLoad, _minimumRuntime, _maximumRuntime, _minimumTimeout, _maximumTimeout, _timeWindows, _timezone, _socket, _pauseSwitch, _statePeakLoads, 0, _stateSensor, _startState, _pausedState, _completedState, _criticalState, _canForceShutdown, _shutDownOnComplete);
+        var x = new TriggeredEnergyConsumer(_logger, _name, _consumerGroups, _powerUsage, _criticallyNeeded, _switchOnLoad, _switchOffLoad, _minimumRuntime, _maximumRuntime, _minimumTimeout, _maximumTimeout, _timeWindows, _timezone, _socket, _pauseSwitch, _statePeakLoads, 0, _stateSensor, _startState, _pausedState, _completedState, _criticalState, _canForceShutdown, _shutDownOnComplete);
         return x;
     }
 }

@@ -12,6 +12,7 @@ public class CoolingEnergyConsumerBuilder
     private readonly ILogger _logger;
     private readonly AppTestContext _testCtx;
     private String _name;
+    private List<string> _consumerGroups = [];
 
     private NumericEntity _powerUsage;
     private BinarySensor? _criticallyNeeded;
@@ -44,6 +45,8 @@ public class CoolingEnergyConsumerBuilder
         _switchOffLoad = 200;
 
         _socket = BinarySwitch.Create(_testCtx.HaContext, "switch.socket_fridge");
+        AddConsumerGroup("Critical");
+
         _peakLoad = 75;
 
         _temperatureSensor = new NumericEntity(_testCtx.HaContext, "sensor.fridge_temperature");
@@ -57,6 +60,12 @@ public class CoolingEnergyConsumerBuilder
         _socket = BinarySwitch.Create(_testCtx.HaContext, $"switch.socket_{name.MakeHaFriendly()}");
         _powerUsage = new NumericEntity(_testCtx.HaContext, $"sensor.socket_{name.MakeHaFriendly()}_power");
 
+        return this;
+    }
+
+    public CoolingEnergyConsumerBuilder AddConsumerGroup(string consumerGroup)
+    {
+        _consumerGroups.Add(consumerGroup);
         return this;
     }
 
@@ -115,7 +124,7 @@ public class CoolingEnergyConsumerBuilder
 
     public CoolingEnergyConsumer Build()
     {
-        var x = new CoolingEnergyConsumer(_logger, _name, _powerUsage, _criticallyNeeded, _switchOnLoad, _switchOffLoad, _minimumRuntime, _maximumRuntime, _minimumTimeout, _maximumTimeout, _timeWindows, _timezone, _socket, _peakLoad, _temperatureSensor, _targetTemperature, _maxTemperature);
+        var x = new CoolingEnergyConsumer(_logger, _name, _consumerGroups, _powerUsage, _criticallyNeeded, _switchOnLoad, _switchOffLoad, _minimumRuntime, _maximumRuntime, _minimumTimeout, _maximumTimeout, _timeWindows, _timezone, _socket, _peakLoad, _temperatureSensor, _targetTemperature, _maxTemperature);
         return x;
     }
 }

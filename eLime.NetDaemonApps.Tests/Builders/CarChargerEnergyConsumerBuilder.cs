@@ -14,6 +14,7 @@ public class CarChargerEnergyConsumerBuilder
     private readonly ILogger _logger;
     private readonly AppTestContext _testCtx;
     private String _name;
+    private List<string> _consumerGroups = [];
 
     private NumericEntity _powerUsage;
     private BinarySensor? _criticallyNeeded;
@@ -24,7 +25,7 @@ public class CarChargerEnergyConsumerBuilder
     private TimeSpan? _maximumRuntime;
     private TimeSpan? _minimumTimeout;
     private TimeSpan? _maximumTimeout;
-    private List<TimeWindow> _timeWindows = new();
+    private List<TimeWindow> _timeWindows = [];
     private string _timezone;
 
     public int _minimumCurrent;
@@ -36,7 +37,7 @@ public class CarChargerEnergyConsumerBuilder
     public NumericEntity _voltageEntity;
     public TextSensor _stateSensor;
 
-    public List<Car> _cars = new();
+    public List<Car> _cars = [];
 
     public CarChargerEnergyConsumerBuilder(ILogger logger, AppTestContext testCtx)
     {
@@ -84,6 +85,12 @@ public class CarChargerEnergyConsumerBuilder
     {
         _name = name;
 
+        return this;
+    }
+
+    public CarChargerEnergyConsumerBuilder AddConsumerGroup(string consumerGroup)
+    {
+        _consumerGroups.Add(consumerGroup);
         return this;
     }
 
@@ -149,7 +156,7 @@ public class CarChargerEnergyConsumerBuilder
 
     public CarChargerEnergyConsumer Build()
     {
-        var x = new CarChargerEnergyConsumer(_logger, _name, _powerUsage, _criticallyNeeded, _switchOnLoad, _switchOffLoad, _minimumRuntime, _maximumRuntime, _minimumTimeout, _maximumTimeout, _timeWindows, _timezone,
+        var x = new CarChargerEnergyConsumer(_logger, _name, _consumerGroups, _powerUsage, _criticallyNeeded, _switchOnLoad, _switchOffLoad, _minimumRuntime, _maximumRuntime, _minimumTimeout, _maximumTimeout, _timeWindows, _timezone,
             _minimumCurrent, _maximumCurrent, _offCurrent, _currentEntity, _voltageEntity, _stateSensor, _cars, _testCtx.Scheduler);
         x.SetBalancingMethod(_testCtx.Scheduler.Now, _balancingMethod);
         return x;

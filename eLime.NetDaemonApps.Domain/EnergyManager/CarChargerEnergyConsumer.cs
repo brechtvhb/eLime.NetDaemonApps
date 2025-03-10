@@ -16,7 +16,7 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
     public Int32 MinimumCurrent { get; set; }
     public Int32 MaximumCurrent { get; set; }
     public BalancingMethod BalancingMethod { get; private set; }
-    public BalanceOnBehalfOf BalanceOnBehalfOf { get; private set; }
+    public string BalanceOnBehalfOf { get; private set; }
 
     public double ReleasablePowerWhenBalancingOnBehalfOf => CurrentLoad - (MinimumCurrentForConnectedCar * TotalVoltage);
     public TimeSpan MinimumRebalancingInterval => TimeSpan.FromSeconds(20); //TODO: config setting
@@ -48,11 +48,11 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 
     public DateTimeOffset? _lastCurrentChange;
 
-    public CarChargerEnergyConsumer(ILogger logger, String name, NumericEntity powerUsage, BinarySensor? criticallyNeeded, Double switchOnLoad, Double switchOffLoad, TimeSpan? minimumRuntime, TimeSpan? maximumRuntime, TimeSpan? minimumTimeout,
+    public CarChargerEnergyConsumer(ILogger logger, String name, List<string> consumerGroups, NumericEntity powerUsage, BinarySensor? criticallyNeeded, Double switchOnLoad, Double switchOffLoad, TimeSpan? minimumRuntime, TimeSpan? maximumRuntime, TimeSpan? minimumTimeout,
         TimeSpan? maximumTimeout, List<TimeWindow> timeWindows, String timezone, Int32 minimumCurrent, Int32 maximumCurrent, Int32 offCurrent, InputNumberEntity currentEntity, NumericEntity voltageEntity, TextSensor stateSensor, List<Car> cars, IScheduler scheduler)
     {
         _scheduler = scheduler;
-        SetCommonFields(logger, name, powerUsage, criticallyNeeded, switchOnLoad, switchOffLoad, minimumRuntime, maximumRuntime, minimumTimeout, maximumTimeout, timeWindows, timezone);
+        SetCommonFields(logger, name, consumerGroups, powerUsage, criticallyNeeded, switchOnLoad, switchOffLoad, minimumRuntime, maximumRuntime, minimumTimeout, maximumTimeout, timeWindows, timezone);
         MinimumCurrent = minimumCurrent;
         MaximumCurrent = maximumCurrent;
         OffCurrent = offCurrent;
@@ -82,7 +82,7 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         BalancingMethod = balancingMethod;
         _balancingMethodLastChangedAt = now;
     }
-    public void SetBalanceOnBehalfOf(BalanceOnBehalfOf balanceOnBehalfOf)
+    public void SetBalanceOnBehalfOf(string balanceOnBehalfOf)
     {
         BalanceOnBehalfOf = balanceOnBehalfOf;
     }

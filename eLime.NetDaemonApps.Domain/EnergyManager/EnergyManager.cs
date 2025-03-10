@@ -175,14 +175,13 @@ public class EnergyManager : IDisposable
         var estimatedLoad = preStartEstimatedLoad + expectedLoad;
         var estimatedAverageLoad = preStartEstimatedAveragedLoad + expectedLoad;
 
-        var dynamicLoadThatCanBeScaledDownOnBehalfOf = dynamicLoadNetChange != 0
-            ? 0 //Dynamic load already changed, skip changing more until next pass.
-            : runningConsumers
-                .OfType<IDynamicLoadConsumer>()
-                .Where(consumer => consumer.BalanceOnBehalfOf == BalanceOnBehalfOf.AllConsumers)
-                .Sum(consumer => consumer.ReleasablePowerWhenBalancingOnBehalfOf);
+        var dynamicLoadThatCanBeScaledDownOnBehalfOf = Consumers
+            .Where(x => x.State == EnergyConsumerState.Running)
+            .OfType<IDynamicLoadConsumer>()
+            .Where(consumer => consumer.BalanceOnBehalfOf == "AllConsumers")
+            .Sum(consumer => consumer.ReleasablePowerWhenBalancingOnBehalfOf) + dynamicLoadNetChange;
 
-        dynamicLoadThatCanBeScaledDownOnBehalfOf = Math.Round(dynamicLoadThatCanBeScaledDownOnBehalfOf);
+        dynamicLoadThatCanBeScaledDownOnBehalfOf = Math.Round(dynamicLoadThatCanBeScaledDownOnBehalfOf < 0 ? 0 : dynamicLoadThatCanBeScaledDownOnBehalfOf);
 
         var consumersThatCriticallyNeedEnergy = Consumers.Where(x => x is { State: EnergyConsumerState.CriticallyNeedsEnergy });
 
@@ -213,7 +212,7 @@ public class EnergyManager : IDisposable
 
             if (consumer is IDynamicLoadConsumer)
             {
-                //TODO: Can another dynamic load start when another dynamic load is already active?. Add BalanceOnBehalfOf = NonDynamicLoadOnly
+                //TODO: Can another dynamic load start when another dynamic load is already active?.
                 if (preStartEstimatedLoad - dynamicLoadThatCanBeScaledDownOnBehalfOf >= consumer.SwitchOnLoad)
                     continue;
                 if (preStartEstimatedAveragedLoad - dynamicLoadThatCanBeScaledDownOnBehalfOf >= consumer.SwitchOnLoad)
@@ -248,7 +247,7 @@ public class EnergyManager : IDisposable
         var dynamicLoadThatCanBeScaledDownOnBehalfOf = Consumers
                 .Where(x => x.State == EnergyConsumerState.Running)
                 .OfType<IDynamicLoadConsumer>()
-                .Where(consumer => consumer.BalanceOnBehalfOf == BalanceOnBehalfOf.AllConsumers)
+                .Where(consumer => consumer.BalanceOnBehalfOf == "AllConsumers")
                 .Sum(consumer => consumer.ReleasablePowerWhenBalancingOnBehalfOf) + dynamicLoadNetChange;
 
         dynamicLoadThatCanBeScaledDownOnBehalfOf = Math.Round(dynamicLoadThatCanBeScaledDownOnBehalfOf < 0 ? 0 : dynamicLoadThatCanBeScaledDownOnBehalfOf);
@@ -370,10 +369,15 @@ public class EnergyManager : IDisposable
             Options = Enum<BalancingMethod>.AllValuesAsStringList(),
             Device = GetConsumerDevice(consumer)
         };
+
+        List<String> consumerGroups = ["Self"];
+        consumerGroups.AddRange(Consumers.SelectMany(x => x.ConsumerGroups).Distinct());
+        consumerGroups.Add("AllConsumers");
+
         var balanceOnBehalfOfDropdownOptions = new SelectOptions
         {
             Icon = "mdi:car-turbocharger", //TODO
-            Options = Enum<BalanceOnBehalfOf>.AllValuesAsStringList(),
+            Options = consumerGroups,
             Device = GetConsumerDevice(consumer)
         };
 
@@ -407,7 +411,7 @@ public class EnergyManager : IDisposable
         {
             _logger.LogDebug("{Consumer}: Setting balance on behalf of to {State}.", consumer.Name, state);
             await _mqttEntityManager.SetStateAsync(selectName, state);
-            dynamicLoadConsumer.SetBalanceOnBehalfOf(Enum<BalanceOnBehalfOf>.Cast(state));
+            dynamicLoadConsumer.SetBalanceOnBehalfOf(state);
             DebounceUpdateInHomeAssistant(consumer).RunSync();
         };
     }
@@ -426,7 +430,7 @@ public class EnergyManager : IDisposable
             return;
 
         dynamicLoadConsumer.SetBalancingMethod(_scheduler.Now, storedEnergyConsumerState.BalancingMethod ?? BalancingMethod.SolarOnly);
-        dynamicLoadConsumer.SetBalanceOnBehalfOf(storedEnergyConsumerState.BalanceOnBehalfOf ?? BalanceOnBehalfOf.Self);
+        dynamicLoadConsumer.SetBalanceOnBehalfOf(storedEnergyConsumerState.BalanceOnBehalfOf ?? "Self");
     }
 
     public eLime.NetDaemonApps.Domain.Mqtt.Device GetGlobalDevice()

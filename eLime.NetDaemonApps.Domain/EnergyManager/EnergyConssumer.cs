@@ -11,6 +11,7 @@ public abstract class EnergyConsumer : IDisposable
     protected ILogger Logger;
 
     public String Name { get; private set; }
+    public List<String> ConsumerGroups { get; private set; }
     public NumericEntity PowerUsage { get; private set; }
     public BinarySensor? CriticallyNeeded { get; private set; }
     public abstract Boolean Running { get; }
@@ -53,11 +54,13 @@ public abstract class EnergyConsumer : IDisposable
         return fileStorage;
     }
 
-    protected void SetCommonFields(ILogger logger, String name, NumericEntity powerUsage, BinarySensor? criticallyNeeded, Double switchOnLoad, Double switchOffLoad, TimeSpan? minimumRuntime, TimeSpan? maximumRuntime, TimeSpan? minimumTimeout, TimeSpan? maximumTimeout, List<TimeWindow> timeWindows, String timezone)
+    protected void SetCommonFields(ILogger logger, String name, List<string> consumerGroups, NumericEntity powerUsage, BinarySensor? criticallyNeeded, Double switchOnLoad, Double switchOffLoad, TimeSpan? minimumRuntime, TimeSpan? maximumRuntime, TimeSpan? minimumTimeout, TimeSpan? maximumTimeout, List<TimeWindow> timeWindows, String timezone)
     {
         Logger = logger;
 
         Name = name;
+        ConsumerGroups = consumerGroups;
+
         PowerUsage = powerUsage;
         CriticallyNeeded = criticallyNeeded;
         SwitchOffLoad = switchOffLoad;
