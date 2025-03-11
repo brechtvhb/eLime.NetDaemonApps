@@ -175,20 +175,14 @@ public class EnergyManager : IDisposable
         var estimatedLoad = preStartEstimatedLoad + expectedLoad;
         var estimatedAverageLoad = preStartEstimatedAveragedLoad + expectedLoad;
 
-        var dynamicLoadThatCanBeScaledDownOnBehalfOf = Consumers
-            .Where(x => x.State == EnergyConsumerState.Running)
-            .OfType<IDynamicLoadConsumer>()
-            .Where(consumer => consumer.BalanceOnBehalfOf == "AllConsumers")
-            .Sum(consumer => consumer.ReleasablePowerWhenBalancingOnBehalfOf) + dynamicLoadNetChange;
-
-        dynamicLoadThatCanBeScaledDownOnBehalfOf = Math.Round(dynamicLoadThatCanBeScaledDownOnBehalfOf < 0 ? 0 : dynamicLoadThatCanBeScaledDownOnBehalfOf);
-
         var consumersThatCriticallyNeedEnergy = Consumers.Where(x => x is { State: EnergyConsumerState.CriticallyNeedsEnergy });
 
         foreach (var criticalConsumer in consumersThatCriticallyNeedEnergy)
         {
             if (!criticalConsumer.CanStart(_scheduler.Now))
                 continue;
+
+            var dynamicLoadThatCanBeScaledDownOnBehalfOf = GetDynamicLoadThatCanBeScaledDownOnBehalfOf(criticalConsumer, dynamicLoadNetChange);
 
             //Will not turn on a load that would exceed current grid import peak
             if (estimatedAverageLoad - dynamicLoadThatCanBeScaledDownOnBehalfOf + criticalConsumer.PeakLoad > GridMonitor.PeakLoad)
@@ -210,9 +204,10 @@ public class EnergyManager : IDisposable
             if (!consumer.CanStart(_scheduler.Now))
                 continue;
 
+            var dynamicLoadThatCanBeScaledDownOnBehalfOf = GetDynamicLoadThatCanBeScaledDownOnBehalfOf(consumer, dynamicLoadNetChange);
+
             if (consumer is IDynamicLoadConsumer)
             {
-                //TODO: Can another dynamic load start when another dynamic load is already active?.
                 if (preStartEstimatedLoad - dynamicLoadThatCanBeScaledDownOnBehalfOf >= consumer.SwitchOnLoad)
                     continue;
                 if (preStartEstimatedAveragedLoad - dynamicLoadThatCanBeScaledDownOnBehalfOf >= consumer.SwitchOnLoad)
@@ -244,14 +239,6 @@ public class EnergyManager : IDisposable
         var estimatedAverageLoad = GridMonitor.AverageLoadSince(_scheduler.Now, TimeSpan.FromMinutes(3)) + dynamicLoadNetChange + startLoadNetChange;
         var stopNetChange = 0d;
 
-        var dynamicLoadThatCanBeScaledDownOnBehalfOf = Consumers
-                .Where(x => x.State == EnergyConsumerState.Running)
-                .OfType<IDynamicLoadConsumer>()
-                .Where(consumer => consumer.BalanceOnBehalfOf == "AllConsumers")
-                .Sum(consumer => consumer.ReleasablePowerWhenBalancingOnBehalfOf) + dynamicLoadNetChange;
-
-        dynamicLoadThatCanBeScaledDownOnBehalfOf = Math.Round(dynamicLoadThatCanBeScaledDownOnBehalfOf < 0 ? 0 : dynamicLoadThatCanBeScaledDownOnBehalfOf);
-
         var consumersThatNoLongerNeedEnergy = Consumers.Where(x => x is { State: EnergyConsumerState.Off, Running: true });
         foreach (var consumer in consumersThatNoLongerNeedEnergy)
         {
@@ -262,9 +249,17 @@ public class EnergyManager : IDisposable
             stopNetChange -= consumer.CurrentLoad;
         }
 
-        var consumersThatPreferSolar = Consumers.OrderByDescending(x => x.SwitchOffLoad).Where(x => x.CanForceStop(_scheduler.Now) && x is { Running: true } && x.SwitchOffLoad < estimatedAverageLoad - dynamicLoadThatCanBeScaledDownOnBehalfOf && x.SwitchOffLoad < estimatedLoad - dynamicLoadThatCanBeScaledDownOnBehalfOf).ToList();
-        foreach (var consumer in consumersThatPreferSolar.TakeWhile(consumer => consumer.SwitchOffLoad < estimatedAverageLoad - dynamicLoadThatCanBeScaledDownOnBehalfOf))
+        var consumersThatPreferSolar = Consumers.OrderByDescending(x => x.SwitchOffLoad).Where(x => x.CanForceStop(_scheduler.Now) && x is { Running: true }).ToList();
+        foreach (var consumer in consumersThatPreferSolar)
         {
+            var dynamicLoadThatCanBeScaledDownOnBehalfOf = GetDynamicLoadThatCanBeScaledDownOnBehalfOf(consumer, dynamicLoadNetChange);
+
+            if (consumer.SwitchOffLoad > estimatedAverageLoad - dynamicLoadThatCanBeScaledDownOnBehalfOf)
+                continue;
+
+            if (consumer.SwitchOffLoad > estimatedLoad - dynamicLoadThatCanBeScaledDownOnBehalfOf)
+                continue;
+
             _logger.LogDebug("{Consumer}: Will stop consumer because current load is above switch off load. Current load/estimated (dynamicLoadThatCanBeScaledDownOnBehalfOf) load was: {CurrentLoad}/{EstimatedLoad} ({DynamicLoadThatCanBeScaledDownOnBehalfOf}). Switch-off/peak load of consumer is: {SwitchOffLoad}/{PeakLoad}", consumer.Name, GridMonitor.CurrentLoad, estimatedAverageLoad, dynamicLoadThatCanBeScaledDownOnBehalfOf, consumer.SwitchOffLoad, consumer.PeakLoad);
             consumer.Stop();
             estimatedLoad -= consumer.CurrentLoad;
@@ -272,13 +267,15 @@ public class EnergyManager : IDisposable
             stopNetChange -= consumer.CurrentLoad;
         }
 
-        if (dynamicLoadThatCanBeScaledDownOnBehalfOf > 0)
-            return stopNetChange;
-
         if (estimatedAverageLoad < GridMonitor.PeakLoad)
             return stopNetChange;
 
         if (estimatedLoad < GridMonitor.PeakLoad)
+            return stopNetChange;
+
+        //Should we be able to differentiate between force stops and regular stops when managing dynamic loads?
+        var dynamicLoadThatCanBeScaledDownOnBehalfOfForAllConsumers = GetDynamicLoadThatCanBeScaledDownOnBehalfOf(null, dynamicLoadNetChange);
+        if (dynamicLoadThatCanBeScaledDownOnBehalfOfForAllConsumers > 0)
             return stopNetChange;
 
         var consumersThatShouldForceStopped = Consumers.Where(x => x.CanForceStopOnPeakLoad(_scheduler.Now) && x.Running);
@@ -305,6 +302,22 @@ public class EnergyManager : IDisposable
 
 
         return stopNetChange;
+    }
+
+    private double GetDynamicLoadThatCanBeScaledDownOnBehalfOf(EnergyConsumer? consumer, Double dynamicLoadNetChange)
+    {
+        var consumerGroups = consumer?.ConsumerGroups ?? [];
+
+        if (!consumerGroups.Contains(IDynamicLoadConsumer.CONSUMER_GROUP_ALL))
+            consumerGroups.Add(IDynamicLoadConsumer.CONSUMER_GROUP_ALL);
+
+        var dynamicLoadThatCanBeScaledDownOnBehalfOf = Consumers
+            .Where(x => x.State == EnergyConsumerState.Running)
+            .OfType<IDynamicLoadConsumer>()
+            .Where(x => consumerGroups.Contains(x.BalanceOnBehalfOf))
+            .Sum(x => x.ReleasablePowerWhenBalancingOnBehalfOf) + dynamicLoadNetChange;
+
+        return Math.Round(dynamicLoadThatCanBeScaledDownOnBehalfOf < 0 ? 0 : dynamicLoadThatCanBeScaledDownOnBehalfOf);
     }
 
     private readonly DebounceDispatcher? ManageConsumersDebounceDispatcher;
@@ -370,9 +383,9 @@ public class EnergyManager : IDisposable
             Device = GetConsumerDevice(consumer)
         };
 
-        List<String> consumerGroups = ["Self"];
+        List<String> consumerGroups = [IDynamicLoadConsumer.CONSUMER_GROUP_SELF];
         consumerGroups.AddRange(Consumers.SelectMany(x => x.ConsumerGroups).Distinct());
-        consumerGroups.Add("AllConsumers");
+        consumerGroups.Add(IDynamicLoadConsumer.CONSUMER_GROUP_ALL);
 
         var balanceOnBehalfOfDropdownOptions = new SelectOptions
         {

@@ -17,6 +17,8 @@ internal interface IDynamicLoadConsumer
     public void SetBalanceOnBehalfOf(string consumerGorup);
     public (Double current, Double netPowerChange) Rebalance(double netGridUsage, double trailingNetGridUsage, double peakUsage, double currentAverageDemand, double totalNetChange);
 
+    public static string CONSUMER_GROUP_SELF = "Self";
+    public static string CONSUMER_GROUP_ALL = "All consumers";
 }
 
 public enum BalancingMethod
