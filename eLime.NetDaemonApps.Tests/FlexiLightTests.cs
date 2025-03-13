@@ -970,8 +970,8 @@ public class FlexiLightTests
             Enabled = true,
             Changes = new List<FlexiSceneChange>
             {
-                new() { ChangedAt = _testCtx.Scheduler.Now.AddDays(-7).AddHours(-1), Scene = "morning"},
-                new() { ChangedAt = _testCtx.Scheduler.Now.AddDays(-7).AddHours(1), Scene = "day"}
+                new() { ChangedAt = _testCtx.Scheduler.Now.AddDays(-3).AddHours(-1), Scene = "morning"},
+                new() { ChangedAt = _testCtx.Scheduler.Now.AddDays(-3).AddHours(1), Scene = "day"}
             }
         });
 
@@ -999,9 +999,9 @@ public class FlexiLightTests
             Enabled = true,
             Changes = new List<FlexiSceneChange>
             {
-                new() { ChangedAt = _testCtx.Scheduler.Now.AddDays(-7).AddHours(-1), Scene = "morning"},
-                new() { ChangedAt = _testCtx.Scheduler.Now.AddDays(-7).AddHours(1), Scene = "off"},
-                new() { ChangedAt = _testCtx.Scheduler.Now.AddDays(-7).AddHours(2), Scene = "day"}
+                new() { ChangedAt = _testCtx.Scheduler.Now.AddDays(-3).AddHours(-1), Scene = "morning"},
+                new() { ChangedAt = _testCtx.Scheduler.Now.AddDays(-3).AddHours(1), Scene = "off"},
+                new() { ChangedAt = _testCtx.Scheduler.Now.AddDays(-3).AddHours(2), Scene = "day"}
             }
         });
 
@@ -1032,9 +1032,9 @@ public class FlexiLightTests
             Enabled = true,
             Changes =
             [
-                new FlexiSceneChange { ChangedAt = _testCtx.Scheduler.Now.AddDays(-7).AddHours(-1), Scene = "morning" },
-                new FlexiSceneChange { ChangedAt = _testCtx.Scheduler.Now.AddDays(-7).AddHours(1), Scene = "off" },
-                new FlexiSceneChange { ChangedAt = _testCtx.Scheduler.Now.AddDays(-7).AddHours(2), Scene = "day" }
+                new FlexiSceneChange { ChangedAt = _testCtx.Scheduler.Now.AddDays(-3).AddHours(-1), Scene = "morning" },
+                new FlexiSceneChange { ChangedAt = _testCtx.Scheduler.Now.AddDays(-3).AddHours(1), Scene = "off" },
+                new FlexiSceneChange { ChangedAt = _testCtx.Scheduler.Now.AddDays(-3).AddHours(2), Scene = "day" }
             ]
         });
 
