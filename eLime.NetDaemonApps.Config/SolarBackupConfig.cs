@@ -5,6 +5,7 @@ public class SolarBackupConfig
     public SolarBackupSynologyConfig Synology { get; set; }
     public SolarBackupPveConfig Pve { get; set; }
     public SolarBackupPbsConfig Pbs { get; set; }
+    public TimeSpan BackupInterval { get; set; }
     public TimeSpan CriticalBackupInterval { get; set; }
 }
 

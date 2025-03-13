@@ -968,11 +968,10 @@ public class FlexiLightTests
         A.CallTo(() => _fileStorage.Get<FlexiSceneFileStorage>("FlexiScenes", "office")).Returns(new FlexiSceneFileStorage
         {
             Enabled = true,
-            Changes = new List<FlexiSceneChange>
-            {
-                new() { ChangedAt = _testCtx.Scheduler.Now.AddDays(-3).AddHours(-1), Scene = "morning"},
-                new() { ChangedAt = _testCtx.Scheduler.Now.AddDays(-3).AddHours(1), Scene = "day"}
-            }
+            Changes = [
+                new() {ChangedAt = _testCtx.Scheduler.Now.AddDays(-3).AddHours(-1), Scene = "morning"},
+                new() {ChangedAt = _testCtx.Scheduler.Now.AddDays(-3).AddHours(1), Scene = "day"}
+            ]
         });
 
         var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, "office").WithSimulatePresenceSensor().WithMultipleFlexiScenes().Build();
@@ -997,12 +996,11 @@ public class FlexiLightTests
         A.CallTo(() => _fileStorage.Get<FlexiSceneFileStorage>("FlexiScenes", "office")).Returns(new FlexiSceneFileStorage
         {
             Enabled = true,
-            Changes = new List<FlexiSceneChange>
-            {
-                new() { ChangedAt = _testCtx.Scheduler.Now.AddDays(-3).AddHours(-1), Scene = "morning"},
-                new() { ChangedAt = _testCtx.Scheduler.Now.AddDays(-3).AddHours(1), Scene = "off"},
-                new() { ChangedAt = _testCtx.Scheduler.Now.AddDays(-3).AddHours(2), Scene = "day"}
-            }
+            Changes = [
+                new() {ChangedAt = _testCtx.Scheduler.Now.AddDays(-3).AddHours(-1), Scene = "morning"},
+                new() {ChangedAt = _testCtx.Scheduler.Now.AddDays(-3).AddHours(1), Scene = "off"},
+                new() {ChangedAt = _testCtx.Scheduler.Now.AddDays(-3).AddHours(2), Scene = "day"}
+            ]
         });
 
         var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, "office").WithSimulatePresenceSensor().WithMultipleFlexiScenes().Build();
@@ -1060,11 +1058,10 @@ public class FlexiLightTests
         A.CallTo(() => _fileStorage.Get<FlexiSceneFileStorage>("FlexiScenes", "office")).Returns(new FlexiSceneFileStorage
         {
             Enabled = true,
-            Changes = new List<FlexiSceneChange>
-            {
-                new() { ChangedAt = _testCtx.Scheduler.Now.AddDays(-7).AddHours(-1), Scene = "morning"},
-                new() { ChangedAt = _testCtx.Scheduler.Now.AddDays(-7).AddHours(1), Scene = "day"}
-            }
+            Changes = [
+                new() {ChangedAt = _testCtx.Scheduler.Now.AddDays(-7).AddHours(-1), Scene = "morning"},
+                new() {ChangedAt = _testCtx.Scheduler.Now.AddDays(-7).AddHours(1), Scene = "day"}
+            ]
         });
 
         var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, "office").WithSimulatePresenceSensor().WithMultipleFlexiScenes().Build();
@@ -1085,11 +1082,10 @@ public class FlexiLightTests
         A.CallTo(() => _fileStorage.Get<FlexiSceneFileStorage>("FlexiScenes", "office")).Returns(new FlexiSceneFileStorage
         {
             Enabled = true,
-            Changes = new List<FlexiSceneChange>
-            {
-                new() { ChangedAt = _testCtx.Scheduler.Now.AddDays(-7).AddHours(-1), Scene = "morning"},
-                new() { ChangedAt = _testCtx.Scheduler.Now.AddDays(-7).AddHours(1), Scene = "day"}
-            }
+            Changes = [
+                new() {ChangedAt = _testCtx.Scheduler.Now.AddDays(-7).AddHours(-1), Scene = "morning"},
+                new() {ChangedAt = _testCtx.Scheduler.Now.AddDays(-7).AddHours(1), Scene = "day"}
+            ]
         });
 
         var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, "office").WithMultipleFlexiScenes().Build();

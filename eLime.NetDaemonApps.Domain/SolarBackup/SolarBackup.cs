@@ -27,7 +27,8 @@ namespace eLime.NetDaemonApps.Domain.SolarBackup
 
         public SolarBackupStatus State => _state switch
         {
-            IdleState when LastBackupCompletedAt?.Add(CriticalBackupInterval) >= _scheduler.Now => SolarBackupStatus.Idle,
+            IdleState when LastBackupCompletedAt?.Add(BackupInterval) >= _scheduler.Now => SolarBackupStatus.Idle,
+            IdleState when LastBackupCompletedAt?.Add(BackupInterval) < _scheduler.Now => SolarBackupStatus.BackupNeeded,
             IdleState when LastBackupCompletedAt?.Add(CriticalBackupInterval) < _scheduler.Now => SolarBackupStatus.CriticalBackupNeeded,
             StartingBackupServerState => SolarBackupStatus.StartingBackupServer,
             BackingUpWorkloadState => SolarBackupStatus.BackingUpWorkload,
@@ -51,6 +52,8 @@ namespace eLime.NetDaemonApps.Domain.SolarBackup
         private string SynologyBroadcastAddress { get; }
         internal Script Script { get; set; }
         private Button ShutDownButton { get; }
+
+        private TimeSpan BackupInterval { get; }
         private TimeSpan CriticalBackupInterval { get; }
 
         internal PveClient PveClient { get; set; }
@@ -58,7 +61,7 @@ namespace eLime.NetDaemonApps.Domain.SolarBackup
 
         private readonly TimeSpan _minimumChangeInterval = TimeSpan.FromSeconds(20);
 
-        public SolarBackup(ILogger logger, IHaContext haContext, IScheduler scheduler, IFileStorage fileStorage, IMqttEntityManager mqttEntityManager, string synologyMacAddress, string synologyBroadcastAddress, PveClient pveClient, PbsClient pbsClient, Button shutdownButton, TimeSpan criticalBackupInterval)
+        public SolarBackup(ILogger logger, IHaContext haContext, IScheduler scheduler, IFileStorage fileStorage, IMqttEntityManager mqttEntityManager, string synologyMacAddress, string synologyBroadcastAddress, PveClient pveClient, PbsClient pbsClient, Button shutdownButton, TimeSpan backupInterval, TimeSpan criticalBackupInterval)
         {
             _logger = logger;
             _haContext = haContext;
@@ -73,6 +76,7 @@ namespace eLime.NetDaemonApps.Domain.SolarBackup
             PveClient = pveClient;
             PbsClient = pbsClient;
             ShutDownButton = shutdownButton;
+            BackupInterval = backupInterval;
             CriticalBackupInterval = criticalBackupInterval;
 
             EnsureSensorsExist().RunSync();
@@ -81,6 +85,7 @@ namespace eLime.NetDaemonApps.Domain.SolarBackup
             SolarBackupState initState = state switch
             {
                 SolarBackupStatus.Idle => new IdleState(),
+                SolarBackupStatus.BackupNeeded => new IdleState(),
                 SolarBackupStatus.CriticalBackupNeeded => new IdleState(),
                 SolarBackupStatus.StartingBackupServer => new StartingBackupServerState(),
                 SolarBackupStatus.BackingUpWorkload => new BackingUpWorkloadState(),
@@ -241,6 +246,7 @@ namespace eLime.NetDaemonApps.Domain.SolarBackup
 public enum SolarBackupStatus
 {
     Idle,
+    BackupNeeded,
     CriticalBackupNeeded,
     StartingBackupServer,
     BackingUpWorkload,
