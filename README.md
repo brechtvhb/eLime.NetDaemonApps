@@ -9,9 +9,3 @@ TODO
 
 ## FlexergyManager
 TODO
-
-## DumbWashingMachine
-TODO
-
-## DumbTumbleDryer
-TODO
