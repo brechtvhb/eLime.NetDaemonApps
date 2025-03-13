@@ -95,7 +95,9 @@ public class FlexiScenes
     {
         var changeSince = now?.DayOfWeek switch
         {
+            DayOfWeek.Monday => TimeSpan.FromDays(3),
             DayOfWeek.Tuesday => TimeSpan.FromDays(1),
+            DayOfWeek.Wednesday => TimeSpan.FromDays(1),
             DayOfWeek.Thursday => TimeSpan.FromDays(1),
             _ => TimeSpan.FromDays(7),
         };

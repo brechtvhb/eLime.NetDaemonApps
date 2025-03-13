@@ -1,4 +1,5 @@
 ﻿using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
+using eLime.NetDaemonApps.Domain.Entities.Buttons;
 using eLime.NetDaemonApps.Domain.Entities.ClimateEntities;
 using eLime.NetDaemonApps.Domain.Entities.Covers;
 using eLime.NetDaemonApps.Domain.Entities.Input;
@@ -73,6 +74,11 @@ public static class AppTestContextExtensions
     public static void VerifySwitchTurnOn(this AppTestContext ctx, BinarySwitch entity, Times times)
     {
         ctx.HaContextMock.Verify(c => c.CallService("switch", "turn_on", It.Is<ServiceTarget>(s => Match(entity.EntityId, s)), null), times);
+    }
+
+    public static void VerifyButtonPressed(this AppTestContext ctx, Button entity, Func<Times> times)
+    {
+        ctx.HaContextMock.Verify(c => c.CallService("button", "press", It.Is<ServiceTarget>(s => Match(entity.EntityId, s)), null), times);
     }
 
     public static void VerifySceneTurnOn(this AppTestContext ctx, Scene entity, Func<Times> times)

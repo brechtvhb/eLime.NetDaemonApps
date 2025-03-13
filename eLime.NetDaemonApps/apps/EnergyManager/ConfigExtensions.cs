@@ -2,6 +2,7 @@
 using eLime.NetDaemonApps.Config.EnergyManager;
 using eLime.NetDaemonApps.Domain.EnergyManager;
 using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
+using eLime.NetDaemonApps.Domain.Entities.Buttons;
 using eLime.NetDaemonApps.Domain.Entities.DeviceTracker;
 using eLime.NetDaemonApps.Domain.Entities.Input;
 using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
@@ -48,6 +49,7 @@ public static class ConfigExtensions
             if (consumer.Triggered != null)
             {
                 var socket = BinarySwitch.Create(ha, consumer.Triggered.SocketEntity);
+                var startButton = !String.IsNullOrWhiteSpace(consumer.Triggered.StartButton) ? new Button(ha, consumer.Triggered.StartButton) : null;
                 BinarySwitch? pauseSwitch = null;
 
                 if (!String.IsNullOrWhiteSpace(consumer.Triggered.PauseSwitch))
@@ -56,7 +58,7 @@ public static class ConfigExtensions
                 var stateSensor = TextSensor.Create(ha, consumer.Triggered.StateSensor);
                 var stateMap = consumer.Triggered.PeakLoads.Select(x => (x.State, x.PeakLoad)).ToList();
                 var defaultLoad = consumer.Triggered.DefaultLoad ?? 0;
-                energyConsumer = new TriggeredEnergyConsumer(logger, consumer.Name, consumer.ConsumerGroups, powerUsageEntity, criticallyNeededEntity, consumer.SwitchOnLoad, consumer.SwitchOffLoad, consumer.MinimumRuntime, consumer.MaximumRuntime, consumer.MinimumTimeout, consumer.MaximumTimeout, timeWindows, config.Timezone, socket, pauseSwitch, stateMap, defaultLoad, stateSensor, consumer.Triggered.StartState, consumer.Triggered.PausedState, consumer.Triggered.CompletedState, consumer.Triggered.CriticalState, consumer.Triggered.CanPause, consumer.Triggered.ShutDownOnComplete);
+                energyConsumer = new TriggeredEnergyConsumer(logger, consumer.Name, consumer.ConsumerGroups, powerUsageEntity, criticallyNeededEntity, consumer.SwitchOnLoad, consumer.SwitchOffLoad, consumer.MinimumRuntime, consumer.MaximumRuntime, consumer.MinimumTimeout, consumer.MaximumTimeout, timeWindows, config.Timezone, socket, startButton, pauseSwitch, stateMap, defaultLoad, stateSensor, consumer.Triggered.StartState, consumer.Triggered.PausedState, consumer.Triggered.CompletedState, consumer.Triggered.CriticalState, consumer.Triggered.CanPause, consumer.Triggered.ShutDownOnComplete);
             }
 
             if (consumer.CarCharger != null)

@@ -72,6 +72,27 @@ public class TriggeredEnergyConsumerTests
     }
 
     [TestMethod]
+    public void StateChange_Triggers_Button()
+    {
+        // Arrange
+        var consumer = new TriggeredEnergyConsumerBuilder(_logger, _testCtx, "tumble_dryer")
+            .Build();
+
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
+            .AddConsumer(consumer)
+            .Build();
+
+        //Act
+        _testCtx.TriggerStateChange(consumer.StateSensor, "waiting_to_start");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
+
+        //Assert
+        Assert.AreEqual(EnergyConsumerState.NeedsEnergy, energyManager.Consumers.First().State);
+        _testCtx.VerifyButtonPressed(consumer.StartButton!, Moq.Times.Once);
+    }
+
+
+    [TestMethod]
     public void Running_Renders_PeakLoad()
     {
         // Arrange
