@@ -41,6 +41,8 @@ namespace eLime.NetDaemonApps.Domain.SolarBackup
             _ => SolarBackupStatus.Idle
         };
 
+        private SolarBackupFileStorage? _lastStoredState;
+
         public DateTimeOffset? StartedAt { get; set; }
         public DateTimeOffset? LastBackupCompletedAt { get; set; }
 
@@ -103,6 +105,9 @@ namespace eLime.NetDaemonApps.Domain.SolarBackup
             GuardTask = _scheduler.RunEvery(_minimumChangeInterval, _scheduler.Now, () =>
             {
                 _state.CheckProgress(_logger, scheduler, this);
+
+                if (State != _lastStoredState?.State)
+                    UpdateStateInHomeAssistant().RunSync();
             });
         }
 
@@ -193,7 +198,9 @@ namespace eLime.NetDaemonApps.Domain.SolarBackup
             await _mqttEntityManager.SetStateAsync($"sensor.solar_last_backup_completed_at", LastBackupCompletedAt?.ToString("O") ?? "None");
             _logger.LogTrace("Update solar backup sensors in home assistant.");
 
-            _fileStorage.Save("SolarBackup", "SolarBackup", ToFileStorage());
+            var stateToStore = ToFileStorage();
+            _fileStorage.Save("SolarBackup", "SolarBackup", stateToStore);
+            _lastStoredState = stateToStore;
         }
 
         private SolarBackupStatus? RetrieveState()
