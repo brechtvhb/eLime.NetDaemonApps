@@ -15,12 +15,6 @@ public record IlluminanceSensor : NumericThresholdSensor
     {
     }
 
-    public new static IlluminanceSensor Create(IHaContext haContext, string entityId, Double? threshold, Double? belowThreshold = null)
-    {
-        var sensor = new IlluminanceSensor(haContext, entityId);
-        sensor.Initialize(threshold, TimeSpan.Zero, null, belowThreshold);
-        return sensor;
-    }
     public new static IlluminanceSensor Create(IHaContext haContext, string entityId, Double? threshold, TimeSpan thresholdTimeSpan, IScheduler scheduler)
     {
         var sensor = new IlluminanceSensor(haContext, entityId);

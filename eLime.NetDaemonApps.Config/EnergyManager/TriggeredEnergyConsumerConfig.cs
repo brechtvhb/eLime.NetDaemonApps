@@ -3,6 +3,7 @@
 public class TriggeredEnergyConsumerConfig
 {
     public string SocketEntity { get; set; }
+    public string StartButton { get; set; }
     public string PauseSwitch { get; set; }
     public string StateSensor { get; set; }
     public string StartState { get; set; }

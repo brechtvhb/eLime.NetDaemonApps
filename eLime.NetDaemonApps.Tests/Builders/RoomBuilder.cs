@@ -496,7 +496,7 @@ namespace eLime.NetDaemonApps.Tests.Builders
         {
             _config.AutoSwitchOffAboveIlluminance = true;
             _config.IlluminanceThreshold = 40;
-            _config.IlluminanceLowerThreshold = 20;
+            _config.IlluminanceThresholdTimeSpan = TimeSpan.FromMinutes(1);
             _config.IlluminanceSensors = new List<string>
             {
                 "sensor.illuminance"
@@ -509,7 +509,6 @@ namespace eLime.NetDaemonApps.Tests.Builders
         {
             _config.AutoSwitchOffAboveIlluminance = true;
             _config.IlluminanceThreshold = 40;
-            _config.IlluminanceLowerThreshold = 20;
             _config.IlluminanceSensors = new List<string>
             {
                 "sensor.illuminance1",

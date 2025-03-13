@@ -1,5 +1,6 @@
 ﻿using eLime.NetDaemonApps.Domain.EnergyManager;
 using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
+using eLime.NetDaemonApps.Domain.Entities.Buttons;
 using eLime.NetDaemonApps.Domain.Entities.TextSensors;
 using eLime.NetDaemonApps.Domain.Helper;
 using eLime.NetDaemonApps.Tests.Helpers;
@@ -28,13 +29,14 @@ public class TriggeredEnergyConsumerBuilder
     private string _timezone;
 
     private BinarySwitch _socket;
+    private Button? _startButton;
     private BinarySwitch? _pauseSwitch;
 
     private TextSensor _stateSensor;
     private String _startState;
     private String? _pausedState;
     private String _completedState;
-    private String _criticalState;
+    private String? _criticalState;
     private Boolean _canForceShutdown;
     private Boolean _shutDownOnComplete;
     private List<(String state, Double peakLoad)> _statePeakLoads = new();
@@ -84,6 +86,28 @@ public class TriggeredEnergyConsumerBuilder
             AddStatePeakLoad("Rinsing", 330);
             AddStatePeakLoad("Spinning", 420);
         }
+
+        if (baseType == "tumble_dryer")
+        {
+            _name = "Washer";
+            _powerUsage = new NumericEntity(_testCtx.HaContext, "sensor.socket_dryer_power");
+            _switchOnLoad = -500;
+            _switchOffLoad = 3500;
+            _startButton = new Button(_testCtx.HaContext, "button.tumble_dryer_start");
+            _socket = BinarySwitch.Create(_testCtx.HaContext, "switch.tumble_dryer_power_on");
+            AddConsumerGroup("Deferrable");
+
+            WithStateSensor(TextSensor.Create(_testCtx.HaContext, "sensor.tumble_dryer_state"), "waiting_to_start", null, "program_ended", null);
+            WithCanForceShutdown();
+            AddStatePeakLoad("off", 1);
+            AddStatePeakLoad("on", 4);
+            AddStatePeakLoad("drying", 450);
+            AddStatePeakLoad("machine_iron", 470);
+            AddStatePeakLoad("hand_iron_2", 480);
+            AddStatePeakLoad("hand_iron_1", 500);
+            AddStatePeakLoad("program_ended", 100);
+        }
+
         if (baseType == "dishwasher")
         {
             _name = "Dishwasher";
@@ -166,7 +190,7 @@ public class TriggeredEnergyConsumerBuilder
         return this;
     }
 
-    public TriggeredEnergyConsumerBuilder WithStateSensor(TextSensor stateSensor, String startState, String? pausedState, String completedState, String criticalState)
+    public TriggeredEnergyConsumerBuilder WithStateSensor(TextSensor stateSensor, String startState, String? pausedState, String completedState, String? criticalState)
     {
         _stateSensor = stateSensor;
         _startState = startState;
@@ -195,7 +219,7 @@ public class TriggeredEnergyConsumerBuilder
 
     public TriggeredEnergyConsumer Build()
     {
-        var x = new TriggeredEnergyConsumer(_logger, _name, _consumerGroups, _powerUsage, _criticallyNeeded, _switchOnLoad, _switchOffLoad, _minimumRuntime, _maximumRuntime, _minimumTimeout, _maximumTimeout, _timeWindows, _timezone, _socket, _pauseSwitch, _statePeakLoads, 0, _stateSensor, _startState, _pausedState, _completedState, _criticalState, _canForceShutdown, _shutDownOnComplete);
+        var x = new TriggeredEnergyConsumer(_logger, _name, _consumerGroups, _powerUsage, _criticallyNeeded, _switchOnLoad, _switchOffLoad, _minimumRuntime, _maximumRuntime, _minimumTimeout, _maximumTimeout, _timeWindows, _timezone, _socket, _startButton, _pauseSwitch, _statePeakLoads, 0, _stateSensor, _startState, _pausedState, _completedState, _criticalState, _canForceShutdown, _shutDownOnComplete);
         return x;
     }
 }

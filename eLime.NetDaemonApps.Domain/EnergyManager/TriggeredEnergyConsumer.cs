@@ -1,4 +1,5 @@
 ﻿using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
+using eLime.NetDaemonApps.Domain.Entities.Buttons;
 using eLime.NetDaemonApps.Domain.Entities.TextSensors;
 using Microsoft.Extensions.Logging;
 using NetDaemon.HassModel.Entities;
@@ -8,8 +9,10 @@ namespace eLime.NetDaemonApps.Domain.EnergyManager;
 public class TriggeredEnergyConsumer : EnergyConsumer
 {
     public BinarySwitch Socket { get; }
+    public Button? StartButton { get; }
+
     public BinarySwitch? PauseSwitch { get; }
-    public override bool Running => Socket.IsOn();
+    public override bool Running => Socket.IsOn() && StateSensor.State != StartState && StateSensor.State != CompletedState && StatePeakLoads.Select(x => x.State).Contains(StateSensor.State);
 
 
     public TextSensor StateSensor { get; }
@@ -48,12 +51,14 @@ public class TriggeredEnergyConsumer : EnergyConsumer
     }
 
     public TriggeredEnergyConsumer(ILogger logger, String name, List<string> consumerGroups, NumericEntity powerUsage, BinarySensor? criticallyNeeded, Double switchOnLoad, Double switchOffLoad, TimeSpan? minimumRuntime, TimeSpan? maximumRuntime, TimeSpan? minimumTimeout,
-        TimeSpan? maximumTimeout, List<TimeWindow> timeWindows, String timezone, BinarySwitch socket, BinarySwitch? pauseSwitch, List<(String State, Double PeakLoad)> peakLoads, double defaultLoad, TextSensor stateSensor, String startState, String? pausedState, String completedState, String criticalState, bool canPause, bool shutDownOnComplete)
+        TimeSpan? maximumTimeout, List<TimeWindow> timeWindows, String timezone, BinarySwitch socket, Button? startButton, BinarySwitch? pauseSwitch, List<(String State, Double PeakLoad)> peakLoads, double defaultLoad, TextSensor stateSensor, String startState, String? pausedState, String completedState, String? criticalState, bool canPause, bool shutDownOnComplete)
     {
         SetCommonFields(logger, name, consumerGroups, powerUsage, criticallyNeeded, switchOnLoad, switchOffLoad, minimumRuntime, maximumRuntime, minimumTimeout, maximumTimeout, timeWindows, timezone);
         Socket = socket;
         Socket.TurnedOn += Socket_TurnedOn;
         Socket.TurnedOff += Socket_TurnedOff;
+
+        StartButton = startButton;
 
         PauseSwitch = pauseSwitch;
 
@@ -135,6 +140,12 @@ public class TriggeredEnergyConsumer : EnergyConsumer
             return;
         }
 
+        if (StateSensor.State == StartState && StartButton != null)
+        {
+            StartButton.Press();
+            return;
+        }
+
         Socket.TurnOn();
     }
 
@@ -165,19 +176,27 @@ public class TriggeredEnergyConsumer : EnergyConsumer
     private void StateSensor_StateChanged(object? sender, TextSensorEventArgs e)
     {
         if (e.Sensor.State == StartState)
+        {
             CheckDesiredState(new EnergyConsumerStartCommand(this, EnergyConsumerState.NeedsEnergy));
-
-        if (e.Sensor.State == CompletedState)
-            CheckDesiredState(new EnergyConsumerStopCommand(this, EnergyConsumerState.Off));
-
-        if (e.Sensor.State == CriticalState)
+        }
+        else if (e.Sensor.State == CriticalState)
+        {
             CheckDesiredState(new EnergyConsumerStartCommand(this, EnergyConsumerState.CriticallyNeedsEnergy));
-
+        }
+        else if (e.Sensor.State == CompletedState)
+        {
+            CheckDesiredState(new EnergyConsumerStopCommand(this, EnergyConsumerState.Off));
+        }
+        else if (StatePeakLoads.Select(x => x.State).Contains(StateSensor.State))
+        {
+            CheckDesiredState(new EnergyConsumerStartCommand(this, EnergyConsumerState.Running));
+        }
     }
 
     private void Socket_TurnedOn(object? sender, BinarySensorEventArgs e)
     {
-        CheckDesiredState(new EnergyConsumerStartedEvent(this, EnergyConsumerState.Running));
+        if (StateSensor.State != StartState && StatePeakLoads.Select(x => x.State).Contains(StateSensor.State))
+            CheckDesiredState(new EnergyConsumerStartedEvent(this, EnergyConsumerState.Running));
     }
 
     private void Socket_TurnedOff(object? sender, BinarySensorEventArgs e)

@@ -640,22 +640,6 @@ public class FlexiLightTests
         _testCtx.VerifyLightTurnOn(new Light(_testCtx.HaContext, "light.test"), Moq.Times.Once);
     }
 
-
-    [TestMethod]
-    public void DoesNotActivateLight_If_IlluminanceBetweenThresholds()
-    {
-        // Arrange
-        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).WithIlluminanceSensor().Build();
-        _testCtx.TriggerStateChange(new IlluminanceSensor(_testCtx.HaContext, "sensor.illuminance"), "30");
-
-        //Act
-        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
-
-        //Assert
-        _testCtx.VerifyLightTurnOn(new Light(_testCtx.HaContext, "light.test"), Moq.Times.Never);
-    }
-
-
     [TestMethod]
     public void DoesActivateLight_If_OneOfIlluminanceOk()
     {

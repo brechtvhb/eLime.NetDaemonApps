@@ -31,7 +31,6 @@ public class Room : IAsyncDisposable
 
     public InitialClickAfterMotionBehaviour InitialClickAfterMotionBehaviour { get; }
     public Int32? IlluminanceThreshold { get; }
-    public Int32? IlluminanceLowerThreshold { get; }
     public bool AutoSwitchOffAboveIlluminance { get; }
     public TimeSpan IgnorePresenceAfterOffDuration { get; }
     public DateTimeOffset? TurnOffAt { get; private set; }
@@ -193,7 +192,6 @@ public class Room : IAsyncDisposable
         SimulatePresenceIgnoreDuration = config.SimulatePresenceIgnoreDuration ?? TimeSpan.FromMinutes(3);
         InitialClickAfterMotionBehaviour = config.InitialClickAfterMotionBehaviour == Config.FlexiLights.InitialClickAfterMotionBehaviour.ChangeOffDurationOnly ? InitialClickAfterMotionBehaviour.ChangeOffDurationOnly : InitialClickAfterMotionBehaviour.ChangeOFfDurationAndGoToNextFlexiScene;
         IlluminanceThreshold = config.IlluminanceThreshold;
-        IlluminanceLowerThreshold = config.IlluminanceLowerThreshold ?? IlluminanceThreshold;
         AutoSwitchOffAboveIlluminance = config.AutoSwitchOffAboveIlluminance;
         IgnorePresenceAfterOffDuration = config.IgnorePresenceAfterOffDuration ?? TimeSpan.Zero;
 
@@ -216,9 +214,7 @@ public class Room : IAsyncDisposable
                 if (IlluminanceSensors.Any(x => x.EntityId == sensorId))
                     continue;
 
-                var sensor = config.IlluminanceLowerThreshold != null
-                    ? IlluminanceSensor.Create(_haContext, sensorId, config.IlluminanceThreshold, config.IlluminanceLowerThreshold)
-                    : IlluminanceSensor.Create(_haContext, sensorId, config.IlluminanceThreshold, config.IlluminanceThresholdTimeSpan, scheduler);
+                var sensor = IlluminanceSensor.Create(_haContext, sensorId, config.IlluminanceThreshold, config.IlluminanceThresholdTimeSpan, scheduler);
                 AddIlluminanceSensor(sensor);
             }
         }
@@ -715,9 +711,9 @@ public class Room : IAsyncDisposable
             return;
         }
 
-        if (IlluminanceLowerThreshold != null && IlluminanceSensors.All(x => x.State > IlluminanceLowerThreshold))
+        if (IlluminanceThreshold != null && IlluminanceSensors.All(x => x.State > IlluminanceThreshold))
         {
-            _logger.LogTrace("{Room}: Mixin should have triggered because motion sensor saw something moving but did not turn on lights because all illuminance sensors [{IlluminanceSensorValues}] are above threshold of {IlluminanceThreshold} lux.", Name, String.Join(", ", IlluminanceSensors.Select(x => $"{x.EntityId} - {x.State} lux")), IlluminanceLowerThreshold);
+            _logger.LogTrace("{Room}: Mixin should have triggered because motion sensor saw something moving but did not turn on lights because all illuminance sensors [{IlluminanceSensorValues}] are above threshold of {IlluminanceThreshold} lux.", Name, String.Join(", ", IlluminanceSensors.Select(x => $"{x.EntityId} - {x.State} lux")), IlluminanceThreshold);
             return;
         }
 
@@ -843,10 +839,10 @@ public class Room : IAsyncDisposable
     }
     private async Task ExecuteFlexiSceneOnMotion()
     {
-        if (IlluminanceLowerThreshold != null && IlluminanceSensors.All(x => x.State > IlluminanceLowerThreshold))
+        if (IlluminanceThreshold != null && IlluminanceSensors.All(x => x.State > IlluminanceThreshold))
         {
             _logger.LogTrace(
-                "{Room}: Motion sensor saw something moving but did not turn on lights because all illuminance sensors [{IlluminanceSensorValues}] are above threshold of {IlluminanceThreshold} lux.", Name, String.Join(", ", IlluminanceSensors.Select(x => $"{x.EntityId} - {x.State} lux")), IlluminanceLowerThreshold);
+                "{Room}: Motion sensor saw something moving but did not turn on lights because all illuminance sensors [{IlluminanceSensorValues}] are above threshold of {IlluminanceThreshold} lux.", Name, String.Join(", ", IlluminanceSensors.Select(x => $"{x.EntityId} - {x.State} lux")), IlluminanceThreshold);
             return;
         }
 
@@ -1029,6 +1025,13 @@ public class Room : IAsyncDisposable
 
         if (LastChangedAt?.Add(SimulatePresenceIgnoreDuration) > _scheduler.Now)
             return;
+
+        if (IlluminanceThreshold != null && IlluminanceSensors.All(x => x.State > IlluminanceThreshold))
+        {
+            _logger.LogTrace(
+                "{Room}: Motion sensor saw something moving but did not turn on lights because all illuminance sensors [{IlluminanceSensorValues}] are above threshold of {IlluminanceThreshold} lux.", Name, String.Join(", ", IlluminanceSensors.Select(x => $"{x.EntityId} - {x.State} lux")), IlluminanceThreshold);
+            return;
+        }
 
         if (FlexiScenes.Current == flexiSceneToSimulate)
             return;
