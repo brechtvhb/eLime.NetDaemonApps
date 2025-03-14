@@ -13,7 +13,7 @@ public class TriggeredEnergyConsumer : EnergyConsumer
 
     public BinarySwitch? PauseSwitch { get; }
 
-    public override bool Running => (Socket == null || Socket.IsOn()) && States.Where(x => x.IsRunning).Select(x => x.Name).Contains(StateSensor.State);
+    public override bool Running => (Socket == null || (Socket != null && Socket.IsOn())) && States.Where(x => x.IsRunning).Select(x => x.Name).Contains(StateSensor.State);
 
     public TextSensor StateSensor { get; }
     public String StartState { get; }
