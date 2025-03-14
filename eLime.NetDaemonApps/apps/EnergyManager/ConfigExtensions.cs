@@ -49,7 +49,7 @@ public static class ConfigExtensions
             }
             if (consumer.Triggered != null)
             {
-                var socket = BinarySwitch.Create(ha, consumer.Triggered.SocketEntity);
+                var socket = !String.IsNullOrWhiteSpace(consumer.Triggered.SocketEntity) ? BinarySwitch.Create(ha, consumer.Triggered.SocketEntity) : null;
                 var startButton = !String.IsNullOrWhiteSpace(consumer.Triggered.StartButton) ? new Button(ha, consumer.Triggered.StartButton) : null;
                 BinarySwitch? pauseSwitch = null;
 

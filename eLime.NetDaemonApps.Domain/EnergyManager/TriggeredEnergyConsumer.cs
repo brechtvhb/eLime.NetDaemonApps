@@ -8,12 +8,12 @@ namespace eLime.NetDaemonApps.Domain.EnergyManager;
 
 public class TriggeredEnergyConsumer : EnergyConsumer
 {
-    public BinarySwitch Socket { get; }
+    public BinarySwitch? Socket { get; }
     public Button? StartButton { get; }
 
     public BinarySwitch? PauseSwitch { get; }
-    public override bool Running => Socket.IsOn() && StateSensor.State != StartState && StateSensor.State != CompletedState && States.Where(x => x.IsRunning).Select(x => x.Name).Contains(StateSensor.State);
 
+    public override bool Running => (Socket == null || Socket.IsOn()) && States.Where(x => x.IsRunning).Select(x => x.Name).Contains(StateSensor.State);
 
     public TextSensor StateSensor { get; }
     public String StartState { get; }
@@ -23,7 +23,7 @@ public class TriggeredEnergyConsumer : EnergyConsumer
     public Boolean CanPause { get; }
     public Boolean ShutDownOnComplete { get; }
 
-    public List<State> States { get; } = [];
+    public List<State> States { get; }
 
     public override double PeakLoad
     {
@@ -42,17 +42,24 @@ public class TriggeredEnergyConsumer : EnergyConsumer
                 if (currentStatePassed && state.PeakLoad > maxPeakLoad)
                     maxPeakLoad = state.PeakLoad;
             }
+
             return maxPeakLoad;
         }
     }
 
-    public TriggeredEnergyConsumer(ILogger logger, String name, List<string> consumerGroups, NumericEntity powerUsage, BinarySensor? criticallyNeeded, Double switchOnLoad, Double switchOffLoad, TimeSpan? minimumRuntime, TimeSpan? maximumRuntime, TimeSpan? minimumTimeout,
-        TimeSpan? maximumTimeout, List<TimeWindow> timeWindows, String timezone, BinarySwitch socket, Button? startButton, BinarySwitch? pauseSwitch, List<State> states, TextSensor stateSensor, String startState, String? pausedState, String completedState, String? criticalState, bool canPause, bool shutDownOnComplete)
+    public TriggeredEnergyConsumer(ILogger logger, String name, List<string> consumerGroups, NumericEntity powerUsage, BinarySensor? criticallyNeeded, Double switchOnLoad, Double switchOffLoad,
+        TimeSpan? minimumRuntime, TimeSpan? maximumRuntime, TimeSpan? minimumTimeout,
+        TimeSpan? maximumTimeout, List<TimeWindow> timeWindows, String timezone, BinarySwitch? socket, Button? startButton, BinarySwitch? pauseSwitch, List<State> states, TextSensor stateSensor,
+        String startState, String? pausedState, String completedState, String? criticalState, bool canPause, bool shutDownOnComplete)
     {
         SetCommonFields(logger, name, consumerGroups, powerUsage, criticallyNeeded, switchOnLoad, switchOffLoad, minimumRuntime, maximumRuntime, minimumTimeout, maximumTimeout, timeWindows, timezone);
         Socket = socket;
-        Socket.TurnedOn += Socket_TurnedOn;
-        Socket.TurnedOff += Socket_TurnedOff;
+
+        if (Socket != null)
+        {
+            Socket.TurnedOn += Socket_TurnedOn;
+            Socket.TurnedOff += Socket_TurnedOff;
+        }
 
         StartButton = startButton;
 
@@ -136,13 +143,14 @@ public class TriggeredEnergyConsumer : EnergyConsumer
             return;
         }
 
-        if (StateSensor.State == StartState && StartButton != null)
+        if (StateSensor.State == StartState && Socket != null && Socket.IsOff())
         {
-            StartButton.Press();
+            Socket.TurnOn();
             return;
         }
 
-        Socket.TurnOn();
+        if (StateSensor.State == StartState && StartButton != null)
+            StartButton.Press();
     }
 
     public override void TurnOff()
@@ -154,14 +162,17 @@ public class TriggeredEnergyConsumer : EnergyConsumer
         }
 
         if (ShutDownOnComplete)
-            Socket.TurnOff();
+            Socket?.TurnOff();
     }
 
     public override void DisposeInternal()
     {
-        Socket.TurnedOn -= Socket_TurnedOn;
-        Socket.TurnedOn -= Socket_TurnedOff;
-        Socket.Dispose();
+        if (Socket != null)
+        {
+            Socket.TurnedOn -= Socket_TurnedOn;
+            Socket.TurnedOn -= Socket_TurnedOff;
+            Socket.Dispose();
+        }
 
         PauseSwitch?.Dispose();
 
@@ -171,7 +182,7 @@ public class TriggeredEnergyConsumer : EnergyConsumer
 
     private void StateSensor_StateChanged(object? sender, TextSensorEventArgs e)
     {
-        if (e.Sensor.State == StartState)
+        if (e.Sensor.State == StartState || e.Sensor.State == PausedState)
         {
             CheckDesiredState(new EnergyConsumerStartCommand(this, EnergyConsumerState.NeedsEnergy));
         }
@@ -191,7 +202,7 @@ public class TriggeredEnergyConsumer : EnergyConsumer
 
     private void Socket_TurnedOn(object? sender, BinarySensorEventArgs e)
     {
-        if (StateSensor.State != StartState && States.Where(x => x.IsRunning).Select(x => x.Name).Contains(StateSensor.State))
+        if (States.Where(x => x.IsRunning).Select(x => x.Name).Contains(StateSensor.State))
             CheckDesiredState(new EnergyConsumerStartedEvent(this, EnergyConsumerState.Running));
     }
 
@@ -199,7 +210,6 @@ public class TriggeredEnergyConsumer : EnergyConsumer
     {
         CheckDesiredState(new EnergyConsumerStoppedEvent(this, EnergyConsumerState.Off));
     }
-
 }
 
 public class State
