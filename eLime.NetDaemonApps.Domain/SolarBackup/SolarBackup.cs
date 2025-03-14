@@ -47,7 +47,6 @@ namespace eLime.NetDaemonApps.Domain.SolarBackup
         public DateTimeOffset? LastBackupCompletedAt { get; set; }
 
         private IDisposable StartBackupButtonListener { get; set; }
-        private IDisposable StartBackupSwitchListener { get; set; }
         private IDisposable? GuardTask { get; }
 
         private string SynologyMacAddress { get; }
@@ -129,9 +128,6 @@ namespace eLime.NetDaemonApps.Domain.SolarBackup
 
             var delayedStartButtonTriggerObserver = await _mqttEntityManager.PrepareCommandSubscriptionAsync("button.solar_backup_start");
             StartBackupButtonListener = delayedStartButtonTriggerObserver.SubscribeAsync(StartBackupButtonTriggeredHandler());
-
-            var delayedStartSwitchTriggerObserver = await _mqttEntityManager.PrepareCommandSubscriptionAsync("switch.solar_backup_start");
-            StartBackupSwitchListener = delayedStartSwitchTriggerObserver.SubscribeAsync(StartBackupSwitchTriggeredHandler());
         }
 
         internal Func<string, Task> StartBackupButtonTriggeredHandler()
@@ -146,18 +142,7 @@ namespace eLime.NetDaemonApps.Domain.SolarBackup
                 await UpdateStateInHomeAssistant();
             };
         }
-        internal Func<string, Task> StartBackupSwitchTriggeredHandler()
-        {
-            return async state =>
-            {
-                _logger.LogDebug("Solar backup: Setting start triggered to {state}.", state);
 
-                if (state == "ON" && State is SolarBackupStatus.Idle or SolarBackupStatus.BackupNeeded or SolarBackupStatus.CriticalBackupNeeded)
-                    await StartBackup();
-
-                await UpdateStateInHomeAssistant();
-            };
-        }
 
         private Task StartBackup()
         {
@@ -243,7 +228,6 @@ namespace eLime.NetDaemonApps.Domain.SolarBackup
         {
             _logger.LogInformation($"Solar backup disposing.");
             StartBackupButtonListener?.Dispose();
-            StartBackupSwitchListener?.Dispose();
             GuardTask?.Dispose();
             _logger.LogInformation($"Solar backup disposed.");
         }
