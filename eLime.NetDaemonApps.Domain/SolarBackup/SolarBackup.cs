@@ -138,9 +138,9 @@ namespace eLime.NetDaemonApps.Domain.SolarBackup
         {
             return async state =>
             {
-                _logger.LogDebug("Solar backup: Setting setting start triggered to {state}.", state);
+                _logger.LogDebug("Solar backup: Setting start triggered to {state}.", state);
 
-                if (state == "START" && State == SolarBackupStatus.Idle)
+                if (state == "START" && State is SolarBackupStatus.Idle or SolarBackupStatus.BackupNeeded or SolarBackupStatus.CriticalBackupNeeded)
                     await StartBackup();
 
                 await UpdateStateInHomeAssistant();
@@ -150,9 +150,9 @@ namespace eLime.NetDaemonApps.Domain.SolarBackup
         {
             return async state =>
             {
-                _logger.LogDebug("Solar backup: Setting setting start triggered to {state}.", state);
+                _logger.LogDebug("Solar backup: Setting start triggered to {state}.", state);
 
-                if (state == "ON" && State is SolarBackupStatus.Idle or SolarBackupStatus.CriticalBackupNeeded)
+                if (state == "ON" && State is SolarBackupStatus.Idle or SolarBackupStatus.BackupNeeded or SolarBackupStatus.CriticalBackupNeeded)
                     await StartBackup();
 
                 await UpdateStateInHomeAssistant();
