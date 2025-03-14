@@ -187,7 +187,7 @@ public class TriggeredEnergyConsumer : EnergyConsumer
         {
             CheckDesiredState(new EnergyConsumerStopCommand(this, EnergyConsumerState.Off));
         }
-        else if (StatePeakLoads.Select(x => x.State).Contains(StateSensor.State))
+        else if (StatePeakLoads.Select(x => x.State).Contains(StateSensor.State) && State != EnergyConsumerState.Running)
         {
             CheckDesiredState(new EnergyConsumerStartCommand(this, EnergyConsumerState.Running));
         }
