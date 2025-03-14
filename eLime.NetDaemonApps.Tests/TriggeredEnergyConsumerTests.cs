@@ -61,6 +61,7 @@ public class TriggeredEnergyConsumerTests
         var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
             .AddConsumer(consumer)
             .Build();
+        _testCtx.TriggerStateChange(consumer.Socket, "off");
 
         //Act
         _testCtx.TriggerStateChange(consumer.StateSensor, "Yes");
@@ -70,6 +71,7 @@ public class TriggeredEnergyConsumerTests
         Assert.AreEqual(EnergyConsumerState.NeedsEnergy, energyManager.Consumers.First().State);
         _testCtx.VerifySwitchTurnOn(consumer.Socket, Moq.Times.Once);
     }
+
 
     [TestMethod]
     public void StateChange_Triggers_Button()
@@ -81,6 +83,7 @@ public class TriggeredEnergyConsumerTests
         var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
             .AddConsumer(consumer)
             .Build();
+        _testCtx.TriggerStateChange(consumer.Socket, "on");
 
         //Act
         _testCtx.TriggerStateChange(consumer.StateSensor, "waiting_to_start");
@@ -88,6 +91,32 @@ public class TriggeredEnergyConsumerTests
 
         //Assert
         Assert.AreEqual(EnergyConsumerState.NeedsEnergy, energyManager.Consumers.First().State);
+        _testCtx.VerifyButtonPressed(consumer.StartButton!, Moq.Times.Once);
+    }
+
+    [TestMethod]
+    public void StateChange_Triggers_Socket_Then_Button()
+    {
+        // Arrange
+        var consumer = new TriggeredEnergyConsumerBuilder(_logger, _testCtx, "tumble_dryer")
+            .Build();
+
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
+            .AddConsumer(consumer)
+            .Build();
+
+        _testCtx.TriggerStateChange(consumer.Socket, "off");
+
+        //Act
+        _testCtx.TriggerStateChange(consumer.StateSensor, "waiting_to_start");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
+
+        _testCtx.TriggerStateChange(consumer.Socket, "on");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(25));
+
+        //Assert
+        Assert.AreEqual(EnergyConsumerState.NeedsEnergy, energyManager.Consumers.First().State);
+        _testCtx.VerifySwitchTurnOn(consumer.Socket, Moq.Times.Once);
         _testCtx.VerifyButtonPressed(consumer.StartButton!, Moq.Times.Once);
     }
 
