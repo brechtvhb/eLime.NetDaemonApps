@@ -12,13 +12,13 @@ public class TriggeredEnergyConsumerConfig
     public string CriticalState { get; set; }
     public bool CanPause { get; set; }
     public bool ShutDownOnComplete { get; set; }
-    public List<TriggeredStatePeakLoad> PeakLoads { get; set; } = [];
-    public double? DefaultLoad { get; set; }
+    public List<State> States { get; set; } = [];
 
 }
 
-public class TriggeredStatePeakLoad
+public class State
 {
-    public string State { get; set; }
+    public string Name { get; set; }
     public double PeakLoad { get; set; }
+    public bool IsRunning { get; set; }
 }
