@@ -12,7 +12,7 @@ public class TriggeredEnergyConsumer : EnergyConsumer
     public Button? StartButton { get; }
 
     public BinarySwitch? PauseSwitch { get; }
-    public override bool Running => Socket.IsOn() && StateSensor.State != StartState && StateSensor.State != CompletedState && StatePeakLoads.Select(x => x.State).Contains(StateSensor.State);
+    public override bool Running => Socket.IsOn() && StateSensor.State != StartState && StateSensor.State != CompletedState && States.Where(x => x.IsRunning).Select(x => x.Name).Contains(StateSensor.State);
 
 
     public TextSensor StateSensor { get; }
@@ -23,8 +23,7 @@ public class TriggeredEnergyConsumer : EnergyConsumer
     public Boolean CanPause { get; }
     public Boolean ShutDownOnComplete { get; }
 
-    public List<(String State, Double PeakLoad)> StatePeakLoads { get; }
-    public double defaultLoad;
+    public List<State> States { get; } = [];
 
     public override double PeakLoad
     {
@@ -32,26 +31,23 @@ public class TriggeredEnergyConsumer : EnergyConsumer
         {
             var currentState = StateSensor.State;
 
-            if (StatePeakLoads.All(x => x.State != currentState))
-                return defaultLoad;
-
             var currentStatePassed = false;
             var maxPeakLoad = 0d;
 
-            foreach (var (state, peakLoad) in StatePeakLoads)
+            foreach (var state in States)
             {
-                if (state == currentState)
+                if (state.Name == currentState)
                     currentStatePassed = true;
 
-                if (currentStatePassed && peakLoad > maxPeakLoad)
-                    maxPeakLoad = peakLoad;
+                if (currentStatePassed && state.PeakLoad > maxPeakLoad)
+                    maxPeakLoad = state.PeakLoad;
             }
             return maxPeakLoad;
         }
     }
 
     public TriggeredEnergyConsumer(ILogger logger, String name, List<string> consumerGroups, NumericEntity powerUsage, BinarySensor? criticallyNeeded, Double switchOnLoad, Double switchOffLoad, TimeSpan? minimumRuntime, TimeSpan? maximumRuntime, TimeSpan? minimumTimeout,
-        TimeSpan? maximumTimeout, List<TimeWindow> timeWindows, String timezone, BinarySwitch socket, Button? startButton, BinarySwitch? pauseSwitch, List<(String State, Double PeakLoad)> peakLoads, double defaultLoad, TextSensor stateSensor, String startState, String? pausedState, String completedState, String? criticalState, bool canPause, bool shutDownOnComplete)
+        TimeSpan? maximumTimeout, List<TimeWindow> timeWindows, String timezone, BinarySwitch socket, Button? startButton, BinarySwitch? pauseSwitch, List<State> states, TextSensor stateSensor, String startState, String? pausedState, String completedState, String? criticalState, bool canPause, bool shutDownOnComplete)
     {
         SetCommonFields(logger, name, consumerGroups, powerUsage, criticallyNeeded, switchOnLoad, switchOffLoad, minimumRuntime, maximumRuntime, minimumTimeout, maximumTimeout, timeWindows, timezone);
         Socket = socket;
@@ -70,7 +66,7 @@ public class TriggeredEnergyConsumer : EnergyConsumer
         CompletedState = completedState;
         CriticalState = criticalState;
 
-        StatePeakLoads = peakLoads;
+        States = states;
         CanPause = canPause;
         ShutDownOnComplete = shutDownOnComplete;
     }
@@ -187,7 +183,7 @@ public class TriggeredEnergyConsumer : EnergyConsumer
         {
             CheckDesiredState(new EnergyConsumerStopCommand(this, EnergyConsumerState.Off));
         }
-        else if (StatePeakLoads.Select(x => x.State).Contains(StateSensor.State) && State != EnergyConsumerState.Running)
+        else if (States.Where(x => x.IsRunning).Select(x => x.Name).Contains(StateSensor.State) && State != EnergyConsumerState.Running)
         {
             CheckDesiredState(new EnergyConsumerStartCommand(this, EnergyConsumerState.Running));
         }
@@ -195,7 +191,7 @@ public class TriggeredEnergyConsumer : EnergyConsumer
 
     private void Socket_TurnedOn(object? sender, BinarySensorEventArgs e)
     {
-        if (StateSensor.State != StartState && StatePeakLoads.Select(x => x.State).Contains(StateSensor.State))
+        if (StateSensor.State != StartState && States.Where(x => x.IsRunning).Select(x => x.Name).Contains(StateSensor.State))
             CheckDesiredState(new EnergyConsumerStartedEvent(this, EnergyConsumerState.Running));
     }
 
@@ -204,4 +200,21 @@ public class TriggeredEnergyConsumer : EnergyConsumer
         CheckDesiredState(new EnergyConsumerStoppedEvent(this, EnergyConsumerState.Off));
     }
 
+}
+
+public class State
+{
+    public string Name { get; private init; }
+    public double PeakLoad { get; private init; }
+    public bool IsRunning { get; private init; }
+
+    public static State Create(string name, double peakLoad, bool isRunning)
+    {
+        return new State
+        {
+            Name = name,
+            PeakLoad = peakLoad,
+            IsRunning = isRunning
+        };
+    }
 }

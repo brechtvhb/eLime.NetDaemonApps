@@ -25,7 +25,7 @@ public class TriggeredEnergyConsumerBuilder
     private TimeSpan? _maximumRuntime;
     private TimeSpan? _minimumTimeout;
     private TimeSpan? _maximumTimeout;
-    private List<TimeWindow> _timeWindows = new();
+    private List<TimeWindow> _timeWindows = [];
     private string _timezone;
 
     private BinarySwitch _socket;
@@ -39,7 +39,7 @@ public class TriggeredEnergyConsumerBuilder
     private String? _criticalState;
     private Boolean _canForceShutdown;
     private Boolean _shutDownOnComplete;
-    private List<(String state, Double peakLoad)> _statePeakLoads = new();
+    private List<State> _states = [];
 
     public TriggeredEnergyConsumerBuilder(ILogger logger, AppTestContext testCtx, String baseType)
     {
@@ -59,11 +59,10 @@ public class TriggeredEnergyConsumerBuilder
 
             WithStateSensor(TextSensor.Create(_testCtx.HaContext, "sensor.irrigation_state"), "Yes", null, "No", "Critical");
             WithCanForceShutdown();
-            AddStatePeakLoad("No", 1);
-            AddStatePeakLoad("Yes", 1);
-            AddStatePeakLoad("Critical", 1);
-            AddStatePeakLoad("Ongoing", 700);
-
+            AddStatePeakLoad("No", 1, false);
+            AddStatePeakLoad("Yes", 1, false);
+            AddStatePeakLoad("Critical", 1, false);
+            AddStatePeakLoad("Ongoing", 700, true);
         }
 
         if (baseType == "washer")
@@ -78,13 +77,13 @@ public class TriggeredEnergyConsumerBuilder
 
             WithStateSensor(TextSensor.Create(_testCtx.HaContext, "sensor.smartwasher_smartwasher_state"), "DelayedStart", null, "Ready", "Critical");
             WithCanForceShutdown();
-            AddStatePeakLoad("Idle", 0);
-            AddStatePeakLoad("DelayedStart", 0);
-            AddStatePeakLoad("Prewashing", 120);
-            AddStatePeakLoad("Heating", 2200);
-            AddStatePeakLoad("Washing", 170);
-            AddStatePeakLoad("Rinsing", 330);
-            AddStatePeakLoad("Spinning", 420);
+            AddStatePeakLoad("Idle", 0, false);
+            AddStatePeakLoad("DelayedStart", 0, false);
+            AddStatePeakLoad("Prewashing", 120, true);
+            AddStatePeakLoad("Heating", 2200, true);
+            AddStatePeakLoad("Washing", 170, true);
+            AddStatePeakLoad("Rinsing", 330, true);
+            AddStatePeakLoad("Spinning", 420, true);
         }
 
         if (baseType == "tumble_dryer")
@@ -99,13 +98,14 @@ public class TriggeredEnergyConsumerBuilder
 
             WithStateSensor(TextSensor.Create(_testCtx.HaContext, "sensor.tumble_dryer_state"), "waiting_to_start", null, "program_ended", null);
             WithCanForceShutdown();
-            AddStatePeakLoad("off", 1);
-            AddStatePeakLoad("on", 4);
-            AddStatePeakLoad("drying", 450);
-            AddStatePeakLoad("machine_iron", 470);
-            AddStatePeakLoad("hand_iron_2", 480);
-            AddStatePeakLoad("hand_iron_1", 500);
-            AddStatePeakLoad("program_ended", 100);
+            AddStatePeakLoad("off", 1, false);
+            AddStatePeakLoad("on", 4, false);
+            AddStatePeakLoad("waiting_to_start", 4, false);
+            AddStatePeakLoad("drying", 450, true);
+            AddStatePeakLoad("machine_iron", 470, true);
+            AddStatePeakLoad("hand_iron_2", 480, true);
+            AddStatePeakLoad("hand_iron_1", 500, true);
+            AddStatePeakLoad("program_ended", 100, true);
         }
 
         if (baseType == "dishwasher")
@@ -121,14 +121,14 @@ public class TriggeredEnergyConsumerBuilder
 
             WithStateSensor(TextSensor.Create(_testCtx.HaContext, "sensor.dishwasher_operation_state_enhanced"), "DelayedStart", "Paused", "Ready", "Critical");
             WithCanForceShutdown();
-            AddStatePeakLoad("Inactive", 1);
-            AddStatePeakLoad("Aborting", 1);
-            AddStatePeakLoad("DelayedStart", 1);
-            AddStatePeakLoad("RemoteStart", 1);
-            AddStatePeakLoad("Ready", 1);
-            AddStatePeakLoad("Running", 1500);
-            AddStatePeakLoad("Drying", 15);
-            AddStatePeakLoad("Finished", 1);
+            AddStatePeakLoad("Inactive", 1, false);
+            AddStatePeakLoad("Aborting", 1, false);
+            AddStatePeakLoad("DelayedStart", 1, false);
+            AddStatePeakLoad("RemoteStart", 1, false);
+            AddStatePeakLoad("Ready", 1, false);
+            AddStatePeakLoad("Running", 1500, true);
+            AddStatePeakLoad("Drying", 15, true);
+            AddStatePeakLoad("Finished", 1, false);
         }
 
         WithShutdownOnComplete();
@@ -200,9 +200,9 @@ public class TriggeredEnergyConsumerBuilder
         return this;
     }
 
-    public TriggeredEnergyConsumerBuilder AddStatePeakLoad(String state, Double peakLoad)
+    public TriggeredEnergyConsumerBuilder AddStatePeakLoad(string name, double peakLoad, bool isRunning)
     {
-        _statePeakLoads.Add((state, peakLoad));
+        _states.Add(State.Create(name, peakLoad, isRunning));
         return this;
     }
 
@@ -219,7 +219,7 @@ public class TriggeredEnergyConsumerBuilder
 
     public TriggeredEnergyConsumer Build()
     {
-        var x = new TriggeredEnergyConsumer(_logger, _name, _consumerGroups, _powerUsage, _criticallyNeeded, _switchOnLoad, _switchOffLoad, _minimumRuntime, _maximumRuntime, _minimumTimeout, _maximumTimeout, _timeWindows, _timezone, _socket, _startButton, _pauseSwitch, _statePeakLoads, 0, _stateSensor, _startState, _pausedState, _completedState, _criticalState, _canForceShutdown, _shutDownOnComplete);
+        var x = new TriggeredEnergyConsumer(_logger, _name, _consumerGroups, _powerUsage, _criticallyNeeded, _switchOnLoad, _switchOffLoad, _minimumRuntime, _maximumRuntime, _minimumTimeout, _maximumTimeout, _timeWindows, _timezone, _socket, _startButton, _pauseSwitch, _states, _stateSensor, _startState, _pausedState, _completedState, _criticalState, _canForceShutdown, _shutDownOnComplete);
         return x;
     }
 }

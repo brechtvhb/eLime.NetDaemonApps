@@ -15,6 +15,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Concurrency;
 using CarChargingMode = eLime.NetDaemonApps.Domain.EnergyManager.CarChargingMode;
+using State = eLime.NetDaemonApps.Domain.EnergyManager.State;
 
 namespace eLime.NetDaemonApps.apps.EnergyManager;
 
@@ -56,9 +57,8 @@ public static class ConfigExtensions
                     pauseSwitch = BinarySwitch.Create(ha, consumer.Triggered.PauseSwitch);
 
                 var stateSensor = TextSensor.Create(ha, consumer.Triggered.StateSensor);
-                var stateMap = consumer.Triggered.PeakLoads.Select(x => (x.State, x.PeakLoad)).ToList();
-                var defaultLoad = consumer.Triggered.DefaultLoad ?? 0;
-                energyConsumer = new TriggeredEnergyConsumer(logger, consumer.Name, consumer.ConsumerGroups, powerUsageEntity, criticallyNeededEntity, consumer.SwitchOnLoad, consumer.SwitchOffLoad, consumer.MinimumRuntime, consumer.MaximumRuntime, consumer.MinimumTimeout, consumer.MaximumTimeout, timeWindows, config.Timezone, socket, startButton, pauseSwitch, stateMap, defaultLoad, stateSensor, consumer.Triggered.StartState, consumer.Triggered.PausedState, consumer.Triggered.CompletedState, consumer.Triggered.CriticalState, consumer.Triggered.CanPause, consumer.Triggered.ShutDownOnComplete);
+                var states = consumer.Triggered.States.Select(x => State.Create(x.Name, x.PeakLoad, x.IsRunning)).ToList();
+                energyConsumer = new TriggeredEnergyConsumer(logger, consumer.Name, consumer.ConsumerGroups, powerUsageEntity, criticallyNeededEntity, consumer.SwitchOnLoad, consumer.SwitchOffLoad, consumer.MinimumRuntime, consumer.MaximumRuntime, consumer.MinimumTimeout, consumer.MaximumTimeout, timeWindows, config.Timezone, socket, startButton, pauseSwitch, states, stateSensor, consumer.Triggered.StartState, consumer.Triggered.PausedState, consumer.Triggered.CompletedState, consumer.Triggered.CriticalState, consumer.Triggered.CanPause, consumer.Triggered.ShutDownOnComplete);
             }
 
             if (consumer.CarCharger != null)
