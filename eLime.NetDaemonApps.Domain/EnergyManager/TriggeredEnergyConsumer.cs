@@ -121,6 +121,8 @@ public class TriggeredEnergyConsumer : EnergyConsumer
         if (!CanPause)
             return false;
 
+        Logger.LogInformation($"{Name}: Can force stop indicated we should stop this consumer.");
+
         return true;
     }
 
