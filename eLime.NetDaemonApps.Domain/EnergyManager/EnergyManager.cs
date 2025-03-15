@@ -249,7 +249,7 @@ public class EnergyManager : IDisposable
             stopNetChange -= consumer.CurrentLoad;
         }
 
-        var consumersThatPreferSolar = Consumers.OrderByDescending(x => x.SwitchOffLoad).Where(x => x.CanForceStop(_scheduler.Now) && x is { Running: true }).ToList();
+        var consumersThatPreferSolar = Consumers.OrderByDescending(x => x.SwitchOffLoad).Where(x => x.Running).Where(x => x.CanForceStop(_scheduler.Now)).ToList();
         foreach (var consumer in consumersThatPreferSolar)
         {
             var dynamicLoadThatCanBeScaledDownOnBehalfOf = GetDynamicLoadThatCanBeScaledDownOnBehalfOf(consumer, dynamicLoadNetChange);
