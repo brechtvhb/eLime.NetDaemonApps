@@ -3,6 +3,7 @@ using eLime.NetDaemonApps.Domain.Entities.Buttons;
 using eLime.NetDaemonApps.Domain.Entities.TextSensors;
 using Microsoft.Extensions.Logging;
 using NetDaemon.HassModel.Entities;
+using System.Diagnostics;
 
 namespace eLime.NetDaemonApps.Domain.EnergyManager;
 
@@ -121,7 +122,8 @@ public class TriggeredEnergyConsumer : EnergyConsumer
         if (!CanPause)
             return false;
 
-        Logger.LogInformation($"{Name}: Can force stop indicated we should stop this consumer.");
+        var callStack = new StackTrace();
+        Logger.LogInformation($"{Name}: Can force stop indicated we should stop this consumer.\n {callStack}");
 
         return true;
     }
