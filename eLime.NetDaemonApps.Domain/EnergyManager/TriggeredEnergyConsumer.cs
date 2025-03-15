@@ -91,7 +91,7 @@ public class TriggeredEnergyConsumer : EnergyConsumer
             false => EnergyConsumerState.Off,
         };
 
-        if (Name == "DishWasher")
+        if (Name == "Dishwasher")
         {
             Logger.LogInformation($"{Name}: StateSensor.State = {StateSensor.State}");
             Logger.LogInformation($"{Name}: Running = {Running}");
