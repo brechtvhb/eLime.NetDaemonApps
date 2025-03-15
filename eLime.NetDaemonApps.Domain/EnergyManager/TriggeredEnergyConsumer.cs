@@ -91,12 +91,12 @@ public class TriggeredEnergyConsumer : EnergyConsumer
             false => EnergyConsumerState.Off,
         };
 
-        if (Name == "Dishwasher")
-        {
-            Logger.LogInformation($"{Name}: StateSensor.State = {StateSensor.State}");
-            Logger.LogInformation($"{Name}: Running = {Running}. Socket = {Socket == null || Socket.IsOn()}. State = {States.Where(x => x.IsRunning).Select(x => x.Name).Contains(StateSensor.State)}");
-            Logger.LogInformation($"{Name}: DesiredState = {desiredState}");
-        }
+        //if (Name == "Dishwasher")
+        //{
+        //    Logger.LogInformation($"{Name}: StateSensor.State = {StateSensor.State}");
+        //    Logger.LogInformation($"{Name}: Running = {Running}. Socket = {Socket == null || Socket.IsOn()}. State = {States.Where(x => x.IsRunning).Select(x => x.Name).Contains(StateSensor.State)}");
+        //    Logger.LogInformation($"{Name}: DesiredState = {desiredState}");
+        //}
 
         return desiredState;
     }
@@ -192,6 +192,9 @@ public class TriggeredEnergyConsumer : EnergyConsumer
 
     private void StateSensor_StateChanged(object? sender, TextSensorEventArgs e)
     {
+        if (Socket != null && Socket.IsOff())
+            return;
+
         if (e.Sensor.State == StartState || e.Sensor.State == PausedState)
         {
             CheckDesiredState(new EnergyConsumerStartCommand(this, EnergyConsumerState.NeedsEnergy));
