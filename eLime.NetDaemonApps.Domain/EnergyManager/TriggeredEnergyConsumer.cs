@@ -157,6 +157,7 @@ public class TriggeredEnergyConsumer : EnergyConsumer
     {
         if (StateSensor.State != CompletedState && CanPause && PauseSwitch != null)
         {
+            Logger.LogInformation($"{Name}: Pause was triggered.");
             PauseSwitch.TurnOff();
             return;
         }
@@ -192,7 +193,7 @@ public class TriggeredEnergyConsumer : EnergyConsumer
         }
         else if (e.Sensor.State == CompletedState)
         {
-            Logger.LogInformation($"Sensor state ({e.Sensor.State}) = completed state ({CompletedState})");
+            Logger.LogInformation($"{Name}: Sensor state ({e.Sensor.State}) = completed state ({CompletedState})");
             CheckDesiredState(new EnergyConsumerStopCommand(this, EnergyConsumerState.Off));
         }
         else if (States.Where(x => x.IsRunning).Select(x => x.Name).Contains(StateSensor.State) && State != EnergyConsumerState.Running)
