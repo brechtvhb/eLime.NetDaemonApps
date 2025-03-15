@@ -3,7 +3,6 @@ using eLime.NetDaemonApps.Domain.Entities.Buttons;
 using eLime.NetDaemonApps.Domain.Entities.TextSensors;
 using Microsoft.Extensions.Logging;
 using NetDaemon.HassModel.Entities;
-using System.Diagnostics;
 
 namespace eLime.NetDaemonApps.Domain.EnergyManager;
 
@@ -81,7 +80,7 @@ public class TriggeredEnergyConsumer : EnergyConsumer
 
     protected override EnergyConsumerState GetDesiredState(DateTimeOffset? now)
     {
-        return Running switch
+        var desiredState = Running switch
         {
             true when StateSensor.State == CompletedState => EnergyConsumerState.Off,
             true when StateSensor.State == PausedState => EnergyConsumerState.NeedsEnergy,
@@ -91,6 +90,15 @@ public class TriggeredEnergyConsumer : EnergyConsumer
             false when (StateSensor.State == StartState || StateSensor.State == PausedState) => EnergyConsumerState.NeedsEnergy,
             false => EnergyConsumerState.Off,
         };
+
+        if (Name == "DishWasher")
+        {
+            Logger.LogInformation($"{Name}: StateSensor.State = {StateSensor.State}");
+            Logger.LogInformation($"{Name}: Running = {Running}");
+            Logger.LogInformation($"{Name}: DesiredState = {desiredState}");
+        }
+
+        return desiredState;
     }
 
 
@@ -121,9 +129,6 @@ public class TriggeredEnergyConsumer : EnergyConsumer
 
         if (!CanPause)
             return false;
-
-        var callStack = new StackTrace();
-        Logger.LogInformation($"{Name}: Can force stop indicated we should stop this consumer.\n {callStack}");
 
         return true;
     }
