@@ -94,7 +94,7 @@ public class TriggeredEnergyConsumer : EnergyConsumer
         if (Name == "Dishwasher")
         {
             Logger.LogInformation($"{Name}: StateSensor.State = {StateSensor.State}");
-            Logger.LogInformation($"{Name}: Running = {Running}");
+            Logger.LogInformation($"{Name}: Running = {Running}. Socket = {Socket == null || Socket.IsOn()}. State = {States.Where(x => x.IsRunning).Select(x => x.Name).Contains(StateSensor.State)}");
             Logger.LogInformation($"{Name}: DesiredState = {desiredState}");
         }
 

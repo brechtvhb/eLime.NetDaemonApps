@@ -12,7 +12,7 @@ public class TriggeredEnergyConsumerConfig
     public string CriticalState { get; set; }
     public bool CanPause { get; set; }
     public bool ShutDownOnComplete { get; set; }
-    public List<State> States { get; set; } = [];
+    public List<State> States { get; set; }
 
 }
 
