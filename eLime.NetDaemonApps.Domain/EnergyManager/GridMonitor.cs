@@ -13,7 +13,33 @@ public class GridMonitor : IDisposable, IGridMonitor
     public NumericSensor GridPowerExportSensor { get; }
     public NumericEntity PeakImportSensor { get; }
     public NumericEntity CurrentAverageDemandEntity { get; }
-    public double CurrentLoad => (GridPowerImportSensor.State - GridPowerExportSensor.State) ?? 2500; //Could happen if the sensor is unavailable, we don't want infinite power consumption then, which is the case when we would set the default value to 0 
+
+    private double _lastKnownValidPowerImportValue;
+    private double CurrentPowerImport
+    {
+        get
+        {
+            if (GridPowerImportSensor.State != null)
+                _lastKnownValidPowerImportValue = GridPowerImportSensor.State.Value;
+
+            return _lastKnownValidPowerImportValue;
+        }
+    }
+
+    private double _lastKnownValidPowerExportValue;
+    private double CurrentPowerExport
+    {
+        get
+        {
+            if (GridPowerExportSensor.State != null)
+                _lastKnownValidPowerExportValue = GridPowerExportSensor.State.Value;
+
+            return _lastKnownValidPowerExportValue;
+        }
+    }
+
+
+    public double CurrentLoad => CurrentPowerImport - CurrentPowerExport;
 
     public Double PeakLoad => (PeakImportSensor.State * 1000 ?? 0) > 2500
         ? PeakImportSensor.State * 1000 ?? 0
@@ -38,11 +64,17 @@ public class GridMonitor : IDisposable, IGridMonitor
 
     private void GridPowerImportSensor_Changed(object? sender, NumericSensorEventArgs e)
     {
-        _lastImportValues.Enqueue((_scheduler.Now, e.Sensor.State ?? 0));
+        if (e.Sensor.State == null)
+            return;
+
+        _lastImportValues.Enqueue((_scheduler.Now, e.Sensor.State.Value));
     }
     private void GridPowerExportSensor_Changed(object? sender, NumericSensorEventArgs e)
     {
-        _lastExportValues.Enqueue((_scheduler.Now, e.Sensor.State ?? 0));
+        if (e.Sensor.State == null)
+            return;
+
+        _lastExportValues.Enqueue((_scheduler.Now, e.Sensor.State.Value));
     }
 
     public double AverageImportSince(DateTimeOffset now, TimeSpan timeSpan)
