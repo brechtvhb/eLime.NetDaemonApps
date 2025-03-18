@@ -1,0 +1,3 @@
+﻿eLime.NetDaemonApps.Config.SmartHeatPumpConfig:
+  smartGridReadyInput1: "switch.stiebel_eltron_isg_sg_ready_input_1"
+  smartGridReadyInput2: "switch.stiebel_eltron_isg_sg_ready_input_2"

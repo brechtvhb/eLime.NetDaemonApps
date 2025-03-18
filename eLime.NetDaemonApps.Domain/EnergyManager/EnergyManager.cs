@@ -414,7 +414,7 @@ public class EnergyManager : IDisposable
             _logger.LogDebug("{Consumer}: Setting dynamic load balancing method to {State}.", consumer.Name, state);
             await _mqttEntityManager.SetStateAsync(selectName, state);
             dynamicLoadConsumer.SetBalancingMethod(_scheduler.Now, Enum<BalancingMethod>.Cast(state));
-            DebounceUpdateInHomeAssistant(consumer).RunSync();
+            await DebounceUpdateInHomeAssistant(consumer);
         };
     }
 
@@ -425,7 +425,7 @@ public class EnergyManager : IDisposable
             _logger.LogDebug("{Consumer}: Setting balance on behalf of to {State}.", consumer.Name, state);
             await _mqttEntityManager.SetStateAsync(selectName, state);
             dynamicLoadConsumer.SetBalanceOnBehalfOf(state);
-            DebounceUpdateInHomeAssistant(consumer).RunSync();
+            await DebounceUpdateInHomeAssistant(consumer);
         };
     }
 

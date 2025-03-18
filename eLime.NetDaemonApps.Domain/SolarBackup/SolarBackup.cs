@@ -115,9 +115,6 @@ namespace eLime.NetDaemonApps.Domain.SolarBackup
             var solarBackupButtonEntityOptions = new ButtonOptions() { Icon = "mdi:solar-power", Device = GetDevice(), PayloadPress = "START" };
             await _mqttEntityManager.CreateAsync("button.solar_backup_start", new EntityCreationOptions(Name: $"Start solar backup", Persist: true), solarBackupButtonEntityOptions);
 
-            var solarBackupEntityOptions = new EntityOptions { Icon = "mdi:solar-power", Device = GetDevice(), };
-            await _mqttEntityManager.CreateAsync("switch.solar_backup_start", new EntityCreationOptions(Name: $"Start solar backup", DeviceClass: "switch", Persist: true), solarBackupEntityOptions);
-
             var stateOptions = new EntityOptions { Icon = "mdi:progress-helper", Device = GetDevice() };
             await _mqttEntityManager.CreateAsync($"sensor.solar_backup_state", new EntityCreationOptions(Name: $"Solar backup state", UniqueId: $"sensor.solar_backup_state", Persist: true), stateOptions);
 
