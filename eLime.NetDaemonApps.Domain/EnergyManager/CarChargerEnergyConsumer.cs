@@ -187,13 +187,11 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 
     private double GetMidpointAdjustedGridCurrent(double trailingNetGridUsage)
     {
-        var midPoint = TotalVoltage * 0.5;
+        var currentDifference = trailingNetGridUsage / TotalVoltage;
 
-        var currentDifference = (trailingNetGridUsage - midPoint) / TotalVoltage;
-
-        return currentDifference is < 0.65d and > -0.65d
+        return currentDifference is < 0.70d and > -0.70d
             ? 0
-            : Math.Round(currentDifference, 0, MidpointRounding.ToPositiveInfinity);
+            : Math.Round(currentDifference, 0);
     }
 
     private double GetSolarOnlyAdjustedGridCurrent(double trailingNetGridUsage)
