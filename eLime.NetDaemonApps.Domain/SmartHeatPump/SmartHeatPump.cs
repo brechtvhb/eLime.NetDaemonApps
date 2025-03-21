@@ -125,8 +125,6 @@ public class SmartHeatPump : IDisposable
 
     private void SetSmartGridReadyInputs()
     {
-        SmartGridReadyMode = mode;
-
         switch (State.SmartGridReadyMode)
         {
             case SmartGridReadyMode.Blocked:
