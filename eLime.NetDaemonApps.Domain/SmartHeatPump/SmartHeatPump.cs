@@ -59,31 +59,66 @@ public class SmartHeatPump : IDisposable
         EnsureEntitiesExist().RunSync();
         UpdateInHomeAssistant().RunSync();
     }
-    private void SmartGridReadyInput_TurnedOn(object? sender, BinarySensorEventArgs e)
+    private async void SmartGridReadyInput_TurnedOn(object? sender, BinarySensorEventArgs e)
     {
-        //Bug in ISG (turns SG ready inputs on while SG ready state remains in correct state), this code makes sure everything is in sync
-        if (e.Old?.State == "unavailable" && e.New?.State == "on")
-            SetSmartGridReadyInputs();
+        try
+        {
+            //Bug in ISG (turns SG ready inputs on while SG ready state remains in correct state), this code makes sure everything is in sync
+            _logger.LogDebug("Smart heat pump: Smart grid ready input went from available to on, resetting to correct state.");
+            if (e.Old?.State == "unavailable" && e.New?.State == "on")
+                await SetSmartGridReadyInputs();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Could not set SG ready state.");
+        }
     }
-    private void SourceTemperatureSensor_Changed(object? sender, NumericSensorEventArgs e)
+    private async void SourceTemperatureSensor_Changed(object? sender, NumericSensorEventArgs e)
     {
-        if (State.SourcePumpStartedAt == null)
-            return;
+        try
+        {
+            if (State.SourcePumpStartedAt == null)
+                return;
 
-        if (State.SourcePumpStartedAt.Value.AddMinutes(30) > _scheduler.Now)
-            return;
+            if (State.SourcePumpStartedAt.Value.AddMinutes(30) > _scheduler.Now)
+                return;
 
-        if (e.New?.State != null)
-            State.SourceTemperature = e.New.State.Value;
+            if (e.New?.State != null)
+            {
+                State.SourceTemperature = e.New.State.Value;
+                await DebounceUpdateInHomeAssistantAndSave();
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Could not handle change of source temperature.");
+        }
     }
 
-    private void SourcePumpRunningSensor_TurnedOn(object? sender, BinarySensorEventArgs e)
+    private async void SourcePumpRunningSensor_TurnedOn(object? sender, BinarySensorEventArgs e)
     {
-        State.SourcePumpStartedAt = _scheduler.Now;
+        try
+        {
+            State.SourcePumpStartedAt = _scheduler.Now;
+            await DebounceUpdateInHomeAssistantAndSave();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Could not handle source pump turned on event.");
+        }
     }
-    private void SourcePumpRunningSensor_TurnedOff(object? sender, BinarySensorEventArgs e)
+
+    private async void SourcePumpRunningSensor_TurnedOff(object? sender, BinarySensorEventArgs e)
     {
-        State.SourcePumpStartedAt = null;
+        try
+        {
+            State.SourcePumpStartedAt = null;
+            await DebounceUpdateInHomeAssistantAndSave();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Could not handle source pump turned off event.");
+        }
     }
 
     private async Task EnsureEntitiesExist()
@@ -118,12 +153,11 @@ public class SmartHeatPump : IDisposable
         {
             _logger.LogDebug("Smart heat pump: Setting smart grid ready mode to {State}.", state);
             State.SmartGridReadyMode = Enum<SmartGridReadyMode>.Cast(state);
-            SetSmartGridReadyInputs();
-            await DebounceUpdateInHomeAssistantAndSave();
+            await SetSmartGridReadyInputs();
         };
     }
 
-    private void SetSmartGridReadyInputs()
+    private async Task SetSmartGridReadyInputs()
     {
         switch (State.SmartGridReadyMode)
         {
@@ -144,6 +178,7 @@ public class SmartHeatPump : IDisposable
                 SmartGridReadyInput1.TurnOn();
                 break;
         }
+        await DebounceUpdateInHomeAssistantAndSave();
     }
 
     private Device GetDevice()
