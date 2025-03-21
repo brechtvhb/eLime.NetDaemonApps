@@ -40,8 +40,11 @@ public class SmartHeatPump : IDisposable
         _scheduler = configuration.Scheduler;
         _fileStorage = configuration.FileStorage;
         _mqttEntityManager = configuration.MqttEntityManager;
+
         SmartGridReadyInput1 = configuration.SmartGridReadyInput1;
+        SmartGridReadyInput1.TurnedOn += SmartGridReadyInput_TurnedOn;
         SmartGridReadyInput2 = configuration.SmartGridReadyInput2;
+        SmartGridReadyInput2.TurnedOn += SmartGridReadyInput_TurnedOn;
 
         SourcePumpRunningSensor = configuration.SourcePumpRunningSensor;
         SourcePumpRunningSensor.TurnedOn += SourcePumpRunningSensor_TurnedOn;
@@ -56,7 +59,12 @@ public class SmartHeatPump : IDisposable
         EnsureEntitiesExist().RunSync();
         UpdateInHomeAssistant().RunSync();
     }
-
+    private void SmartGridReadyInput_TurnedOn(object? sender, BinarySensorEventArgs e)
+    {
+        //Bug in ISG (turns SG ready inputs on while SG ready state remains in correct state), this code makes sure everything is in sync
+        if (e.Old?.State == "unavailable" && e.New?.State == "on")
+            SetSmartGridReadyInputs();
+    }
     private void SourceTemperatureSensor_Changed(object? sender, NumericSensorEventArgs e)
     {
         if (State.SourcePumpStartedAt == null)
@@ -109,14 +117,15 @@ public class SmartHeatPump : IDisposable
         return async state =>
         {
             _logger.LogDebug("Smart heat pump: Setting smart grid ready mode to {State}.", state);
-            SetSmartGridReadyInputs(Enum<SmartGridReadyMode>.Cast(state));
+            State.SmartGridReadyMode = Enum<SmartGridReadyMode>.Cast(state);
+            SetSmartGridReadyInputs();
             await DebounceUpdateInHomeAssistantAndSave();
         };
     }
 
-    private void SetSmartGridReadyInputs(SmartGridReadyMode mode)
+    private void SetSmartGridReadyInputs()
     {
-        State.SmartGridReadyMode = mode;
+        SmartGridReadyMode = mode;
 
         switch (State.SmartGridReadyMode)
         {

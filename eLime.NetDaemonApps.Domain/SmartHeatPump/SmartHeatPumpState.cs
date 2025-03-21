@@ -2,7 +2,7 @@
 
 internal class SmartHeatPumpState
 {
-    internal SmartGridReadyMode SmartGridReadyMode { get; set; }
-    internal double SourceTemperature { get; set; }
-    internal DateTimeOffset? SourcePumpStartedAt { get; set; }
+    public SmartGridReadyMode SmartGridReadyMode { get; set; }
+    public double SourceTemperature { get; set; }
+    public DateTimeOffset? SourcePumpStartedAt { get; set; }
 }

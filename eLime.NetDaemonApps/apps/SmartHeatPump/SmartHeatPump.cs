@@ -41,8 +41,8 @@ public class SmartHeatPump : IAsyncInitializable, IAsyncDisposable
         _ct = cancellationToken;
         try
         {
-            var smartGridReadyInput1 = new BinarySwitch(_ha, _config.SmartGridReadyInput1);
-            var smartGridReadyInput2 = new BinarySwitch(_ha, _config.SmartGridReadyInput2);
+            var smartGridReadyInput1 = BinarySwitch.Create(_ha, _config.SmartGridReadyInput1);
+            var smartGridReadyInput2 = BinarySwitch.Create(_ha, _config.SmartGridReadyInput2);
 
             var config = new SmartHeatPumpConfiguration
             {
