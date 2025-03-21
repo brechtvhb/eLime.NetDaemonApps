@@ -1,10 +1,12 @@
 ﻿using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
+using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
 using eLime.NetDaemonApps.Domain.Helper;
 using eLime.NetDaemonApps.Domain.Mqtt;
 using eLime.NetDaemonApps.Domain.Storage;
 using Microsoft.Extensions.Logging;
 using NetDaemon.Extensions.MqttEntityManager;
 using NetDaemon.HassModel;
+using System.Globalization;
 using System.Reactive.Concurrency;
 using System.Runtime.CompilerServices;
 
@@ -14,6 +16,7 @@ namespace eLime.NetDaemonApps.Domain.SmartHeatPump;
 public class SmartHeatPump : IDisposable
 {
     private const string smartGridReadyModeSelectName = "select.heat_pump_smart_grid_ready_mode";
+    private const string sourceTemperatureSensorName = "sensor.heat_pump_source_temperature";
 
     private readonly IHaContext _haContext;
     private readonly ILogger _logger;
@@ -21,12 +24,14 @@ public class SmartHeatPump : IDisposable
     private readonly IFileStorage _fileStorage;
     private readonly IMqttEntityManager _mqttEntityManager;
 
+    private SmartHeatPumpState State { get; set; }
     private BinarySwitch SmartGridReadyInput1 { get; }
     private BinarySwitch SmartGridReadyInput2 { get; }
-
-    public SmartGridReadyMode SmartGridReadyMode { get; private set; }
     private IDisposable? SmartGridReadyModeChangedEventHandlerObservable { get; set; }
     private readonly DebounceDispatcher? UpdateInHomeAssistantAndSaveDebounceDispatcher;
+
+    private BinarySensor SourcePumpRunningSensor { get; }
+    private NumericSensor SourceTemperatureSensor { get; }
 
     public SmartHeatPump(SmartHeatPumpConfiguration configuration)
     {
@@ -38,6 +43,12 @@ public class SmartHeatPump : IDisposable
         SmartGridReadyInput1 = configuration.SmartGridReadyInput1;
         SmartGridReadyInput2 = configuration.SmartGridReadyInput2;
 
+        SourcePumpRunningSensor = configuration.SourcePumpRunningSensor;
+        SourcePumpRunningSensor.TurnedOn += SourcePumpRunningSensor_TurnedOn;
+        SourcePumpRunningSensor.TurnedOff += SourcePumpRunningSensor_TurnedOff;
+        SourceTemperatureSensor = configuration.SourceTemperatureSensor;
+        SourceTemperatureSensor.Changed += SourceTemperatureSensor_Changed;
+
         if (configuration.DebounceDuration != TimeSpan.Zero)
             UpdateInHomeAssistantAndSaveDebounceDispatcher = new DebounceDispatcher(configuration.DebounceDuration);
 
@@ -46,6 +57,26 @@ public class SmartHeatPump : IDisposable
         UpdateInHomeAssistant().RunSync();
     }
 
+    private void SourceTemperatureSensor_Changed(object? sender, NumericSensorEventArgs e)
+    {
+        if (State.SourcePumpStartedAt == null)
+            return;
+
+        if (State.SourcePumpStartedAt.Value.AddMinutes(30) > _scheduler.Now)
+            return;
+
+        if (e.New?.State != null)
+            State.SourceTemperature = e.New.State.Value;
+    }
+
+    private void SourcePumpRunningSensor_TurnedOn(object? sender, BinarySensorEventArgs e)
+    {
+        State.SourcePumpStartedAt = _scheduler.Now;
+    }
+    private void SourcePumpRunningSensor_TurnedOff(object? sender, BinarySensorEventArgs e)
+    {
+        State.SourcePumpStartedAt = null;
+    }
 
     private async Task EnsureEntitiesExist()
     {
@@ -60,6 +91,16 @@ public class SmartHeatPump : IDisposable
         await _mqttEntityManager.CreateAsync(smartGridReadyModeSelectName, new EntityCreationOptions(UniqueId: smartGridReadyModeSelectName, Name: "Smart grid ready mode", DeviceClass: "select", Persist: true), smartGridReadySelectOptions);
         var smartGridReadyModeObservable = await _mqttEntityManager.PrepareCommandSubscriptionAsync(smartGridReadyModeSelectName);
         SmartGridReadyModeChangedEventHandlerObservable = smartGridReadyModeObservable.SubscribeAsync(SmartGridReadyModeChangedEventHandler());
+
+        var sourceTemperatureSensorOptions = new NumericSensorOptions
+        {
+            StateClass = "measurement",
+            UnitOfMeasurement = "°C",
+            Icon = "fapro:oil-temperature",
+            Device = GetDevice()
+        };
+        await _mqttEntityManager.CreateAsync(sourceTemperatureSensorName, new EntityCreationOptions(UniqueId: sourceTemperatureSensorName, Name: "Source temperature", DeviceClass: "temperature", Persist: true), sourceTemperatureSensorOptions);
+
     }
 
 
@@ -75,27 +116,26 @@ public class SmartHeatPump : IDisposable
 
     private void SetSmartGridReadyInputs(SmartGridReadyMode mode)
     {
-        SmartGridReadyMode = mode;
+        State.SmartGridReadyMode = mode;
 
-        if (SmartGridReadyMode == SmartGridReadyMode.Blocked)
+        switch (State.SmartGridReadyMode)
         {
-            SmartGridReadyInput2.TurnOn();
-            SmartGridReadyInput1.TurnOff();
-        }
-        else if (SmartGridReadyMode == SmartGridReadyMode.Normal)
-        {
-            SmartGridReadyInput2.TurnOff();
-            SmartGridReadyInput1.TurnOff();
-        }
-        else if (SmartGridReadyMode == SmartGridReadyMode.Boosted)
-        {
-            SmartGridReadyInput2.TurnOff();
-            SmartGridReadyInput1.TurnOn();
-        }
-        else if (SmartGridReadyMode == SmartGridReadyMode.Maximized)
-        {
-            SmartGridReadyInput2.TurnOn();
-            SmartGridReadyInput1.TurnOn();
+            case SmartGridReadyMode.Blocked:
+                SmartGridReadyInput2.TurnOn();
+                SmartGridReadyInput1.TurnOff();
+                break;
+            case SmartGridReadyMode.Normal:
+                SmartGridReadyInput2.TurnOff();
+                SmartGridReadyInput1.TurnOff();
+                break;
+            case SmartGridReadyMode.Boosted:
+                SmartGridReadyInput2.TurnOff();
+                SmartGridReadyInput1.TurnOn();
+                break;
+            case SmartGridReadyMode.Maximized:
+                SmartGridReadyInput2.TurnOn();
+                SmartGridReadyInput1.TurnOn();
+                break;
         }
     }
 
@@ -120,12 +160,12 @@ public class SmartHeatPump : IDisposable
 
     private void GetState()
     {
-        var fileStorage = _fileStorage.Get<SmartHeatPumpFileStorage>("SmartHeatPump", "SmartHeatPump");
+        var persistedState = _fileStorage.Get<SmartHeatPumpState>("SmartHeatPump", "SmartHeatPump");
 
-        if (fileStorage == null)
+        if (persistedState == null)
             return;
 
-        SmartGridReadyMode = fileStorage.SmartGridReadyMode;
+        State = persistedState;
 
         _logger.LogDebug("Retrieved Smart heat pump state.");
     }
@@ -138,7 +178,7 @@ public class SmartHeatPump : IDisposable
 
     private void Save()
     {
-        _fileStorage.Save("SmartHeatPump", "SmartHeatPump", ToFileStorage());
+        _fileStorage.Save("SmartHeatPump", "SmartHeatPump", State);
     }
 
     private async Task UpdateInHomeAssistant()
@@ -148,14 +188,10 @@ public class SmartHeatPump : IDisposable
         //    LastUpdated = DateTime.Now.ToString("O"),
         //};
 
-        await _mqttEntityManager.SetStateAsync(smartGridReadyModeSelectName, SmartGridReadyMode.ToString());
+        await _mqttEntityManager.SetStateAsync(smartGridReadyModeSelectName, State.SmartGridReadyMode.ToString());
+        await _mqttEntityManager.SetStateAsync(sourceTemperatureSensorName, State.SourceTemperature.ToString("N", new NumberFormatInfo { NumberDecimalSeparator = "." }));
         //await _mqttEntityManager.SetAttributesAsync("sensor.energy_manager_state", globalAttributes);
     }
-
-    private SmartHeatPumpFileStorage ToFileStorage() => new()
-    {
-        SmartGridReadyMode = SmartGridReadyMode
-    };
 
 
 
