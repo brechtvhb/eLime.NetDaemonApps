@@ -1,5 +1,6 @@
 ﻿using eLime.NetDaemonApps.Config;
 using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
+using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
 using eLime.NetDaemonApps.Domain.SmartHeatPump;
 using eLime.NetDaemonApps.Domain.Storage;
 using NetDaemon.Extensions.MqttEntityManager;
@@ -52,7 +53,9 @@ public class SmartHeatPump : IAsyncInitializable, IAsyncDisposable
                 Logger = _logger,
                 DebounceDuration = TimeSpan.FromSeconds(1),
                 SmartGridReadyInput1 = smartGridReadyInput1,
-                SmartGridReadyInput2 = smartGridReadyInput2
+                SmartGridReadyInput2 = smartGridReadyInput2,
+                SourcePumpRunningSensor = BinarySensor.Create(_ha, _config.SourcePumpRunningSensor),
+                SourceTemperatureSensor = NumericSensor.Create(_ha, _config.SourceTemperatureSensor)
             };
 
             _smartHeatPump = new Domain.SmartHeatPump.SmartHeatPump(config);
