@@ -80,7 +80,7 @@ public class SmartHeatPump : IDisposable
             if (State.SourcePumpStartedAt == null)
                 return;
 
-            if (State.SourcePumpStartedAt.Value.AddMinutes(30) > _scheduler.Now)
+            if (State.SourcePumpStartedAt.Value.AddMinutes(25) > _scheduler.Now)
                 return;
 
             if (e.New?.State != null)
