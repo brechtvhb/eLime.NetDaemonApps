@@ -32,6 +32,12 @@ public class SmartHeatPump : IDisposable
     {
 
     }
+    public static async Task<SmartHeatPump> Create(SmartHeatPumpConfiguration configuration)
+    {
+        var smartHeatPump = new SmartHeatPump();
+        await smartHeatPump.Initialize(configuration);
+        return smartHeatPump;
+    }
 
     private async Task Initialize(SmartHeatPumpConfiguration configuration)
     {
@@ -65,12 +71,7 @@ public class SmartHeatPump : IDisposable
         State = GetState();
         await Entities.PublishState(State);
     }
-    public static async Task<SmartHeatPump> Create(SmartHeatPumpConfiguration configuration)
-    {
-        var smartHeatPump = new SmartHeatPump();
-        await smartHeatPump.Initialize(configuration);
-        return smartHeatPump;
-    }
+
 
     private async void SmartGridReadyModeChangedEvent(object? sender, SmartGridReadyModeChangedEventArgs e)
     {
@@ -242,22 +243,17 @@ public class SmartHeatPump : IDisposable
         if (persistedState == null)
             return new SmartHeatPumpState();
 
-        var state = persistedState;
+        if (HomeAssistant.SourcePumpRunningSensor.IsOn() && persistedState.SourcePumpStartedAt == null)
+            persistedState.SourcePumpStartedAt = Scheduler.Now;
 
-        if (HomeAssistant.SourcePumpRunningSensor.IsOn() && State.SourcePumpStartedAt == null)
-            state.SourcePumpStartedAt = Scheduler.Now;
+        if (HomeAssistant.SourcePumpRunningSensor.IsOff() && persistedState.SourcePumpStartedAt != null)
+            persistedState.SourcePumpStartedAt = null;
 
-        if (HomeAssistant.SourcePumpRunningSensor.IsOff() && State.SourcePumpStartedAt != null)
-            state.SourcePumpStartedAt = null;
-
-        if (State.HeatCoefficientOfPerformance == null)
-            CalculateCoefficientOfPerformance(HomeAssistant.HeatConsumedTodayIntegerSensor.State, HomeAssistant.HeatConsumedTodayDecimalsSensor.State, HomeAssistant.HeatProducedTodayIntegerSensor.State, HomeAssistant.HeatProducedTodayDecimalsSensor.State);
-
-        if (State.HotWaterCoefficientOfPerformance == null)
-            CalculateCoefficientOfPerformance(HomeAssistant.HotWaterConsumedTodayIntegerSensor.State, HomeAssistant.HotWaterConsumedTodayDecimalsSensor.State, HomeAssistant.HotWaterProducedTodayIntegerSensor.State, HomeAssistant.HotWaterProducedTodayDecimalsSensor.State);
+        persistedState.HeatCoefficientOfPerformance ??= CalculateCoefficientOfPerformance(HomeAssistant.HeatConsumedTodayIntegerSensor.State, HomeAssistant.HeatConsumedTodayDecimalsSensor.State, HomeAssistant.HeatProducedTodayIntegerSensor.State, HomeAssistant.HeatProducedTodayDecimalsSensor.State);
+        persistedState.HotWaterCoefficientOfPerformance ??= CalculateCoefficientOfPerformance(HomeAssistant.HotWaterConsumedTodayIntegerSensor.State, HomeAssistant.HotWaterConsumedTodayDecimalsSensor.State, HomeAssistant.HotWaterProducedTodayIntegerSensor.State, HomeAssistant.HotWaterProducedTodayDecimalsSensor.State);
 
         Logger.LogDebug("Retrieved Smart heat pump state.");
-        return state;
+        return persistedState;
     }
 
     private async Task SaveAndPublishState()
