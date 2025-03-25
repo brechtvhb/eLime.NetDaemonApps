@@ -68,8 +68,8 @@ public class SmartHeatPump : IDisposable
             SaveAndPublishStateDebounceDispatcher = new DebounceDispatcher(configuration.DebounceDuration);
 
         await Entities.Publish();
-        State = GetState();
-        await Entities.PublishState(State);
+        GetAndSanitizeState();
+        await SaveAndPublishState();
     }
 
 
@@ -236,24 +236,22 @@ public class SmartHeatPump : IDisposable
     }
 
 
-    private SmartHeatPumpState GetState()
+    private void GetAndSanitizeState()
     {
         var persistedState = FileStorage.Get<SmartHeatPumpState>("SmartHeatPump", "SmartHeatPump");
 
-        if (persistedState == null)
-            return new SmartHeatPumpState();
+        State = persistedState ?? new SmartHeatPumpState();
 
-        if (HomeAssistant.SourcePumpRunningSensor.IsOn() && persistedState.SourcePumpStartedAt == null)
-            persistedState.SourcePumpStartedAt = Scheduler.Now;
+        if (HomeAssistant.SourcePumpRunningSensor.IsOn() && State.SourcePumpStartedAt == null)
+            State.SourcePumpStartedAt = Scheduler.Now;
 
-        if (HomeAssistant.SourcePumpRunningSensor.IsOff() && persistedState.SourcePumpStartedAt != null)
-            persistedState.SourcePumpStartedAt = null;
+        if (HomeAssistant.SourcePumpRunningSensor.IsOff() && State.SourcePumpStartedAt != null)
+            State.SourcePumpStartedAt = null;
 
-        persistedState.HeatCoefficientOfPerformance ??= CalculateCoefficientOfPerformance(HomeAssistant.HeatConsumedTodayIntegerSensor.State, HomeAssistant.HeatConsumedTodayDecimalsSensor.State, HomeAssistant.HeatProducedTodayIntegerSensor.State, HomeAssistant.HeatProducedTodayDecimalsSensor.State);
-        persistedState.HotWaterCoefficientOfPerformance ??= CalculateCoefficientOfPerformance(HomeAssistant.HotWaterConsumedTodayIntegerSensor.State, HomeAssistant.HotWaterConsumedTodayDecimalsSensor.State, HomeAssistant.HotWaterProducedTodayIntegerSensor.State, HomeAssistant.HotWaterProducedTodayDecimalsSensor.State);
+        State.HeatCoefficientOfPerformance ??= CalculateCoefficientOfPerformance(HomeAssistant.HeatConsumedTodayIntegerSensor.State, HomeAssistant.HeatConsumedTodayDecimalsSensor.State, HomeAssistant.HeatProducedTodayIntegerSensor.State, HomeAssistant.HeatProducedTodayDecimalsSensor.State);
+        State.HotWaterCoefficientOfPerformance ??= CalculateCoefficientOfPerformance(HomeAssistant.HotWaterConsumedTodayIntegerSensor.State, HomeAssistant.HotWaterConsumedTodayDecimalsSensor.State, HomeAssistant.HotWaterProducedTodayIntegerSensor.State, HomeAssistant.HotWaterProducedTodayDecimalsSensor.State);
 
         Logger.LogDebug("Retrieved Smart heat pump state.");
-        return persistedState;
     }
 
     private async Task SaveAndPublishState()
