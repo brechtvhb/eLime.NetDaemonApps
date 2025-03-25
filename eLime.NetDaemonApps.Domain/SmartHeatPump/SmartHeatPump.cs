@@ -1,5 +1,7 @@
-﻿using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
+﻿using eLime.NetDaemonApps.Domain.Entities;
+using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
+using eLime.NetDaemonApps.Domain.Entities.TextSensors;
 using eLime.NetDaemonApps.Domain.Helper;
 using eLime.NetDaemonApps.Domain.Mqtt;
 using eLime.NetDaemonApps.Domain.Storage;
@@ -32,6 +34,7 @@ public class SmartHeatPump : IDisposable
 
     private BinarySensor SourcePumpRunningSensor { get; }
     private NumericSensor SourceTemperatureSensor { get; }
+    private TextSensor StatusBytesSensor { get; }
 
     public SmartHeatPump(SmartHeatPumpConfiguration configuration)
     {
@@ -42,9 +45,7 @@ public class SmartHeatPump : IDisposable
         _mqttEntityManager = configuration.MqttEntityManager;
 
         SmartGridReadyInput1 = configuration.SmartGridReadyInput1;
-        SmartGridReadyInput1.TurnedOn += SmartGridReadyInput_TurnedOn;
         SmartGridReadyInput2 = configuration.SmartGridReadyInput2;
-        SmartGridReadyInput2.TurnedOn += SmartGridReadyInput_TurnedOn;
 
         SourcePumpRunningSensor = configuration.SourcePumpRunningSensor;
         SourcePumpRunningSensor.TurnedOn += SourcePumpRunningSensor_TurnedOn;
@@ -52,6 +53,8 @@ public class SmartHeatPump : IDisposable
         SourceTemperatureSensor = configuration.SourceTemperatureSensor;
         SourceTemperatureSensor.Changed += SourceTemperatureSensor_Changed;
 
+        StatusBytesSensor = configuration.StatusBytesSensor;
+        StatusBytesSensor.StateChanged += StatusBytes_Changed;
         if (configuration.DebounceDuration != TimeSpan.Zero)
             UpdateInHomeAssistantAndSaveDebounceDispatcher = new DebounceDispatcher(configuration.DebounceDuration);
 
@@ -59,13 +62,14 @@ public class SmartHeatPump : IDisposable
         EnsureEntitiesExist().RunSync();
         UpdateInHomeAssistant().RunSync();
     }
-    private async void SmartGridReadyInput_TurnedOn(object? sender, BinarySensorEventArgs e)
+
+    private async void StatusBytes_Changed(object? sender, TextSensorEventArgs e)
     {
         try
         {
             //Bug in ISG (turns SG ready inputs on while SG ready state remains in correct state), this code makes sure everything is in sync
-            _logger.LogDebug("Smart heat pump: Smart grid ready input went from available to on, resetting to correct state.");
-            if (e.Old?.State == "unavailable" && e.New?.State == "on")
+            _logger.LogDebug("Smart heat pump: ISG was not available for a while but came back online, we can assume it rebooted.");
+            if (e.Old?.State == Constants.UNAVAILABLE && e.New?.State != Constants.UNAVAILABLE)
                 await SetSmartGridReadyInputs();
         }
         catch (Exception ex)
@@ -73,6 +77,7 @@ public class SmartHeatPump : IDisposable
             _logger.LogError(ex, "Could not set SG ready state.");
         }
     }
+
     private async void SourceTemperatureSensor_Changed(object? sender, NumericSensorEventArgs e)
     {
         try
@@ -112,6 +117,9 @@ public class SmartHeatPump : IDisposable
     {
         try
         {
+            if (State.SourcePumpStartedAt?.AddMinutes(25) <= _scheduler.Now && SourceTemperatureSensor.State != null)
+                State.SourceTemperature = SourceTemperatureSensor.State.Value;
+
             State.SourcePumpStartedAt = null;
             await DebounceUpdateInHomeAssistantAndSave();
         }
@@ -209,6 +217,12 @@ public class SmartHeatPump : IDisposable
 
         State = persistedState;
 
+        if (SourcePumpRunningSensor.IsOn() && State.SourcePumpStartedAt == null)
+            State.SourcePumpStartedAt = _scheduler.Now;
+
+        if (SourcePumpRunningSensor.IsOff() && State.SourcePumpStartedAt != null)
+            State.SourcePumpStartedAt = null;
+
         _logger.LogDebug("Retrieved Smart heat pump state.");
     }
 
@@ -240,5 +254,11 @@ public class SmartHeatPump : IDisposable
     public void Dispose()
     {
         SmartGridReadyModeChangedEventHandlerObservable?.Dispose();
+        SourcePumpRunningSensor.TurnedOn -= SourcePumpRunningSensor_TurnedOn;
+        SourcePumpRunningSensor.TurnedOff -= SourcePumpRunningSensor_TurnedOff;
+        SourcePumpRunningSensor.Dispose();
+
+        SourceTemperatureSensor.Changed -= SourceTemperatureSensor_Changed;
+        SourceTemperatureSensor.Dispose();
     }
 }

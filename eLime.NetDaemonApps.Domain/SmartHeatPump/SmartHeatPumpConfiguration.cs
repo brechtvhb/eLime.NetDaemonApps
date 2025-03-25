@@ -1,5 +1,6 @@
 ﻿using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
+using eLime.NetDaemonApps.Domain.Entities.TextSensors;
 using eLime.NetDaemonApps.Domain.Storage;
 using Microsoft.Extensions.Logging;
 using NetDaemon.Extensions.MqttEntityManager;
@@ -20,6 +21,6 @@ public class SmartHeatPumpConfiguration
     public required BinarySwitch SmartGridReadyInput2 { get; set; }
     public required BinarySensor SourcePumpRunningSensor { get; set; }
     public required NumericSensor SourceTemperatureSensor { get; set; }
-
+    public required TextSensor StatusBytesSensor { get; set; }
     public TimeSpan DebounceDuration { get; set; }
 }

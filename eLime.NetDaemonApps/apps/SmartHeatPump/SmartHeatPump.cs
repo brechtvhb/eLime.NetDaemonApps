@@ -1,6 +1,7 @@
 ﻿using eLime.NetDaemonApps.Config;
 using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
+using eLime.NetDaemonApps.Domain.Entities.TextSensors;
 using eLime.NetDaemonApps.Domain.SmartHeatPump;
 using eLime.NetDaemonApps.Domain.Storage;
 using NetDaemon.Extensions.MqttEntityManager;
@@ -41,9 +42,6 @@ public class SmartHeatPump : IAsyncInitializable, IAsyncDisposable
         _ct = cancellationToken;
         try
         {
-            var smartGridReadyInput1 = BinarySwitch.Create(_ha, _config.SmartGridReadyInput1);
-            var smartGridReadyInput2 = BinarySwitch.Create(_ha, _config.SmartGridReadyInput2);
-
             var config = new SmartHeatPumpConfiguration
             {
                 HaContext = _ha,
@@ -52,10 +50,11 @@ public class SmartHeatPump : IAsyncInitializable, IAsyncDisposable
                 FileStorage = _fileStorage,
                 Logger = _logger,
                 DebounceDuration = TimeSpan.FromSeconds(1),
-                SmartGridReadyInput1 = smartGridReadyInput1,
-                SmartGridReadyInput2 = smartGridReadyInput2,
+                SmartGridReadyInput1 = BinarySwitch.Create(_ha, _config.SmartGridReadyInput1),
+                SmartGridReadyInput2 = BinarySwitch.Create(_ha, _config.SmartGridReadyInput2),
                 SourcePumpRunningSensor = BinarySensor.Create(_ha, _config.SourcePumpRunningSensor),
-                SourceTemperatureSensor = NumericSensor.Create(_ha, _config.SourceTemperatureSensor)
+                SourceTemperatureSensor = NumericSensor.Create(_ha, _config.SourceTemperatureSensor),
+                StatusBytesSensor = TextSensor.Create(_ha, _config.StatusBytesSensor)
             };
 
             _smartHeatPump = new Domain.SmartHeatPump.SmartHeatPump(config);
