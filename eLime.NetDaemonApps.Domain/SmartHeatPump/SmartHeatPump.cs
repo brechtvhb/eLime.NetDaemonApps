@@ -3,78 +3,148 @@ using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
 using eLime.NetDaemonApps.Domain.Entities.TextSensors;
 using eLime.NetDaemonApps.Domain.Helper;
-using eLime.NetDaemonApps.Domain.Mqtt;
 using eLime.NetDaemonApps.Domain.Storage;
 using Microsoft.Extensions.Logging;
-using NetDaemon.Extensions.MqttEntityManager;
 using NetDaemon.HassModel;
-using System.Globalization;
 using System.Reactive.Concurrency;
 using System.Runtime.CompilerServices;
+
+#pragma warning disable CS8618, CS9264
 
 [assembly: InternalsVisibleTo("eLime.NetDaemonApps.Tests")]
 namespace eLime.NetDaemonApps.Domain.SmartHeatPump;
 
 public class SmartHeatPump : IDisposable
 {
-    private const string smartGridReadyModeSelectName = "select.heat_pump_smart_grid_ready_mode";
-    private const string sourceTemperatureSensorName = "sensor.heat_pump_source_temperature";
+    internal IHaContext HaContext { get; private set; }
+    internal ILogger Logger { get; private set; }
+    internal IScheduler Scheduler { get; private set; }
+    internal IFileStorage FileStorage { get; private set; }
 
-    private readonly IHaContext _haContext;
-    private readonly ILogger _logger;
-    private readonly IScheduler _scheduler;
-    private readonly IFileStorage _fileStorage;
-    private readonly IMqttEntityManager _mqttEntityManager;
+    internal SmartHeatPumpState State { get; private set; }
+    internal SmartHeatPumpHomeAssistantEntities HomeAssistant { get; private set; }
+    internal SmartHeatPumpEntities Entities { get; private set; }
 
-    private SmartHeatPumpState State { get; set; }
-    private BinarySwitch SmartGridReadyInput1 { get; }
-    private BinarySwitch SmartGridReadyInput2 { get; }
-    private IDisposable? SmartGridReadyModeChangedEventHandlerObservable { get; set; }
-    private readonly DebounceDispatcher? UpdateInHomeAssistantAndSaveDebounceDispatcher;
+    internal DebounceDispatcher? SaveAndPublishStateDebounceDispatcher { get; private set; }
 
-    private BinarySensor SourcePumpRunningSensor { get; }
-    private NumericSensor SourceTemperatureSensor { get; }
-    private TextSensor StatusBytesSensor { get; }
 
-    public SmartHeatPump(SmartHeatPumpConfiguration configuration)
+    private SmartHeatPump()
     {
-        _haContext = configuration.HaContext;
-        _logger = configuration.Logger;
-        _scheduler = configuration.Scheduler;
-        _fileStorage = configuration.FileStorage;
-        _mqttEntityManager = configuration.MqttEntityManager;
 
-        SmartGridReadyInput1 = configuration.SmartGridReadyInput1;
-        SmartGridReadyInput2 = configuration.SmartGridReadyInput2;
-
-        SourcePumpRunningSensor = configuration.SourcePumpRunningSensor;
-        SourcePumpRunningSensor.TurnedOn += SourcePumpRunningSensor_TurnedOn;
-        SourcePumpRunningSensor.TurnedOff += SourcePumpRunningSensor_TurnedOff;
-        SourceTemperatureSensor = configuration.SourceTemperatureSensor;
-        SourceTemperatureSensor.Changed += SourceTemperatureSensor_Changed;
-
-        StatusBytesSensor = configuration.StatusBytesSensor;
-        StatusBytesSensor.StateChanged += StatusBytes_Changed;
-        if (configuration.DebounceDuration != TimeSpan.Zero)
-            UpdateInHomeAssistantAndSaveDebounceDispatcher = new DebounceDispatcher(configuration.DebounceDuration);
-
-        GetState();
-        EnsureEntitiesExist().RunSync();
-        UpdateInHomeAssistant().RunSync();
     }
+
+    private async Task Initialize(SmartHeatPumpConfiguration configuration)
+    {
+        HaContext = configuration.HaContext;
+        Logger = configuration.Logger;
+        Scheduler = configuration.Scheduler;
+        FileStorage = configuration.FileStorage;
+
+        HomeAssistant = new SmartHeatPumpHomeAssistantEntities(configuration);
+        HomeAssistant.SourcePumpRunningSensor.TurnedOn += SourcePumpRunningSensor_TurnedOn;
+        HomeAssistant.SourcePumpRunningSensor.TurnedOff += SourcePumpRunningSensor_TurnedOff;
+        HomeAssistant.SourceTemperatureSensor.Changed += SourceTemperatureSensor_Changed;
+        HomeAssistant.StatusBytesSensor.StateChanged += StatusBytes_Changed;
+
+        HomeAssistant.HeatConsumedTodayIntegerSensor.Changed += HeatSensor_changed;
+        HomeAssistant.HeatConsumedTodayDecimalsSensor.Changed += HeatSensor_changed;
+        HomeAssistant.HeatProducedTodayIntegerSensor.Changed += HeatSensor_changed;
+        HomeAssistant.HeatProducedTodayDecimalsSensor.Changed += HeatSensor_changed;
+
+        HomeAssistant.HotWaterConsumedTodayIntegerSensor.Changed += HotWaterSensor_changed;
+        HomeAssistant.HotWaterConsumedTodayDecimalsSensor.Changed += HotWaterSensor_changed;
+        HomeAssistant.HotWaterProducedTodayIntegerSensor.Changed += HotWaterSensor_changed;
+        HomeAssistant.HotWaterProducedTodayDecimalsSensor.Changed += HotWaterSensor_changed;
+
+        Entities = new SmartHeatPumpEntities(configuration.MqttEntityManager);
+        Entities.SmartGridReadyModeChangedEvent += SmartGridReadyModeChangedEvent;
+        if (configuration.DebounceDuration != TimeSpan.Zero)
+            SaveAndPublishStateDebounceDispatcher = new DebounceDispatcher(configuration.DebounceDuration);
+
+        await Entities.Publish();
+        State = GetState();
+        await Entities.PublishState(State);
+    }
+    public static async Task<SmartHeatPump> Create(SmartHeatPumpConfiguration configuration)
+    {
+        var smartHeatPump = new SmartHeatPump();
+        await smartHeatPump.Initialize(configuration);
+        return smartHeatPump;
+    }
+
+    private async void SmartGridReadyModeChangedEvent(object? sender, SmartGridReadyModeChangedEventArgs e)
+    {
+        try
+        {
+            await SetSmartGridReadyInputs();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Could not handle Smart grid ready mode state change.");
+        }
+    }
+
+    private async void HeatSensor_changed(object? sender, NumericSensorEventArgs e)
+    {
+        try
+        {
+            var cop = CalculateCoefficientOfPerformance(HomeAssistant.HeatConsumedTodayIntegerSensor.State, HomeAssistant.HeatConsumedTodayDecimalsSensor.State, HomeAssistant.HeatProducedTodayIntegerSensor.State, HomeAssistant.HeatProducedTodayDecimalsSensor.State);
+
+            if (cop != null)
+                State.HeatCoefficientOfPerformance = cop.Value;
+            await DebounceSaveAndPublishState();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Could not calculate coefficient of performance for heat.");
+        }
+    }
+
+    private async void HotWaterSensor_changed(object? sender, NumericSensorEventArgs e)
+    {
+        try
+        {
+            var cop = CalculateCoefficientOfPerformance(HomeAssistant.HotWaterConsumedTodayIntegerSensor.State, HomeAssistant.HotWaterConsumedTodayDecimalsSensor.State, HomeAssistant.HotWaterProducedTodayIntegerSensor.State, HomeAssistant.HotWaterProducedTodayDecimalsSensor.State);
+
+            if (cop != null)
+                State.HotWaterCoefficientOfPerformance = cop.Value;
+            await DebounceSaveAndPublishState();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Could not calculate coefficient of performance for hot water.");
+        }
+    }
+
+    private double? CalculateCoefficientOfPerformance(double? integerConsumedToday, double? decimalsConsumedToday, double? integerProducedToday, double? decimalsProducedToday)
+    {
+        double consumedToday = 0;
+        double producedToday = 0;
+
+        if (integerConsumedToday != null && decimalsConsumedToday != null)
+            consumedToday = integerConsumedToday.Value + decimalsConsumedToday.Value / 1000;
+        if (integerProducedToday != null && decimalsProducedToday != null)
+            producedToday = integerProducedToday.Value + decimalsProducedToday.Value / 1000;
+
+        if (consumedToday < 1 || producedToday < 1)
+            return null;
+
+        return Math.Round(producedToday / consumedToday, 2);
+    }
+
 
     private async void StatusBytes_Changed(object? sender, TextSensorEventArgs e)
     {
         try
         {
             //Bug in ISG (turns SG ready inputs on while SG ready state remains in correct state), this code makes sure everything is in sync
-            _logger.LogDebug("Smart heat pump: ISG was not available for a while but came back online, we can assume it rebooted.");
+            Logger.LogDebug("Smart heat pump: ISG was not available for a while but came back online, we can assume it rebooted.");
             if (e.Old?.State == Constants.UNAVAILABLE && e.New?.State != Constants.UNAVAILABLE)
                 await SetSmartGridReadyInputs();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Could not set SG ready state.");
+            Logger.LogError(ex, "Could not set SG ready state.");
         }
     }
 
@@ -85,18 +155,18 @@ public class SmartHeatPump : IDisposable
             if (State.SourcePumpStartedAt == null)
                 return;
 
-            if (State.SourcePumpStartedAt.Value.AddMinutes(25) > _scheduler.Now)
+            if (State.SourcePumpStartedAt.Value.AddMinutes(25) > Scheduler.Now)
                 return;
 
             if (e.New?.State != null)
             {
                 State.SourceTemperature = e.New.State.Value;
-                await DebounceUpdateInHomeAssistantAndSave();
+                await DebounceSaveAndPublishState();
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Could not handle change of source temperature.");
+            Logger.LogError(ex, "Could not handle change of source temperature.");
         }
     }
 
@@ -104,12 +174,12 @@ public class SmartHeatPump : IDisposable
     {
         try
         {
-            State.SourcePumpStartedAt = _scheduler.Now;
-            await DebounceUpdateInHomeAssistantAndSave();
+            State.SourcePumpStartedAt = Scheduler.Now;
+            await DebounceSaveAndPublishState();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Could not handle source pump turned on event.");
+            Logger.LogError(ex, "Could not handle source pump turned on event.");
         }
     }
 
@@ -117,52 +187,16 @@ public class SmartHeatPump : IDisposable
     {
         try
         {
-            if (State.SourcePumpStartedAt?.AddMinutes(25) <= _scheduler.Now && SourceTemperatureSensor.State != null)
-                State.SourceTemperature = SourceTemperatureSensor.State.Value;
+            if (State.SourcePumpStartedAt?.AddMinutes(25) <= Scheduler.Now && HomeAssistant.SourceTemperatureSensor.State != null)
+                State.SourceTemperature = HomeAssistant.SourceTemperatureSensor.State.Value;
 
             State.SourcePumpStartedAt = null;
-            await DebounceUpdateInHomeAssistantAndSave();
+            await DebounceSaveAndPublishState();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Could not handle source pump turned off event.");
+            Logger.LogError(ex, "Could not handle source pump turned off event.");
         }
-    }
-
-    private async Task EnsureEntitiesExist()
-    {
-
-        var smartGridReadySelectOptions = new SelectOptions
-        {
-            Icon = "phu:smarthome-solver",
-            Options = Enum<SmartGridReadyMode>.AllValuesAsStringList(),
-            Device = GetDevice()
-        };
-
-        await _mqttEntityManager.CreateAsync(smartGridReadyModeSelectName, new EntityCreationOptions(UniqueId: smartGridReadyModeSelectName, Name: "Smart grid ready mode", DeviceClass: "select", Persist: true), smartGridReadySelectOptions);
-        var smartGridReadyModeObservable = await _mqttEntityManager.PrepareCommandSubscriptionAsync(smartGridReadyModeSelectName);
-        SmartGridReadyModeChangedEventHandlerObservable = smartGridReadyModeObservable.SubscribeAsync(SmartGridReadyModeChangedEventHandler());
-
-        var sourceTemperatureSensorOptions = new NumericSensorOptions
-        {
-            StateClass = "measurement",
-            UnitOfMeasurement = "°C",
-            Icon = "fapro:oil-temperature",
-            Device = GetDevice()
-        };
-        await _mqttEntityManager.CreateAsync(sourceTemperatureSensorName, new EntityCreationOptions(UniqueId: sourceTemperatureSensorName, Name: "Source temperature", DeviceClass: "temperature", Persist: true), sourceTemperatureSensorOptions);
-
-    }
-
-
-    private Func<string, Task> SmartGridReadyModeChangedEventHandler()
-    {
-        return async state =>
-        {
-            _logger.LogDebug("Smart heat pump: Setting smart grid ready mode to {State}.", state);
-            State.SmartGridReadyMode = Enum<SmartGridReadyMode>.Cast(state);
-            await SetSmartGridReadyInputs();
-        };
     }
 
     private async Task SetSmartGridReadyInputs()
@@ -170,95 +204,87 @@ public class SmartHeatPump : IDisposable
         switch (State.SmartGridReadyMode)
         {
             case SmartGridReadyMode.Blocked:
-                SmartGridReadyInput2.TurnOn();
-                SmartGridReadyInput1.TurnOff();
+                HomeAssistant.SmartGridReadyInput2.TurnOn();
+                HomeAssistant.SmartGridReadyInput1.TurnOff();
                 break;
             case SmartGridReadyMode.Normal:
-                SmartGridReadyInput2.TurnOff();
-                SmartGridReadyInput1.TurnOff();
+                HomeAssistant.SmartGridReadyInput2.TurnOff();
+                HomeAssistant.SmartGridReadyInput1.TurnOff();
                 break;
             case SmartGridReadyMode.Boosted:
-                SmartGridReadyInput2.TurnOff();
-                SmartGridReadyInput1.TurnOn();
+                HomeAssistant.SmartGridReadyInput2.TurnOff();
+                HomeAssistant.SmartGridReadyInput1.TurnOn();
                 break;
             case SmartGridReadyMode.Maximized:
-                SmartGridReadyInput2.TurnOn();
-                SmartGridReadyInput1.TurnOn();
+                HomeAssistant.SmartGridReadyInput2.TurnOn();
+                HomeAssistant.SmartGridReadyInput1.TurnOn();
                 break;
         }
-        await DebounceUpdateInHomeAssistantAndSave();
+        await DebounceSaveAndPublishState();
     }
 
-    private Device GetDevice()
+    private async Task DebounceSaveAndPublishState()
     {
-        return new Device { Identifiers = ["smart_heat_pump"], Name = "Smart heat pump", Manufacturer = "Me" };
-    }
-
-    private async Task DebounceUpdateInHomeAssistantAndSave()
-    {
-        if (UpdateInHomeAssistantAndSaveDebounceDispatcher == null)
+        if (SaveAndPublishStateDebounceDispatcher == null)
         {
-            Save();
-            await UpdateInHomeAssistantAndSave();
+            await SaveAndPublishState();
             return;
         }
 
-        Save();
-        await UpdateInHomeAssistantAndSaveDebounceDispatcher.DebounceAsync(UpdateInHomeAssistantAndSave);
+        await SaveAndPublishStateDebounceDispatcher.DebounceAsync(SaveAndPublishState);
     }
 
 
-    private void GetState()
+    private SmartHeatPumpState GetState()
     {
-        var persistedState = _fileStorage.Get<SmartHeatPumpState>("SmartHeatPump", "SmartHeatPump");
+        var persistedState = FileStorage.Get<SmartHeatPumpState>("SmartHeatPump", "SmartHeatPump");
 
         if (persistedState == null)
-            return;
+            return new SmartHeatPumpState();
 
-        State = persistedState;
+        var state = persistedState;
 
-        if (SourcePumpRunningSensor.IsOn() && State.SourcePumpStartedAt == null)
-            State.SourcePumpStartedAt = _scheduler.Now;
+        if (HomeAssistant.SourcePumpRunningSensor.IsOn() && State.SourcePumpStartedAt == null)
+            state.SourcePumpStartedAt = Scheduler.Now;
 
-        if (SourcePumpRunningSensor.IsOff() && State.SourcePumpStartedAt != null)
-            State.SourcePumpStartedAt = null;
+        if (HomeAssistant.SourcePumpRunningSensor.IsOff() && State.SourcePumpStartedAt != null)
+            state.SourcePumpStartedAt = null;
 
-        _logger.LogDebug("Retrieved Smart heat pump state.");
+        if (State.HeatCoefficientOfPerformance == null)
+            CalculateCoefficientOfPerformance(HomeAssistant.HeatConsumedTodayIntegerSensor.State, HomeAssistant.HeatConsumedTodayDecimalsSensor.State, HomeAssistant.HeatProducedTodayIntegerSensor.State, HomeAssistant.HeatProducedTodayDecimalsSensor.State);
+
+        if (State.HotWaterCoefficientOfPerformance == null)
+            CalculateCoefficientOfPerformance(HomeAssistant.HotWaterConsumedTodayIntegerSensor.State, HomeAssistant.HotWaterConsumedTodayDecimalsSensor.State, HomeAssistant.HotWaterProducedTodayIntegerSensor.State, HomeAssistant.HotWaterProducedTodayDecimalsSensor.State);
+
+        Logger.LogDebug("Retrieved Smart heat pump state.");
+        return state;
     }
 
-    private async Task UpdateInHomeAssistantAndSave()
+    private async Task SaveAndPublishState()
     {
-        Save();
-        await UpdateInHomeAssistant();
+        FileStorage.Save("SmartHeatPump", "SmartHeatPump", State);
+        await Entities.PublishState(State);
     }
-
-    private void Save()
-    {
-        _fileStorage.Save("SmartHeatPump", "SmartHeatPump", State);
-    }
-
-    private async Task UpdateInHomeAssistant()
-    {
-        //var globalAttributes = new EnergyManagerAttributes()
-        //{
-        //    LastUpdated = DateTime.Now.ToString("O"),
-        //};
-
-        await _mqttEntityManager.SetStateAsync(smartGridReadyModeSelectName, State.SmartGridReadyMode.ToString());
-        await _mqttEntityManager.SetStateAsync(sourceTemperatureSensorName, State.SourceTemperature.ToString("N", new NumberFormatInfo { NumberDecimalSeparator = "." }));
-        //await _mqttEntityManager.SetAttributesAsync("sensor.energy_manager_state", globalAttributes);
-    }
-
-
 
     public void Dispose()
     {
-        SmartGridReadyModeChangedEventHandlerObservable?.Dispose();
-        SourcePumpRunningSensor.TurnedOn -= SourcePumpRunningSensor_TurnedOn;
-        SourcePumpRunningSensor.TurnedOff -= SourcePumpRunningSensor_TurnedOff;
-        SourcePumpRunningSensor.Dispose();
+        HomeAssistant.SourcePumpRunningSensor.TurnedOn -= SourcePumpRunningSensor_TurnedOn;
+        HomeAssistant.SourcePumpRunningSensor.TurnedOff -= SourcePumpRunningSensor_TurnedOff;
+        HomeAssistant.SourceTemperatureSensor.Changed -= SourceTemperatureSensor_Changed;
+        HomeAssistant.StatusBytesSensor.StateChanged -= StatusBytes_Changed;
 
-        SourceTemperatureSensor.Changed -= SourceTemperatureSensor_Changed;
-        SourceTemperatureSensor.Dispose();
+        HomeAssistant.HeatConsumedTodayIntegerSensor.Changed -= HeatSensor_changed;
+        HomeAssistant.HeatConsumedTodayDecimalsSensor.Changed -= HeatSensor_changed;
+        HomeAssistant.HeatProducedTodayIntegerSensor.Changed -= HeatSensor_changed;
+        HomeAssistant.HeatProducedTodayDecimalsSensor.Changed -= HeatSensor_changed;
+        HomeAssistant.HotWaterConsumedTodayIntegerSensor.Changed -= HotWaterSensor_changed;
+        HomeAssistant.HotWaterConsumedTodayDecimalsSensor.Changed -= HotWaterSensor_changed;
+        HomeAssistant.HotWaterProducedTodayIntegerSensor.Changed -= HotWaterSensor_changed;
+        HomeAssistant.HotWaterProducedTodayDecimalsSensor.Changed -= HotWaterSensor_changed;
+
+        HomeAssistant.Dispose();
+
+        Entities.SmartGridReadyModeChangedEvent -= SmartGridReadyModeChangedEvent;
+        Entities.Dispose();
     }
 }

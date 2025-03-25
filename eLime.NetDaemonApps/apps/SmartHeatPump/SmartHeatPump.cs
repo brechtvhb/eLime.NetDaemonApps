@@ -8,9 +8,9 @@ using NetDaemon.Extensions.MqttEntityManager;
 using System.Reactive.Concurrency;
 using System.Threading;
 using System.Threading.Tasks;
+#pragma warning disable CS8618, CS9264
 
 namespace eLime.NetDaemonApps.apps.SmartHeatPump;
-
 
 [NetDaemonApp(Id = "smartHeatPump"), Focus]
 public class SmartHeatPump : IAsyncInitializable, IAsyncDisposable
@@ -25,7 +25,6 @@ public class SmartHeatPump : IAsyncInitializable, IAsyncDisposable
 
     private Domain.SmartHeatPump.SmartHeatPump _smartHeatPump;
 
-    private CancellationToken _ct;
 
     public SmartHeatPump(IHaContext ha, IScheduler scheduler, IAppConfig<SmartHeatPumpConfig> config, IMqttEntityManager mqttEntityManager, IFileStorage fileStorage, ILogger<SmartHeatPump> logger)
     {
@@ -37,9 +36,8 @@ public class SmartHeatPump : IAsyncInitializable, IAsyncDisposable
         _config = config.Value;
     }
 
-    public Task InitializeAsync(CancellationToken cancellationToken)
+    public async Task InitializeAsync(CancellationToken cancellationToken)
     {
-        _ct = cancellationToken;
         try
         {
             var config = new SmartHeatPumpConfiguration
@@ -54,17 +52,23 @@ public class SmartHeatPump : IAsyncInitializable, IAsyncDisposable
                 SmartGridReadyInput2 = BinarySwitch.Create(_ha, _config.SmartGridReadyInput2),
                 SourcePumpRunningSensor = BinarySensor.Create(_ha, _config.SourcePumpRunningSensor),
                 SourceTemperatureSensor = NumericSensor.Create(_ha, _config.SourceTemperatureSensor),
-                StatusBytesSensor = TextSensor.Create(_ha, _config.StatusBytesSensor)
+                StatusBytesSensor = TextSensor.Create(_ha, _config.StatusBytesSensor),
+                HeatConsumedTodayIntegerSensor = NumericSensor.Create(_ha, _config.HeatConsumedTodayIntegerSensor),
+                HeatConsumedTodayDecimalsSensor = NumericSensor.Create(_ha, _config.HeatConsumedTodayDecimalsSensor),
+                HeatProducedTodayIntegerSensor = NumericSensor.Create(_ha, _config.HeatProducedTodayIntegerSensor),
+                HeatProducedTodayDecimalsSensor = NumericSensor.Create(_ha, _config.HeatProducedTodayDecimalsSensor),
+                HotWaterConsumedTodayIntegerSensor = NumericSensor.Create(_ha, _config.HotWaterConsumedTodayIntegerSensor),
+                HotWaterConsumedTodayDecimalsSensor = NumericSensor.Create(_ha, _config.HotWaterConsumedTodayDecimalsSensor),
+                HotWaterProducedTodayIntegerSensor = NumericSensor.Create(_ha, _config.HotWaterProducedTodayIntegerSensor),
+                HotWaterProducedTodayDecimalsSensor = NumericSensor.Create(_ha, _config.HotWaterProducedTodayDecimalsSensor),
             };
 
-            _smartHeatPump = new Domain.SmartHeatPump.SmartHeatPump(config);
+            _smartHeatPump = await Domain.SmartHeatPump.SmartHeatPump.Create(config);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Something horrible happened :/");
         }
-
-        return Task.CompletedTask;
     }
 
     public ValueTask DisposeAsync()

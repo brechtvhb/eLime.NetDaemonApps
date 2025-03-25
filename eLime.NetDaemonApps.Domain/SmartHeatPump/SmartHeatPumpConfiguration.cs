@@ -22,5 +22,16 @@ public class SmartHeatPumpConfiguration
     public required BinarySensor SourcePumpRunningSensor { get; set; }
     public required NumericSensor SourceTemperatureSensor { get; set; }
     public required TextSensor StatusBytesSensor { get; set; }
+
+    public required NumericSensor HeatConsumedTodayIntegerSensor { get; set; }
+    public required NumericSensor HeatConsumedTodayDecimalsSensor { get; set; }
+    public required NumericSensor HeatProducedTodayIntegerSensor { get; set; }
+    public required NumericSensor HeatProducedTodayDecimalsSensor { get; set; }
+
+    public required NumericSensor HotWaterConsumedTodayIntegerSensor { get; set; }
+    public required NumericSensor HotWaterConsumedTodayDecimalsSensor { get; set; }
+    public required NumericSensor HotWaterProducedTodayIntegerSensor { get; set; }
+    public required NumericSensor HotWaterProducedTodayDecimalsSensor { get; set; }
+
     public TimeSpan DebounceDuration { get; set; }
 }
