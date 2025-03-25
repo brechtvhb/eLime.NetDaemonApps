@@ -101,6 +101,8 @@ public class SmartHeatPumpEntities(IMqttEntityManager mqttEntityManager) : IDisp
         //await mqttEntityManager.SetStateAsync(hotWaterConsumedTodaySensorName, state.HotWaterConsumedToday.ToString("N", new NumberFormatInfo { NumberDecimalSeparator = "." }));
         //await mqttEntityManager.SetStateAsync(hotWaterProducedTodaySensorName, state.HotWaterProducedToday.ToString("N", new NumberFormatInfo { NumberDecimalSeparator = "." }));
 
+        await mqttEntityManager.SetStateAsync(heatCoefficientOfPerformanceSensorName, state.HeatCoefficientOfPerformance?.ToString("N", new NumberFormatInfo { NumberDecimalSeparator = "." }) ?? "");
+        await mqttEntityManager.SetStateAsync(hotWaterCoefficientOfPerformanceSensorName, state.HotWaterCoefficientOfPerformance?.ToString("N", new NumberFormatInfo { NumberDecimalSeparator = "." }) ?? "");
         //await _mqttEntityManager.SetAttributesAsync("sensor.energy_manager_state", globalAttributes);
     }
 
