@@ -68,8 +68,8 @@ public class SmartHeatPump : IDisposable
         if (configuration.DebounceDuration != TimeSpan.Zero)
             SaveAndPublishStateDebounceDispatcher = new DebounceDispatcher(configuration.DebounceDuration);
 
-        CalculateHeatCopDebounceDispatcher = new DebounceDispatcher(TimeSpan.FromSeconds(30));
-        CalculateHotWaterCopDebounceDispatcher = new DebounceDispatcher(TimeSpan.FromSeconds(30));
+        CalculateHeatCopDebounceDispatcher = new DebounceDispatcher(TimeSpan.FromSeconds(120));
+        CalculateHotWaterCopDebounceDispatcher = new DebounceDispatcher(TimeSpan.FromSeconds(120));
 
         await Entities.Publish();
         GetAndSanitizeState();
