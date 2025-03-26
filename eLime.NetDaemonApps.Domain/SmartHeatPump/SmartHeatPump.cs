@@ -77,6 +77,8 @@ public class SmartHeatPump : IDisposable
     {
         try
         {
+            Logger.LogInformation($"Setting smart grid ready mode to {e.SmartGridReadyMode}.");
+            State.SmartGridReadyMode = e.SmartGridReadyMode;
             await SetSmartGridReadyInputs();
         }
         catch (Exception ex)
