@@ -26,7 +26,8 @@ public class SmartHeatPump : IDisposable
     internal SmartHeatPumpEntities Entities { get; private set; }
 
     internal DebounceDispatcher? SaveAndPublishStateDebounceDispatcher { get; private set; }
-
+    internal DebounceDispatcher CalculateHeatCopDebounceDispatcher { get; private set; }
+    internal DebounceDispatcher CalculateHotWaterCopDebounceDispatcher { get; private set; }
 
     private SmartHeatPump()
     {
@@ -67,6 +68,9 @@ public class SmartHeatPump : IDisposable
         if (configuration.DebounceDuration != TimeSpan.Zero)
             SaveAndPublishStateDebounceDispatcher = new DebounceDispatcher(configuration.DebounceDuration);
 
+        CalculateHeatCopDebounceDispatcher = new DebounceDispatcher(TimeSpan.FromSeconds(30));
+        CalculateHotWaterCopDebounceDispatcher = new DebounceDispatcher(TimeSpan.FromSeconds(30));
+
         await Entities.Publish();
         GetAndSanitizeState();
         await SaveAndPublishState();
@@ -91,11 +95,7 @@ public class SmartHeatPump : IDisposable
     {
         try
         {
-            var cop = CalculateCoefficientOfPerformance(HomeAssistant.HeatConsumedTodayIntegerSensor.State, HomeAssistant.HeatConsumedTodayDecimalsSensor.State, HomeAssistant.HeatProducedTodayIntegerSensor.State, HomeAssistant.HeatProducedTodayDecimalsSensor.State);
-
-            if (cop != null)
-                State.HeatCoefficientOfPerformance = cop.Value;
-            await DebounceSaveAndPublishState();
+            await CalculateHeatCopDebounceDispatcher.DebounceAsync(CalculateHeatCoefficientOfPerformance);
         }
         catch (Exception ex)
         {
@@ -103,20 +103,35 @@ public class SmartHeatPump : IDisposable
         }
     }
 
+    private async Task CalculateHeatCoefficientOfPerformance()
+    {
+        var cop = CalculateCoefficientOfPerformance(HomeAssistant.HeatConsumedTodayIntegerSensor.State, HomeAssistant.HeatConsumedTodayDecimalsSensor.State, HomeAssistant.HeatProducedTodayIntegerSensor.State, HomeAssistant.HeatProducedTodayDecimalsSensor.State);
+
+        if (cop != null)
+            State.HeatCoefficientOfPerformance = cop.Value;
+        await DebounceSaveAndPublishState();
+    }
+
+
     private async void HotWaterSensor_changed(object? sender, NumericSensorEventArgs e)
     {
         try
         {
-            var cop = CalculateCoefficientOfPerformance(HomeAssistant.HotWaterConsumedTodayIntegerSensor.State, HomeAssistant.HotWaterConsumedTodayDecimalsSensor.State, HomeAssistant.HotWaterProducedTodayIntegerSensor.State, HomeAssistant.HotWaterProducedTodayDecimalsSensor.State);
-
-            if (cop != null)
-                State.HotWaterCoefficientOfPerformance = cop.Value;
-            await DebounceSaveAndPublishState();
+            await CalculateHotWaterCopDebounceDispatcher.DebounceAsync(CalculateHotWaterCoefficientOfPerformance);
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Could not calculate coefficient of performance for hot water.");
         }
+    }
+
+    private async Task CalculateHotWaterCoefficientOfPerformance()
+    {
+        var cop = CalculateCoefficientOfPerformance(HomeAssistant.HotWaterConsumedTodayIntegerSensor.State, HomeAssistant.HotWaterConsumedTodayDecimalsSensor.State, HomeAssistant.HotWaterProducedTodayIntegerSensor.State, HomeAssistant.HotWaterProducedTodayDecimalsSensor.State);
+
+        if (cop != null)
+            State.HotWaterCoefficientOfPerformance = cop.Value;
+        await DebounceSaveAndPublishState();
     }
 
     private double? CalculateCoefficientOfPerformance(double? integerConsumedToday, double? decimalsConsumedToday, double? integerProducedToday, double? decimalsProducedToday)

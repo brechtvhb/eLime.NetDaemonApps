@@ -1,11 +1,8 @@
 ﻿namespace eLime.NetDaemonApps.Domain.Helper;
 
-public class DebounceDispatcher : DebounceDispatcher<bool>
+public class DebounceDispatcher(TimeSpan interval)
+    : DebounceDispatcher<bool>(interval)
 {
-    public DebounceDispatcher(TimeSpan interval) : base(interval)
-    {
-    }
-
     public Task DebounceAsync(Func<Task> action)
     {
         return base.DebounceAsync(async () =>
@@ -17,7 +14,7 @@ public class DebounceDispatcher : DebounceDispatcher<bool>
 
     public void Debounce(Action action)
     {
-        Func<Task<bool>> actionAsync = () => Task.Run(() =>
+        var actionAsync = () => Task.Run(() =>
         {
             action.Invoke();
             return true;
