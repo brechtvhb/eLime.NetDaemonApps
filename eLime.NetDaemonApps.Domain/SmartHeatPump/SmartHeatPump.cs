@@ -173,12 +173,12 @@ public class SmartHeatPump : IDisposable
             if (State.SourcePumpStartedAt == null)
                 return;
 
-            if (State.SourcePumpStartedAt.Value.AddMinutes(25) > Scheduler.Now)
+            if (State.SourcePumpStartedAt.Value.AddMinutes(15) > Scheduler.Now)
                 return;
 
             if (e.New?.State != null)
             {
-                State.SourceTemperature = e.New.State.Value;
+                UpdateSourceTemperature(e.New.State.Value);
                 await DebounceSaveAndPublishState();
             }
         }
@@ -205,8 +205,8 @@ public class SmartHeatPump : IDisposable
     {
         try
         {
-            if (State.SourcePumpStartedAt?.AddMinutes(25) <= Scheduler.Now && HomeAssistant.SourceTemperatureSensor.State != null)
-                State.SourceTemperature = HomeAssistant.SourceTemperatureSensor.State.Value;
+            if (State.SourcePumpStartedAt?.AddMinutes(15) <= Scheduler.Now && HomeAssistant.SourceTemperatureSensor.State != null)
+                UpdateSourceTemperature(HomeAssistant.SourceTemperatureSensor.State.Value, false);
 
             State.SourcePumpStartedAt = null;
             await DebounceSaveAndPublishState();
@@ -215,6 +215,31 @@ public class SmartHeatPump : IDisposable
         {
             Logger.LogError(ex, "Could not handle source pump turned off event.");
         }
+    }
+
+    private void UpdateSourceTemperature(double temperature, bool sourcePumpRunning = true)
+    {
+        var maxAllowedVariation = 1.0;
+        var difference = temperature - State.SourceTemperature;
+
+        var updateSourceTemperature = sourcePumpRunning switch
+        {
+            false when State.SourceTemperatureUpdatedAt > State.SourcePumpStartedAt => false,
+            false when difference < maxAllowedVariation => true,
+            true when State.SourceTemperatureUpdatedAt < State.SourcePumpStartedAt => true,
+            true when difference < maxAllowedVariation => true,
+            _ when State.SourceTemperatureUpdatedAt == null => true,
+            _ => false,
+        };
+
+        if (!updateSourceTemperature)
+        {
+            Logger.LogInformation($"Did not update source temperature. Current source temperature was '{State.SourceTemperature} °C', new temperature was '{temperature} °C'. (Δ={difference} °C). Last update was: {State.SourceTemperatureUpdatedAt:O}.");
+            return;
+        }
+
+        State.SourceTemperature = temperature;
+        State.SourceTemperatureUpdatedAt = Scheduler.Now;
     }
 
     private async Task SetSmartGridReadyInputs()
