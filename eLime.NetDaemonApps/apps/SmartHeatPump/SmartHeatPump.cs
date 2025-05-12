@@ -52,6 +52,7 @@ public class SmartHeatPump : IAsyncInitializable, IAsyncDisposable
                 SmartGridReadyInput2 = BinarySwitch.Create(_ha, _config.SmartGridReadyInput2),
                 SourcePumpRunningSensor = BinarySensor.Create(_ha, _config.SourcePumpRunningSensor),
                 SourceTemperatureSensor = NumericSensor.Create(_ha, _config.SourceTemperatureSensor),
+                IsCoolingSensor = BinarySensor.Create(_ha, _config.IsCoolingSensor),
                 StatusBytesSensor = TextSensor.Create(_ha, _config.StatusBytesSensor),
                 HeatConsumedTodayIntegerSensor = NumericSensor.Create(_ha, _config.HeatConsumedTodayIntegerSensor),
                 HeatConsumedTodayDecimalsSensor = NumericSensor.Create(_ha, _config.HeatConsumedTodayDecimalsSensor),

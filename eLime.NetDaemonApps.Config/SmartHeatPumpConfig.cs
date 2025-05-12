@@ -7,6 +7,7 @@ public class SmartHeatPumpConfig
     public string SmartGridReadyInput2 { get; set; }
     public string SourcePumpRunningSensor { get; set; }
     public string SourceTemperatureSensor { get; set; }
+    public string IsCoolingSensor { get; set; }
     public string StatusBytesSensor { get; set; }
     public string HeatConsumedTodayIntegerSensor { get; set; }
     public string HeatConsumedTodayDecimalsSensor { get; set; }

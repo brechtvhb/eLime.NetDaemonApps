@@ -21,6 +21,8 @@ public class SmartHeatPumpConfiguration
     public required BinarySwitch SmartGridReadyInput2 { get; set; }
     public required BinarySensor SourcePumpRunningSensor { get; set; }
     public required NumericSensor SourceTemperatureSensor { get; set; }
+
+    public required BinarySensor IsCoolingSensor { get; set; }
     public required TextSensor StatusBytesSensor { get; set; }
 
     public required NumericSensor HeatConsumedTodayIntegerSensor { get; set; }

@@ -178,7 +178,7 @@ public class SmartHeatPump : IDisposable
 
             if (e.New?.State != null)
             {
-                UpdateSourceTemperature(e.New.State.Value);
+                UpdateSourceTemperature(e.New.State.Value, HomeAssistant.SourcePumpRunningSensor.IsOn(), HomeAssistant.IsCoolingSensor.IsOn());
                 await DebounceSaveAndPublishState();
             }
         }
@@ -206,7 +206,7 @@ public class SmartHeatPump : IDisposable
         try
         {
             if (State.SourcePumpStartedAt?.AddMinutes(15) <= Scheduler.Now && HomeAssistant.SourceTemperatureSensor.State != null)
-                UpdateSourceTemperature(HomeAssistant.SourceTemperatureSensor.State.Value, false);
+                UpdateSourceTemperature(HomeAssistant.SourceTemperatureSensor.State.Value, false, HomeAssistant.IsCoolingSensor.IsOn());
 
             State.SourcePumpStartedAt = null;
             await DebounceSaveAndPublishState();
@@ -217,8 +217,11 @@ public class SmartHeatPump : IDisposable
         }
     }
 
-    private void UpdateSourceTemperature(double temperature, bool sourcePumpRunning = true)
+    private void UpdateSourceTemperature(double temperature, bool sourcePumpRunning, bool isCooling)
     {
+        if (isCooling)
+            return;
+
         var maxAllowedVariation = 1.0;
         var difference = temperature - State.SourceTemperature;
 
