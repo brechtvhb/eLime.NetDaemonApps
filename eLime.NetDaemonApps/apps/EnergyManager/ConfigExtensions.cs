@@ -21,7 +21,6 @@ namespace eLime.NetDaemonApps.apps.EnergyManager;
 
 public static class ConfigExtensions
 {
-
     public static Domain.EnergyManager.EnergyManager ToEntities(this EnergyManagerConfig config, IHaContext ha, IScheduler scheduler, IMqttEntityManager mqttEntityManager, IFileStorage fileStorage, ILogger logger)
     {
         var phoneToNotify = config.PhoneToNotify;
@@ -91,7 +90,15 @@ public static class ConfigExtensions
                 consumers.Add(energyConsumer);
         }
 
-        var gridMonitor = new GridMonitor(scheduler, new NumericEntity(ha, config.Grid.VoltageEntity), NumericSensor.Create(ha, config.Grid.ImportEntity), NumericSensor.Create(ha, config.Grid.ExportEntity), new NumericEntity(ha, config.Grid.PeakImportEntity), new NumericEntity(ha, config.Grid.CurrentAverageDemandEntity));
+        var gridVoltage = new NumericEntity(ha, config.Grid.VoltageEntity);
+        var gridImport = NumericSensor.Create(ha, config.Grid.ImportEntity);
+        var gridExport = NumericSensor.Create(ha, config.Grid.ExportEntity);
+        var gridPeakImport = new NumericEntity(ha, config.Grid.PeakImportEntity);
+        var gridCurrentAverageDemand = new NumericEntity(ha, config.Grid.CurrentAverageDemandEntity);
+        var totalBatteryChargePower = NumericSensor.Create(ha, config.BatteryManager.TotalChargePowerSensor);
+        var totalBatteryDischargePower = NumericSensor.Create(ha, config.BatteryManager.TotalDischargePowerSensor);
+        var gridMonitor = new GridMonitor(scheduler, gridVoltage, gridImport, gridExport, gridPeakImport, gridCurrentAverageDemand, totalBatteryChargePower, totalBatteryDischargePower);
+
         var entity = new Domain.EnergyManager.EnergyManager(ha, logger, scheduler, mqttEntityManager, fileStorage, gridMonitor, new NumericEntity(ha, config.SolarProductionRemainingTodayEntity), consumers, phoneToNotify, TimeSpan.FromSeconds(2));
         return entity;
     }

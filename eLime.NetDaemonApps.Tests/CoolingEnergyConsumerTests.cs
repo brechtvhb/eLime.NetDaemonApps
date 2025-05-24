@@ -31,6 +31,8 @@ public class CoolingEnergyConsumerTests
         A.CallTo(() => _gridMonitor.PeakLoad).Returns(4000);
         A.CallTo(() => _gridMonitor.CurrentLoad).Returns(-2000);
         A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-2000);
+        A.CallTo(() => _gridMonitor.CurrentLoadMinusBatteries).Returns(-2000);
+        A.CallTo(() => _gridMonitor.AverageLoadMinusBatteriesSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-2000);
     }
 
 
@@ -98,8 +100,8 @@ public class CoolingEnergyConsumerTests
     public void VeryHotFridge_HasPriorityOver_HotFridge()
     {
         // Arrange
-        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(-100);
-        A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-100);
+        A.CallTo(() => _gridMonitor.CurrentLoadMinusBatteries).Returns(-100);
+        A.CallTo(() => _gridMonitor.AverageLoadMinusBatteriesSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-100);
 
         var consumer = new CoolingEnergyConsumerBuilder(_logger, _testCtx)
             .Build();

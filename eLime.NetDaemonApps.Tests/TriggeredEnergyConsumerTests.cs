@@ -29,8 +29,8 @@ public class TriggeredEnergyConsumerTests
         _gridMonitor = A.Fake<IGridMonitor>();
 
         A.CallTo(() => _gridMonitor.PeakLoad).Returns(4000);
-        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(-2000);
-        A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-2000);
+        A.CallTo(() => _gridMonitor.CurrentLoadMinusBatteries).Returns(-2000);
+        A.CallTo(() => _gridMonitor.AverageLoadMinusBatteriesSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-2000);
     }
 
 
@@ -244,7 +244,7 @@ public class TriggeredEnergyConsumerTests
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
 
         //Act
-        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(3500);
+        A.CallTo(() => _gridMonitor.CurrentLoadMinusBatteries).Returns(3500);
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(20));
 
         //Assert
@@ -267,11 +267,11 @@ public class TriggeredEnergyConsumerTests
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
 
         _testCtx.TriggerStateChange(consumer.StateSensor, "Paused");
-        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(3500);
+        A.CallTo(() => _gridMonitor.CurrentLoadMinusBatteries).Returns(3500);
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(20));
 
         //Act
-        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(-1000);
+        A.CallTo(() => _gridMonitor.CurrentLoadMinusBatteries).Returns(-1000);
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(20));
 
         //Assert

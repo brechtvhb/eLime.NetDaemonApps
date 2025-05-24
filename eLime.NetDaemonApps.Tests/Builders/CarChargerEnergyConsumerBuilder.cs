@@ -20,6 +20,7 @@ public class CarChargerEnergyConsumerBuilder
     private BinarySensor? _criticallyNeeded;
     private Double _switchOnLoad;
     private Double _switchOffLoad;
+    private AllowBatteryPower _allowBatteryPower = AllowBatteryPower.No;
 
     private TimeSpan? _minimumRuntime;
     private TimeSpan? _maximumRuntime;
@@ -58,6 +59,7 @@ public class CarChargerEnergyConsumerBuilder
         _voltageEntity = new NumericEntity(_testCtx.HaContext, "sensor.voltage");
         WithStateSensor(TextSensor.Create(_testCtx.HaContext, "sensor.z"));
         AddCar("Passat GTE", CarChargingMode.Ac1Phase, null, null, 6, 16, null, 11.5, new NumericEntity(_testCtx.HaContext, "sensor.a"), null, false, new BinarySensor(_testCtx.HaContext, "binary_sensor.b"), new DeviceTracker(_testCtx.HaContext, "device_tracker.passat_gte_position"));
+        WithAllowBatteryPower(AllowBatteryPower.No);
     }
 
     public CarChargerEnergyConsumerBuilder InitTeslaTests(bool remainOffAtFullBattery = false)
@@ -78,6 +80,7 @@ public class CarChargerEnergyConsumerBuilder
         var _carChargerSwitch = BinarySwitch.Create(_testCtx.HaContext, "switch.my2024_charge");
         var carChargingState = TextSensor.Create(_testCtx.HaContext, "sensor.my2024_charging");
         AddCar("MY2024", CarChargingMode.Ac3Phase, _carChargerSwitch, _carCurrentEntity, 1, 16, carChargingState, 75, new NumericEntity(_testCtx.HaContext, "sensor.my2024_battery"), new NumericEntity(_testCtx.HaContext, "sensor.my2024_battery_max_charge"), remainOffAtFullBattery, new BinarySensor(_testCtx.HaContext, "binary_sensor.my2024_cable_connected"), new DeviceTracker(_testCtx.HaContext, "device_tracker.my2024_position"));
+        WithAllowBatteryPower(AllowBatteryPower.No);
         return this;
     }
 
@@ -147,6 +150,11 @@ public class CarChargerEnergyConsumerBuilder
         _balancingMethod = balancingMethod;
         return this;
     }
+    public CarChargerEnergyConsumerBuilder WithAllowBatteryPower(AllowBatteryPower allowBatteryPower)
+    {
+        _allowBatteryPower = allowBatteryPower;
+        return this;
+    }
 
     public CarChargerEnergyConsumerBuilder AddCar(String name, CarChargingMode mode, BinarySwitch? chargerSwitch, InputNumberEntity? currentEntity, Int32? minimumCurrent, Int32? maximumCurrent, TextSensor? carChargingState, Double batteryCapacity, NumericEntity batteryPercentageSensor, NumericEntity? maxBatteryPercentageSensor, bool remainOnAtFullBattery, BinarySensor cableConnectedSensor, DeviceTracker location)
     {
@@ -159,6 +167,7 @@ public class CarChargerEnergyConsumerBuilder
         var x = new CarChargerEnergyConsumer(_logger, _name, _consumerGroups, _powerUsage, _criticallyNeeded, _switchOnLoad, _switchOffLoad, _minimumRuntime, _maximumRuntime, _minimumTimeout, _maximumTimeout, _timeWindows, _timezone,
             _minimumCurrent, _maximumCurrent, _offCurrent, _currentEntity, _voltageEntity, _stateSensor, _cars, _testCtx.Scheduler);
         x.SetBalancingMethod(_testCtx.Scheduler.Now, _balancingMethod);
+        x.SetAllowBatteryPower(_allowBatteryPower);
         return x;
     }
 }

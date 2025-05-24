@@ -150,7 +150,7 @@ public class EnergyManager : IDisposable
 
         foreach (var dynamicLoadConsumer in dynamicLoadConsumers)
         {
-            var (current, netChange) = dynamicLoadConsumer.Rebalance(GridMonitor.CurrentLoad, GridMonitor.AverageLoadSince(_scheduler.Now, dynamicLoadConsumer.MinimumRebalancingInterval), GridMonitor.PeakLoad, GridMonitor.CurrentAverageDemand, dynamicNetChange);
+            var (current, netChange) = dynamicLoadConsumer.Rebalance(GridMonitor, dynamicNetChange);
 
             if (netChange == 0)
                 continue;
@@ -165,8 +165,8 @@ public class EnergyManager : IDisposable
     //TODO: Use linear programming model and estimates of production and consumption to be able to schedule deferred loads in the future.
     private Double StartConsumersIfNeeded(Double dynamicLoadNetChange)
     {
-        var preStartEstimatedLoad = GridMonitor.CurrentLoad + dynamicLoadNetChange;
-        var preStartEstimatedAveragedLoad = GridMonitor.AverageLoadSince(_scheduler.Now, _minimumChangeInterval) + dynamicLoadNetChange;
+        var preStartEstimatedLoad = GridMonitor.CurrentLoadMinusBatteries + dynamicLoadNetChange;
+        var preStartEstimatedAveragedLoad = GridMonitor.AverageLoadMinusBatteriesSince(_scheduler.Now, _minimumChangeInterval) + dynamicLoadNetChange;
         var startNetChange = 0d;
 
         var runningConsumers = Consumers.Where(x => x.State == EnergyConsumerState.Running).ToList();
@@ -235,8 +235,8 @@ public class EnergyManager : IDisposable
 
     private Double StopConsumersIfNeeded(Double dynamicLoadNetChange, Double startLoadNetChange)
     {
-        var estimatedLoad = GridMonitor.CurrentLoad + dynamicLoadNetChange + startLoadNetChange;
-        var estimatedAverageLoad = GridMonitor.AverageLoadSince(_scheduler.Now, TimeSpan.FromMinutes(3)) + dynamicLoadNetChange + startLoadNetChange;
+        var estimatedLoad = GridMonitor.CurrentLoadMinusBatteries + dynamicLoadNetChange + startLoadNetChange;
+        var estimatedAverageLoad = GridMonitor.AverageLoadMinusBatteriesSince(_scheduler.Now, TimeSpan.FromMinutes(3)) + dynamicLoadNetChange + startLoadNetChange;
         var stopNetChange = 0d;
 
         var consumersThatNoLongerNeedEnergy = Consumers.Where(x => x is { State: EnergyConsumerState.Off, Running: true });
@@ -375,7 +375,7 @@ public class EnergyManager : IDisposable
 
         var balancingMethodDropdownName = $"select.energy_consumer_{consumer.Name.MakeHaFriendly()}_balancing_method";
         var balanceOnBehalfOfDropdownName = $"select.energy_consumer_{consumer.Name.MakeHaFriendly()}_balance_on_behalf_of";
-
+        var allowBatteryPowerDropDownName = $"select.energy_consumer_{consumer.Name.MakeHaFriendly()}_allow_battery_power";
         var balancingMethodDropdownOptions = new SelectOptions
         {
             Icon = "mdi:car-turbocharger",
@@ -394,40 +394,59 @@ public class EnergyManager : IDisposable
             Device = GetConsumerDevice(consumer)
         };
 
+        var allowBatteryPowerDropDownOptions = new SelectOptions
+        {
+            Icon = "fapro:battery-bolt",
+            Options = Enum<AllowBatteryPower>.AllValuesAsStringList(),
+            Device = GetConsumerDevice(consumer)
+        };
+
         await _mqttEntityManager.CreateAsync(balancingMethodDropdownName, new EntityCreationOptions(UniqueId: balancingMethodDropdownName, Name: $"Dynamic load balancing method - {consumer.Name}", DeviceClass: "select", Persist: true), balancingMethodDropdownOptions);
         await _mqttEntityManager.SetStateAsync(balancingMethodDropdownName, dynamicLoadConsumer.BalancingMethod.ToString());
 
         await _mqttEntityManager.CreateAsync(balanceOnBehalfOfDropdownName, new EntityCreationOptions(UniqueId: balanceOnBehalfOfDropdownName, Name: $"Balance on behalf of - {consumer.Name}", DeviceClass: "select", Persist: true), balanceOnBehalfOfDropdownOptions);
-        await _mqttEntityManager.SetStateAsync(balanceOnBehalfOfDropdownName, dynamicLoadConsumer.BalanceOnBehalfOf.ToString());
+        await _mqttEntityManager.SetStateAsync(balanceOnBehalfOfDropdownName, dynamicLoadConsumer.BalanceOnBehalfOf);
+
+        await _mqttEntityManager.CreateAsync(allowBatteryPowerDropDownName, new EntityCreationOptions(UniqueId: allowBatteryPowerDropDownName, Name: $"Allow battery power - {consumer.Name}", DeviceClass: "select", Persist: true), allowBatteryPowerDropDownOptions);
+        await _mqttEntityManager.SetStateAsync(allowBatteryPowerDropDownName, dynamicLoadConsumer.AllowBatteryPower.ToString());
 
         var balancingMethodObserver = await _mqttEntityManager.PrepareCommandSubscriptionAsync(balancingMethodDropdownName);
         dynamicLoadConsumer.BalancingMethodChangedCommandHandler = balancingMethodObserver.SubscribeAsync(SetBalancingMethodHandler(consumer, dynamicLoadConsumer, balancingMethodDropdownName));
 
         var balanceOnBehalfOfObserver = await _mqttEntityManager.PrepareCommandSubscriptionAsync(balanceOnBehalfOfDropdownName);
         dynamicLoadConsumer.BalanceOnBehalfOfChangedCommandHandler = balanceOnBehalfOfObserver.SubscribeAsync(SetBalanceOnBehalfOfHandler(consumer, dynamicLoadConsumer, balanceOnBehalfOfDropdownName));
+
+        var allowBatteryPowerObserver = await _mqttEntityManager.PrepareCommandSubscriptionAsync(allowBatteryPowerDropDownName);
+        dynamicLoadConsumer.AllowBatteryPowerChangedCommandHandler = allowBatteryPowerObserver.SubscribeAsync(SetAllowBatteryPower(consumer, dynamicLoadConsumer, balancingMethodDropdownName));
+
     }
 
-    private Func<string, Task> SetBalancingMethodHandler(EnergyConsumer consumer, IDynamicLoadConsumer dynamicLoadConsumer, string selectName)
-    {
-        return async state =>
+    private Func<string, Task> SetBalancingMethodHandler(EnergyConsumer consumer, IDynamicLoadConsumer dynamicLoadConsumer, string selectName) =>
+        async state =>
         {
             _logger.LogDebug("{Consumer}: Setting dynamic load balancing method to {State}.", consumer.Name, state);
             await _mqttEntityManager.SetStateAsync(selectName, state);
             dynamicLoadConsumer.SetBalancingMethod(_scheduler.Now, Enum<BalancingMethod>.Cast(state));
             await DebounceUpdateInHomeAssistant(consumer);
         };
-    }
 
-    private Func<string, Task> SetBalanceOnBehalfOfHandler(EnergyConsumer consumer, IDynamicLoadConsumer dynamicLoadConsumer, string selectName)
-    {
-        return async state =>
+    private Func<string, Task> SetBalanceOnBehalfOfHandler(EnergyConsumer consumer, IDynamicLoadConsumer dynamicLoadConsumer, string selectName) =>
+        async state =>
         {
             _logger.LogDebug("{Consumer}: Setting balance on behalf of to {State}.", consumer.Name, state);
             await _mqttEntityManager.SetStateAsync(selectName, state);
             dynamicLoadConsumer.SetBalanceOnBehalfOf(state);
             await DebounceUpdateInHomeAssistant(consumer);
         };
-    }
+
+    private Func<string, Task> SetAllowBatteryPower(EnergyConsumer consumer, IDynamicLoadConsumer dynamicLoadConsumer, string selectName) =>
+        async state =>
+        {
+            _logger.LogDebug("{Consumer}: Setting allow battery power to {State}.", consumer.Name, state);
+            await _mqttEntityManager.SetStateAsync(selectName, state);
+            dynamicLoadConsumer.SetAllowBatteryPower(Enum<AllowBatteryPower>.Cast(state));
+            await DebounceUpdateInHomeAssistant(consumer);
+        };
 
 
     private void InitializeState(EnergyConsumer consumer)
@@ -444,6 +463,7 @@ public class EnergyManager : IDisposable
 
         dynamicLoadConsumer.SetBalancingMethod(_scheduler.Now, storedEnergyConsumerState.BalancingMethod ?? BalancingMethod.SolarOnly);
         dynamicLoadConsumer.SetBalanceOnBehalfOf(storedEnergyConsumerState.BalanceOnBehalfOf ?? "Self");
+        dynamicLoadConsumer.SetAllowBatteryPower(storedEnergyConsumerState.AllowBatteryPower ?? AllowBatteryPower.No);
     }
 
     public eLime.NetDaemonApps.Domain.Mqtt.Device GetGlobalDevice()

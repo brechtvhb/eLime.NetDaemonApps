@@ -50,6 +50,7 @@ public abstract class EnergyConsumer : IDisposable
 
         fileStorage.BalancingMethod = dynamicLoadConsumer.BalancingMethod;
         fileStorage.BalanceOnBehalfOf = dynamicLoadConsumer.BalanceOnBehalfOf;
+        fileStorage.AllowBatteryPower = dynamicLoadConsumer.AllowBatteryPower;
 
         return fileStorage;
     }

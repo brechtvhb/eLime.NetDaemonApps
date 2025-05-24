@@ -49,6 +49,7 @@ public class EnergyManagerBuilder
     {
 
         var x = new EnergyManager(_testCtx.HaContext, _logger, _scheduler, _mqttEntityManager, _fileStorage, _gridMonitor, _remainingSolarProductionToday, _consumers, _phoneToNotify, TimeSpan.Zero);
+
         return x;
     }
 }

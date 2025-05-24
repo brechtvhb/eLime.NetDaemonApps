@@ -32,6 +32,8 @@ public class CarChargerEnergyConsumerTests
         A.CallTo(() => _gridMonitor.PeakLoad).Returns(4000);
         A.CallTo(() => _gridMonitor.CurrentLoad).Returns(-2000);
         A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-2000);
+        A.CallTo(() => _gridMonitor.CurrentLoadMinusBatteries).Returns(-2000);
+        A.CallTo(() => _gridMonitor.AverageLoadMinusBatteriesSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-2000);
         _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.voltage"), "230");
     }
 
@@ -174,8 +176,8 @@ public class CarChargerEnergyConsumerTests
         _testCtx.TriggerStateChange(consumer.StateSensor, "Charging");
         _testCtx.TriggerStateChange(consumer.CurrentEntity, "6");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(15));
-        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(-600);
-        A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-600);
+        A.CallTo(() => _gridMonitor.CurrentLoadMinusBatteries).Returns(-600);
+        A.CallTo(() => _gridMonitor.AverageLoadMinusBatteriesSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-600);
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(10));
 
         //Assert
@@ -204,8 +206,8 @@ public class CarChargerEnergyConsumerTests
         _testCtx.TriggerStateChange(consumer.StateSensor, "Charging");
         _testCtx.TriggerStateChange(consumer.CurrentEntity, "16");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(15));
-        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(800);
-        A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(800);
+        A.CallTo(() => _gridMonitor.CurrentLoadMinusBatteries).Returns(800);
+        A.CallTo(() => _gridMonitor.AverageLoadMinusBatteriesSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(800);
 
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(10));
 
@@ -235,8 +237,8 @@ public class CarChargerEnergyConsumerTests
         //Act
         _testCtx.TriggerStateChange(consumer.StateSensor, "Charging");
         _testCtx.TriggerStateChange(consumer.CurrentEntity, "6");
-        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(1200);
-        A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(1200);
+        A.CallTo(() => _gridMonitor.CurrentLoadMinusBatteries).Returns(1200);
+        A.CallTo(() => _gridMonitor.AverageLoadMinusBatteriesSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(1200);
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(10));
 
         //Assert
@@ -266,12 +268,12 @@ public class CarChargerEnergyConsumerTests
         //Act
         _testCtx.TriggerStateChange(consumer.StateSensor, "Charging");
         _testCtx.TriggerStateChange(consumer.CurrentEntity, "6");
-        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(1200);
-        A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(1200);
+        A.CallTo(() => _gridMonitor.CurrentLoadMinusBatteries).Returns(1200);
+        A.CallTo(() => _gridMonitor.AverageLoadMinusBatteriesSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(1200);
         _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(3));
 
-        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(1201);
-        A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(1201);
+        A.CallTo(() => _gridMonitor.CurrentLoadMinusBatteries).Returns(1201);
+        A.CallTo(() => _gridMonitor.AverageLoadMinusBatteriesSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(1201);
         _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(3));
 
         //Assert
@@ -300,15 +302,15 @@ public class CarChargerEnergyConsumerTests
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(10));
 
         _testCtx.TriggerStateChange(consumer.StateSensor, "Charging");
-        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(800);
-        A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(800);
+        A.CallTo(() => _gridMonitor.CurrentLoadMinusBatteries).Returns(800);
+        A.CallTo(() => _gridMonitor.AverageLoadMinusBatteriesSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(800);
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(15));
 
         //Act
         _testCtx.TriggerStateChange(consumer.CurrentEntity, "12");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(10));
-        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(-110);
-        A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-110);
+        A.CallTo(() => _gridMonitor.CurrentLoadMinusBatteries).Returns(-110);
+        A.CallTo(() => _gridMonitor.AverageLoadMinusBatteriesSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-110);
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(15));
 
         //Assert
@@ -448,8 +450,8 @@ public class CarChargerEnergyConsumerTests
 
         //Act
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(15));
-        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(800);
-        A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-900);
+        A.CallTo(() => _gridMonitor.CurrentLoadMinusBatteries).Returns(800);
+        A.CallTo(() => _gridMonitor.AverageLoadMinusBatteriesSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-900);
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(10));
 
         //Assert
@@ -520,8 +522,8 @@ public class CarChargerEnergyConsumerTests
 
         //Act
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(15));
-        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(-900);
-        A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-900);
+        A.CallTo(() => _gridMonitor.CurrentLoadMinusBatteries).Returns(-900);
+        A.CallTo(() => _gridMonitor.AverageLoadMinusBatteriesSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-900);
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(10));
 
         //Assert
@@ -558,8 +560,8 @@ public class CarChargerEnergyConsumerTests
 
         //Act
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(10));
-        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(-1500);
-        A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-1500);
+        A.CallTo(() => _gridMonitor.CurrentLoadMinusBatteries).Returns(-1500);
+        A.CallTo(() => _gridMonitor.AverageLoadMinusBatteriesSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-1500);
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(15));
 
         //Assert
@@ -597,8 +599,8 @@ public class CarChargerEnergyConsumerTests
 
         //Act
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(10));
-        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(900);
-        A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(900);
+        A.CallTo(() => _gridMonitor.CurrentLoadMinusBatteries).Returns(900);
+        A.CallTo(() => _gridMonitor.AverageLoadMinusBatteriesSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(900);
 
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(15));
 
@@ -638,8 +640,8 @@ public class CarChargerEnergyConsumerTests
 
         //Act
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(15));
-        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(900);
-        A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(900);
+        A.CallTo(() => _gridMonitor.CurrentLoadMinusBatteries).Returns(900);
+        A.CallTo(() => _gridMonitor.AverageLoadMinusBatteriesSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(900);
 
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(10));
 
@@ -678,8 +680,8 @@ public class CarChargerEnergyConsumerTests
         _testCtx.TriggerStateChange(consumer.PowerUsage, "4000");
 
         //Act
-        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(800);
-        A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(800);
+        A.CallTo(() => _gridMonitor.CurrentLoadMinusBatteries).Returns(800);
+        A.CallTo(() => _gridMonitor.AverageLoadMinusBatteriesSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(800);
 
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(30));
 
@@ -719,8 +721,8 @@ public class CarChargerEnergyConsumerTests
 
         //Act
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(10));
-        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(-900);
-        A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-900);
+        A.CallTo(() => _gridMonitor.CurrentLoadMinusBatteries).Returns(-900);
+        A.CallTo(() => _gridMonitor.AverageLoadMinusBatteriesSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-900);
 
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(15));
 
@@ -758,21 +760,109 @@ public class CarChargerEnergyConsumerTests
         _testCtx.TriggerStateChange(consumer.Cars.First().ChargerSwitch, "on");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(10));
         _testCtx.TriggerStateChange(consumer.PowerUsage, "4000");
-        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(-900);
-        A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-900);
+        A.CallTo(() => _gridMonitor.CurrentLoadMinusBatteries).Returns(-900);
+        A.CallTo(() => _gridMonitor.AverageLoadMinusBatteriesSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-900);
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(15));
 
         //Act
         _testCtx.TriggerStateChange(consumer.Cars.First().CurrentEntity, "8");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(10));
         _testCtx.TriggerStateChange(consumer.PowerUsage, "5400");
-        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(600);
-        A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(600);
+        A.CallTo(() => _gridMonitor.CurrentLoadMinusBatteries).Returns(600);
+        A.CallTo(() => _gridMonitor.AverageLoadMinusBatteriesSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(600);
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(15));
 
         //Assert
         _testCtx.InputNumberChanged(consumer.Cars.First().CurrentEntity, 8, Moq.Times.Once);
         _testCtx.InputNumberChanged(consumer.Cars.First().CurrentEntity, 7, Moq.Times.Never);
         _testCtx.InputNumberChanged(consumer.Cars.First().CurrentEntity, 9, Moq.Times.Never);
+    }
+
+    [TestMethod]
+    public void Battery_ChargePower_Is_Included()
+    {
+        // Arrange
+        var consumer = new CarChargerEnergyConsumerBuilder(_logger, _testCtx)
+            .WithRuntime(TimeSpan.FromMinutes(5), null)
+            .InitTeslaTests()
+            .Build();
+
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
+            .AddConsumer(consumer)
+            .Build();
+
+        _testCtx.TriggerStateChange(consumer.StateSensor, "Occupied");
+        _testCtx.TriggerStateChange(consumer.Cars.First().ChargingStateSensor, "no_power");
+        _testCtx.TriggerStateChange(consumer.Cars.First().CableConnectedSensor, "on");
+        _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "5");
+        _testCtx.TriggerStateChange(consumer.Cars.First().MaxBatteryPercentageSensor, "80");
+        _testCtx.TriggerStateChange(consumer.Cars.First().Location, "home");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
+        consumer.SetBalancingMethod(_testCtx.Scheduler.Now, BalancingMethod.SolarOnly);
+        consumer.SetAllowBatteryPower(AllowBatteryPower.Yes);
+
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
+
+        _testCtx.TriggerStateChange(consumer.StateSensor, "Charging");
+        _testCtx.TriggerStateChange(consumer.CurrentEntity, "16");
+        _testCtx.TriggerStateChange(consumer.Cars.First().ChargingStateSensor, "charging");
+        _testCtx.TriggerStateChange(consumer.Cars.First().CurrentEntity, "6");
+        _testCtx.TriggerStateChange(consumer.Cars.First().ChargerSwitch, "on");
+        _testCtx.TriggerStateChange(consumer.PowerUsage, "4000");
+
+        //Act
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(10));
+        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(0);
+        A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(0);
+        A.CallTo(() => _gridMonitor.CurrentLoadMinusBatteries).Returns(-1800);
+        A.CallTo(() => _gridMonitor.AverageLoadMinusBatteriesSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-1800);
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(15));
+
+        //Assert
+        _testCtx.InputNumberChanged(consumer.Cars.First().CurrentEntity, 8, Moq.Times.Never);
+    }
+
+    [TestMethod]
+    public void Battery_DischargePower_Is_Included()
+    {
+        // Arrange
+        var consumer = new CarChargerEnergyConsumerBuilder(_logger, _testCtx)
+            .WithRuntime(TimeSpan.FromMinutes(5), null)
+            .InitTeslaTests()
+            .Build();
+
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
+            .AddConsumer(consumer)
+            .Build();
+
+        _testCtx.TriggerStateChange(consumer.StateSensor, "Occupied");
+        _testCtx.TriggerStateChange(consumer.Cars.First().ChargingStateSensor, "no_power");
+        _testCtx.TriggerStateChange(consumer.Cars.First().CableConnectedSensor, "on");
+        _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "5");
+        _testCtx.TriggerStateChange(consumer.Cars.First().MaxBatteryPercentageSensor, "80");
+        _testCtx.TriggerStateChange(consumer.Cars.First().Location, "home");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
+        consumer.SetBalancingMethod(_testCtx.Scheduler.Now, BalancingMethod.SolarOnly);
+        consumer.SetAllowBatteryPower(AllowBatteryPower.Yes);
+
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
+
+        _testCtx.TriggerStateChange(consumer.StateSensor, "Charging");
+        _testCtx.TriggerStateChange(consumer.CurrentEntity, "16");
+        _testCtx.TriggerStateChange(consumer.Cars.First().ChargingStateSensor, "charging");
+        _testCtx.TriggerStateChange(consumer.Cars.First().CurrentEntity, "6");
+        _testCtx.TriggerStateChange(consumer.Cars.First().ChargerSwitch, "on");
+        _testCtx.TriggerStateChange(consumer.PowerUsage, "4000");
+
+        //Act
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(10));
+        A.CallTo(() => _gridMonitor.CurrentLoad).Returns(-900);
+        A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-900);
+        A.CallTo(() => _gridMonitor.CurrentLoadMinusBatteries).Returns(900);
+        A.CallTo(() => _gridMonitor.AverageLoadMinusBatteriesSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(900);
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(15));
+
+        //Assert
+        _testCtx.InputNumberChanged(consumer.Cars.First().CurrentEntity, 4, Moq.Times.Never);
     }
 }

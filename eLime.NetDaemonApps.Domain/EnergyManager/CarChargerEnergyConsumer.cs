@@ -11,11 +11,13 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 {
     public IDisposable? BalancingMethodChangedCommandHandler { get; set; }
     public IDisposable? BalanceOnBehalfOfChangedCommandHandler { get; set; }
+    public IDisposable? AllowBatteryPowerChangedCommandHandler { get; set; }
     private readonly IScheduler _scheduler;
 
     public Int32 MinimumCurrent { get; set; }
     public Int32 MaximumCurrent { get; set; }
     public BalancingMethod BalancingMethod { get; private set; }
+    public AllowBatteryPower AllowBatteryPower { get; private set; }
     public string BalanceOnBehalfOf { get; private set; }
 
     public double ReleasablePowerWhenBalancingOnBehalfOf => CurrentLoad - (MinimumCurrentForConnectedCar * TotalVoltage);
@@ -86,15 +88,24 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
     {
         BalanceOnBehalfOf = balanceOnBehalfOf;
     }
+    public void SetAllowBatteryPower(AllowBatteryPower allowBatteryPower)
+    {
+        AllowBatteryPower = allowBatteryPower;
+    }
 
-    public (Double current, Double netPowerChange) Rebalance(double netGridUsage, double trailingNetGridUsage, double peakUsage, double currentAverageDemand, double totalNetChange)
+    public (Double current, Double netPowerChange) Rebalance(IGridMonitor gridMonitor, double totalNetChange)
     {
         if (_lastCurrentChange?.Add(MinimumRebalancingInterval) > _scheduler.Now)
             return (0, 0);
 
         var currentChargerCurrent = CurrentEntity.State ?? 0;
 
-        var currentAdjustment = GetBalancingAdjustedGridCurrent(netGridUsage + totalNetChange, trailingNetGridUsage + totalNetChange, peakUsage, currentAverageDemand);
+        var currentLoad = AllowBatteryPower == AllowBatteryPower.Yes ? gridMonitor.CurrentLoad : gridMonitor.CurrentLoadMinusBatteries;
+        var averagedLoad = AllowBatteryPower == AllowBatteryPower.Yes
+            ? gridMonitor.AverageLoadSince(_scheduler.Now, MinimumRebalancingInterval)
+            : gridMonitor.AverageLoadMinusBatteriesSince(_scheduler.Now, MinimumRebalancingInterval);
+
+        var currentAdjustment = GetBalancingAdjustedGridCurrent(currentLoad + totalNetChange, averagedLoad + totalNetChange, gridMonitor.PeakLoad, gridMonitor.CurrentAverageDemand);
 
         double toBeChargerCurrent;
         double toBeCarCurrent = 0;
