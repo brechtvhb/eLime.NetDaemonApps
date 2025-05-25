@@ -144,7 +144,6 @@ public class BatteryTests
         _testCtx.TriggerStateChange(consumer.PowerUsage, "4000");
 
         //Act
-        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(10));
         A.CallTo(() => _gridMonitor.CurrentLoad).Returns(0);
         A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(0);
         A.CallTo(() => _gridMonitor.CurrentLoadMinusBatteries).Returns(-1800);
