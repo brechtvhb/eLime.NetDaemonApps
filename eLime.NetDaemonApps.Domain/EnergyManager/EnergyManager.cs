@@ -435,7 +435,7 @@ public class EnergyManager : IDisposable
         dynamicLoadConsumer.BalanceOnBehalfOfChangedCommandHandler = balanceOnBehalfOfObserver.SubscribeAsync(SetBalanceOnBehalfOfHandler(consumer, dynamicLoadConsumer, balanceOnBehalfOfDropdownName));
 
         var allowBatteryPowerObserver = await _mqttEntityManager.PrepareCommandSubscriptionAsync(allowBatteryPowerDropDownName);
-        dynamicLoadConsumer.AllowBatteryPowerChangedCommandHandler = allowBatteryPowerObserver.SubscribeAsync(SetAllowBatteryPower(consumer, dynamicLoadConsumer, balancingMethodDropdownName));
+        dynamicLoadConsumer.AllowBatteryPowerChangedCommandHandler = allowBatteryPowerObserver.SubscribeAsync(SetAllowBatteryPower(consumer, dynamicLoadConsumer, allowBatteryPowerDropDownName));
 
     }
 
