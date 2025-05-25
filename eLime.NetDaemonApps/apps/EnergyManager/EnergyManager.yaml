@@ -78,13 +78,11 @@
     batteries:
     - name: "Marstek Venus E - 1"
       capacity: 5.12
-      initialStateOfCharge: 80
       maxChargePower: 2500
       maxDischargePower: 800
+      powerSensor: "sensor.battery_marstek_venus_e_1_power"
       stateOfChargeSensor: "sensor.battery_marstek_venus_e_1_soc"
-      chargePowerSensor: "sensor.battery_marstek_venus_e_1_charge_power"
-      dischargePowerSensor: "sensor.battery_marstek_venus_e_1_discharge_power"
       totalEnergyChargedSensor: "sensor.battery_marstek_venus_e_1_total_energy_charged"
       totalEnergyDischargedSensor: "sensor.battery_marstek_venus_e_1_total_energy_discharged"
-      chargePowerEntity: "number.battery_marstek_venus_e_1_charge_power"
-      dischargePowerEntity: "number.battery_marstek_venus_e_1_discharge_power"
+      maxChargePowerEntity: "number.battery_marstek_venus_e_1_charge_power"
+      maxDischargePowerEntity: "number.battery_marstek_venus_e_1_discharge_power"

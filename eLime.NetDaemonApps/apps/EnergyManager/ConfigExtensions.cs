@@ -26,6 +26,8 @@ public static class ConfigExtensions
         var phoneToNotify = config.PhoneToNotify;
 
         var consumers = new List<EnergyConsumer>();
+        var batteries = new List<Battery>();
+
         foreach (var consumer in config.Consumers)
         {
             var powerUsageEntity = new NumericEntity(ha, consumer.PowerUsageEntity);
@@ -90,6 +92,21 @@ public static class ConfigExtensions
                 consumers.Add(energyConsumer);
         }
 
+        foreach (var batteryConfig in config.BatteryManager.Batteries)
+        {
+            var powerSensor = new NumericEntity(ha, batteryConfig.PowerSensor);
+            var stateOfChargeSensor = new NumericEntity(ha, batteryConfig.StateOfChargeSensor);
+            var totalEnergyChargedSensor = new NumericEntity(ha, batteryConfig.StateOfChargeSensor);
+            var totalEnergyDischargedSensor = new NumericEntity(ha, batteryConfig.StateOfChargeSensor);
+            var maxChargePowerEntity = new InputNumberEntity(ha, batteryConfig.MaxChargePowerEntity);
+            var maxDischargePowerEntity = new InputNumberEntity(ha, batteryConfig.MaxDischargePowerEntity);
+
+            var battery = new Battery(logger, scheduler, batteryConfig.Name, batteryConfig.Capacity, batteryConfig.MaxChargePower, batteryConfig.MaxDischargePower,
+                powerSensor, stateOfChargeSensor, totalEnergyChargedSensor, totalEnergyDischargedSensor, maxChargePowerEntity, maxDischargePowerEntity, [], config.Timezone);
+
+            batteries.Add(battery);
+        }
+
         var gridVoltage = new NumericEntity(ha, config.Grid.VoltageEntity);
         var gridImport = NumericSensor.Create(ha, config.Grid.ImportEntity);
         var gridExport = NumericSensor.Create(ha, config.Grid.ExportEntity);
@@ -99,7 +116,7 @@ public static class ConfigExtensions
         var totalBatteryDischargePower = NumericSensor.Create(ha, config.BatteryManager.TotalDischargePowerSensor);
         var gridMonitor = new GridMonitor(scheduler, gridVoltage, gridImport, gridExport, gridPeakImport, gridCurrentAverageDemand, totalBatteryChargePower, totalBatteryDischargePower);
 
-        var entity = new Domain.EnergyManager.EnergyManager(ha, logger, scheduler, mqttEntityManager, fileStorage, gridMonitor, new NumericEntity(ha, config.SolarProductionRemainingTodayEntity), consumers, phoneToNotify, TimeSpan.FromSeconds(2));
+        var entity = new Domain.EnergyManager.EnergyManager(ha, logger, scheduler, mqttEntityManager, fileStorage, gridMonitor, new NumericEntity(ha, config.SolarProductionRemainingTodayEntity), consumers, batteries, phoneToNotify, TimeSpan.FromSeconds(2));
         return entity;
     }
 

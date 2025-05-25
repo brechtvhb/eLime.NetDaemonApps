@@ -23,6 +23,8 @@ public class EnergyManager : IDisposable
     public Service Services { get; }
 
     public List<EnergyConsumer> Consumers { get; }
+    public List<Battery> Batteries { get; }
+
     private readonly IHaContext _haContext;
     private readonly ILogger _logger;
     private readonly IScheduler _scheduler;
@@ -41,7 +43,7 @@ public class EnergyManager : IDisposable
                 ? EnergyConsumerState.Running
                 : EnergyConsumerState.Off;
 
-    public EnergyManager(IHaContext haContext, ILogger logger, IScheduler scheduler, IMqttEntityManager mqttEntityManager, IFileStorage fileStorage, IGridMonitor gridMonitor, NumericEntity solarProductionRemainingTodaySensor, List<EnergyConsumer> energyConsumers, string? phoneToNotify, TimeSpan debounceDuration)
+    public EnergyManager(IHaContext haContext, ILogger logger, IScheduler scheduler, IMqttEntityManager mqttEntityManager, IFileStorage fileStorage, IGridMonitor gridMonitor, NumericEntity solarProductionRemainingTodaySensor, List<EnergyConsumer> energyConsumers, List<Battery> batteries, string? phoneToNotify, TimeSpan debounceDuration)
     {
         _haContext = haContext;
         _logger = logger;
@@ -56,7 +58,7 @@ public class EnergyManager : IDisposable
         PhoneToNotify = phoneToNotify;
 
         Consumers = energyConsumers;
-
+        Batteries = batteries;
         InitializeStateSensor().RunSync();
         foreach (var energyConsumer in Consumers)
         {
@@ -132,6 +134,7 @@ public class EnergyManager : IDisposable
             var dynamicNetChange = AdjustDynamicLoadsIfNeeded();
             var startNetChange = StartConsumersIfNeeded(dynamicNetChange);
             var stopNetChange = StopConsumersIfNeeded(dynamicNetChange, startNetChange);
+            ManageBatteriesIfNeeded();
 
             if (dynamicNetChange != 0 || startNetChange != 0 || stopNetChange != 0)
                 _lastChange = _scheduler.Now;
@@ -302,6 +305,21 @@ public class EnergyManager : IDisposable
 
 
         return stopNetChange;
+    }
+
+    private void ManageBatteriesIfNeeded()
+    {
+        var canDischarge = Consumers.Where(x => x.Running).OfType<IDynamicLoadConsumer>().Any(x => x.AllowBatteryPower == AllowBatteryPower.Yes);
+        if (canDischarge)
+        {
+            foreach (var battery in Batteries.Where(battery => !battery.CanDischarge))
+                battery.EnableDischarging();
+        }
+        else
+        {
+            foreach (var battery in Batteries.Where(battery => battery.CanDischarge))
+                battery.DisableDischarging();
+        }
     }
 
     private double GetDynamicLoadThatCanBeScaledDownOnBehalfOf(EnergyConsumer? consumer, Double dynamicLoadNetChange)
@@ -515,6 +533,11 @@ public class EnergyManager : IDisposable
             _fileStorage.Save("EnergyManager", $"{consumer.Name.MakeHaFriendly()}", consumer.ToFileStorage());
 
             _logger.LogTrace("{Consumer}: Updated Consumer state sensors in home assistant.", consumer.Name);
+        }
+
+        foreach (var battery in Batteries)
+        {
+            _fileStorage.Save("EnergyManager", $"{battery.Name.MakeHaFriendly()}", battery.ToFileStorage());
         }
     }
 

@@ -20,7 +20,6 @@ public class CarChargerEnergyConsumerBuilder
     private BinarySensor? _criticallyNeeded;
     private Double _switchOnLoad;
     private Double _switchOffLoad;
-    private AllowBatteryPower _allowBatteryPower = AllowBatteryPower.No;
 
     private TimeSpan? _minimumRuntime;
     private TimeSpan? _maximumRuntime;
@@ -32,6 +31,7 @@ public class CarChargerEnergyConsumerBuilder
     public int _minimumCurrent;
     public int _maximumCurrent;
     public int _offCurrent;
+    private AllowBatteryPower _allowBatteryPower = AllowBatteryPower.No;
     private BalancingMethod _balancingMethod = BalancingMethod.SolarOnly;
 
     public InputNumberEntity _currentEntity;

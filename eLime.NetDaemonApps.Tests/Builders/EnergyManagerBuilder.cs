@@ -24,6 +24,7 @@ public class EnergyManagerBuilder
 
 
     private List<EnergyConsumer> _consumers;
+    private List<Battery> _batteries;
 
     public EnergyManagerBuilder(AppTestContext testCtx, ILogger logger, IMqttEntityManager mqttEntityManager, IFileStorage fileStorage, IScheduler scheduler, IGridMonitor gridMonitor)
     {
@@ -36,6 +37,7 @@ public class EnergyManagerBuilder
 
         _phoneToNotify = "brecht";
         _consumers = [];
+        _batteries = [];
     }
 
     public EnergyManagerBuilder AddConsumer(EnergyConsumer consumer)
@@ -45,10 +47,17 @@ public class EnergyManagerBuilder
         return this;
     }
 
+    public EnergyManagerBuilder AddBattery(Battery battery)
+    {
+        _batteries.Add(battery);
+
+        return this;
+    }
+
     public EnergyManager Build()
     {
 
-        var x = new EnergyManager(_testCtx.HaContext, _logger, _scheduler, _mqttEntityManager, _fileStorage, _gridMonitor, _remainingSolarProductionToday, _consumers, _phoneToNotify, TimeSpan.Zero);
+        var x = new EnergyManager(_testCtx.HaContext, _logger, _scheduler, _mqttEntityManager, _fileStorage, _gridMonitor, _remainingSolarProductionToday, _consumers, _batteries, _phoneToNotify, TimeSpan.Zero);
 
         return x;
     }

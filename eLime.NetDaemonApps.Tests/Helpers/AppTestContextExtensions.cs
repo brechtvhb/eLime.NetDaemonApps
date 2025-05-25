@@ -109,6 +109,14 @@ public static class AppTestContextExtensions
     {
         ctx.HaContextMock.Verify(c => c.CallService("input_number", "set_value", It.Is<ServiceTarget>(s => Match(entity.EntityId, s)), It.Is<InputNumberSetValueParameters>(x => x.Value == value)), times);
     }
+    public static void NumberChanged(this AppTestContext ctx, InputNumberEntity entity, Double value, Func<Times> times)
+    {
+        ctx.HaContextMock.Verify(c => c.CallService("number", "set_value", It.Is<ServiceTarget>(s => Match(entity.EntityId, s)), It.Is<InputNumberSetValueParameters>(x => x.Value == value)), times);
+    }
+    public static void NumberChanged(this AppTestContext ctx, InputNumberEntity entity, Double value, Times times)
+    {
+        ctx.HaContextMock.Verify(c => c.CallService("number", "set_value", It.Is<ServiceTarget>(s => Match(entity.EntityId, s)), It.Is<InputNumberSetValueParameters>(x => x.Value == value)), times);
+    }
 
     private static bool Match(string s, ServiceTarget x)
     {

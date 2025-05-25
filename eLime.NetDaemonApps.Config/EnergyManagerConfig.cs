@@ -28,18 +28,17 @@ public class BatteryConfig
 {
     public string Name { get; set; }
     public decimal Capacity { get; set; } //in kWh
-    public int InitialStateOfCharge { get; set; } //Needed to calculate round trip efficiency properly
+    //public int InitialStateOfCharge { get; set; } nope, recalculate RTE everytime battery percentage hits 11%?
     public int MaxChargePower { get; set; }
     public int MaxDischargePower { get; set; }
+    public string PowerSensor { get; set; }
     public string StateOfChargeSensor { get; set; }
-    public string ChargePowerSensor { get; set; }
-    public string DischargePowerSensor { get; set; }
     public string TotalEnergyChargedSensor { get; set; }
     public string TotalEnergyDischargedSensor { get; set; }
 
-    public string ChargePowerEntity { get; set; }
-    public string DischargePowerEntity { get; set; }
+    public string MaxChargePowerEntity { get; set; }
+    public string MaxDischargePowerEntity { get; set; }
 
-    //to generate: OperatingMode (BalanceToZero, ImportOnly, ExportOnly, Manual, Off), ReservedPeakShavingStateOfCharge, RoundTripEfficiency
+    //to generate: OperatingMode (Automatic, Manual), ReservedPeakShavingStateOfCharge, RoundTripEfficiency
 
 }
