@@ -309,7 +309,7 @@ public class EnergyManager : IDisposable
 
     private void ManageBatteriesIfNeeded()
     {
-        var canDischarge = Consumers.Where(x => x.Running).OfType<IDynamicLoadConsumer>().Any(x => x.AllowBatteryPower == AllowBatteryPower.Yes);
+        var canDischarge = Consumers.Where(x => x.Running).OfType<IDynamicLoadConsumer>().All(x => x.AllowBatteryPower != AllowBatteryPower.No);
         if (canDischarge)
         {
             foreach (var battery in Batteries.Where(battery => !battery.CanDischarge))
