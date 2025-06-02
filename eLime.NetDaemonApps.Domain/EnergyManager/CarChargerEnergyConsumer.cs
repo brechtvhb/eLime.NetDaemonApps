@@ -140,12 +140,13 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         var currentAdjustment = BalancingMethod switch
         {
             _ when CriticallyNeeded?.IsOn() == true => GetNearPeakAdjustedGridCurrent(netGridUsage, peakUsage),
+            BalancingMethod.MaximizeQuarterPeak => GetMaximizeQuarterPeakAdjustedGridCurrent(netGridUsage, peakUsage, currentAverageDemand),
             BalancingMethod.NearPeak => GetNearPeakAdjustedGridCurrent(netGridUsage, peakUsage),
             BalancingMethod.MidPeak => GetMidPeakAdjustedGridCurrent(trailingNetGridUsage, peakUsage),
             BalancingMethod.SolarPreferred => GetSolarPreferredAdjustedGridCurrent(trailingNetGridUsage),
             BalancingMethod.MidPoint => GetMidpointAdjustedGridCurrent(trailingNetGridUsage),
-            BalancingMethod.MaximizeQuarterPeak => GetMaximizeQuarterPeakAdjustedGridCurrent(netGridUsage, peakUsage, currentAverageDemand),
-            _ => GetSolarOnlyAdjustedGridCurrent(trailingNetGridUsage)
+            BalancingMethod.SolarSurplus => GetSolarSurplusAdjustedGridCurrent(trailingNetGridUsage),
+            _ => GetSolarOnlyAdjustedGridCurrent(trailingNetGridUsage),
         };
 
         return currentAdjustment;
@@ -179,7 +180,6 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 
     public double GetMidPeakAdjustedGridCurrent(double trailingNetGridUsage, double peakUsageThisMonth)
     {
-        var midPoint = TotalVoltage * 0.5;
         var currentDifference = (trailingNetGridUsage - peakUsageThisMonth / 2) / TotalVoltage;
 
         return currentDifference is < 0.70 and > -0.70d
@@ -208,6 +208,15 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
     private double GetSolarOnlyAdjustedGridCurrent(double trailingNetGridUsage)
     {
         var currentDifference = trailingNetGridUsage / TotalVoltage;
+
+        return currentDifference is < 0.20 and > -1.15d
+            ? 0
+            : Math.Round(currentDifference, 0, MidpointRounding.ToPositiveInfinity);
+    }
+
+    private double GetSolarSurplusAdjustedGridCurrent(double trailingNetGridUsage)
+    {
+        var currentDifference = (trailingNetGridUsage - TotalVoltage) / TotalVoltage;
 
         return currentDifference is < 0.20 and > -1.15d
             ? 0
