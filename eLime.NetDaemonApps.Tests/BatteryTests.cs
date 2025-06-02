@@ -98,7 +98,7 @@ public class BatteryTests
         A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(0);
         A.CallTo(() => _gridMonitor.CurrentLoadMinusBatteries).Returns(-1800);
         A.CallTo(() => _gridMonitor.AverageLoadMinusBatteriesSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-1800);
-        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(15));
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(25));
 
         //Assert
         _testCtx.NumberChanged(battery.MaxDischargePowerEntity, 0, Moq.Times.Once);
