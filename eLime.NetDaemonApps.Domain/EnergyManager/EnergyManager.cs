@@ -30,7 +30,7 @@ public class EnergyManager : IDisposable
     private readonly IScheduler _scheduler;
     private readonly IMqttEntityManager _mqttEntityManager;
     private readonly IFileStorage _fileStorage;
-    private readonly TimeSpan _minimumChangeInterval = TimeSpan.FromSeconds(20);
+    private readonly TimeSpan _minimumChangeInterval = TimeSpan.FromSeconds(30);
 
     private DateTimeOffset _lastChange = DateTimeOffset.MinValue;
     private IDisposable? GuardTask { get; }
