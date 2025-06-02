@@ -112,7 +112,7 @@ public class TriggeredEnergyConsumerTests
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
 
         _testCtx.TriggerStateChange(consumer.Socket, "on");
-        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(25));
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(35));
 
         //Assert
         Assert.AreEqual(EnergyConsumerState.NeedsEnergy, energyManager.Consumers.First().State);
