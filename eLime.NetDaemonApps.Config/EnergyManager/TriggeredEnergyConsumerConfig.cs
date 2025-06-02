@@ -16,6 +16,7 @@ public class TriggeredEnergyConsumerConfig
 
 }
 
+//TODO: Rename this shit
 public class State
 {
     public string Name { get; set; }

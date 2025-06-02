@@ -7,15 +7,10 @@ using System.Globalization;
 namespace eLime.NetDaemonApps.Domain.SmartHeatPump;
 
 #pragma warning disable CS8618, CS9264
-public class SmartHeatPumpEntities(IMqttEntityManager mqttEntityManager) : IDisposable
+public class SmartHeatPumpMqttEntities(IMqttEntityManager mqttEntityManager) : IDisposable
 {
     private const string smartGridReadyModeSelectName = "select.heat_pump_smart_grid_ready_mode";
     private const string sourceTemperatureSensorName = "sensor.heat_pump_source_temperature";
-
-    private const string heatConsumedTodaySensorName = "sensor.heat_pump_heat_consumed_today";
-    private const string heatProducedTodaySensorName = "sensor.heat_pump_heat_produced_today";
-    private const string hotWaterConsumedTodaySensorName = "sensor.heat_pump_hot_water_consumed_today";
-    private const string hotWaterProducedTodaySensorName = "sensor.heat_pump_hot_water_produced_today";
 
     private const string heatCoefficientOfPerformanceSensorName = "sensor.heat_pump_heat_coefficient_of_performance";
     private const string hotWaterCoefficientOfPerformanceSensorName = "sensor.heat_pump_hot_water_coefficient_of_performance";
@@ -48,19 +43,6 @@ public class SmartHeatPumpEntities(IMqttEntityManager mqttEntityManager) : IDisp
             Device = GetDevice()
         };
         await mqttEntityManager.CreateAsync(sourceTemperatureSensorName, new EntityCreationOptions(UniqueId: sourceTemperatureSensorName, Name: "Source temperature", DeviceClass: "temperature", Persist: true), sourceTemperatureSensorOptions);
-
-        //Not sure yet if I want to expose these sensors
-        //var energySensorOptions = new NumericSensorOptions
-        //{
-        //    StateClass = "total",
-        //    UnitOfMeasurement = "kWh",
-        //    Icon = "fapro:meter-bolt",
-        //    Device = GetDevice()
-        //};
-        //await mqttEntityManager.CreateAsync(heatConsumedTodaySensorName, new EntityCreationOptions(UniqueId: heatConsumedTodaySensorName, Name: "Heat consumed today", DeviceClass: "energy", Persist: true), energySensorOptions);
-        //await mqttEntityManager.CreateAsync(heatProducedTodaySensorName, new EntityCreationOptions(UniqueId: heatProducedTodaySensorName, Name: "Heat produced today", DeviceClass: "energy", Persist: true), energySensorOptions);
-        //await mqttEntityManager.CreateAsync(hotWaterConsumedTodaySensorName, new EntityCreationOptions(UniqueId: hotWaterConsumedTodaySensorName, Name: "Hot water consumed today", DeviceClass: "energy", Persist: true), energySensorOptions);
-        //await mqttEntityManager.CreateAsync(hotWaterProducedTodaySensorName, new EntityCreationOptions(UniqueId: hotWaterProducedTodaySensorName, Name: "Hot water produced today", DeviceClass: "energy", Persist: true), energySensorOptions);
 
         var coefficientOfPerformanceSensorOptions = new NumericSensorOptions
         {
@@ -95,11 +77,6 @@ public class SmartHeatPumpEntities(IMqttEntityManager mqttEntityManager) : IDisp
 
         await mqttEntityManager.SetStateAsync(smartGridReadyModeSelectName, state.SmartGridReadyMode.ToString());
         await mqttEntityManager.SetStateAsync(sourceTemperatureSensorName, state.SourceTemperature.ToString("N", new NumberFormatInfo { NumberDecimalSeparator = "." }));
-
-        //await mqttEntityManager.SetStateAsync(heatConsumedTodaySensorName, state.HeatConsumedToday.ToString("N", new NumberFormatInfo { NumberDecimalSeparator = "." }));
-        //await mqttEntityManager.SetStateAsync(heatProducedTodaySensorName, state.HeatProducedToday.ToString("N", new NumberFormatInfo { NumberDecimalSeparator = "." }));
-        //await mqttEntityManager.SetStateAsync(hotWaterConsumedTodaySensorName, state.HotWaterConsumedToday.ToString("N", new NumberFormatInfo { NumberDecimalSeparator = "." }));
-        //await mqttEntityManager.SetStateAsync(hotWaterProducedTodaySensorName, state.HotWaterProducedToday.ToString("N", new NumberFormatInfo { NumberDecimalSeparator = "." }));
 
         await mqttEntityManager.SetStateAsync(heatCoefficientOfPerformanceSensorName, state.HeatCoefficientOfPerformance?.ToString("N", new NumberFormatInfo { NumberDecimalSeparator = "." }) ?? "");
         await mqttEntityManager.SetStateAsync(hotWaterCoefficientOfPerformanceSensorName, state.HotWaterCoefficientOfPerformance?.ToString("N", new NumberFormatInfo { NumberDecimalSeparator = "." }) ?? "");

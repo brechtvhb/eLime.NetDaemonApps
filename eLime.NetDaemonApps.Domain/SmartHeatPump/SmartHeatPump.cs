@@ -23,7 +23,7 @@ public class SmartHeatPump : IDisposable
 
     internal SmartHeatPumpState State { get; private set; }
     internal SmartHeatPumpHomeAssistantEntities HomeAssistant { get; private set; }
-    internal SmartHeatPumpEntities Entities { get; private set; }
+    internal SmartHeatPumpMqttEntities Entities { get; private set; }
 
     internal DebounceDispatcher? SaveAndPublishStateDebounceDispatcher { get; private set; }
     internal DebounceDispatcher CalculateHeatCopDebounceDispatcher { get; private set; }
@@ -63,7 +63,7 @@ public class SmartHeatPump : IDisposable
         HomeAssistant.HotWaterProducedTodayIntegerSensor.Changed += HotWaterSensor_changed;
         HomeAssistant.HotWaterProducedTodayDecimalsSensor.Changed += HotWaterSensor_changed;
 
-        Entities = new SmartHeatPumpEntities(configuration.MqttEntityManager);
+        Entities = new SmartHeatPumpMqttEntities(configuration.MqttEntityManager);
         Entities.SmartGridReadyModeChangedEvent += SmartGridReadyModeChangedEvent;
         if (configuration.DebounceDuration != TimeSpan.Zero)
             SaveAndPublishStateDebounceDispatcher = new DebounceDispatcher(configuration.DebounceDuration);

@@ -4,6 +4,6 @@ public enum SmartGridReadyMode
 {
     Blocked,
     Normal,
-    Boosted, //Increases temperatures but does not overrule standstill?
-    Maximized //Overrules standstill?
+    Boosted, //Increases temperatures
+    Maximized //Overrules standstill? Nope, just increases temperatures to ridiculously high levels
 }
