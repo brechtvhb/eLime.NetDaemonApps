@@ -26,6 +26,7 @@ internal interface IDynamicLoadConsumer
 
 public enum BalancingMethod
 {
+    SolarSurplus,
     SolarOnly,
     MidPoint,
     SolarPreferred,
