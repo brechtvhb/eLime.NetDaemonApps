@@ -216,7 +216,7 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 
     private double GetSolarSurplusAdjustedGridCurrent(double trailingNetGridUsage)
     {
-        var currentDifference = (trailingNetGridUsage - TotalVoltage) + 1;
+        var currentDifference = (trailingNetGridUsage / TotalVoltage) + 1;
 
         return currentDifference is < 0.20 and > -1.15d
             ? 0
