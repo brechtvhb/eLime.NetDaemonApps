@@ -730,6 +730,91 @@ public class CarChargerEnergyConsumerTests
         _testCtx.InputNumberChanged(consumer.Cars.First().CurrentEntity, 8, Moq.Times.Once);
     }
 
+
+    [TestMethod]
+    public void Balancing_Mode_Solar_Only_Load_Minimizes_Grid_Usage()
+    {
+        // Arrange
+        var consumer = new CarChargerEnergyConsumerBuilder(_logger, _testCtx)
+            .WithRuntime(TimeSpan.FromMinutes(5), null)
+            .InitTeslaTests()
+            .Build();
+
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
+            .AddConsumer(consumer)
+            .Build();
+
+        _testCtx.TriggerStateChange(consumer.StateSensor, "Occupied");
+        _testCtx.TriggerStateChange(consumer.Cars.First().ChargingStateSensor, "no_power");
+        _testCtx.TriggerStateChange(consumer.Cars.First().CableConnectedSensor, "on");
+        _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "5");
+        _testCtx.TriggerStateChange(consumer.Cars.First().MaxBatteryPercentageSensor, "80");
+        _testCtx.TriggerStateChange(consumer.Cars.First().Location, "home");
+
+        consumer.SetBalancingMethod(_testCtx.Scheduler.Now, BalancingMethod.SolarOnly);
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
+
+        _testCtx.TriggerStateChange(consumer.StateSensor, "Charging");
+        _testCtx.TriggerStateChange(consumer.CurrentEntity, "16");
+        _testCtx.TriggerStateChange(consumer.Cars.First().ChargingStateSensor, "charging");
+        _testCtx.TriggerStateChange(consumer.Cars.First().CurrentEntity, "6");
+        _testCtx.TriggerStateChange(consumer.Cars.First().ChargerSwitch, "on");
+        _testCtx.TriggerStateChange(consumer.PowerUsage, "4000");
+
+        //Act
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(10));
+        A.CallTo(() => _gridMonitor.CurrentLoadMinusBatteries).Returns(-900);
+        A.CallTo(() => _gridMonitor.AverageLoadMinusBatteriesSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-900);
+
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(25));
+
+        //Assert
+        _testCtx.InputNumberChanged(consumer.Cars.First().CurrentEntity, 7, Moq.Times.Once);
+    }
+
+
+    [TestMethod]
+    public void Balancing_Mode_Solar_Surplus_Load_Minimizes_Grid_Usage()
+    {
+        // Arrange
+        var consumer = new CarChargerEnergyConsumerBuilder(_logger, _testCtx)
+            .WithRuntime(TimeSpan.FromMinutes(5), null)
+            .InitTeslaTests()
+            .Build();
+
+        var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
+            .AddConsumer(consumer)
+            .Build();
+
+        _testCtx.TriggerStateChange(consumer.StateSensor, "Occupied");
+        _testCtx.TriggerStateChange(consumer.Cars.First().ChargingStateSensor, "no_power");
+        _testCtx.TriggerStateChange(consumer.Cars.First().CableConnectedSensor, "on");
+        _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "5");
+        _testCtx.TriggerStateChange(consumer.Cars.First().MaxBatteryPercentageSensor, "80");
+        _testCtx.TriggerStateChange(consumer.Cars.First().Location, "home");
+
+        consumer.SetBalancingMethod(_testCtx.Scheduler.Now, BalancingMethod.SolarSurplus);
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
+
+        _testCtx.TriggerStateChange(consumer.StateSensor, "Charging");
+        _testCtx.TriggerStateChange(consumer.CurrentEntity, "16");
+        _testCtx.TriggerStateChange(consumer.Cars.First().ChargingStateSensor, "charging");
+        _testCtx.TriggerStateChange(consumer.Cars.First().CurrentEntity, "6");
+        _testCtx.TriggerStateChange(consumer.Cars.First().ChargerSwitch, "on");
+        _testCtx.TriggerStateChange(consumer.PowerUsage, "4000");
+
+        //Act
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(10));
+        A.CallTo(() => _gridMonitor.CurrentLoadMinusBatteries).Returns(-1800);
+        A.CallTo(() => _gridMonitor.AverageLoadMinusBatteriesSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-1800);
+
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(25));
+
+        //Assert
+        _testCtx.InputNumberChanged(consumer.Cars.First().CurrentEntity, 7, Moq.Times.Once);
+    }
+
+
     [TestMethod]
     public void Balancing_Mode_Solar_Preferred_Load_Maximizes_Grid_Usage_But_IsNotJumpy()
     {

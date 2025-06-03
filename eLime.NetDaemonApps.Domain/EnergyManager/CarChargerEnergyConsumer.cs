@@ -102,8 +102,8 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 
         var currentLoad = AllowBatteryPower == AllowBatteryPower.Yes ? gridMonitor.CurrentLoad : gridMonitor.CurrentLoadMinusBatteries;
         var averagedLoad = AllowBatteryPower == AllowBatteryPower.Yes
-            ? gridMonitor.AverageLoadSince(_scheduler.Now, MinimumRebalancingInterval)
-            : gridMonitor.AverageLoadMinusBatteriesSince(_scheduler.Now, MinimumRebalancingInterval);
+            ? gridMonitor.AverageLoadSince(_scheduler.Now, MinimumRebalancingInterval.Subtract(TimeSpan.FromSeconds(10)))
+            : gridMonitor.AverageLoadMinusBatteriesSince(_scheduler.Now, MinimumRebalancingInterval.Subtract(TimeSpan.FromSeconds(10)));
 
         var currentAdjustment = GetBalancingAdjustedGridCurrent(currentLoad + totalNetChange, averagedLoad + totalNetChange, gridMonitor.PeakLoad, gridMonitor.CurrentAverageDemand);
 
@@ -216,7 +216,7 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 
     private double GetSolarSurplusAdjustedGridCurrent(double trailingNetGridUsage)
     {
-        var currentDifference = (trailingNetGridUsage - TotalVoltage) / TotalVoltage;
+        var currentDifference = (trailingNetGridUsage / TotalVoltage) + 1;
 
         return currentDifference is < 0.20 and > -1.15d
             ? 0
