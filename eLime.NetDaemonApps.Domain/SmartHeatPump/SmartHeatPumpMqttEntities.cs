@@ -51,8 +51,8 @@ public class SmartHeatPumpMqttEntities(IMqttEntityManager mqttEntityManager) : I
             Icon = "fapro:chart-line",
             Device = GetDevice()
         };
-        await mqttEntityManager.CreateAsync(heatCoefficientOfPerformanceSensorName, new EntityCreationOptions(UniqueId: heatCoefficientOfPerformanceSensorName, Name: "Heat coefficient of performance", DeviceClass: "power_factor", Persist: true), coefficientOfPerformanceSensorOptions);
-        await mqttEntityManager.CreateAsync(hotWaterCoefficientOfPerformanceSensorName, new EntityCreationOptions(UniqueId: hotWaterCoefficientOfPerformanceSensorName, Name: "Hot water coefficient of performance", DeviceClass: "power_factor", Persist: true), coefficientOfPerformanceSensorOptions);
+        await mqttEntityManager.CreateAsync(heatCoefficientOfPerformanceSensorName, new EntityCreationOptions(UniqueId: heatCoefficientOfPerformanceSensorName, Name: "Heat coefficient of performance", Persist: true), coefficientOfPerformanceSensorOptions);
+        await mqttEntityManager.CreateAsync(hotWaterCoefficientOfPerformanceSensorName, new EntityCreationOptions(UniqueId: hotWaterCoefficientOfPerformanceSensorName, Name: "Hot water coefficient of performance", Persist: true), coefficientOfPerformanceSensorOptions);
     }
     private Func<string, Task> SmartGridReadyModeChangedEventHandler()
     {
