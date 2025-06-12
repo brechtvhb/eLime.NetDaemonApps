@@ -12,5 +12,6 @@ public class EnergyConsumerHomeAssistantEntities(EnergyConsumerConfiguration con
     public void Dispose()
     {
         PowerUsageSensor.Dispose();
+        CriticallyNeededSensor?.Dispose();
     }
 }

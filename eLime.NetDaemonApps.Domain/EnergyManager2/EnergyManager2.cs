@@ -65,7 +65,7 @@ public class EnergyManager2 : IDisposable
         GridMonitor = GridMonitor2.Create(configuration);
         foreach (var x in configuration.Consumers)
         {
-            var consumer = await EnergyConsumer2.Create(Logger, FileStorage, configuration.MqttEntityManager, configuration.Timezone, x);
+            var consumer = await EnergyConsumer2.Create(Logger, FileStorage, Scheduler, configuration.MqttEntityManager, configuration.Timezone, x);
             consumer.StateChanged += EnergyConsumer_StateChanged;
             Consumers.Add(consumer);
         }
@@ -203,7 +203,7 @@ public class EnergyManager2 : IDisposable
 
             var dynamicLoadThatCanBeScaledDownOnBehalfOf = GetDynamicLoadThatCanBeScaledDownOnBehalfOf(consumer, dynamicLoadNetChange);
 
-            if (consumer is IDynamicLoadConsumer)
+            if (consumer is IDynamicLoadConsumer2)
             {
                 if (preStartEstimatedLoad - dynamicLoadThatCanBeScaledDownOnBehalfOf >= consumer.SwitchOnLoad)
                     continue;
@@ -334,54 +334,47 @@ public class EnergyManager2 : IDisposable
         return Math.Round(dynamicLoadThatCanBeScaledDownOnBehalfOf < 0 ? 0 : dynamicLoadThatCanBeScaledDownOnBehalfOf);
     }
 
-    private void EnergyConsumer_StateChanged(object? sender, EnergyConsumer2StateChangedEvent e)
+    private async void EnergyConsumer_StateChanged(object? sender, EnergyConsumer2StateChangedEvent e)
     {
-        var energyConsumer = Consumers.Single(x => x.Name == e.Consumer.Name);
-
-        Logger.LogInformation("{EnergyConsumer}: State changed to: {State}.", e.Consumer.Name, e.State);
-
-        switch (e)
+        try
         {
-            case EnergyConsumer2StartCommand:
-                break;
-            case EnergyConsumer2StartedEvent:
-                energyConsumer.Started(Scheduler);
-                break;
-            case EnergyConsumer2StopCommand:
-                energyConsumer.Stop();
-                break;
-            case EnergyConsumer2StoppedEvent:
-                energyConsumer.Stopped(Scheduler.Now);
-                break;
-        }
+            var energyConsumer = Consumers.Single(x => x.Name == e.Consumer.Name);
 
-        DebounceSaveAndPublishState().RunSync();
+            Logger.LogInformation("{EnergyConsumer}: State changed to: {State}.", e.Consumer.Name, e.State);
+
+            switch (e)
+            {
+                case EnergyConsumer2StartCommand:
+                    break;
+                case EnergyConsumer2StartedEvent:
+                    energyConsumer.Started(Scheduler);
+                    break;
+                case EnergyConsumer2StopCommand:
+                    energyConsumer.Stop();
+                    break;
+                case EnergyConsumer2StoppedEvent:
+                    energyConsumer.Stopped(Scheduler.Now);
+                    break;
+            }
+
+            await DebounceSaveAndPublishState();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "{EnergyConsumer}: Error while processing state change.", e.Consumer.Name);
+        }
     }
     private void GetAndSanitizeState()
     {
-        var persistedState = FileStorage.Get<EnergyManagerState>("EnergyManager", "EnergyManager"); //TODO: per consumer & per battery state, do this here or on the consumer/battery itself?
+        var persistedState = FileStorage.Get<EnergyManagerState>("EnergyManager", "EnergyManager"); //TODO: per battery state is done with consumer?
 
         State = persistedState ?? new EnergyManagerState();
-
-        //if (HomeAssistant.SourcePumpRunningSensor.IsOn() && State.SourcePumpStartedAt == null)
-        //    State.SourcePumpStartedAt = Scheduler.Now;
-
-        //if (HomeAssistant.SourcePumpRunningSensor.IsOff() && State.SourcePumpStartedAt != null)
-        //    State.SourcePumpStartedAt = null;
-
-        //State.HeatCoefficientOfPerformance ??= CalculateCoefficientOfPerformance(HomeAssistant.HeatConsumedTodayIntegerSensor.State, HomeAssistant.HeatConsumedTodayDecimalsSensor.State, HomeAssistant.HeatProducedTodayIntegerSensor.State, HomeAssistant.HeatProducedTodayDecimalsSensor.State);
-        //State.HotWaterCoefficientOfPerformance ??= CalculateCoefficientOfPerformance(HomeAssistant.HotWaterConsumedTodayIntegerSensor.State, HomeAssistant.HotWaterConsumedTodayDecimalsSensor.State, HomeAssistant.HotWaterProducedTodayIntegerSensor.State, HomeAssistant.HotWaterProducedTodayDecimalsSensor.State);
-
-        Logger.LogDebug("Retrieved Smart heat pump state.");
     }
 
     private async Task SaveAndPublishState()
     {
         FileStorage.Save("EnergyManager", "EnergyManager", State);
         await MqttSensors.PublishState(State);
-
-        foreach (var consumer in Consumers)
-            await consumer.SaveAndPublishState(); //TODO: only save modified consumers?
     }
 
     public void Dispose()
@@ -389,7 +382,6 @@ public class EnergyManager2 : IDisposable
         HomeAssistant.Dispose();
         GuardTask?.Dispose();
 
-        //MqttSensors.SmartGridReadyModeChangedEvent -= SmartGridReadyModeChangedEvent;
         foreach (var consumer in Consumers)
             consumer.Dispose();
     }

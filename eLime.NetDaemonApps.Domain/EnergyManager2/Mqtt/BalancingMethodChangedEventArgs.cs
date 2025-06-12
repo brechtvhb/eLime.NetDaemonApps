@@ -1,4 +1,6 @@
-﻿using eLime.NetDaemonApps.Domain.EnergyManager;
+﻿
+
+using eLime.NetDaemonApps.Domain.EnergyManager2.Consumers;
 
 namespace eLime.NetDaemonApps.Domain.EnergyManager2.Mqtt;
 

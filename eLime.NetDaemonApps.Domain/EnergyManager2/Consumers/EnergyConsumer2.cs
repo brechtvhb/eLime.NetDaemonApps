@@ -13,40 +13,9 @@ namespace eLime.NetDaemonApps.Domain.EnergyManager2.Consumers;
 
 public abstract class EnergyConsumer2 : IDisposable
 {
-    protected EnergyConsumer2(ILogger logger, IFileStorage fileStorage, string timeZone, EnergyConsumerConfiguration config)
-    {
-        Logger = logger;
-        FileStorage = fileStorage;
-
-        TimeWindows = config.TimeWindows.Select(x => new TimeWindow(x.ActiveSensor, new TimeOnly(0, 0).Add(x.Start), new TimeOnly(0, 0).Add(x.End))).ToList(); //TODO clean up
-        Timezone = timeZone;
-
-        MinimumRuntime = config.MinimumRuntime;
-        MaximumRuntime = config.MaximumRuntime;
-        MinimumTimeout = config.MinimumTimeout;
-        MaximumTimeout = config.MaximumTimeout;
-        ConsumerGroups = config.ConsumerGroups;
-        SwitchOnLoad = config.SwitchOnLoad;
-        SwitchOffLoad = config.SwitchOffLoad;
-    }
-    public static async Task<EnergyConsumer2> Create(ILogger logger, IFileStorage fileStorage, IMqttEntityManager mqttEntityManager, string timeZone, EnergyConsumerConfiguration config)
-    {
-        EnergyConsumer2 consumer;
-
-        if (config.Simple != null)
-            consumer = new SimpleEnergyConsumer2(logger, fileStorage, mqttEntityManager, timeZone, config);
-        else
-            throw new NotSupportedException($"The energy consumer type '{config.GetType().Name}' is not supported.");
-
-        await consumer.MqttSensors.CreateOrUpdateEntities(config.ConsumerGroups);
-        consumer.GetAndSanitizeState();
-        await consumer.SaveAndPublishState();
-
-        return consumer;
-    }
-
-    protected ILogger Logger;
+    protected ILogger Logger { get; }
     protected IFileStorage FileStorage { get; }
+    protected IScheduler Scheduler { get; }
 
     internal ConsumerState State { get; private set; }
     internal abstract EnergyConsumerHomeAssistantEntities HomeAssistant { get; }
@@ -66,7 +35,50 @@ public abstract class EnergyConsumer2 : IDisposable
     internal double SwitchOffLoad;
     internal List<string> ConsumerGroups;
 
+    internal DebounceDispatcher? SaveAndPublishStateDebounceDispatcher { get; private set; }
     public IDisposable? StopTimer { get; set; }
+
+    protected EnergyConsumer2(ILogger logger, IFileStorage fileStorage, IScheduler scheduler, string timeZone, EnergyConsumerConfiguration config)
+    {
+        Logger = logger;
+        FileStorage = fileStorage;
+        Scheduler = scheduler;
+
+        TimeWindows = config.TimeWindows.Select(x => new TimeWindow(x.ActiveSensor, new TimeOnly(0, 0).Add(x.Start), new TimeOnly(0, 0).Add(x.End))).ToList(); //TODO clean up
+        Timezone = timeZone;
+
+        MinimumRuntime = config.MinimumRuntime;
+        MaximumRuntime = config.MaximumRuntime;
+        MinimumTimeout = config.MinimumTimeout;
+        MaximumTimeout = config.MaximumTimeout;
+        ConsumerGroups = config.ConsumerGroups;
+        SwitchOnLoad = config.SwitchOnLoad;
+        SwitchOffLoad = config.SwitchOffLoad;
+    }
+    public static async Task<EnergyConsumer2> Create(ILogger logger, IFileStorage fileStorage, IScheduler scheduler, IMqttEntityManager mqttEntityManager, string timeZone, EnergyConsumerConfiguration config)
+    {
+        EnergyConsumer2 consumer;
+
+        if (config.Simple != null)
+            consumer = new SimpleEnergyConsumer2(logger, fileStorage, scheduler, mqttEntityManager, timeZone, config);
+        else if (config.Cooling != null)
+            consumer = new CoolingEnergyConsumer2(logger, fileStorage, scheduler, mqttEntityManager, timeZone, config);
+        else if (config.Triggered != null)
+            consumer = new TriggeredEnergyConsumer2(logger, fileStorage, scheduler, mqttEntityManager, timeZone, config);
+        else if (config.CarCharger != null)
+            consumer = new CarChargerEnergyConsumer2(logger, fileStorage, scheduler, mqttEntityManager, timeZone, config);
+        else
+            throw new NotSupportedException($"The energy consumer type '{config.GetType().Name}' is not supported.");
+
+        consumer.SaveAndPublishStateDebounceDispatcher = new DebounceDispatcher(TimeSpan.FromSeconds(1));
+
+        await consumer.MqttSensors.CreateOrUpdateEntities(config.ConsumerGroups);
+        consumer.GetAndSanitizeState();
+        await consumer.SaveAndPublishState();
+
+        return consumer;
+    }
+
 
     internal event EventHandler<EnergyConsumer2StateChangedEvent>? StateChanged;
 
@@ -75,17 +87,18 @@ public abstract class EnergyConsumer2 : IDisposable
         var persistedState = FileStorage.Get<ConsumerState>("EnergyManager", State.Name);
         State = persistedState ?? new ConsumerState();
 
-
-        //if (HomeAssistant.SourcePumpRunningSensor.IsOn() && State.SourcePumpStartedAt == null)
-        //    State.SourcePumpStartedAt = Scheduler.Now;
-
-        //if (HomeAssistant.SourcePumpRunningSensor.IsOff() && State.SourcePumpStartedAt != null)
-        //    State.SourcePumpStartedAt = null;
-
-        //State.HeatCoefficientOfPerformance ??= CalculateCoefficientOfPerformance(HomeAssistant.HeatConsumedTodayIntegerSensor.State, HomeAssistant.HeatConsumedTodayDecimalsSensor.State, HomeAssistant.HeatProducedTodayIntegerSensor.State, HomeAssistant.HeatProducedTodayDecimalsSensor.State);
-        //State.HotWaterCoefficientOfPerformance ??= CalculateCoefficientOfPerformance(HomeAssistant.HotWaterConsumedTodayIntegerSensor.State, HomeAssistant.HotWaterConsumedTodayDecimalsSensor.State, HomeAssistant.HotWaterProducedTodayIntegerSensor.State, HomeAssistant.HotWaterProducedTodayDecimalsSensor.State);
-
         Logger.LogDebug("{Name}: Retrieved state", State.Name);
+    }
+
+    protected async Task DebounceSaveAndPublishState()
+    {
+        if (SaveAndPublishStateDebounceDispatcher == null)
+        {
+            await SaveAndPublishState();
+            return;
+        }
+
+        await SaveAndPublishStateDebounceDispatcher.DebounceAsync(SaveAndPublishState);
     }
 
     internal async Task SaveAndPublishState()
@@ -95,22 +108,18 @@ public abstract class EnergyConsumer2 : IDisposable
     }
 
 
-    internal void OnStateCHanged(EnergyConsumer2StateChangedEvent e)
+    internal async void OnStateCHanged(EnergyConsumer2StateChangedEvent e)
     {
-        StateChanged?.Invoke(this, e);
+        try
+        {
+            StateChanged?.Invoke(this, e);
+            await DebounceSaveAndPublishState();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "{EnergyConsumer}: Error while processing state change.", Name);
+        }
     }
-
-    public void SetState(IScheduler scheduler, EnergyConsumerState state, DateTimeOffset? startedAt, DateTimeOffset? lastRun)
-    {
-        State.State = state;
-
-        if (startedAt != null && state == EnergyConsumerState.Running)
-            Started(scheduler, startedAt);
-
-        if (lastRun != null)
-            State.LastRun = lastRun;
-    }
-
 
     internal void Stop()
     {
@@ -233,13 +242,5 @@ public abstract class EnergyConsumer2 : IDisposable
     public abstract bool CanForceStopOnPeakLoad(DateTimeOffset now);
     public abstract void TurnOn();
     public abstract void TurnOff();
-
-    public abstract void DisposeInternal();
-
-    public void Dispose()
-    {
-        HomeAssistant.Dispose();
-        MqttSensors.Dispose();
-        DisposeInternal();
-    }
+    public abstract void Dispose();
 }

@@ -1,4 +1,5 @@
-﻿using eLime.NetDaemonApps.Domain.EnergyManager;
+﻿
+using eLime.NetDaemonApps.Domain.EnergyManager2.Consumers;
 using eLime.NetDaemonApps.Domain.EnergyManager2.PersistableState;
 using eLime.NetDaemonApps.Domain.Helper;
 using eLime.NetDaemonApps.Domain.Mqtt;

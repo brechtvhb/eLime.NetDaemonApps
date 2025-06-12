@@ -16,7 +16,7 @@ public class CarConfiguration
     {
         Name = config.Name;
         Mode = Enum<CarChargingMode>.Cast(config.Mode);
-        ChargerSwitch = !string.IsNullOrWhiteSpace(config.ChargerSwitch) ? BinarySensor.Create(haContext, config.ChargerSwitch) : null;
+        ChargerSwitch = !string.IsNullOrWhiteSpace(config.ChargerSwitch) ? BinarySwitch.Create(haContext, config.ChargerSwitch) : null;
         CurrentNumber = !string.IsNullOrWhiteSpace(config.CurrentEntity) ? new InputNumberEntity(haContext, config.CurrentEntity) : null;
         ChargingStateSensor = !string.IsNullOrWhiteSpace(config.ChargingStateSensor) ? TextSensor.Create(haContext, config.ChargingStateSensor) : null;
         MinimumCurrent = config.MinimumCurrent;
@@ -31,7 +31,7 @@ public class CarConfiguration
     }
     public string Name { get; set; }
     public CarChargingMode Mode { get; set; }
-    public BinarySensor? ChargerSwitch { get; set; }
+    public BinarySwitch? ChargerSwitch { get; set; }
     public InputNumberEntity? CurrentNumber { get; set; }
     public TextSensor? ChargingStateSensor { get; set; }
     public int? MinimumCurrent { get; set; }

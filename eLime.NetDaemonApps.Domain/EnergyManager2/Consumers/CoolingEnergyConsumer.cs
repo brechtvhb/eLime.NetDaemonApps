@@ -10,39 +10,44 @@ using System.Reactive.Concurrency;
 
 namespace eLime.NetDaemonApps.Domain.EnergyManager2.Consumers;
 
-public class SimpleEnergyConsumer2 : EnergyConsumer2
+public class CoolingEnergyConsumer2 : EnergyConsumer2
 {
     internal sealed override EnergyConsumerMqttSensors MqttSensors { get; }
-    internal sealed override SimpleEnergyConsumerHomeAssistantEntities HomeAssistant { get; }
-
+    internal sealed override CoolingEnergyConsumerHomeAssistantEntities HomeAssistant { get; }
     internal override bool IsRunning => HomeAssistant.SocketSwitch.IsOn();
     internal override double PeakLoad { get; }
+    public Double TargetTemperature { get; set; }
+    public Double MaxTemperature { get; set; }
 
-    internal SimpleEnergyConsumer2(ILogger logger, IFileStorage fileStorage, IScheduler scheduler, IMqttEntityManager mqttEntityManager, string timeZone, EnergyConsumerConfiguration config)
+    internal CoolingEnergyConsumer2(ILogger logger, IFileStorage fileStorage, IScheduler scheduler, IMqttEntityManager mqttEntityManager, string timeZone, EnergyConsumerConfiguration config)
         : base(logger, fileStorage, scheduler, timeZone, config)
     {
-        if (config.Simple == null)
-            throw new ArgumentException("Simple configuration is required for SimpleEnergyConsumer2.");
+        if (config.Cooling == null)
+            throw new ArgumentException("Cooling configuration is required for CoolingEnergyConsumer2.");
 
-        HomeAssistant = new SimpleEnergyConsumerHomeAssistantEntities(config);
+        HomeAssistant = new CoolingEnergyConsumerHomeAssistantEntities(config);
         HomeAssistant.SocketSwitch.TurnedOn += Socket_TurnedOn;
         HomeAssistant.SocketSwitch.TurnedOff += Socket_TurnedOff;
 
         MqttSensors = new EnergyConsumerMqttSensors(config.Name, mqttEntityManager);
-        PeakLoad = config.Simple.PeakLoad;
+        PeakLoad = config.Cooling.PeakLoad;
+        TargetTemperature = config.Cooling.TargetTemperature;
+        MaxTemperature = config.Cooling.MaxTemperature;
     }
 
     protected override EnergyConsumerState GetDesiredState(DateTimeOffset? now)
     {
         return IsRunning switch
         {
+            true when HomeAssistant.TemperatureSensor.State < TargetTemperature => EnergyConsumerState.Off,
             true => EnergyConsumerState.Running,
             false when MaximumTimeout != null && State.LastRun?.Add(MaximumTimeout.Value) < now => EnergyConsumerState.CriticallyNeedsEnergy,
             false when HomeAssistant.CriticallyNeededSensor != null && HomeAssistant.CriticallyNeededSensor.IsOn() => EnergyConsumerState.CriticallyNeedsEnergy,
-            false => EnergyConsumerState.NeedsEnergy,
+            false when HomeAssistant.TemperatureSensor.State >= MaxTemperature => EnergyConsumerState.CriticallyNeedsEnergy,
+            false when HomeAssistant.TemperatureSensor.State >= TargetTemperature => EnergyConsumerState.NeedsEnergy,
+            false => EnergyConsumerState.Off
         };
     }
-
     public override bool CanStart(DateTimeOffset now)
     {
         if (State.State is EnergyConsumerState.Running or EnergyConsumerState.Off)
@@ -51,12 +56,14 @@ public class SimpleEnergyConsumer2 : EnergyConsumer2
         if (!IsWithinTimeWindow(now) && HasTimeWindow())
             return false;
 
+        if (HomeAssistant.TemperatureSensor.State < TargetTemperature)
+            return false;
+
         if (MinimumTimeout == null)
             return true;
 
         return !(State.LastRun?.Add(MinimumTimeout.Value) > now);
     }
-
 
     public override bool CanForceStop(DateTimeOffset now)
     {
@@ -64,6 +71,9 @@ public class SimpleEnergyConsumer2 : EnergyConsumer2
             return false;
 
         if (HomeAssistant.CriticallyNeededSensor != null && HomeAssistant.CriticallyNeededSensor.IsOn())
+            return false;
+
+        if (HomeAssistant.TemperatureSensor.State > MaxTemperature)
             return false;
 
         return true;
@@ -76,7 +86,6 @@ public class SimpleEnergyConsumer2 : EnergyConsumer2
 
         return true;
     }
-
 
     public override void TurnOn()
     {

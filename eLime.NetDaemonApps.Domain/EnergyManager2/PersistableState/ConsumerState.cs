@@ -1,4 +1,7 @@
-﻿using eLime.NetDaemonApps.Domain.EnergyManager;
+﻿
+using eLime.NetDaemonApps.Domain.EnergyManager;
+using AllowBatteryPower = eLime.NetDaemonApps.Domain.EnergyManager2.Consumers.AllowBatteryPower;
+using BalancingMethod = eLime.NetDaemonApps.Domain.EnergyManager2.Consumers.BalancingMethod;
 
 namespace eLime.NetDaemonApps.Domain.EnergyManager2.PersistableState;
 

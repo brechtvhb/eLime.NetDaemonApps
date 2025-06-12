@@ -11,9 +11,9 @@ public class TriggeredEnergyConsumerConfiguration
 {
     public TriggeredEnergyConsumerConfiguration(IHaContext haContext, TriggeredEnergyConsumerConfig config)
     {
-        SocketSwitch = !string.IsNullOrWhiteSpace(config.SocketEntity) ? BinarySensor.Create(haContext, config.SocketEntity) : null;
+        SocketSwitch = !string.IsNullOrWhiteSpace(config.SocketEntity) ? BinarySwitch.Create(haContext, config.SocketEntity) : null;
         StartButton = !string.IsNullOrWhiteSpace(config.StartButton) ? new Button(haContext, config.StartButton) : null;
-        PauseSwitch = !string.IsNullOrWhiteSpace(config.PauseSwitch) ? BinarySensor.Create(haContext, config.PauseSwitch) : null;
+        PauseSwitch = !string.IsNullOrWhiteSpace(config.PauseSwitch) ? BinarySwitch.Create(haContext, config.PauseSwitch) : null;
         StateSensor = TextSensor.Create(haContext, config.StateSensor);
         StartState = config.StartState;
         PausedState = config.PausedState;
@@ -23,9 +23,9 @@ public class TriggeredEnergyConsumerConfiguration
         ShutDownOnComplete = config.ShutDownOnComplete;
         States = config.States.Select(x => new TriggeredEnergyConsumerState(x)).ToList();
     }
-    public BinarySensor? SocketSwitch { get; set; }
+    public BinarySwitch? SocketSwitch { get; set; }
     public Button? StartButton { get; set; }
-    public BinarySensor? PauseSwitch { get; set; } //Button once washer is Mielefied
+    public BinarySwitch? PauseSwitch { get; set; } //Button once washer is Mielefied
     public TextSensor StateSensor { get; set; }
     public string StartState { get; set; }
     public string PausedState { get; set; }
