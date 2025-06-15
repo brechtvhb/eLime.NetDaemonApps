@@ -25,7 +25,7 @@ public class StormProtector : IDisposable
     private double? NightlyRainThreshold { get; }
     private double? NightlyRainRateThreshold { get; }
 
-    public (ScreenState? State, Boolean Enforce) DesiredState { get; private set; }
+    public (ScreenState? State, bool Enforce) DesiredState { get; private set; }
     private bool StormModeActive { get; set; }
     private bool Night { get; set; }
     public bool StormyNight { get; private set; }
@@ -74,12 +74,12 @@ public class StormProtector : IDisposable
         }
     }
 
-    private void CheckDesiredState(Object? o, NumericSensorEventArgs sender)
+    private void CheckDesiredState(object? o, NumericSensorEventArgs sender)
     {
         CheckDesiredState();
     }
 
-    internal void CheckDesiredState(Boolean emitEvent = true)
+    internal void CheckDesiredState(bool emitEvent = true)
     {
         var desiredState = GetDesiredState();
 
@@ -141,7 +141,7 @@ public class StormProtector : IDisposable
         CheckDesiredState();
     }
 
-    public (ScreenState? State, Boolean Enforce) GetDesiredState()
+    public (ScreenState? State, bool Enforce) GetDesiredState()
     {
 
         bool? windSpeedIsAboveStormThreshold = WindSpeedSensor?.State == null || WindSpeedStormStartThreshold == null

@@ -2,7 +2,7 @@
 
 internal class VentilationFileStorage
 {
-    public Boolean Enabled { get; set; }
+    public bool Enabled { get; set; }
     public DateTimeOffset? LastStateChange { get; set; }
     public VentilationGuards? LastStateChangeTriggeredBy { get; set; }
 

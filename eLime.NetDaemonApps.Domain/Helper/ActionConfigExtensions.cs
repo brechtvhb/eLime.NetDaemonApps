@@ -13,7 +13,7 @@ namespace eLime.NetDaemonApps.Domain.Helper;
 internal static class SwitchConfigExtensions
 {
     internal static List<ISwitch> ConvertToDomainModel(this IList<SwitchConfig>? switches, TimeSpan? clickInterval, TimeSpan? longClickDuration, TimeSpan? uberLongClickDuration,
-        String? singlePressState, String? doublePressState, String? triplePressState, String? longPressState, String? uberLongPressState, IHaContext context)
+        string? singlePressState, string? doublePressState, string? triplePressState, string? longPressState, string? uberLongPressState, IHaContext context)
     {
         var switchList = new List<ISwitch>();
 

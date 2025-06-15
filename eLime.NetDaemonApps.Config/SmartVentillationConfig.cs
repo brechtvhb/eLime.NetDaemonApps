@@ -6,7 +6,7 @@ public class SmartVentilationConfig
 {
     public string Name { get; set; }
     public bool? Enabled { get; set; }
-    public String NetDaemonUserId { get; set; }
+    public string NetDaemonUserId { get; set; }
 
     public string ClimateEntity { get; set; }
 

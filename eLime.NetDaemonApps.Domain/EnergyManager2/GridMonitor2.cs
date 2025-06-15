@@ -66,11 +66,11 @@ public class GridMonitor2 : IDisposable, IGridMonitor2
     public double CurrentLoad => CurrentPowerImport - CurrentPowerExport;
     public double CurrentLoadMinusBatteries => CurrentLoad - CurrentBatteryChargePower + CurrentBatteryDischargePower;
 
-    public Double PeakLoad => (HomeAssistant.PeakImportSensor.State * 1000 ?? 0) > 2500
+    public double PeakLoad => (HomeAssistant.PeakImportSensor.State * 1000 ?? 0) > 2500
         ? HomeAssistant.PeakImportSensor.State * 1000 ?? 0
         : 2500;
 
-    public Double CurrentAverageDemand => HomeAssistant.CurrentAverageDemandSensor.State * 1000 ?? 0;
+    public double CurrentAverageDemand => HomeAssistant.CurrentAverageDemandSensor.State * 1000 ?? 0;
 
     private readonly FixedSizeConcurrentQueue<(DateTimeOffset Moment, double Value)> _lastImportValues = new(200);
     private readonly FixedSizeConcurrentQueue<(DateTimeOffset Moment, double Value)> _lastExportValues = new(200);

@@ -11,13 +11,13 @@ public class SimpleEnergyConsumerBuilder
 {
     private readonly ILogger _logger;
     private readonly AppTestContext _testCtx;
-    private String _name;
+    private string _name;
     private List<string> _consumerGroups = [];
 
     private NumericEntity _powerUsage;
     private BinarySensor _criticallyNeeded;
-    private Double _switchOnLoad;
-    private Double _switchOffLoad;
+    private double _switchOnLoad;
+    private double _switchOffLoad;
 
     private TimeSpan? _minimumRuntime;
     private TimeSpan? _maximumRuntime;
@@ -27,7 +27,7 @@ public class SimpleEnergyConsumerBuilder
     private string _timezone;
 
     private BinarySwitch _socket;
-    private Double _peakLoad;
+    private double _peakLoad;
 
     public SimpleEnergyConsumerBuilder(ILogger logger, AppTestContext testCtx)
     {
@@ -45,7 +45,7 @@ public class SimpleEnergyConsumerBuilder
         _peakLoad = 42;
     }
 
-    public SimpleEnergyConsumerBuilder WithName(String name)
+    public SimpleEnergyConsumerBuilder WithName(string name)
     {
         _name = name;
         _socket = BinarySwitch.Create(_testCtx.HaContext, $"switch.socket_{name.MakeHaFriendly()}");
@@ -83,7 +83,7 @@ public class SimpleEnergyConsumerBuilder
         return this;
     }
 
-    public SimpleEnergyConsumerBuilder WithLoad(Double switchOnLoad, Double switchOffLoad, Double peakLoad)
+    public SimpleEnergyConsumerBuilder WithLoad(double switchOnLoad, double switchOffLoad, double peakLoad)
     {
         _switchOnLoad = switchOnLoad;
         _switchOffLoad = switchOffLoad;
@@ -98,7 +98,7 @@ public class SimpleEnergyConsumerBuilder
         _timeWindows.Add(new TimeWindow(isActive, start, end));
         return this;
     }
-    public SimpleEnergyConsumerBuilder WithTimezone(String timezone)
+    public SimpleEnergyConsumerBuilder WithTimezone(string timezone)
     {
         _timezone = timezone;
         return this;

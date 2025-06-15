@@ -62,6 +62,10 @@ public static class AppTestContextExtensions
     {
         ctx.HaContextMock.Verify(c => c.CallService("switch", "turn_off", It.Is<ServiceTarget>(s => Match(entity.EntityId, s)), null), times);
     }
+    public static void VerifySwitchTurnOff(this AppTestContext ctx, string entity, Func<Times> times)
+    {
+        ctx.HaContextMock.Verify(c => c.CallService("switch", "turn_off", It.Is<ServiceTarget>(s => Match(entity, s)), null), times);
+    }
     public static void VerifySwitchTurnOff(this AppTestContext ctx, BinarySwitch entity, Times times)
     {
         ctx.HaContextMock.Verify(c => c.CallService("switch", "turn_off", It.Is<ServiceTarget>(s => Match(entity.EntityId, s)), null), times);
@@ -70,6 +74,11 @@ public static class AppTestContextExtensions
     {
         ctx.HaContextMock.Verify(c => c.CallService("switch", "turn_on", It.Is<ServiceTarget>(s => Match(entity.EntityId, s)), null), times);
     }
+    public static void VerifySwitchTurnOn(this AppTestContext ctx, string entity, Func<Times> times)
+    {
+        ctx.HaContextMock.Verify(c => c.CallService("switch", "turn_on", It.Is<ServiceTarget>(s => Match(entity, s)), null), times);
+    }
+
 
     public static void VerifySwitchTurnOn(this AppTestContext ctx, BinarySwitch entity, Times times)
     {
@@ -93,27 +102,27 @@ public static class AppTestContextExtensions
 
     public static void VerifyScriptCalled(this AppTestContext ctx, string script_name, Func<Times> times)
     {
-        ctx.HaContextMock.Verify(c => c.CallService("script", script_name, null, It.IsAny<Object?>()), times);
+        ctx.HaContextMock.Verify(c => c.CallService("script", script_name, null, It.IsAny<object?>()), times);
     }
 
     public static void VerifyPhoneNotified(this AppTestContext ctx, string phone, Func<Times> times)
     {
-        ctx.HaContextMock.Verify(c => c.CallService("notify", phone, null, It.IsAny<Object?>()), times);
+        ctx.HaContextMock.Verify(c => c.CallService("notify", phone, null, It.IsAny<object?>()), times);
     }
 
-    public static void InputNumberChanged(this AppTestContext ctx, InputNumberEntity entity, Double value, Func<Times> times)
+    public static void InputNumberChanged(this AppTestContext ctx, InputNumberEntity entity, double value, Func<Times> times)
     {
         ctx.HaContextMock.Verify(c => c.CallService("input_number", "set_value", It.Is<ServiceTarget>(s => Match(entity.EntityId, s)), It.Is<InputNumberSetValueParameters>(x => x.Value == value)), times);
     }
-    public static void InputNumberChanged(this AppTestContext ctx, InputNumberEntity entity, Double value, Times times)
+    public static void InputNumberChanged(this AppTestContext ctx, InputNumberEntity entity, double value, Times times)
     {
         ctx.HaContextMock.Verify(c => c.CallService("input_number", "set_value", It.Is<ServiceTarget>(s => Match(entity.EntityId, s)), It.Is<InputNumberSetValueParameters>(x => x.Value == value)), times);
     }
-    public static void NumberChanged(this AppTestContext ctx, InputNumberEntity entity, Double value, Func<Times> times)
+    public static void NumberChanged(this AppTestContext ctx, InputNumberEntity entity, double value, Func<Times> times)
     {
         ctx.HaContextMock.Verify(c => c.CallService("number", "set_value", It.Is<ServiceTarget>(s => Match(entity.EntityId, s)), It.Is<InputNumberSetValueParameters>(x => x.Value == value)), times);
     }
-    public static void NumberChanged(this AppTestContext ctx, InputNumberEntity entity, Double value, Times times)
+    public static void NumberChanged(this AppTestContext ctx, InputNumberEntity entity, double value, Times times)
     {
         ctx.HaContextMock.Verify(c => c.CallService("number", "set_value", It.Is<ServiceTarget>(s => Match(entity.EntityId, s)), It.Is<InputNumberSetValueParameters>(x => x.Value == value)), times);
     }

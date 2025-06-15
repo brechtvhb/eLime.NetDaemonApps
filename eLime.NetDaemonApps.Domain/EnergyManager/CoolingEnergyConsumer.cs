@@ -7,16 +7,16 @@ namespace eLime.NetDaemonApps.Domain.EnergyManager;
 public class CoolingEnergyConsumer : EnergyConsumer
 {
     public NumericEntity TemperatureSensor { get; set; }
-    public Double TargetTemperature { get; set; }
-    public Double MaxTemperature { get; set; }
+    public double TargetTemperature { get; set; }
+    public double MaxTemperature { get; set; }
 
     public override bool Running => Socket.IsOn();
     public BinarySwitch Socket { get; }
     public override double PeakLoad { get; }
 
 
-    public CoolingEnergyConsumer(ILogger logger, String name, List<string> consumerGroups, NumericEntity powerUsage, BinarySensor? criticallyNeeded, Double switchOnLoad, Double switchOffLoad, TimeSpan? minimumRuntime, TimeSpan? maximumRuntime, TimeSpan? minimumTimeout,
-        TimeSpan? maximumTimeout, List<TimeWindow> timeWindows, String timezone, BinarySwitch socket, Double peakLoad, NumericEntity temperatureSensor, Double targetTemperature, Double maxTemperature)
+    public CoolingEnergyConsumer(ILogger logger, string name, List<string> consumerGroups, NumericEntity powerUsage, BinarySensor? criticallyNeeded, double switchOnLoad, double switchOffLoad, TimeSpan? minimumRuntime, TimeSpan? maximumRuntime, TimeSpan? minimumTimeout,
+        TimeSpan? maximumTimeout, List<TimeWindow> timeWindows, string timezone, BinarySwitch socket, double peakLoad, NumericEntity temperatureSensor, double targetTemperature, double maxTemperature)
     {
         SetCommonFields(logger, name, consumerGroups, powerUsage, criticallyNeeded, switchOnLoad, switchOffLoad, minimumRuntime, maximumRuntime, minimumTimeout, maximumTimeout, timeWindows, timezone);
         Socket = socket;

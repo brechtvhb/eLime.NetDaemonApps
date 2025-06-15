@@ -4,6 +4,6 @@ namespace eLime.NetDaemonApps.Config;
 
 public class FlexiScreensConfig
 {
-    public String NetDaemonUserId { get; set; }
-    public IDictionary<String, FlexiScreenConfig> Screens { get; set; }
+    public string NetDaemonUserId { get; set; }
+    public IDictionary<string, FlexiScreenConfig> Screens { get; set; }
 }

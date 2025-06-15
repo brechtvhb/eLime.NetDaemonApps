@@ -2,10 +2,10 @@
 
 public interface IGridMonitor : IDisposable
 {
-    Double CurrentLoad { get; }
-    Double CurrentLoadMinusBatteries { get; }
-    Double CurrentAverageDemand { get; }
-    Double PeakLoad { get; }
+    double CurrentLoad { get; }
+    double CurrentLoadMinusBatteries { get; }
+    double CurrentAverageDemand { get; }
+    double PeakLoad { get; }
 
     double AverageImportSince(DateTimeOffset now, TimeSpan timeSpan);
     double AverageExportSince(DateTimeOffset now, TimeSpan timeSpan);

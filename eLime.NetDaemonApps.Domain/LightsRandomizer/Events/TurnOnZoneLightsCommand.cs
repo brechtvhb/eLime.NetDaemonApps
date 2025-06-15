@@ -2,7 +2,7 @@
 
 namespace eLime.NetDaemonApps.Domain.LightsRandomizer;
 
-public class TurnOnZoneLightsCommand(String zone, String scene) : INotification
+public class TurnOnZoneLightsCommand(string zone, string scene) : INotification
 {
     public string Zone => zone;
     public string Scene => scene;

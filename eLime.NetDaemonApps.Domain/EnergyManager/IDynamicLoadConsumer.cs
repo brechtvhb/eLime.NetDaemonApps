@@ -2,9 +2,9 @@
 
 internal interface IDynamicLoadConsumer
 {
-    public String Name { get; }
-    public Int32 MinimumCurrent { get; }
-    public Int32 MaximumCurrent { get; }
+    public string Name { get; }
+    public int MinimumCurrent { get; }
+    public int MaximumCurrent { get; }
     public TimeSpan MinimumRebalancingInterval { get; }
     public BalancingMethod BalancingMethod { get; }
     public string BalanceOnBehalfOf { get; }
@@ -18,7 +18,7 @@ internal interface IDynamicLoadConsumer
     public void SetBalancingMethod(DateTimeOffset now, BalancingMethod balancingMethod);
     public void SetBalanceOnBehalfOf(string consumerGorup);
     public void SetAllowBatteryPower(AllowBatteryPower allowBatteryPower);
-    public (Double current, Double netPowerChange) Rebalance(IGridMonitor gridMonitor, double totalNetChange);
+    public (double current, double netPowerChange) Rebalance(IGridMonitor gridMonitor, double totalNetChange);
 
     public static string CONSUMER_GROUP_SELF = "Self";
     public static string CONSUMER_GROUP_ALL = "All consumers";

@@ -2,5 +2,5 @@
 
 internal class SmartIrrigationFileStorage
 {
-    public Boolean EnergyAvailable { get; set; }
+    public bool EnergyAvailable { get; set; }
 }

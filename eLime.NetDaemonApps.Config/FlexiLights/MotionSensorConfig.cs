@@ -2,6 +2,6 @@ namespace eLime.NetDaemonApps.Config.FlexiLights;
 
 public class MotionSensorConfig
 {
-    public String Sensor { get; set; }
-    public String MixinScene { get; set; }
+    public string Sensor { get; set; }
+    public string MixinScene { get; set; }
 }

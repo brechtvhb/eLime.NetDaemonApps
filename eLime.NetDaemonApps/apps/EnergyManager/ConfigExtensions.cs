@@ -31,7 +31,7 @@ public static class ConfigExtensions
         foreach (var consumer in config.Consumers)
         {
             var powerUsageEntity = new NumericEntity(ha, consumer.PowerUsageEntity);
-            var criticallyNeededEntity = !String.IsNullOrWhiteSpace(consumer.CriticallyNeededEntity) ? new BinarySensor(ha, consumer.CriticallyNeededEntity) : null;
+            var criticallyNeededEntity = !string.IsNullOrWhiteSpace(consumer.CriticallyNeededEntity) ? new BinarySensor(ha, consumer.CriticallyNeededEntity) : null;
             var timeWindows = consumer.TimeWindows?.Select(x => x.ToEntities(ha))?.ToList() ?? [];
 
             EnergyConsumer energyConsumer = null;
@@ -50,11 +50,11 @@ public static class ConfigExtensions
             }
             if (consumer.Triggered != null)
             {
-                var socket = !String.IsNullOrWhiteSpace(consumer.Triggered.SocketEntity) ? BinarySwitch.Create(ha, consumer.Triggered.SocketEntity) : null;
-                var startButton = !String.IsNullOrWhiteSpace(consumer.Triggered.StartButton) ? new Button(ha, consumer.Triggered.StartButton) : null;
+                var socket = !string.IsNullOrWhiteSpace(consumer.Triggered.SocketEntity) ? BinarySwitch.Create(ha, consumer.Triggered.SocketEntity) : null;
+                var startButton = !string.IsNullOrWhiteSpace(consumer.Triggered.StartButton) ? new Button(ha, consumer.Triggered.StartButton) : null;
                 BinarySwitch? pauseSwitch = null;
 
-                if (!String.IsNullOrWhiteSpace(consumer.Triggered.PauseSwitch))
+                if (!string.IsNullOrWhiteSpace(consumer.Triggered.PauseSwitch))
                     pauseSwitch = BinarySwitch.Create(ha, consumer.Triggered.PauseSwitch);
 
                 var stateSensor = TextSensor.Create(ha, consumer.Triggered.StateSensor);
@@ -67,21 +67,21 @@ public static class ConfigExtensions
                 var cars = new List<Car>();
                 foreach (var car in consumer.CarCharger.Cars)
                 {
-                    var carChargerSwitch = !String.IsNullOrWhiteSpace(car.ChargerSwitch) ? BinarySwitch.Create(ha, car.ChargerSwitch) : null;
-                    var carCurrentEntity = !String.IsNullOrWhiteSpace(car.CurrentEntity) ? new InputNumberEntity(ha, car.CurrentEntity) : null;
+                    var carChargerSwitch = !string.IsNullOrWhiteSpace(car.ChargerSwitch) ? BinarySwitch.Create(ha, car.ChargerSwitch) : null;
+                    var carCurrentEntity = !string.IsNullOrWhiteSpace(car.CurrentEntity) ? new InputNumberEntity(ha, car.CurrentEntity) : null;
 
                     var batteryPercentageSensor = new NumericEntity(ha, car.BatteryPercentageSensor);
-                    var maxBatteryPercentageSensor = !String.IsNullOrWhiteSpace(car.MaxBatteryPercentageSensor) ? new NumericEntity(ha, car.MaxBatteryPercentageSensor) : null;
+                    var maxBatteryPercentageSensor = !string.IsNullOrWhiteSpace(car.MaxBatteryPercentageSensor) ? new NumericEntity(ha, car.MaxBatteryPercentageSensor) : null;
                     var cableConnectedSensor = BinarySensor.Create(ha, car.CableConnectedSensor);
                     var location = new DeviceTracker(ha, car.Location);
-                    var chargingStateSensor = !String.IsNullOrWhiteSpace(car.ChargingStateSensor) ? TextSensor.Create(ha, car.ChargingStateSensor) : null;
+                    var chargingStateSensor = !string.IsNullOrWhiteSpace(car.ChargingStateSensor) ? TextSensor.Create(ha, car.ChargingStateSensor) : null;
                     var mode = Enum<CarChargingMode>.Cast(car.Mode);
 
                     cars.Add(new Car(car.Name, mode, carChargerSwitch, carCurrentEntity, car.MinimumCurrent, car.MaximumCurrent, chargingStateSensor, car.BatteryCapacity, batteryPercentageSensor, maxBatteryPercentageSensor, car.RemainOnAtFullBattery, cableConnectedSensor, car.AutoPowerOnWhenConnecting, location, scheduler));
                 }
 
                 var currentEntity = InputNumberEntity.Create(ha, consumer.CarCharger.CurrentEntity);
-                var voltageEntity = !String.IsNullOrEmpty(consumer.CarCharger.VoltageEntity) ? new NumericEntity(ha, consumer.CarCharger.VoltageEntity) : null;
+                var voltageEntity = !string.IsNullOrEmpty(consumer.CarCharger.VoltageEntity) ? new NumericEntity(ha, consumer.CarCharger.VoltageEntity) : null;
                 var stateSensor = TextSensor.Create(ha, consumer.CarCharger.StateSensor);
 
                 energyConsumer = new CarChargerEnergyConsumer(logger, consumer.Name, consumer.ConsumerGroups, powerUsageEntity, criticallyNeededEntity, consumer.SwitchOnLoad, consumer.SwitchOffLoad, consumer.MinimumRuntime, consumer.MaximumRuntime, consumer.MinimumTimeout, consumer.MaximumTimeout, timeWindows, config.Timezone,

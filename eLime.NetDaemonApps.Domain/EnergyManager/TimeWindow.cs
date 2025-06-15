@@ -16,7 +16,7 @@ public class TimeWindow
         End = end;
     }
 
-    public bool IsActive(DateTimeOffset now, String timezone)
+    public bool IsActive(DateTimeOffset now, string timezone)
     {
         if (Active != null && Active.IsOff())
             return false;

@@ -13,7 +13,7 @@ public class IndoorAirQualityGuard : IDisposable
     private readonly IScheduler _scheduler;
 
 
-    public IndoorAirQualityGuard(ILogger logger, IScheduler scheduler, List<NumericSensor> co2Sensors, Int32 co2MediumThreshold, Int32 co2HighThreshold)
+    public IndoorAirQualityGuard(ILogger logger, IScheduler scheduler, List<NumericSensor> co2Sensors, int co2MediumThreshold, int co2HighThreshold)
     {
         Co2Sensors = co2Sensors;
         Co2MediumThreshold = co2MediumThreshold;
@@ -23,7 +23,7 @@ public class IndoorAirQualityGuard : IDisposable
         _scheduler = scheduler;
     }
 
-    public (VentilationState? State, Boolean Enforce) GetDesiredState()
+    public (VentilationState? State, bool Enforce) GetDesiredState()
     {
         if (Co2Sensors.Any(x => x.State > Co2HighThreshold))
             return (VentilationState.High, true);

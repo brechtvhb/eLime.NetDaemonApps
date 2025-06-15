@@ -2,7 +2,7 @@
 
 internal class CapacityCalculatorStorage
 {
-    public Decimal AverageCapacityLastYear { get; set; }
+    public decimal AverageCapacityLastYear { get; set; }
 
     public bool Equals(CapacityCalculatorStorage? r)
     {

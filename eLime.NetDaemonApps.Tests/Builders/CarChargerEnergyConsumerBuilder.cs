@@ -13,13 +13,13 @@ public class CarChargerEnergyConsumerBuilder
 {
     private readonly ILogger _logger;
     private readonly AppTestContext _testCtx;
-    private String _name;
+    private string _name;
     private List<string> _consumerGroups = [];
 
     private NumericEntity _powerUsage;
     private BinarySensor? _criticallyNeeded;
-    private Double _switchOnLoad;
-    private Double _switchOffLoad;
+    private double _switchOnLoad;
+    private double _switchOffLoad;
 
     private TimeSpan? _minimumRuntime;
     private TimeSpan? _maximumRuntime;
@@ -84,7 +84,7 @@ public class CarChargerEnergyConsumerBuilder
         return this;
     }
 
-    public CarChargerEnergyConsumerBuilder WithName(String name)
+    public CarChargerEnergyConsumerBuilder WithName(string name)
     {
         _name = name;
 
@@ -126,13 +126,13 @@ public class CarChargerEnergyConsumerBuilder
         return this;
     }
 
-    public CarChargerEnergyConsumerBuilder WithTimezone(String timezone)
+    public CarChargerEnergyConsumerBuilder WithTimezone(string timezone)
     {
         _timezone = timezone;
         return this;
     }
 
-    public CarChargerEnergyConsumerBuilder WithLoads(Double switchOn, Double switchOff)
+    public CarChargerEnergyConsumerBuilder WithLoads(double switchOn, double switchOff)
     {
         _switchOnLoad = switchOn;
         _switchOffLoad = switchOff;
@@ -156,7 +156,7 @@ public class CarChargerEnergyConsumerBuilder
         return this;
     }
 
-    public CarChargerEnergyConsumerBuilder AddCar(String name, CarChargingMode mode, BinarySwitch? chargerSwitch, InputNumberEntity? currentEntity, Int32? minimumCurrent, Int32? maximumCurrent, TextSensor? carChargingState, Double batteryCapacity, NumericEntity batteryPercentageSensor, NumericEntity? maxBatteryPercentageSensor, bool remainOnAtFullBattery, BinarySensor cableConnectedSensor, DeviceTracker location)
+    public CarChargerEnergyConsumerBuilder AddCar(string name, CarChargingMode mode, BinarySwitch? chargerSwitch, InputNumberEntity? currentEntity, int? minimumCurrent, int? maximumCurrent, TextSensor? carChargingState, double batteryCapacity, NumericEntity batteryPercentageSensor, NumericEntity? maxBatteryPercentageSensor, bool remainOnAtFullBattery, BinarySensor cableConnectedSensor, DeviceTracker location)
     {
         _cars.Add(new Car(name, mode, chargerSwitch, currentEntity, minimumCurrent, maximumCurrent, carChargingState, batteryCapacity, batteryPercentageSensor, maxBatteryPercentageSensor, remainOnAtFullBattery, cableConnectedSensor, false, location, _testCtx.Scheduler));
         return this;

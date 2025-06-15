@@ -10,12 +10,12 @@ public class AntiFrostMistingIrrigationZoneBuilder
 {
     private readonly AppTestContext _testCtx;
     private readonly ILogger _logger;
-    private String _name;
-    private Int32 _flowRate;
+    private string _name;
+    private int _flowRate;
     private BinarySwitch _valve;
     private NumericSensor _temperatureSensor;
-    private Int32 _lowTemperature;
-    private Int32 _criticallyLowTemperature;
+    private int _lowTemperature;
+    private int _criticallyLowTemperature;
     private TimeSpan _mistingDuration;
     private TimeSpan _mistingTimeout;
 
@@ -38,7 +38,7 @@ public class AntiFrostMistingIrrigationZoneBuilder
         _mistingTimeout = TimeSpan.FromMinutes(5);
     }
 
-    public AntiFrostMistingIrrigationZoneBuilder WithName(String name)
+    public AntiFrostMistingIrrigationZoneBuilder WithName(string name)
     {
         _name = name;
         return this;
@@ -52,7 +52,7 @@ public class AntiFrostMistingIrrigationZoneBuilder
         return this;
     }
 
-    public AntiFrostMistingIrrigationZoneBuilder WithFlowRate(Int32 flowRate)
+    public AntiFrostMistingIrrigationZoneBuilder WithFlowRate(int flowRate)
     {
         _flowRate = flowRate;
         return this;
@@ -70,7 +70,7 @@ public class AntiFrostMistingIrrigationZoneBuilder
     }
 
 
-    public AntiFrostMistingIrrigationZoneBuilder With(NumericSensor TemperatureSensor, Int32 lowTemperature, Int32 criticallyLowTemperature)
+    public AntiFrostMistingIrrigationZoneBuilder With(NumericSensor TemperatureSensor, int lowTemperature, int criticallyLowTemperature)
     {
         _temperatureSensor = TemperatureSensor;
         _lowTemperature = lowTemperature;

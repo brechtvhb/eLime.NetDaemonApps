@@ -8,11 +8,11 @@ public record StateSwitch : TextSensor, ISwitch, IDisposable
 {
     private IDisposable _subscribeDisposable;
 
-    public String SinglePressState { get; private set; }
-    public String DoublePressState { get; private set; }
-    public String TriplePressState { get; private set; }
-    public String LongPressState { get; private set; }
-    public String UberLongPressState { get; private set; }
+    public string SinglePressState { get; private set; }
+    public string DoublePressState { get; private set; }
+    public string TriplePressState { get; private set; }
+    public string LongPressState { get; private set; }
+    public string UberLongPressState { get; private set; }
     public StateSwitch(IHaContext haContext, string entityId) : base(haContext, entityId)
     {
     }
@@ -21,7 +21,7 @@ public record StateSwitch : TextSensor, ISwitch, IDisposable
     {
     }
 
-    public void Initialize(String? singlePressState, String? doublePressState, String? triplePressState, String? longPressState, String? uberLongPressState)
+    public void Initialize(string? singlePressState, string? doublePressState, string? triplePressState, string? longPressState, string? uberLongPressState)
     {
         SinglePressState = singlePressState ?? "single-press";
         DoublePressState = doublePressState ?? "double-press";
@@ -39,7 +39,7 @@ public record StateSwitch : TextSensor, ISwitch, IDisposable
             });
     }
 
-    public static StateSwitch Create(IHaContext haContext, string entityId, String? singlePressState, String? doublePressState, String? triplePressState, String? longPressState, String? uberLongPressState)
+    public static StateSwitch Create(IHaContext haContext, string entityId, string? singlePressState, string? doublePressState, string? triplePressState, string? longPressState, string? uberLongPressState)
     {
         var @switch = new StateSwitch(haContext, entityId);
         @switch.Initialize(singlePressState, doublePressState, triplePressState, longPressState, uberLongPressState);

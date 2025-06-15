@@ -10,7 +10,7 @@ public class Battery : IDisposable
     protected ILogger Logger;
     protected IScheduler Scheduler;
 
-    public String Name { get; private set; }
+    public string Name { get; private set; }
     public decimal Capacity { get; private set; }
     public int MaxChargePower { get; private set; }
     public int MaxDischargePower { get; private set; }
@@ -25,11 +25,11 @@ public class Battery : IDisposable
     public bool CanDischarge => MaxDischargePowerEntity.State is > 0;
 
     public InputNumberEntity MaxDischargePowerEntity { get; private set; }
-    public Double CurrentLoad => PowerSensor.State ?? 0;
+    public double CurrentLoad => PowerSensor.State ?? 0;
 
     //Might come in handy when using multiple batteries?
     public List<TimeWindow> TimeWindows { get; private set; }
-    public String Timezone { get; private set; }
+    public string Timezone { get; private set; }
 
     public DateTimeOffset? LastChange { get; private set; }
     public IDisposable? StopTimer { get; set; }

@@ -2,6 +2,6 @@
 
 public class SimpleEnergyConsumerConfig
 {
-    public String SocketEntity { get; set; }
-    public Double PeakLoad { get; set; }
+    public string SocketEntity { get; set; }
+    public double PeakLoad { get; set; }
 }

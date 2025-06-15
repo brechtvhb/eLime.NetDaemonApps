@@ -2,10 +2,10 @@
 
 public class LightingZone
 {
-    public String Name { get; private init; }
-    public List<String> AllowedScenes { get; private init; } = [];
+    public string Name { get; private init; }
+    public List<string> AllowedScenes { get; private init; } = [];
 
-    public static LightingZone Create(String name, List<String> allowedScenes)
+    public static LightingZone Create(string name, List<string> allowedScenes)
     {
         return new LightingZone { Name = name, AllowedScenes = allowedScenes };
     }

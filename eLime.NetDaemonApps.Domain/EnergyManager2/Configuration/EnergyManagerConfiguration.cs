@@ -10,7 +10,7 @@ namespace eLime.NetDaemonApps.Domain.EnergyManager2.Configuration;
 
 public class EnergyManagerConfiguration
 {
-    public EnergyManagerConfiguration(IHaContext haContext, ILogger logger, IScheduler scheduler, IFileStorage fileStorage, IMqttEntityManager mqttEntityManager, EnergyManagerConfig config)
+    public EnergyManagerConfiguration(IHaContext haContext, ILogger logger, IScheduler scheduler, IFileStorage fileStorage, IMqttEntityManager mqttEntityManager, EnergyManagerConfig config, TimeSpan debounceDuration)
     {
         HaContext = haContext;
         Logger = logger;
@@ -19,7 +19,7 @@ public class EnergyManagerConfiguration
         MqttEntityManager = mqttEntityManager;
 
         Timezone = config.Timezone;
-        DebounceDuration = TimeSpan.FromSeconds(1);
+        DebounceDuration = debounceDuration;
 
         Grid = new GridConfiguration(haContext, config.Grid);
         SolarProductionRemainingTodaySensor = NumericSensor.Create(haContext, config.SolarProductionRemainingTodayEntity);

@@ -11,8 +11,8 @@ public record NumericThresholdSensor : NumericEntity, IDisposable
     private IDisposable? _subscribeBelowForDisposable;
 
     public TimeSpan ThresholdTimeSpan { get; private set; }
-    public Double? Threshold { get; private set; }
-    public Double? BelowThreshold { get; private set; }
+    public double? Threshold { get; private set; }
+    public double? BelowThreshold { get; private set; }
     public NumericThresholdSensor(IHaContext haContext, string entityId) : base(haContext, entityId)
     {
     }
@@ -21,7 +21,7 @@ public record NumericThresholdSensor : NumericEntity, IDisposable
     {
     }
 
-    public void Initialize(Double? threshold, TimeSpan thresholdTimeSpan, IScheduler? scheduler, Double? belowThreshold = null)
+    public void Initialize(double? threshold, TimeSpan thresholdTimeSpan, IScheduler? scheduler, double? belowThreshold = null)
     {
         Threshold = threshold;
         BelowThreshold = belowThreshold ?? threshold;
@@ -57,14 +57,14 @@ public record NumericThresholdSensor : NumericEntity, IDisposable
 
     }
 
-    public static NumericThresholdSensor Create(IHaContext haContext, string entityId, Double? threshold, Double? belowThreshold = null)
+    public static NumericThresholdSensor Create(IHaContext haContext, string entityId, double? threshold, double? belowThreshold = null)
     {
         var sensor = new NumericThresholdSensor(haContext, entityId);
         sensor.Initialize(threshold, TimeSpan.Zero, null, belowThreshold);
         return sensor;
     }
 
-    public static NumericThresholdSensor Create(IHaContext haContext, string entityId, Double? threshold, TimeSpan thresholdTimeSpan, IScheduler scheduler)
+    public static NumericThresholdSensor Create(IHaContext haContext, string entityId, double? threshold, TimeSpan thresholdTimeSpan, IScheduler scheduler)
     {
         var sensor = new NumericThresholdSensor(haContext, entityId);
         sensor.Initialize(threshold, thresholdTimeSpan, scheduler);

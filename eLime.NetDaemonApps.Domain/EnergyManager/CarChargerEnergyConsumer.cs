@@ -14,8 +14,8 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
     public IDisposable? AllowBatteryPowerChangedCommandHandler { get; set; }
     private readonly IScheduler _scheduler;
 
-    public Int32 MinimumCurrent { get; set; }
-    public Int32 MaximumCurrent { get; set; }
+    public int MinimumCurrent { get; set; }
+    public int MaximumCurrent { get; set; }
     public BalancingMethod BalancingMethod { get; private set; }
     public AllowBatteryPower AllowBatteryPower { get; private set; }
     public string BalanceOnBehalfOf { get; private set; }
@@ -24,7 +24,7 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
     public TimeSpan MinimumRebalancingInterval => TimeSpan.FromSeconds(30); //TODO: config setting
     private DateTimeOffset? _balancingMethodLastChangedAt;
 
-    public Int32 OffCurrent { get; set; }
+    public int OffCurrent { get; set; }
 
     public InputNumberEntity CurrentEntity { get; set; }
 
@@ -37,21 +37,21 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 
     private Car? ConnectedCar => Cars.FirstOrDefault(x => x.IsConnectedToHomeCharger);
     public NumericEntity? VoltageEntity { get; set; }
-    public Int32 SinglePhaseVoltage => Convert.ToInt32(VoltageEntity?.State ?? 230);
+    public int SinglePhaseVoltage => Convert.ToInt32(VoltageEntity?.State ?? 230);
 
-    private Int32 TotalVoltage => ConnectedCar?.Mode == CarChargingMode.Ac3Phase ? SinglePhaseVoltage * 3 : SinglePhaseVoltage;
-    private Int32 MinimumCurrentForConnectedCar => ConnectedCar == null
+    private int TotalVoltage => ConnectedCar?.Mode == CarChargingMode.Ac3Phase ? SinglePhaseVoltage * 3 : SinglePhaseVoltage;
+    private int MinimumCurrentForConnectedCar => ConnectedCar == null
         ? MinimumCurrent
         : ConnectedCar.MinimumCurrent < MinimumCurrent
             ? ConnectedCar.MinimumCurrent ?? MinimumCurrent
             : MinimumCurrent;
 
-    private Int32 CurrentCurrentForConnectedCar => CurrentLoad > 0 ? Convert.ToInt32(CurrentLoad / TotalVoltage) : 0;
+    private int CurrentCurrentForConnectedCar => CurrentLoad > 0 ? Convert.ToInt32(CurrentLoad / TotalVoltage) : 0;
 
     public DateTimeOffset? _lastCurrentChange;
 
-    public CarChargerEnergyConsumer(ILogger logger, String name, List<string> consumerGroups, NumericEntity powerUsage, BinarySensor? criticallyNeeded, Double switchOnLoad, Double switchOffLoad, TimeSpan? minimumRuntime, TimeSpan? maximumRuntime, TimeSpan? minimumTimeout,
-        TimeSpan? maximumTimeout, List<TimeWindow> timeWindows, String timezone, Int32 minimumCurrent, Int32 maximumCurrent, Int32 offCurrent, InputNumberEntity currentEntity, NumericEntity voltageEntity, TextSensor stateSensor, List<Car> cars, IScheduler scheduler)
+    public CarChargerEnergyConsumer(ILogger logger, string name, List<string> consumerGroups, NumericEntity powerUsage, BinarySensor? criticallyNeeded, double switchOnLoad, double switchOffLoad, TimeSpan? minimumRuntime, TimeSpan? maximumRuntime, TimeSpan? minimumTimeout,
+        TimeSpan? maximumTimeout, List<TimeWindow> timeWindows, string timezone, int minimumCurrent, int maximumCurrent, int offCurrent, InputNumberEntity currentEntity, NumericEntity voltageEntity, TextSensor stateSensor, List<Car> cars, IScheduler scheduler)
     {
         _scheduler = scheduler;
         SetCommonFields(logger, name, consumerGroups, powerUsage, criticallyNeeded, switchOnLoad, switchOffLoad, minimumRuntime, maximumRuntime, minimumTimeout, maximumTimeout, timeWindows, timezone);
@@ -93,7 +93,7 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         AllowBatteryPower = allowBatteryPower;
     }
 
-    public (Double current, Double netPowerChange) Rebalance(IGridMonitor gridMonitor, double totalNetChange)
+    public (double current, double netPowerChange) Rebalance(IGridMonitor gridMonitor, double totalNetChange)
     {
         if (_lastCurrentChange?.Add(MinimumRebalancingInterval) > _scheduler.Now)
             return (0, 0);
@@ -265,7 +265,7 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         return (carCurrent, true);
     }
 
-    private void ChangeCurrent(Double toBeCurrent)
+    private void ChangeCurrent(double toBeCurrent)
     {
         if (_lastCurrentChange?.Add(TimeSpan.FromSeconds(5)) > _scheduler.Now)
             return;

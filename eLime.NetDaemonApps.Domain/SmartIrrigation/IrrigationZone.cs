@@ -9,11 +9,11 @@ namespace eLime.NetDaemonApps.Domain.SmartIrrigation;
 public abstract class IrrigationZone : IDisposable
 {
     public ILogger Logger { get; private set; }
-    public String Name { get; private set; }
-    public Int32 FlowRate { get; private set; }
+    public string Name { get; private set; }
+    public int FlowRate { get; private set; }
     public BinarySwitch Valve { get; private set; }
 
-    public Boolean CurrentlyWatering => Valve.IsOn();
+    public bool CurrentlyWatering => Valve.IsOn();
     public DateTimeOffset? WateringStartedAt { get; protected set; }
     public DateTimeOffset? LastWatering { get; protected set; }
 
@@ -40,7 +40,7 @@ public abstract class IrrigationZone : IDisposable
     };
 
 
-    protected void SetCommonFields(ILogger logger, String name, Int32 flowRate, BinarySwitch valve, IScheduler scheduler, DateTimeOffset? irrigationSeasonStart, DateTimeOffset? irrigationSeasonEnd)
+    protected void SetCommonFields(ILogger logger, string name, int flowRate, BinarySwitch valve, IScheduler scheduler, DateTimeOffset? irrigationSeasonStart, DateTimeOffset? irrigationSeasonEnd)
     {
         Logger = logger;
 

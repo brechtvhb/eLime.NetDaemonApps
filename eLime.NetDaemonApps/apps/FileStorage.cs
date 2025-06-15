@@ -64,7 +64,7 @@ public class FileStorage : IFileStorage
         JsonSerializer.Serialize(jsonStream, data, _jsonOptions);
     }
 
-    private void EnsureDirectoryExists(String directoryPath)
+    private void EnsureDirectoryExists(string directoryPath)
     {
         if (!Directory.Exists(directoryPath))
         {

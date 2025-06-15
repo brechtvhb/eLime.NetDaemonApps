@@ -2,11 +2,11 @@
 
 internal class FlexiScreenFileStorage
 {
-    public Boolean Enabled { get; set; }
+    public bool Enabled { get; set; }
     public DateTimeOffset? LastAutomatedStateChange { get; set; }
     public DateTimeOffset? LastManualStateChange { get; set; }
     public Protectors? LastStateChangeTriggeredBy { get; set; }
-    public Boolean StormyNight { get; set; }
+    public bool StormyNight { get; set; }
 
     public bool Equals(FlexiScreenFileStorage? r)
     {

@@ -16,12 +16,12 @@ public class TriggeredEnergyConsumer : EnergyConsumer
     public override bool Running => (Socket == null || Socket.IsOn()) && States.Where(x => x.IsRunning).Select(x => x.Name).Contains(StateSensor.State);
 
     public TextSensor StateSensor { get; }
-    public String StartState { get; }
-    public String? PausedState { get; }
-    public String CompletedState { get; }
-    public String? CriticalState { get; }
-    public Boolean CanPause { get; }
-    public Boolean ShutDownOnComplete { get; }
+    public string StartState { get; }
+    public string? PausedState { get; }
+    public string CompletedState { get; }
+    public string? CriticalState { get; }
+    public bool CanPause { get; }
+    public bool ShutDownOnComplete { get; }
 
     public List<State> States { get; }
 
@@ -47,10 +47,10 @@ public class TriggeredEnergyConsumer : EnergyConsumer
         }
     }
 
-    public TriggeredEnergyConsumer(ILogger logger, String name, List<string> consumerGroups, NumericEntity powerUsage, BinarySensor? criticallyNeeded, Double switchOnLoad, Double switchOffLoad,
+    public TriggeredEnergyConsumer(ILogger logger, string name, List<string> consumerGroups, NumericEntity powerUsage, BinarySensor? criticallyNeeded, double switchOnLoad, double switchOffLoad,
         TimeSpan? minimumRuntime, TimeSpan? maximumRuntime, TimeSpan? minimumTimeout,
-        TimeSpan? maximumTimeout, List<TimeWindow> timeWindows, String timezone, BinarySwitch? socket, Button? startButton, BinarySwitch? pauseSwitch, List<State> states, TextSensor stateSensor,
-        String startState, String? pausedState, String completedState, String? criticalState, bool canPause, bool shutDownOnComplete)
+        TimeSpan? maximumTimeout, List<TimeWindow> timeWindows, string timezone, BinarySwitch? socket, Button? startButton, BinarySwitch? pauseSwitch, List<State> states, TextSensor stateSensor,
+        string startState, string? pausedState, string completedState, string? criticalState, bool canPause, bool shutDownOnComplete)
     {
         SetCommonFields(logger, name, consumerGroups, powerUsage, criticallyNeeded, switchOnLoad, switchOffLoad, minimumRuntime, maximumRuntime, minimumTimeout, maximumTimeout, timeWindows, timezone);
         Socket = socket;
@@ -86,7 +86,7 @@ public class TriggeredEnergyConsumer : EnergyConsumer
             true when StateSensor.State == PausedState => EnergyConsumerState.NeedsEnergy,
             true => EnergyConsumerState.Running,
             false when (StateSensor.State == StartState || StateSensor.State == PausedState) && CriticallyNeeded != null && CriticallyNeeded.IsOn() => EnergyConsumerState.CriticallyNeedsEnergy,
-            false when StateSensor.State == CriticalState && !String.IsNullOrWhiteSpace(CriticalState) => EnergyConsumerState.CriticallyNeedsEnergy,
+            false when StateSensor.State == CriticalState && !string.IsNullOrWhiteSpace(CriticalState) => EnergyConsumerState.CriticallyNeedsEnergy,
             false when (StateSensor.State == StartState || StateSensor.State == PausedState) => EnergyConsumerState.NeedsEnergy,
             false => EnergyConsumerState.Off,
         };

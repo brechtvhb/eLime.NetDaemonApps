@@ -32,7 +32,7 @@ public record InputNumberEntity : NumericEntity<InputNumberEntity, NumericEntity
         return sensor;
     }
 
-    public void Change(Double value)
+    public void Change(double value)
     {
         CallService("set_value", new InputNumberSetValueParameters { Value = value });
     }

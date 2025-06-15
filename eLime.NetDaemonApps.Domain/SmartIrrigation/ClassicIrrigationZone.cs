@@ -8,16 +8,16 @@ namespace eLime.NetDaemonApps.Domain.SmartIrrigation;
 public class ClassicIrrigationZone : IrrigationZone, IZoneWithLimitedRuntime
 {
     public NumericSensor SoilMoistureSensor { get; }
-    public Int32 CriticallyLowSoilMoisture { get; }
-    public Int32 LowSoilMoisture { get; }
-    public Int32 TargetSoilMoisture { get; }
+    public int CriticallyLowSoilMoisture { get; }
+    public int LowSoilMoisture { get; }
+    public int TargetSoilMoisture { get; }
     public TimeSpan? MaxDuration { get; }
     public TimeSpan? MinimumTimeout { get; }
     public TimeOnly? IrrigationStartWindow { get; }
     public TimeOnly? IrrigationEndWindow { get; }
 
 
-    public ClassicIrrigationZone(ILogger logger, String name, Int32 flowRate, BinarySwitch valve, NumericSensor soilMoistureSensor, Int32 criticallyLowSoilMoisture, Int32 lowSoilMoisture, Int32 targetSoilMoisture, TimeSpan? maxDuration, TimeSpan? minimumTimeout, TimeOnly? irrigationStartWindow, TimeOnly? irrigationEndWindow, IScheduler scheduler, DateTimeOffset? irrigationSeasonStart, DateTimeOffset? irrigationSeasonEnd)
+    public ClassicIrrigationZone(ILogger logger, string name, int flowRate, BinarySwitch valve, NumericSensor soilMoistureSensor, int criticallyLowSoilMoisture, int lowSoilMoisture, int targetSoilMoisture, TimeSpan? maxDuration, TimeSpan? minimumTimeout, TimeOnly? irrigationStartWindow, TimeOnly? irrigationEndWindow, IScheduler scheduler, DateTimeOffset? irrigationSeasonStart, DateTimeOffset? irrigationSeasonEnd)
     {
         SetCommonFields(logger, name, flowRate, valve, scheduler, irrigationSeasonStart, irrigationSeasonEnd);
 
@@ -34,7 +34,7 @@ public class ClassicIrrigationZone : IrrigationZone, IZoneWithLimitedRuntime
         IrrigationEndWindow = irrigationEndWindow;
     }
 
-    private void CheckDesiredState(Object? o, NumericSensorEventArgs sender)
+    private void CheckDesiredState(object? o, NumericSensorEventArgs sender)
     {
         CheckDesiredState();
     }

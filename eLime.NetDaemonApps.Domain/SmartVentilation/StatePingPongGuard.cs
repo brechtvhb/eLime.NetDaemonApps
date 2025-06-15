@@ -17,7 +17,7 @@ public class StatePingPongGuard : IDisposable
         TimeoutSpan = timeoutSpan ?? TimeSpan.FromMinutes(15);
     }
 
-    internal (VentilationState? State, Boolean Enforce) GetDesiredState(VentilationState? currentState, DateTimeOffset? lastChange) =>
+    internal (VentilationState? State, bool Enforce) GetDesiredState(VentilationState? currentState, DateTimeOffset? lastChange) =>
         lastChange switch
         {
             null => (null, false),

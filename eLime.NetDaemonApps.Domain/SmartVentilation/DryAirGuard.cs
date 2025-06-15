@@ -14,7 +14,7 @@ public class DryAirGuard : IDisposable
     private readonly ILogger _logger;
     private readonly IScheduler _scheduler;
 
-    public DryAirGuard(ILogger logger, IScheduler scheduler, List<NumericSensor> indoorHumiditySensors, Int32 lowHumidityThreshold, NumericSensor outdoorTemperatureSensor, Int32 maxOutdoorTemperature)
+    public DryAirGuard(ILogger logger, IScheduler scheduler, List<NumericSensor> indoorHumiditySensors, int lowHumidityThreshold, NumericSensor outdoorTemperatureSensor, int maxOutdoorTemperature)
     {
         IndoorHumiditySensors = indoorHumiditySensors;
 
@@ -26,7 +26,7 @@ public class DryAirGuard : IDisposable
         _scheduler = scheduler;
     }
 
-    public (VentilationState? State, Boolean Enforce) GetDesiredState()
+    public (VentilationState? State, bool Enforce) GetDesiredState()
     {
         if (OutdoorTemperatureSensor.State > MaxOutdoorTemperature)
             return (null, false);

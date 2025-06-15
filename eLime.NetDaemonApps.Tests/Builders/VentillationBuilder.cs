@@ -52,12 +52,12 @@ public class VentilationBuilder
         _statePingPongGuard = new StatePingPongGuard(_logger, _testCtx.Scheduler, timeoutSpan);
         return this;
     }
-    public VentilationBuilder WithIndoorAirQualityGuard(List<NumericSensor> co2Sensors, Int32 co2MediumThreshold, Int32 co2HighThreshold)
+    public VentilationBuilder WithIndoorAirQualityGuard(List<NumericSensor> co2Sensors, int co2MediumThreshold, int co2HighThreshold)
     {
         _indoorAirQualityGuard = new IndoorAirQualityGuard(_logger, _testCtx.Scheduler, co2Sensors, co2MediumThreshold, co2HighThreshold);
         return this;
     }
-    public VentilationBuilder WithBathroomAirQualityGuard(List<NumericSensor> humiditySensors, Int32 humidityMediumThreshold, Int32 humidityHighThreshold)
+    public VentilationBuilder WithBathroomAirQualityGuard(List<NumericSensor> humiditySensors, int humidityMediumThreshold, int humidityHighThreshold)
     {
         _bathroomAirQualityGuard = new BathroomAirQualityGuard(_logger, _testCtx.Scheduler, humiditySensors, humidityMediumThreshold, humidityHighThreshold);
         return this;
@@ -72,7 +72,7 @@ public class VentilationBuilder
         _moldGuard = new MoldGuard(_logger, _testCtx.Scheduler, maxAwayTimespan, rechargeTimespan);
         return this;
     }
-    public VentilationBuilder WithDryAirGuard(List<NumericSensor> indoorHumiditySensors, Int32 lowHumidityThreshold, NumericSensor outdoorTemperatureSensor, Int32 maxOutdoorTemperature)
+    public VentilationBuilder WithDryAirGuard(List<NumericSensor> indoorHumiditySensors, int lowHumidityThreshold, NumericSensor outdoorTemperatureSensor, int maxOutdoorTemperature)
     {
         _dryAirGuard = new DryAirGuard(_logger, _testCtx.Scheduler, indoorHumiditySensors, lowHumidityThreshold, outdoorTemperatureSensor, maxOutdoorTemperature);
         return this;

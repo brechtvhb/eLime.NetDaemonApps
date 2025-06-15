@@ -30,6 +30,11 @@ public class HaContextMock : Mock<HaContextMockBase>
         Object.TriggerStateChange(entity, newStateValue, attributes);
     }
 
+    public void TriggerStateChange(string entityId, string newState)
+    {
+        Object.TriggerStateChange(entityId, newState);
+    }
+
     public void TriggerStateChange(string entityId, EntityState newState)
     {
         Object.TriggerStateChange(entityId, newState);

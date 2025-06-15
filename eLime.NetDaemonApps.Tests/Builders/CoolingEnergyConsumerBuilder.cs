@@ -11,27 +11,27 @@ public class CoolingEnergyConsumerBuilder
 {
     private readonly ILogger _logger;
     private readonly AppTestContext _testCtx;
-    private String _name;
+    private string _name;
     private List<string> _consumerGroups = [];
 
     private NumericEntity _powerUsage;
     private BinarySensor? _criticallyNeeded;
-    private Double _switchOnLoad;
-    private Double _switchOffLoad;
+    private double _switchOnLoad;
+    private double _switchOffLoad;
 
     private TimeSpan? _minimumRuntime;
     private TimeSpan? _maximumRuntime;
     private TimeSpan? _minimumTimeout;
     private TimeSpan? _maximumTimeout;
     private List<TimeWindow> _timeWindows = [];
-    private String _timezone;
+    private string _timezone;
 
     private BinarySwitch _socket;
-    private Double _peakLoad;
+    private double _peakLoad;
 
     private NumericEntity _temperatureSensor;
-    private Double _targetTemperature;
-    private Double _maxTemperature;
+    private double _targetTemperature;
+    private double _maxTemperature;
 
     public CoolingEnergyConsumerBuilder(ILogger logger, AppTestContext testCtx)
     {
@@ -54,7 +54,7 @@ public class CoolingEnergyConsumerBuilder
         _maxTemperature = 8.5;
     }
 
-    public CoolingEnergyConsumerBuilder WithName(String name)
+    public CoolingEnergyConsumerBuilder WithName(string name)
     {
         _name = name;
         _socket = BinarySwitch.Create(_testCtx.HaContext, $"switch.socket_{name.MakeHaFriendly()}");
@@ -92,7 +92,7 @@ public class CoolingEnergyConsumerBuilder
         return this;
     }
 
-    public CoolingEnergyConsumerBuilder WithLoad(Double switchOnLoad, Double switchOffLoad, Double peakLoad)
+    public CoolingEnergyConsumerBuilder WithLoad(double switchOnLoad, double switchOffLoad, double peakLoad)
     {
         _switchOnLoad = switchOnLoad;
         _peakLoad = peakLoad;
@@ -107,7 +107,7 @@ public class CoolingEnergyConsumerBuilder
         return this;
     }
 
-    public CoolingEnergyConsumerBuilder WithTimezone(String timezone)
+    public CoolingEnergyConsumerBuilder WithTimezone(string timezone)
     {
         _timezone = timezone;
         return this;

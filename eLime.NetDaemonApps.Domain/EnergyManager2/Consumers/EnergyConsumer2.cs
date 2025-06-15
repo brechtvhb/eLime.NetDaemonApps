@@ -22,8 +22,8 @@ public abstract class EnergyConsumer2 : IDisposable
     internal abstract bool IsRunning { get; }
     internal abstract double PeakLoad { get; }
     internal abstract EnergyConsumerMqttSensors MqttSensors { get; }
+    public string Name { get; private set; }
 
-    public string Name => State.Name;
     internal double CurrentLoad => HomeAssistant.PowerUsageSensor.State ?? 0;
     internal List<TimeWindow> TimeWindows;
     internal string Timezone;
@@ -44,6 +44,7 @@ public abstract class EnergyConsumer2 : IDisposable
         FileStorage = fileStorage;
         Scheduler = scheduler;
 
+        Name = config.Name;
         TimeWindows = config.TimeWindows.Select(x => new TimeWindow(x.ActiveSensor, new TimeOnly(0, 0).Add(x.Start), new TimeOnly(0, 0).Add(x.End))).ToList(); //TODO clean up
         Timezone = timeZone;
 
@@ -84,10 +85,10 @@ public abstract class EnergyConsumer2 : IDisposable
 
     internal void GetAndSanitizeState()
     {
-        var persistedState = FileStorage.Get<ConsumerState>("EnergyManager", State.Name);
+        var persistedState = FileStorage.Get<ConsumerState>("EnergyManager", Name);
         State = persistedState ?? new ConsumerState();
 
-        Logger.LogDebug("{Name}: Retrieved state", State.Name);
+        Logger.LogDebug("{Name}: Retrieved state", Name);
     }
 
     protected async Task DebounceSaveAndPublishState()
@@ -103,7 +104,7 @@ public abstract class EnergyConsumer2 : IDisposable
 
     internal async Task SaveAndPublishState()
     {
-        FileStorage.Save("EnergyManager", State.Name, State);
+        FileStorage.Save("EnergyManager", Name, State);
         await MqttSensors.PublishState(State);
     }
 
@@ -219,11 +220,11 @@ public abstract class EnergyConsumer2 : IDisposable
             case null:
                 break;
             case not null when timespan <= TimeSpan.Zero:
-                Logger.LogDebug("{EnergyConsumer}: Will stop right now.", State.Name);
+                Logger.LogDebug("{EnergyConsumer}: Will stop right now.", Name);
                 TurnOff();
                 break;
             case not null when timespan > TimeSpan.Zero:
-                Logger.LogDebug("{EnergyConsumer}: Will run for maximum span of '{TimeSpan}'", State.Name, timespan.Round().ToString());
+                Logger.LogDebug("{EnergyConsumer}: Will run for maximum span of '{TimeSpan}'", Name, timespan.Round().ToString());
                 StopTimer = scheduler.Schedule(timespan.Value, TurnOff);
                 break;
         }

@@ -20,7 +20,7 @@ public static class ConfigExtensions
         var pumpSocket = BinarySwitch.Create(ha, config.PumpSocketEntity);
         var pumpFlowRate = config.PumpFlowRate;
 
-        var weather = !String.IsNullOrWhiteSpace(config.WeatherEntity) ? new Weather(ha, config.WeatherEntity) : null;
+        var weather = !string.IsNullOrWhiteSpace(config.WeatherEntity) ? new Weather(ha, config.WeatherEntity) : null;
         var predictionDays = config.RainPredictionDays;
         var predictionLiters = config.RainPredictionLiters;
         var phoneToNotify = config.PhoneToNotify;
@@ -28,8 +28,8 @@ public static class ConfigExtensions
         var zones = new List<IrrigationZone>();
         foreach (var zone in config.Zones)
         {
-            DateTimeOffset? irrigationSeasonStart = !String.IsNullOrWhiteSpace(zone.IrrigationSeasonStart) && zone.IrrigationSeasonStart.Length == 5 ? new DateTimeOffset(new DateTime(scheduler.Now.Year, Convert.ToInt32(zone.IrrigationSeasonStart.Substring(0, 2)), Convert.ToInt32(zone.IrrigationSeasonStart.Substring(3, 2)))) : null;
-            DateTimeOffset? irrigationSeasonEnd = !String.IsNullOrWhiteSpace(zone.IrrigationSeasonEnd) && zone.IrrigationSeasonEnd.Length == 5 ? new DateTimeOffset(new DateTime(scheduler.Now.Year, Convert.ToInt32(zone.IrrigationSeasonEnd.Substring(0, 2)), Convert.ToInt32(zone.IrrigationSeasonEnd.Substring(3, 2)))) : null;
+            DateTimeOffset? irrigationSeasonStart = !string.IsNullOrWhiteSpace(zone.IrrigationSeasonStart) && zone.IrrigationSeasonStart.Length == 5 ? new DateTimeOffset(new DateTime(scheduler.Now.Year, Convert.ToInt32(zone.IrrigationSeasonStart.Substring(0, 2)), Convert.ToInt32(zone.IrrigationSeasonStart.Substring(3, 2)))) : null;
+            DateTimeOffset? irrigationSeasonEnd = !string.IsNullOrWhiteSpace(zone.IrrigationSeasonEnd) && zone.IrrigationSeasonEnd.Length == 5 ? new DateTimeOffset(new DateTime(scheduler.Now.Year, Convert.ToInt32(zone.IrrigationSeasonEnd.Substring(0, 2)), Convert.ToInt32(zone.IrrigationSeasonEnd.Substring(3, 2)))) : null;
             IrrigationZone irrigationZone = null;
             if (zone.Container != null)
                 irrigationZone = new ContainerIrrigationZone(logger, zone.Name, zone.FlowRate, BinarySwitch.Create(ha, zone.ValveEntity), NumericSensor.Create(ha, zone.Container.VolumeEntity), BinarySensor.Create(ha, zone.Container.OverFlowEntity), zone.Container.CriticalVolume, zone.Container.LowVolume, zone.Container.TargetVolume, scheduler, irrigationSeasonStart, irrigationSeasonEnd);

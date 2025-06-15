@@ -17,9 +17,9 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers
     {
         public string? Name { get; }
 
-        public Boolean Enabled { get; private set; }
-        public Boolean CanDelayStart { get; private set; }
-        public Boolean DelayedStartTriggered { get; private set; }
+        public bool Enabled { get; private set; }
+        public bool CanDelayStart { get; private set; }
+        public bool DelayedStartTriggered { get; private set; }
 
         public NumericSensor PowerSensor { get; set; }
         public BinarySwitch PowerSocket { get; set; }
@@ -35,7 +35,7 @@ namespace eLime.NetDaemonApps.Domain.SmartWashers
         public DateTimeOffset? LastStateChange;
         public DateTimeOffset? StartedAt { get; set; }
         public DateTimeOffset? Eta { get; set; }
-        public Int32? PercentageComplete { get; set; }
+        public int? PercentageComplete { get; set; }
         public WasherProgram? Program { get; set; }
 
         private IDisposable SwitchDisposable { get; set; }

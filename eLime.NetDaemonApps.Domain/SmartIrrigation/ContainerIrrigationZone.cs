@@ -9,11 +9,11 @@ public class ContainerIrrigationZone : IrrigationZone
 {
     public NumericSensor VolumeSensor { get; }
     public BinarySensor OverflowSensor { get; }
-    public Int32 TargetVolume { get; }
-    public Int32 CriticallyLowVolume { get; }
-    public Int32 LowVolume { get; }
+    public int TargetVolume { get; }
+    public int CriticallyLowVolume { get; }
+    public int LowVolume { get; }
 
-    public ContainerIrrigationZone(ILogger logger, String name, Int32 flowRate, BinarySwitch valve, NumericSensor volumeSensor, BinarySensor overflowSensor, Int32 criticallyLowVolume, Int32 lowVolume, Int32 targetVolume, IScheduler scheduler, DateTimeOffset? irrigationSeasonStart, DateTimeOffset? irrigationSeasonEnd)
+    public ContainerIrrigationZone(ILogger logger, string name, int flowRate, BinarySwitch valve, NumericSensor volumeSensor, BinarySensor overflowSensor, int criticallyLowVolume, int lowVolume, int targetVolume, IScheduler scheduler, DateTimeOffset? irrigationSeasonStart, DateTimeOffset? irrigationSeasonEnd)
     {
         SetCommonFields(logger, name, flowRate, valve, scheduler, irrigationSeasonStart, irrigationSeasonEnd);
 
@@ -29,12 +29,12 @@ public class ContainerIrrigationZone : IrrigationZone
         LowVolume = lowVolume;
     }
 
-    private void CheckDesiredState(Object? o, NumericSensorEventArgs sender)
+    private void CheckDesiredState(object? o, NumericSensorEventArgs sender)
     {
         CheckDesiredState();
     }
 
-    private void CheckDesiredState(Object? o, BinarySensorEventArgs sender)
+    private void CheckDesiredState(object? o, BinarySensorEventArgs sender)
     {
         CheckDesiredState();
     }

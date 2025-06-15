@@ -14,7 +14,7 @@ namespace eLime.NetDaemonApps.Domain.CapacityCalculator;
 
 public class CapacityCalculator
 {
-    private String SmartGatewayMeterUrl { get; set; }
+    private string SmartGatewayMeterUrl { get; set; }
 
     private IDisposable? GuardTask { get; set; }
 
@@ -25,9 +25,9 @@ public class CapacityCalculator
     private readonly IFileStorage _fileStorage;
     private CapacityCalculatorStorage? _lastState;
 
-    public Decimal AverageCapacityPastYear { get; private set; }
+    public decimal AverageCapacityPastYear { get; private set; }
 
-    public CapacityCalculator(IHaContext haContext, ILogger logger, IScheduler scheduler, IMqttEntityManager mqttEntityManager, IFileStorage fileStorage, String smartMeterUrl)
+    public CapacityCalculator(IHaContext haContext, ILogger logger, IScheduler scheduler, IMqttEntityManager mqttEntityManager, IFileStorage fileStorage, string smartMeterUrl)
     {
         _haContext = haContext;
         _logger = logger;
@@ -66,7 +66,7 @@ public class CapacityCalculator
                 .Skip(1)
                 .ToList();
 
-            _logger.LogInformation($"Past peaks are: {String.Join(", ", peakPerMonth)} kW. Replacing values below 2.5 with 2.5");
+            _logger.LogInformation($"Past peaks are: {string.Join(", ", peakPerMonth)} kW. Replacing values below 2.5 with 2.5");
             peakPerMonth = ReplaceValuesBelowMinimumPeak(peakPerMonth.ToList());
 
             AverageCapacityPastYear = Math.Round(peakPerMonth.Average(), 3);
@@ -79,7 +79,7 @@ public class CapacityCalculator
         }
     }
 
-    private List<Decimal> ReplaceValuesBelowMinimumPeak(List<Decimal> peakPerMonth)
+    private List<decimal> ReplaceValuesBelowMinimumPeak(List<decimal> peakPerMonth)
     {
         var threshold = 2.5m;
 
@@ -153,8 +153,8 @@ public class CapacityCalculator
 public class SmartGateWayModel
 {
     [JsonPropertyName("mac_address")]
-    public String MacAddress { get; set; }
+    public string MacAddress { get; set; }
 
     [JsonPropertyName("PeakConsumptionLast13Months")]
-    public String PeakConsumptionLast13Months { get; set; }
+    public string PeakConsumptionLast13Months { get; set; }
 }

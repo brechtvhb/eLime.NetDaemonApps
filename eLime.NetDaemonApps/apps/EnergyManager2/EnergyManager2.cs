@@ -38,7 +38,7 @@ public class EnergyManager2 : IAsyncInitializable, IAsyncDisposable
     {
         try
         {
-            var config = new EnergyManagerConfiguration(_ha, _logger, _scheduler, _fileStorage, _mqttEntityManager, _config);
+            var config = new EnergyManagerConfiguration(_ha, _logger, _scheduler, _fileStorage, _mqttEntityManager, _config, TimeSpan.FromSeconds(1));
             _energyManager = await Domain.EnergyManager2.EnergyManager2.Create(config);
         }
         catch (Exception ex)

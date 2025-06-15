@@ -8,7 +8,7 @@ public class ChildrenAreAngryProtector : IDisposable
     private ILogger Logger { get; }
     //Eg: Kids sleeping sensor / operating mode
     public BinarySensor ForceDownSensor { get; }
-    public (ScreenState? State, Boolean Enforce) DesiredState { get; private set; }
+    public (ScreenState? State, bool Enforce) DesiredState { get; private set; }
 
     public ChildrenAreAngryProtector(ILogger logger, BinarySensor forceDownSensor)
     {
@@ -18,13 +18,13 @@ public class ChildrenAreAngryProtector : IDisposable
         ForceDownSensor.TurnedOff += CheckDesiredState;
     }
 
-    private void CheckDesiredState(Object? o, BinarySensorEventArgs sender)
+    private void CheckDesiredState(object? o, BinarySensorEventArgs sender)
     {
         if (sender.Old?.State != "unavailable")
             CheckDesiredState();
     }
 
-    internal void CheckDesiredState(Boolean emitEvent = true)
+    internal void CheckDesiredState(bool emitEvent = true)
     {
         if (ForceDownSensor.IsOn())
             OnNightStarted(EventArgs.Empty);
@@ -68,7 +68,7 @@ public class ChildrenAreAngryProtector : IDisposable
         DesiredStateChanged?.Invoke(this, e);
     }
 
-    public (ScreenState? State, Boolean Enforce) GetDesiredState()
+    public (ScreenState? State, bool Enforce) GetDesiredState()
     {
         return ForceDownSensor.State == "on"
             ? (ScreenState.Down, true)

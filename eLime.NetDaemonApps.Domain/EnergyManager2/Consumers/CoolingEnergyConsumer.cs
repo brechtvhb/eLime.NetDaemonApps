@@ -16,8 +16,8 @@ public class CoolingEnergyConsumer2 : EnergyConsumer2
     internal sealed override CoolingEnergyConsumerHomeAssistantEntities HomeAssistant { get; }
     internal override bool IsRunning => HomeAssistant.SocketSwitch.IsOn();
     internal override double PeakLoad { get; }
-    public Double TargetTemperature { get; set; }
-    public Double MaxTemperature { get; set; }
+    public double TargetTemperature { get; set; }
+    public double MaxTemperature { get; set; }
 
     internal CoolingEnergyConsumer2(ILogger logger, IFileStorage fileStorage, IScheduler scheduler, IMqttEntityManager mqttEntityManager, string timeZone, EnergyConsumerConfiguration config)
         : base(logger, fileStorage, scheduler, timeZone, config)

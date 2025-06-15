@@ -36,6 +36,7 @@ public class EnergyManager2 : IDisposable
 
     internal GridMonitor2 GridMonitor { get; set; }
     internal List<EnergyConsumer2> Consumers { get; } = [];
+    internal BatteryManager BatteryManager { get; set; }
     private readonly TimeSpan _minimumChangeInterval = TimeSpan.FromSeconds(20);
 
     private DateTimeOffset _lastChange = DateTimeOffset.MinValue;
@@ -69,6 +70,7 @@ public class EnergyManager2 : IDisposable
             consumer.StateChanged += EnergyConsumer_StateChanged;
             Consumers.Add(consumer);
         }
+        BatteryManager = await BatteryManager.Create(Logger, FileStorage, Scheduler, configuration.Timezone, configuration.MqttEntityManager, configuration.BatteryManager);
 
         MqttSensors = new EnergyManagerMqttSensors(Scheduler, configuration.MqttEntityManager);
         if (configuration.DebounceDuration != TimeSpan.Zero)
@@ -80,15 +82,22 @@ public class EnergyManager2 : IDisposable
         GetAndSanitizeState();
         await SaveAndPublishState();
 
-        GuardTask = Scheduler.RunEvery(TimeSpan.FromSeconds(5), Scheduler.Now, () =>
+        GuardTask = Scheduler.RunEvery(TimeSpan.FromSeconds(5), Scheduler.Now, async void () =>
         {
-            if (_lastChange.Add(_minimumChangeInterval) > Scheduler.Now)
-                return;
+            try
+            {
+                if (_lastChange.Add(_minimumChangeInterval) > Scheduler.Now)
+                    return;
 
-            foreach (var consumer in Consumers)
-                consumer.CheckDesiredState(Scheduler.Now);
+                foreach (var consumer in Consumers)
+                    consumer.CheckDesiredState(Scheduler.Now);
 
-            DebounceManageConsumers();
+                await DebounceManageConsumers();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Fatal excepting when trying to manage consumers");
+            }
         });
     }
 
@@ -103,18 +112,18 @@ public class EnergyManager2 : IDisposable
 
         await SaveAndPublishStateDebounceDispatcher.DebounceAsync(SaveAndPublishState);
     }
-    internal void DebounceManageConsumers()
+    internal async Task DebounceManageConsumers()
     {
         if (ManageConsumersDebounceDispatcher == null)
         {
-            ManageConsumersIfNeeded();
+            await ManageConsumersIfNeeded();
             return;
         }
 
-        ManageConsumersDebounceDispatcher.Debounce(ManageConsumersIfNeeded);
+        ManageConsumersDebounceDispatcher.Debounce(() => _ = ManageConsumersIfNeeded());
     }
 
-    private void ManageConsumersIfNeeded()
+    private async Task ManageConsumersIfNeeded()
     {
         if (!Monitor.TryEnter(_lock))
         {
@@ -127,10 +136,14 @@ public class EnergyManager2 : IDisposable
             var dynamicNetChange = AdjustDynamicLoadsIfNeeded();
             var startNetChange = StartConsumersIfNeeded(dynamicNetChange);
             var stopNetChange = StopConsumersIfNeeded(dynamicNetChange, startNetChange);
-            ManageBatteriesIfNeeded();
+            await ManageBatteriesIfNeeded();
 
             if (dynamicNetChange != 0 || startNetChange != 0 || stopNetChange != 0)
                 _lastChange = Scheduler.Now;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error while managing consumers.");
         }
         finally
         {
@@ -139,7 +152,7 @@ public class EnergyManager2 : IDisposable
 
     }
 
-    private Double AdjustDynamicLoadsIfNeeded()
+    private double AdjustDynamicLoadsIfNeeded()
     {
         var dynamicLoadConsumers = Consumers.Where(x => x.State.State == EnergyConsumerState.Running).OfType<IDynamicLoadConsumer2>().ToList();
         var dynamicNetChange = 0d;
@@ -160,7 +173,7 @@ public class EnergyManager2 : IDisposable
 
 
     //TODO: Use linear programming model and estimates of production and consumption to be able to schedule deferred loads in the future.
-    private Double StartConsumersIfNeeded(Double dynamicLoadNetChange)
+    private double StartConsumersIfNeeded(double dynamicLoadNetChange)
     {
         var preStartEstimatedLoad = GridMonitor.CurrentLoadMinusBatteries + dynamicLoadNetChange;
         var preStartEstimatedAveragedLoad = GridMonitor.AverageLoadMinusBatteriesSince(Scheduler.Now, _minimumChangeInterval) + dynamicLoadNetChange;
@@ -230,7 +243,7 @@ public class EnergyManager2 : IDisposable
         return startNetChange;
     }
 
-    private Double StopConsumersIfNeeded(Double dynamicLoadNetChange, Double startLoadNetChange)
+    private double StopConsumersIfNeeded(double dynamicLoadNetChange, double startLoadNetChange)
     {
         var estimatedLoad = GridMonitor.CurrentLoadMinusBatteries + dynamicLoadNetChange + startLoadNetChange;
         var estimatedAverageLoad = GridMonitor.AverageLoadMinusBatteriesSince(Scheduler.Now, TimeSpan.FromMinutes(3)) + dynamicLoadNetChange + startLoadNetChange;
@@ -301,24 +314,24 @@ public class EnergyManager2 : IDisposable
         return stopNetChange;
     }
 
-    private void ManageBatteriesIfNeeded()
+    private async Task ManageBatteriesIfNeeded()
     {
         var runningDynamicLoadConsumers = Consumers.Where(x => x.IsRunning).OfType<IDynamicLoadConsumer2>().ToList();
 
         var canDischarge = runningDynamicLoadConsumers.Count == 0 || runningDynamicLoadConsumers.Any(x => x.AllowBatteryPower == AllowBatteryPower.Yes);
-        //if (canDischarge)
-        //{
-        //    foreach (var battery in Batteries.Where(battery => !battery.CanDischarge))
-        //        battery.EnableDischarging();
-        //}
-        //else
-        //{
-        //    foreach (var battery in Batteries.Where(battery => battery.CanDischarge))
-        //        battery.DisableDischarging();
-        //}
+        if (canDischarge)
+        {
+            foreach (var battery in BatteryManager.Batteries.Where(battery => !battery.CanDischarge))
+                await battery.EnableDischarging();
+        }
+        else
+        {
+            foreach (var battery in BatteryManager.Batteries.Where(battery => battery.CanDischarge))
+                await battery.DisableDischarging();
+        }
     }
 
-    private double GetDynamicLoadThatCanBeScaledDownOnBehalfOf(EnergyConsumer2? consumer, Double dynamicLoadNetChange)
+    private double GetDynamicLoadThatCanBeScaledDownOnBehalfOf(EnergyConsumer2? consumer, double dynamicLoadNetChange)
     {
         var consumerGroups = consumer?.ConsumerGroups ?? [];
 

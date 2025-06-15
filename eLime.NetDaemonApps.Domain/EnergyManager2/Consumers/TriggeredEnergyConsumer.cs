@@ -39,12 +39,12 @@ public class TriggeredEnergyConsumer2 : EnergyConsumer2
         }
     }
 
-    public String StartState { get; set; }
-    public String? PausedState { get; set; }
-    public String CompletedState { get; set; }
-    public String? CriticalState { get; set; }
-    public Boolean CanPause { get; set; }
-    public Boolean ShutDownOnComplete { get; set; }
+    public string StartState { get; set; }
+    public string? PausedState { get; set; }
+    public string CompletedState { get; set; }
+    public string? CriticalState { get; set; }
+    public bool CanPause { get; set; }
+    public bool ShutDownOnComplete { get; set; }
 
     public List<TriggeredEnergyConsumerState> States { get; set; }
 
@@ -84,7 +84,7 @@ public class TriggeredEnergyConsumer2 : EnergyConsumer2
             true when HomeAssistant.StateSensor.State == PausedState => EnergyConsumerState.NeedsEnergy,
             true => EnergyConsumerState.Running,
             false when (HomeAssistant.StateSensor.State == StartState || HomeAssistant.StateSensor.State == PausedState) && HomeAssistant.CriticallyNeededSensor != null && HomeAssistant.CriticallyNeededSensor.IsOn() => EnergyConsumerState.CriticallyNeedsEnergy,
-            false when HomeAssistant.StateSensor.State == CriticalState && !String.IsNullOrWhiteSpace(CriticalState) => EnergyConsumerState.CriticallyNeedsEnergy,
+            false when HomeAssistant.StateSensor.State == CriticalState && !string.IsNullOrWhiteSpace(CriticalState) => EnergyConsumerState.CriticallyNeedsEnergy,
             false when (HomeAssistant.StateSensor.State == StartState || HomeAssistant.StateSensor.State == PausedState) => EnergyConsumerState.NeedsEnergy,
             false => EnergyConsumerState.Off,
         };

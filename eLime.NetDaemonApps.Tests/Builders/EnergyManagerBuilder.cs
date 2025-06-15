@@ -20,7 +20,7 @@ public class EnergyManagerBuilder
 
     public IGridMonitor _gridMonitor;
 
-    private String? _phoneToNotify;
+    private string? _phoneToNotify;
 
 
     private List<EnergyConsumer> _consumers;

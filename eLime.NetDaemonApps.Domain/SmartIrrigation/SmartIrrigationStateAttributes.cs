@@ -6,9 +6,9 @@ namespace eLime.NetDaemonApps.Domain.SmartIrrigation;
 public record SmartIrrigationStateAttributes : EnabledSwitchAttributes
 {
     [JsonPropertyName("need_water_zones")]
-    public List<String>? NeedWaterZones { get; init; }
+    public List<string>? NeedWaterZones { get; init; }
     [JsonPropertyName("critical_need_water_zones")]
-    public List<String>? CriticalNeedWaterZones { get; init; }
+    public List<string>? CriticalNeedWaterZones { get; init; }
     [JsonPropertyName("watering_ongoing_zones")]
-    public List<String>? WateringOngoingZones { get; init; }
+    public List<string>? WateringOngoingZones { get; init; }
 }

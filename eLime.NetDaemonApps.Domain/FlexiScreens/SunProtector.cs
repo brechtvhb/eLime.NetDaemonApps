@@ -13,7 +13,7 @@ public class SunProtector : IDisposable
     private double? ElevationThreshold { get; }
     private ScreenState? DesiredStateBelowElevationThreshold { get; }
 
-    public (ScreenState? State, Boolean Enforce) DesiredState { get; private set; }
+    public (ScreenState? State, bool Enforce) DesiredState { get; private set; }
 
     public SunProtector(ILogger logger, double screenOrientation, Sun sun, double? orientationThreshold, double? elevationThreshold, ScreenState? desiredStateBelowElevationThreshold)
     {
@@ -26,12 +26,12 @@ public class SunProtector : IDisposable
         DesiredStateBelowElevationThreshold = desiredStateBelowElevationThreshold;
     }
 
-    private void CheckDesiredState(Object? o, SunEventArgs sender)
+    private void CheckDesiredState(object? o, SunEventArgs sender)
     {
         CheckDesiredState();
     }
 
-    internal void CheckDesiredState(Boolean emitEvent = true)
+    internal void CheckDesiredState(bool emitEvent = true)
     {
         var desiredState = GetDesiredState();
 
@@ -53,7 +53,7 @@ public class SunProtector : IDisposable
         DesiredStateChanged?.Invoke(this, e);
     }
 
-    private (ScreenState? State, Boolean Enforce) GetDesiredState()
+    private (ScreenState? State, bool Enforce) GetDesiredState()
     {
         var elevationAboveThreshold = false;
 

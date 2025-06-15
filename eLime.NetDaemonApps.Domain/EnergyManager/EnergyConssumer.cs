@@ -10,16 +10,16 @@ public abstract class EnergyConsumer : IDisposable
 {
     protected ILogger Logger;
 
-    public String Name { get; private set; }
-    public List<String> ConsumerGroups { get; private set; }
+    public string Name { get; private set; }
+    public List<string> ConsumerGroups { get; private set; }
     public NumericEntity PowerUsage { get; private set; }
     public BinarySensor? CriticallyNeeded { get; private set; }
-    public abstract Boolean Running { get; }
-    public Double CurrentLoad => PowerUsage.State ?? 0;
+    public abstract bool Running { get; }
+    public double CurrentLoad => PowerUsage.State ?? 0;
 
-    public abstract Double PeakLoad { get; }
-    public Double SwitchOnLoad { get; private set; }
-    public Double SwitchOffLoad { get; private set; }
+    public abstract double PeakLoad { get; }
+    public double SwitchOnLoad { get; private set; }
+    public double SwitchOffLoad { get; private set; }
 
     public TimeSpan? MinimumRuntime { get; private set; }
     public TimeSpan? MaximumRuntime { get; private set; }
@@ -27,7 +27,7 @@ public abstract class EnergyConsumer : IDisposable
     public TimeSpan? MaximumTimeout { get; private set; }
 
     public List<TimeWindow> TimeWindows { get; private set; }
-    public String Timezone { get; private set; }
+    public string Timezone { get; private set; }
 
     public DateTimeOffset? StartedAt { get; private set; }
     public DateTimeOffset? LastRun { get; private set; }
@@ -55,7 +55,7 @@ public abstract class EnergyConsumer : IDisposable
         return fileStorage;
     }
 
-    protected void SetCommonFields(ILogger logger, String name, List<string> consumerGroups, NumericEntity powerUsage, BinarySensor? criticallyNeeded, Double switchOnLoad, Double switchOffLoad, TimeSpan? minimumRuntime, TimeSpan? maximumRuntime, TimeSpan? minimumTimeout, TimeSpan? maximumTimeout, List<TimeWindow> timeWindows, String timezone)
+    protected void SetCommonFields(ILogger logger, string name, List<string> consumerGroups, NumericEntity powerUsage, BinarySensor? criticallyNeeded, double switchOnLoad, double switchOffLoad, TimeSpan? minimumRuntime, TimeSpan? maximumRuntime, TimeSpan? minimumTimeout, TimeSpan? maximumTimeout, List<TimeWindow> timeWindows, string timezone)
     {
         Logger = logger;
 

@@ -7,7 +7,7 @@ public class ActionConfig
     public LightAction LightAction { get; set; }
     public string? Scene { get; set; }
     public string? Script { get; set; }
-    public Dictionary<String, String>? ScriptData { get; set; }
+    public Dictionary<string, string>? ScriptData { get; set; }
     public string? Profile { get; set; }
     public Color? Color { get; set; }
     public string? Brightness { get; set; }

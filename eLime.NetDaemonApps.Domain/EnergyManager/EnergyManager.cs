@@ -19,7 +19,7 @@ public class EnergyManager : IDisposable
     public IGridMonitor GridMonitor { get; set; }
     public NumericEntity SolarProductionRemainingTodaySensor { get; }
 
-    public String? PhoneToNotify { get; }
+    public string? PhoneToNotify { get; }
     public Service Services { get; }
 
     public List<EnergyConsumer> Consumers { get; }
@@ -146,7 +146,7 @@ public class EnergyManager : IDisposable
 
     }
 
-    private Double AdjustDynamicLoadsIfNeeded()
+    private double AdjustDynamicLoadsIfNeeded()
     {
         var dynamicLoadConsumers = Consumers.Where(x => x.State == EnergyConsumerState.Running).OfType<IDynamicLoadConsumer>().ToList();
         var dynamicNetChange = 0d;
@@ -166,7 +166,7 @@ public class EnergyManager : IDisposable
     }
 
     //TODO: Use linear programming model and estimates of production and consumption to be able to schedule deferred loads in the future.
-    private Double StartConsumersIfNeeded(Double dynamicLoadNetChange)
+    private double StartConsumersIfNeeded(double dynamicLoadNetChange)
     {
         var preStartEstimatedLoad = GridMonitor.CurrentLoadMinusBatteries + dynamicLoadNetChange;
         var preStartEstimatedAveragedLoad = GridMonitor.AverageLoadMinusBatteriesSince(_scheduler.Now, _minimumChangeInterval) + dynamicLoadNetChange;
@@ -236,7 +236,7 @@ public class EnergyManager : IDisposable
         return startNetChange;
     }
 
-    private Double StopConsumersIfNeeded(Double dynamicLoadNetChange, Double startLoadNetChange)
+    private double StopConsumersIfNeeded(double dynamicLoadNetChange, double startLoadNetChange)
     {
         var estimatedLoad = GridMonitor.CurrentLoadMinusBatteries + dynamicLoadNetChange + startLoadNetChange;
         var estimatedAverageLoad = GridMonitor.AverageLoadMinusBatteriesSince(_scheduler.Now, TimeSpan.FromMinutes(3)) + dynamicLoadNetChange + startLoadNetChange;
@@ -324,7 +324,7 @@ public class EnergyManager : IDisposable
         }
     }
 
-    private double GetDynamicLoadThatCanBeScaledDownOnBehalfOf(EnergyConsumer? consumer, Double dynamicLoadNetChange)
+    private double GetDynamicLoadThatCanBeScaledDownOnBehalfOf(EnergyConsumer? consumer, double dynamicLoadNetChange)
     {
         var consumerGroups = consumer?.ConsumerGroups ?? [];
 
@@ -403,7 +403,7 @@ public class EnergyManager : IDisposable
             Device = GetConsumerDevice(consumer)
         };
 
-        List<String> consumerGroups = [IDynamicLoadConsumer.CONSUMER_GROUP_SELF];
+        List<string> consumerGroups = [IDynamicLoadConsumer.CONSUMER_GROUP_SELF];
         consumerGroups.AddRange(Consumers.SelectMany(x => x.ConsumerGroups).Distinct());
         consumerGroups.Add(IDynamicLoadConsumer.CONSUMER_GROUP_ALL);
 

@@ -37,11 +37,9 @@ internal class Car2 : IDisposable
     public bool IsRunning => HomeAssistant.ChargingStateSensor != null
         ? HomeAssistant.ChargingStateSensor.State == CarChargingStates.charging.ToString()
         : HomeAssistant.ChargerSwitch == null
-            ? CanSetCurrent
-                ? HomeAssistant.CurrentNumber.State >= MinimumCurrent
-                : true
+            ? !CanSetCurrent || HomeAssistant.CurrentNumber!.State >= MinimumCurrent
             : CanSetCurrent
-                ? HomeAssistant.ChargerSwitch.IsOn() && HomeAssistant.CurrentNumber.State >= MinimumCurrent
+                ? HomeAssistant.ChargerSwitch.IsOn() && HomeAssistant.CurrentNumber!.State >= MinimumCurrent
                 : HomeAssistant.ChargerSwitch.IsOn();
 
 
@@ -112,7 +110,7 @@ internal class Car2 : IDisposable
     }
 
 
-    public void ChangeCurrent(Double toBeCurrent)
+    public void ChangeCurrent(double toBeCurrent)
     {
         if (HomeAssistant.CurrentNumber == null)
             return;

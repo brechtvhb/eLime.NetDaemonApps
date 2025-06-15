@@ -64,12 +64,12 @@ public record Climate : Entity<Climate, EntityState<ClimateAttributes>, ClimateA
         CallService("set_temperature", data);
     }
 
-    public void SetTemperature(Double targetTemperature)
+    public void SetTemperature(double targetTemperature)
     {
         CallService("set_temperature", new ClimateSetTemperatureParameters { Temperature = targetTemperature });
     }
 
-    public VentilationState? Mode => String.IsNullOrWhiteSpace(Attributes?.FanMode) ? null : Enum<VentilationState>.Cast(Attributes.FanMode);
+    public VentilationState? Mode => string.IsNullOrWhiteSpace(Attributes?.FanMode) ? null : Enum<VentilationState>.Cast(Attributes.FanMode);
 
     public void Dispose()
     {

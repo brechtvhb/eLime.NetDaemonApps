@@ -10,14 +10,14 @@ public class ContainerIrrigationZoneBuilder
 {
     private readonly AppTestContext _testCtx;
     private readonly ILogger _logger;
-    private String _name;
-    private Int32 _flowRate;
+    private string _name;
+    private int _flowRate;
     private BinarySwitch _valve;
     private NumericSensor _volumeSensor;
     private BinarySensor _overflowSensor;
-    private Int32 _lowVolume;
-    private Int32 _criticallyLowVolume;
-    private Int32 _targetVolume;
+    private int _lowVolume;
+    private int _criticallyLowVolume;
+    private int _targetVolume;
 
     private DateTimeOffset? _irrigationSeasonStart;
     private DateTimeOffset? _irrigationSeasonEnd;
@@ -37,7 +37,7 @@ public class ContainerIrrigationZoneBuilder
         _targetVolume = 7500;
     }
 
-    public ContainerIrrigationZoneBuilder WithName(String name)
+    public ContainerIrrigationZoneBuilder WithName(string name)
     {
         _name = name;
         return this;
@@ -51,7 +51,7 @@ public class ContainerIrrigationZoneBuilder
         return this;
     }
 
-    public ContainerIrrigationZoneBuilder WithFlowRate(Int32 flowRate)
+    public ContainerIrrigationZoneBuilder WithFlowRate(int flowRate)
     {
         _flowRate = flowRate;
         return this;
@@ -67,7 +67,7 @@ public class ContainerIrrigationZoneBuilder
         return this;
     }
 
-    public ContainerIrrigationZoneBuilder With(NumericSensor volumeSensor, Int32 lowVolume, Int32 criticallyLowVolume, Int32 targetVolume)
+    public ContainerIrrigationZoneBuilder With(NumericSensor volumeSensor, int lowVolume, int criticallyLowVolume, int targetVolume)
     {
         _volumeSensor = volumeSensor;
         _lowVolume = lowVolume;

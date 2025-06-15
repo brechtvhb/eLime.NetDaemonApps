@@ -11,8 +11,8 @@ public class SimpleEnergyConsumer : EnergyConsumer
     public override bool Running => Socket.IsOn();
     public override double PeakLoad { get; }
 
-    public SimpleEnergyConsumer(ILogger logger, String name, List<string> consumerGroups, NumericEntity powerUsage, BinarySensor? criticallyNeeded, Double switchOnLoad, Double switchOffLoad, TimeSpan? minimumRuntime, TimeSpan? maximumRuntime, TimeSpan? minimumTimeout,
-        TimeSpan? maximumTimeout, List<TimeWindow> timeWindows, String timezone, BinarySwitch socket, Double peakLoad)
+    public SimpleEnergyConsumer(ILogger logger, string name, List<string> consumerGroups, NumericEntity powerUsage, BinarySensor? criticallyNeeded, double switchOnLoad, double switchOffLoad, TimeSpan? minimumRuntime, TimeSpan? maximumRuntime, TimeSpan? minimumTimeout,
+        TimeSpan? maximumTimeout, List<TimeWindow> timeWindows, string timezone, BinarySwitch socket, double peakLoad)
     {
         SetCommonFields(logger, name, consumerGroups, powerUsage, criticallyNeeded, switchOnLoad, switchOffLoad, minimumRuntime, maximumRuntime, minimumTimeout, maximumTimeout, timeWindows, timezone);
         Socket = socket;

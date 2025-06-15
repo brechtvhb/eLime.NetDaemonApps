@@ -19,11 +19,11 @@ public class RoomConfig
     public TimeSpan? ClickInterval { get; set; }
     public TimeSpan? LongClickDuration { get; set; }
     public TimeSpan? UberLongClickDuration { get; set; }
-    public String? SinglePressState { get; set; }
-    public String? DoublePressState { get; set; }
-    public String? TriplePressState { get; set; }
-    public String? LongPressState { get; set; }
-    public String? UberLongPressState { get; set; }
+    public string? SinglePressState { get; set; }
+    public string? DoublePressState { get; set; }
+    public string? TriplePressState { get; set; }
+    public string? LongPressState { get; set; }
+    public string? UberLongPressState { get; set; }
 
     public InitialClickAfterMotionBehaviour InitialClickAfterMotionBehaviour { get; set; }
     public IList<string>? OffSensors { get; set; }

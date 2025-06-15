@@ -14,7 +14,7 @@ namespace eLime.NetDaemonApps.apps.SmartVentilation;
 public static class ConfigExtensions
 {
 
-    public static Domain.SmartVentilation.SmartVentilation ToEntities(this SmartVentilationConfig config, IHaContext ha, IScheduler scheduler, IMqttEntityManager mqttEntityManager, IFileStorage storage, ILogger logger, String netDaemonUserId)
+    public static Domain.SmartVentilation.SmartVentilation ToEntities(this SmartVentilationConfig config, IHaContext ha, IScheduler scheduler, IMqttEntityManager mqttEntityManager, IFileStorage storage, ILogger logger, string netDaemonUserId)
     {
         var climate = new Climate(ha, config.ClimateEntity);
 

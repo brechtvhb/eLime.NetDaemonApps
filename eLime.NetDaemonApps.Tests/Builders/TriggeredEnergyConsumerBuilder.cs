@@ -13,13 +13,13 @@ public class TriggeredEnergyConsumerBuilder
 {
     private readonly ILogger _logger;
     private readonly AppTestContext _testCtx;
-    private String _name;
+    private string _name;
     private List<string> _consumerGroups = [];
 
     private NumericEntity _powerUsage;
     private BinarySensor? _criticallyNeeded;
-    private Double _switchOnLoad;
-    private Double _switchOffLoad;
+    private double _switchOnLoad;
+    private double _switchOffLoad;
 
     private TimeSpan? _minimumRuntime;
     private TimeSpan? _maximumRuntime;
@@ -33,15 +33,15 @@ public class TriggeredEnergyConsumerBuilder
     private BinarySwitch? _pauseSwitch;
 
     private TextSensor _stateSensor;
-    private String _startState;
-    private String? _pausedState;
-    private String _completedState;
-    private String? _criticalState;
-    private Boolean _canForceShutdown;
-    private Boolean _shutDownOnComplete;
+    private string _startState;
+    private string? _pausedState;
+    private string _completedState;
+    private string? _criticalState;
+    private bool _canForceShutdown;
+    private bool _shutDownOnComplete;
     private List<State> _states = [];
 
-    public TriggeredEnergyConsumerBuilder(ILogger logger, AppTestContext testCtx, String baseType)
+    public TriggeredEnergyConsumerBuilder(ILogger logger, AppTestContext testCtx, string baseType)
     {
         _logger = logger;
         _testCtx = testCtx;
@@ -134,7 +134,7 @@ public class TriggeredEnergyConsumerBuilder
         WithShutdownOnComplete();
     }
 
-    public TriggeredEnergyConsumerBuilder WithName(String name)
+    public TriggeredEnergyConsumerBuilder WithName(string name)
     {
         _name = name;
         _socket = BinarySwitch.Create(_testCtx.HaContext, $"switch.socket_{name.MakeHaFriendly()}");
@@ -142,7 +142,7 @@ public class TriggeredEnergyConsumerBuilder
 
         return this;
     }
-    public TriggeredEnergyConsumerBuilder AddConsumerGroup(String consumerGroup)
+    public TriggeredEnergyConsumerBuilder AddConsumerGroup(string consumerGroup)
     {
         _consumerGroups.Add(consumerGroup);
         return this;
@@ -176,21 +176,21 @@ public class TriggeredEnergyConsumerBuilder
         _timeWindows.Add(new TimeWindow(isActive, start, end));
         return this;
     }
-    public TriggeredEnergyConsumerBuilder WithTimezone(String timezone)
+    public TriggeredEnergyConsumerBuilder WithTimezone(string timezone)
     {
         _timezone = timezone;
         return this;
     }
 
 
-    public TriggeredEnergyConsumerBuilder WithLoads(Double switchOn, Double switchOff)
+    public TriggeredEnergyConsumerBuilder WithLoads(double switchOn, double switchOff)
     {
         _switchOnLoad = switchOn;
         _switchOffLoad = switchOff;
         return this;
     }
 
-    public TriggeredEnergyConsumerBuilder WithStateSensor(TextSensor stateSensor, String startState, String? pausedState, String completedState, String? criticalState)
+    public TriggeredEnergyConsumerBuilder WithStateSensor(TextSensor stateSensor, string startState, string? pausedState, string completedState, string? criticalState)
     {
         _stateSensor = stateSensor;
         _startState = startState;

@@ -40,9 +40,9 @@ public class FlexiScreens : IAsyncInitializable, IAsyncDisposable
         {
             foreach (var (screenName, screenConfig) in _config.Screens)
             {
-                var name = String.IsNullOrWhiteSpace(screenConfig.Name) ? screenName : screenConfig.Name;
+                var name = string.IsNullOrWhiteSpace(screenConfig.Name) ? screenName : screenConfig.Name;
 
-                if (String.IsNullOrWhiteSpace(screenConfig.ScreenEntity))
+                if (string.IsNullOrWhiteSpace(screenConfig.ScreenEntity))
                     throw new ArgumentNullException(nameof(screenConfig.ScreenEntity), "required");
 
                 var flexiScreen = screenConfig.ToEntities(_ha, _scheduler, _mqttEntityManager, _storage, _logger, _config.NetDaemonUserId, name);

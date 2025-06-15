@@ -8,13 +8,13 @@ namespace eLime.NetDaemonApps.Domain.SmartIrrigation;
 public class AntiFrostMistingIrrigationZone : IrrigationZone, IZoneWithLimitedRuntime
 {
     public NumericSensor TemperatureSensor { get; }
-    public Double CriticallyLowTemperature { get; }
-    public Double LowTemperature { get; }
+    public double CriticallyLowTemperature { get; }
+    public double LowTemperature { get; }
     public TimeSpan MistingDuration { get; }
     public TimeSpan MistingTimeout { get; }
 
 
-    public AntiFrostMistingIrrigationZone(ILogger logger, String name, Int32 flowRate, BinarySwitch valve, NumericSensor temperatureSensor, Double criticallyLowTemperature, Double lowTemperature, TimeSpan mistingDuration, TimeSpan mistingTimeout, IScheduler scheduler, DateTimeOffset? irrigationSeasonStart, DateTimeOffset? irrigationSeasonEnd)
+    public AntiFrostMistingIrrigationZone(ILogger logger, string name, int flowRate, BinarySwitch valve, NumericSensor temperatureSensor, double criticallyLowTemperature, double lowTemperature, TimeSpan mistingDuration, TimeSpan mistingTimeout, IScheduler scheduler, DateTimeOffset? irrigationSeasonStart, DateTimeOffset? irrigationSeasonEnd)
     {
         SetCommonFields(logger, name, flowRate, valve, scheduler, irrigationSeasonStart, irrigationSeasonEnd);
 
@@ -27,7 +27,7 @@ public class AntiFrostMistingIrrigationZone : IrrigationZone, IZoneWithLimitedRu
         MistingTimeout = mistingTimeout;
     }
 
-    private void CheckDesiredState(Object? o, NumericSensorEventArgs sender)
+    private void CheckDesiredState(object? o, NumericSensorEventArgs sender)
     {
         CheckDesiredState();
     }

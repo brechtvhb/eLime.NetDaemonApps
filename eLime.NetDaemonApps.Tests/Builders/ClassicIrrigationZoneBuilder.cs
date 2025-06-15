@@ -10,13 +10,13 @@ public class ClassicIrrigationZoneBuilder
 {
     private readonly AppTestContext _testCtx;
     private readonly ILogger _logger;
-    private String _name;
-    private Int32 _flowRate;
+    private string _name;
+    private int _flowRate;
     private BinarySwitch _valve;
     private NumericSensor _soilMoistureSensor;
-    private Int32 _lowSoilMoisture;
-    private Int32 _criticallyLowSoilMoisture;
-    private Int32 _targetSoilMoisture;
+    private int _lowSoilMoisture;
+    private int _criticallyLowSoilMoisture;
+    private int _targetSoilMoisture;
     private TimeSpan? _maxDuration;
     private TimeSpan? _minimumTimeout;
     private TimeOnly? _startWindow;
@@ -39,7 +39,7 @@ public class ClassicIrrigationZoneBuilder
         _targetSoilMoisture = 45;
     }
 
-    public ClassicIrrigationZoneBuilder WithName(String name)
+    public ClassicIrrigationZoneBuilder WithName(string name)
     {
         _name = name;
         return this;
@@ -53,7 +53,7 @@ public class ClassicIrrigationZoneBuilder
         return this;
     }
 
-    public ClassicIrrigationZoneBuilder WithFlowRate(Int32 flowRate)
+    public ClassicIrrigationZoneBuilder WithFlowRate(int flowRate)
     {
         _flowRate = flowRate;
         return this;
@@ -78,7 +78,7 @@ public class ClassicIrrigationZoneBuilder
     }
 
 
-    public ClassicIrrigationZoneBuilder With(NumericSensor soilMoistureSensor, Int32 lowSoilMoisture, Int32 criticallyLowSoilMoisture, Int32 targetSoilMoisture)
+    public ClassicIrrigationZoneBuilder With(NumericSensor soilMoistureSensor, int lowSoilMoisture, int criticallyLowSoilMoisture, int targetSoilMoisture)
     {
         _soilMoistureSensor = soilMoistureSensor;
         _lowSoilMoisture = lowSoilMoisture;

@@ -2,5 +2,5 @@
 
 public class CapacityCalculatorConfig
 {
-    public String SmartMeterUrl { get; set; }
+    public string SmartMeterUrl { get; set; }
 }

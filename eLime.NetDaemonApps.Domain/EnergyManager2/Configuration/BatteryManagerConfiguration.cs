@@ -10,7 +10,7 @@ public class BatteryManagerConfiguration
     {
         TotalChargePowerSensor = NumericSensor.Create(haContext, config.TotalChargePowerSensor);
         TotalDischargePowerSensor = NumericSensor.Create(haContext, config.TotalDischargePowerSensor);
-        Batteries = config.Batteries.Select(b => new BatteryConfiguration(haContext, b)).ToList();
+        Batteries = config.Batteries?.Select(b => new BatteryConfiguration(haContext, b)).ToList() ?? [];
     }
     public NumericSensor TotalChargePowerSensor { get; set; }
     public NumericSensor TotalDischargePowerSensor { get; set; }

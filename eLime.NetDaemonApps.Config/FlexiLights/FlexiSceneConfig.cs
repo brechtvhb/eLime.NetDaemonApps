@@ -9,6 +9,6 @@ public class FlexiSceneConfig
     public TimeSpan? TurnOffAfterIfTriggeredBySwitch { get; set; }
     public TimeSpan? TurnOffAfterIfTriggeredByMotionSensor { get; set; }
 
-    public IList<String>? NextFlexiScenes { get; set; }
+    public IList<string>? NextFlexiScenes { get; set; }
 
 }

@@ -10,7 +10,7 @@ public class BatteryBuilder
 {
     private readonly ILogger _logger;
     private readonly AppTestContext _testCtx;
-    private String _name;
+    private string _name;
 
     private decimal _capacity;
     private int _maxChargePower;
@@ -23,7 +23,7 @@ public class BatteryBuilder
     private InputNumberEntity _maxDischargePowerEntity;
 
     private List<TimeWindow> _timeWindows = [];
-    private String _timezone;
+    private string _timezone;
 
     public BatteryBuilder(ILogger logger, AppTestContext testCtx)
     {

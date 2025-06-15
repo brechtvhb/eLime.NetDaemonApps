@@ -4,12 +4,12 @@ namespace eLime.NetDaemonApps.Domain.FlexiScenes;
 
 internal class FlexiSceneFileStorage
 {
-    public Boolean Enabled { get; set; }
+    public bool Enabled { get; set; }
     public DateTimeOffset? IgnorePresenceUntil { get; set; }
     public DateTimeOffset? TurnOffAt { get; set; }
     public InitiatedBy? InitiatedBy { get; set; }
-    public String? InitialFlexiScene { get; set; }
-    public String? ActiveFlexiScene { get; set; }
+    public string? InitialFlexiScene { get; set; }
+    public string? ActiveFlexiScene { get; set; }
 
     public List<FlexiSceneChange> Changes { get; set; } = [];
 

@@ -2,10 +2,10 @@
 
 public class CoolingEnergyConsumerConfig
 {
-    public String SocketEntity { get; set; }
-    public Double PeakLoad { get; set; }
+    public string SocketEntity { get; set; }
+    public double PeakLoad { get; set; }
 
-    public String TemperatureSensor { get; set; }
-    public Double TargetTemperature { get; set; }
-    public Double MaxTemperature { get; set; }
+    public string TemperatureSensor { get; set; }
+    public double TargetTemperature { get; set; }
+    public double MaxTemperature { get; set; }
 }

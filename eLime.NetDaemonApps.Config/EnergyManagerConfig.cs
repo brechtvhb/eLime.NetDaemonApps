@@ -4,10 +4,10 @@ namespace eLime.NetDaemonApps.Config;
 
 public class EnergyManagerConfig
 {
-    public String Timezone { get; set; }
+    public string Timezone { get; set; }
     public GridConfig Grid { get; set; }
-    public String SolarProductionRemainingTodayEntity { get; set; }
-    public String PhoneToNotify { get; set; }
+    public string SolarProductionRemainingTodayEntity { get; set; }
+    public string PhoneToNotify { get; set; }
     public List<EnergyConsumerConfig> Consumers { get; set; }
     public BatteryManagerConfig BatteryManager { get; set; }
 
@@ -15,8 +15,8 @@ public class EnergyManagerConfig
 
 public class BatteryManagerConfig
 {
-    public String TotalChargePowerSensor { get; set; }
-    public String TotalDischargePowerSensor { get; set; }
+    public string TotalChargePowerSensor { get; set; }
+    public string TotalDischargePowerSensor { get; set; }
 
     //to generate: TotalCapacity, RemainingCapacity, AggregatedStateOfCharge
 

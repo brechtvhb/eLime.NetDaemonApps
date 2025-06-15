@@ -69,11 +69,11 @@ public class GridMonitor : IDisposable, IGridMonitor
     public double CurrentLoad => CurrentPowerImport - CurrentPowerExport;
     public double CurrentLoadMinusBatteries => CurrentLoad - CurrentBatteryChargePower + CurrentBatteryDischargePower;
 
-    public Double PeakLoad => (PeakImportSensor.State * 1000 ?? 0) > 2500
+    public double PeakLoad => (PeakImportSensor.State * 1000 ?? 0) > 2500
         ? PeakImportSensor.State * 1000 ?? 0
         : 2500;
 
-    public Double CurrentAverageDemand => CurrentAverageDemandEntity.State * 1000 ?? 0;
+    public double CurrentAverageDemand => CurrentAverageDemandEntity.State * 1000 ?? 0;
 
     private readonly FixedSizeConcurrentQueue<(DateTimeOffset Moment, double Value)> _lastImportValues = new(200);
     private readonly FixedSizeConcurrentQueue<(DateTimeOffset Moment, double Value)> _lastExportValues = new(200);

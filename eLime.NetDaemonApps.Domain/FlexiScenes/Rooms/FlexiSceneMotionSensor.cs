@@ -11,7 +11,7 @@ public class FlexiSceneMotionSensor
     }
 
     public MotionSensor Sensor { get; private set; }
-    public String? MixinScene { get; private set; }
+    public string? MixinScene { get; private set; }
     public DateTimeOffset? TurnOffAt { get; set; }
     internal IDisposable? TurnOffSchedule { get; set; }
 
@@ -42,7 +42,7 @@ public class FlexiSceneMotionSensor
         ActionsToExecuteOnTurnOff = [];
     }
 
-    public void SetMixinScene(String scene)
+    public void SetMixinScene(string scene)
     {
         MixinScene = scene;
     }
