@@ -89,6 +89,11 @@ public static class AppTestContextExtensions
     {
         ctx.HaContextMock.Verify(c => c.CallService("button", "press", It.Is<ServiceTarget>(s => Match(entity.EntityId, s)), null), times);
     }
+    public static void VerifyButtonPressed(this AppTestContext ctx, string entity, Func<Times> times)
+    {
+        ctx.HaContextMock.Verify(c => c.CallService("button", "press", It.Is<ServiceTarget>(s => Match(entity, s)), null), times);
+    }
+
 
     public static void VerifySceneTurnOn(this AppTestContext ctx, Scene entity, Func<Times> times)
     {

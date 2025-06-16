@@ -18,7 +18,7 @@ public class EnergyConsumerConfiguration
         MaximumRuntime = config.MaximumRuntime;
         MinimumTimeout = config.MinimumTimeout;
         MaximumTimeout = config.MaximumTimeout;
-        CriticallyNeededSensor = BinarySensor.Create(haContext, config.CriticallyNeededEntity);
+        CriticallyNeededSensor = !string.IsNullOrWhiteSpace(config.CriticallyNeededEntity) ? BinarySensor.Create(haContext, config.CriticallyNeededEntity) : null;
         TimeWindows = config.TimeWindows.Select(x => new TimeWindowConfiguration(haContext, x)).ToList();
         Simple = config.Simple != null ? new SimpleEnergyConsumerConfiguration(haContext, config.Simple) : null;
         Cooling = config.Cooling != null ? new CoolingEnergyConsumerConfiguration(haContext, config.Cooling) : null;

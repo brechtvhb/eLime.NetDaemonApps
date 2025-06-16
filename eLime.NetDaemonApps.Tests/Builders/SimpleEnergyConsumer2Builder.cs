@@ -1,19 +1,17 @@
 ﻿using eLime.NetDaemonApps.Config.EnergyManager;
 using eLime.NetDaemonApps.Domain.Helper;
-using eLime.NetDaemonApps.Tests.Helpers;
-using Microsoft.Extensions.Logging;
 
 namespace eLime.NetDaemonApps.Tests.Builders;
 
 public class SimpleEnergyConsumer2Builder
 {
-    private string _name;
+    private string _name = "Pond pump";
     private readonly List<string> _consumerGroups = [];
 
-    private string _powerUsage;
-    private string _criticallyNeeded;
-    private double _switchOnLoad;
-    private double _switchOffLoad;
+    private string _powerUsage = "sensor.socket_pond_pump_power";
+    private string _criticallyNeeded = "boolean_sensor.weather_is_freezing";
+    private double _switchOnLoad = -40;
+    private double _switchOffLoad = 100;
 
     private TimeSpan? _minimumRuntime;
     private TimeSpan? _maximumRuntime;
@@ -21,20 +19,8 @@ public class SimpleEnergyConsumer2Builder
     private TimeSpan? _maximumTimeout;
     private readonly List<TimeWindowConfig> _timeWindows = [];
 
-    private string _socket;
-    private double _peakLoad;
-
-    public SimpleEnergyConsumer2Builder(ILogger logger, AppTestContext testCtx)
-    {
-        _name = "Pond pump";
-        _powerUsage = "sensor.socket_pond_pump_power";
-        _criticallyNeeded = "boolean_sensor.weather_is_freezing";
-        _switchOnLoad = -40;
-        _switchOffLoad = 100;
-
-        _socket = "switch.socket_pond_pump";
-        _peakLoad = 42;
-    }
+    private string _socket = "switch.socket_pond_pump";
+    private double _peakLoad = 42;
 
     public SimpleEnergyConsumer2Builder WithName(string name)
     {
@@ -88,7 +74,7 @@ public class SimpleEnergyConsumer2Builder
     {
         _timeWindows.Add(new TimeWindowConfig
         {
-            ActiveEntity = isActive,
+            ActiveSensor = isActive,
             Start = start,
             End = end
         });

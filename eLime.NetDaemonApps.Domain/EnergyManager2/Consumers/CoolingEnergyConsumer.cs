@@ -3,6 +3,7 @@ using eLime.NetDaemonApps.Domain.EnergyManager2.Configuration;
 using eLime.NetDaemonApps.Domain.EnergyManager2.HomeAssistant;
 using eLime.NetDaemonApps.Domain.EnergyManager2.Mqtt;
 using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
+using Microsoft.Extensions.Logging;
 
 namespace eLime.NetDaemonApps.Domain.EnergyManager2.Consumers;
 
@@ -93,14 +94,30 @@ public class CoolingEnergyConsumer2 : EnergyConsumer2
         HomeAssistant.SocketSwitch.TurnOff();
     }
 
-    private void Socket_TurnedOn(object? sender, BinarySensorEventArgs e)
+    private async void Socket_TurnedOn(object? sender, BinarySensorEventArgs e)
     {
-        CheckDesiredState(new EnergyConsumer2StartedEvent(this, EnergyConsumerState.Running));
+        try
+        {
+            Started();
+            await DebounceSaveAndPublishState();
+        }
+        catch (Exception ex)
+        {
+            Context.Logger.LogError(ex, "An error occurred while handling the socket turned on event.");
+        }
     }
 
-    private void Socket_TurnedOff(object? sender, BinarySensorEventArgs e)
+    private async void Socket_TurnedOff(object? sender, BinarySensorEventArgs e)
     {
-        CheckDesiredState(new EnergyConsumer2StoppedEvent(this, EnergyConsumerState.Off));
+        try
+        {
+            Stopped();
+            await DebounceSaveAndPublishState();
+        }
+        catch (Exception ex)
+        {
+            Context.Logger.LogError(ex, "An error occurred while handling the socket turned off event.");
+        }
     }
     public override void Dispose()
     {

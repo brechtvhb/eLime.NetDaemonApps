@@ -3,7 +3,6 @@ using eLime.NetDaemonApps.Domain.EnergyManager2.Configuration;
 using eLime.NetDaemonApps.Domain.EnergyManager2.HomeAssistant;
 using eLime.NetDaemonApps.Domain.EnergyManager2.Mqtt;
 using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
-using eLime.NetDaemonApps.Domain.Entities.TextSensors;
 using Microsoft.Extensions.Logging;
 
 namespace eLime.NetDaemonApps.Domain.EnergyManager2.Consumers;
@@ -58,8 +57,6 @@ public class TriggeredEnergyConsumer2 : EnergyConsumer2
             HomeAssistant.SocketSwitch.TurnedOn += Socket_TurnedOn;
             HomeAssistant.SocketSwitch.TurnedOff += Socket_TurnedOff;
         }
-
-        HomeAssistant.StateSensor.StateChanged += StateSensor_StateChanged;
 
         StartState = config.Triggered.StartState;
         PausedState = config.Triggered.PausedState;
@@ -162,41 +159,35 @@ public class TriggeredEnergyConsumer2 : EnergyConsumer2
             HomeAssistant.SocketSwitch?.TurnOff();
     }
 
-    private void Socket_TurnedOn(object? sender, BinarySensorEventArgs e)
+    private async void Socket_TurnedOn(object? sender, BinarySensorEventArgs e)
     {
-        if (States.Where(x => x.IsRunning).Select(x => x.Name).Contains(HomeAssistant.StateSensor.State))
-            CheckDesiredState(new EnergyConsumer2StartedEvent(this, EnergyConsumerState.Running));
+        try
+        {
+            if (!States.Where(x => x.IsRunning).Select(x => x.Name).Contains(HomeAssistant.StateSensor.State))
+                return;
+
+            Started();
+            await DebounceSaveAndPublishState();
+        }
+        catch (Exception ex)
+        {
+            Context.Logger.LogError(ex, "An error occurred while handling the socket turned on event.");
+        }
     }
 
-    private void Socket_TurnedOff(object? sender, BinarySensorEventArgs e)
+    private async void Socket_TurnedOff(object? sender, BinarySensorEventArgs e)
     {
-        CheckDesiredState(new EnergyConsumer2StoppedEvent(this, EnergyConsumerState.Off));
+        try
+        {
+            Stopped();
+            await DebounceSaveAndPublishState();
+        }
+        catch (Exception ex)
+        {
+            Context.Logger.LogError(ex, "An error occurred while handling the socket turned off event.");
+        }
     }
 
-
-    private void StateSensor_StateChanged(object? sender, TextSensorEventArgs e)
-    {
-        if (HomeAssistant.SocketSwitch != null && HomeAssistant.SocketSwitch.IsOff())
-            return;
-
-        if (e.Sensor.State == StartState || e.Sensor.State == PausedState)
-        {
-            CheckDesiredState(new EnergyConsumer2StartCommand(this, EnergyConsumerState.NeedsEnergy));
-        }
-        else if (e.Sensor.State == CriticalState)
-        {
-            CheckDesiredState(new EnergyConsumer2StartCommand(this, EnergyConsumerState.CriticallyNeedsEnergy));
-        }
-        else if (e.Sensor.State == CompletedState)
-        {
-            Context.Logger.LogInformation($"{Name}: Sensor state ({e.Sensor.State}) = completed state ({CompletedState})");
-            CheckDesiredState(new EnergyConsumer2StopCommand(this, EnergyConsumerState.Off));
-        }
-        else if (States.Where(x => x.IsRunning).Select(x => x.Name).Contains(HomeAssistant.StateSensor.State) && State.State != EnergyConsumerState.Running)
-        {
-            CheckDesiredState(new EnergyConsumer2StartCommand(this, EnergyConsumerState.Running));
-        }
-    }
 
     public override void Dispose()
     {
@@ -205,8 +196,6 @@ public class TriggeredEnergyConsumer2 : EnergyConsumer2
             HomeAssistant.SocketSwitch.TurnedOn -= Socket_TurnedOn;
             HomeAssistant.SocketSwitch.TurnedOn -= Socket_TurnedOff;
         }
-
-        HomeAssistant.StateSensor.StateChanged -= StateSensor_StateChanged;
 
         HomeAssistant.Dispose();
         MqttSensors.Dispose();

@@ -8,7 +8,7 @@ public class TimeWindowConfiguration
 {
     public TimeWindowConfiguration(IHaContext haContext, TimeWindowConfig config)
     {
-        ActiveSensor = !string.IsNullOrWhiteSpace(config.ActiveEntity) ? BinarySensor.Create(haContext, config.ActiveEntity) : null;
+        ActiveSensor = !string.IsNullOrWhiteSpace(config.ActiveSensor) ? BinarySensor.Create(haContext, config.ActiveSensor) : null;
         Start = config.Start;
         End = config.End;
     }

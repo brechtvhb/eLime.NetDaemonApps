@@ -15,9 +15,9 @@ public class EnergyConsumerConfig
     public TimeSpan? MaximumTimeout { get; set; }
 
     //Extra entity to force something to run (Eg : pond pump when it is freezing)
-    public string CriticallyNeededEntity { get; set; }
+    public string? CriticallyNeededEntity { get; set; }
 
-    public List<TimeWindowConfig> TimeWindows { get; set; }
+    public List<TimeWindowConfig> TimeWindows { get; set; } = [];
 
     public SimpleEnergyConsumerConfig? Simple { get; set; }
     public CoolingEnergyConsumerConfig? Cooling { get; set; }

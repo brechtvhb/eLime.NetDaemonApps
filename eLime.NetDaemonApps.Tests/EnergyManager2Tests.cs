@@ -40,7 +40,7 @@ public class EnergyManager2Tests
     public async Task Init_HappyFlow()
     {
         // Arrange
-        var consumer = new SimpleEnergyConsumer2Builder(_logger, _testCtx)
+        var consumer = new SimpleEnergyConsumer2Builder()
             .Build();
 
         var energyManager = await new EnergyManager2Builder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
@@ -65,7 +65,7 @@ public class EnergyManager2Tests
             LastRun = null,
         });
 
-        var consumer = new SimpleEnergyConsumer2Builder(_logger, _testCtx)
+        var consumer = new SimpleEnergyConsumer2Builder()
             .Build();
 
         _testCtx.TriggerStateChange(consumer.Simple!.SocketEntity, "on");
@@ -85,7 +85,7 @@ public class EnergyManager2Tests
     public async Task Socket_Turning_on_Triggers_State_Running()
     {
         // Arrange
-        var consumer = new SimpleEnergyConsumer2Builder(_logger, _testCtx)
+        var consumer = new SimpleEnergyConsumer2Builder()
             .Build();
 
         var energyManager = await new EnergyManager2Builder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
@@ -108,7 +108,7 @@ public class EnergyManager2Tests
     public async Task Socket_Turning_off_Triggers_State_Off()
     {
         // Arrange
-        var consumer = new SimpleEnergyConsumer2Builder(_logger, _testCtx)
+        var consumer = new SimpleEnergyConsumer2Builder()
             .Build();
 
         var energyManager = await new EnergyManager2Builder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
@@ -125,14 +125,14 @@ public class EnergyManager2Tests
         Assert.AreEqual(_testCtx.Scheduler.Now, energyManager.Consumers.First().State.LastRun);
         Assert.AreEqual(false, energyManager.Consumers.First().IsRunning);
         var mqttState = $"sensor.energy_consumer_{consumer.Name.MakeHaFriendly()}_state";
-        A.CallTo(() => _mqttEntityManager.SetStateAsync(mqttState, EnergyConsumerState.NeedsEnergy.ToString())).MustHaveHappened(1, Times.Exactly); //TODO: should happen only once, must get rid of shitty EnergyConsumer_StateChanged implementation
+        A.CallTo(() => _mqttEntityManager.SetStateAsync(mqttState, EnergyConsumerState.NeedsEnergy.ToString())).MustHaveHappened(1, Times.Exactly);
     }
 
     [TestMethod]
     public async Task Exporting_Energy_SwitchesOnLoad()
     {
         // Arrange
-        var consumer = new SimpleEnergyConsumer2Builder(_logger, _testCtx)
+        var consumer = new SimpleEnergyConsumer2Builder()
             .Build();
 
         var builder = new EnergyManager2Builder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
@@ -151,7 +151,7 @@ public class EnergyManager2Tests
     public async Task Above_Peak_Energy_SwitchesOffLoad()
     {
         // Arrange
-        var consumer = new SimpleEnergyConsumer2Builder(_logger, _testCtx)
+        var consumer = new SimpleEnergyConsumer2Builder()
             .Build();
 
         var builder = new EnergyManager2Builder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
@@ -173,7 +173,7 @@ public class EnergyManager2Tests
     public async Task Above_Peak_Energy_WithMinimumRuntime_SwitchesOffLoad_After_Duration()
     {
         // Arrange
-        var consumer = new SimpleEnergyConsumer2Builder(_logger, _testCtx)
+        var consumer = new SimpleEnergyConsumer2Builder()
             .WithRuntime(TimeSpan.FromSeconds(55), TimeSpan.FromMinutes(60))
             .Build();
 
@@ -196,7 +196,7 @@ public class EnergyManager2Tests
     public async Task SwitchOffLoad_When_Consuming_More_Than_SwitchOffLoad_After_MinimumRuntime()
     {
         // Arrange
-        var consumer = new SimpleEnergyConsumer2Builder(_logger, _testCtx)
+        var consumer = new SimpleEnergyConsumer2Builder()
             .WithRuntime(TimeSpan.FromSeconds(55), TimeSpan.FromMinutes(60))
             .WithLoad(-50, 200, 100)
             .Build();
@@ -220,7 +220,7 @@ public class EnergyManager2Tests
     public async Task DoNotSwitchOffLoad_When_Consuming_More_Than_SwitchOffLoad_Before_MinimumRuntime()
     {
         // Arrange
-        var consumer = new SimpleEnergyConsumer2Builder(_logger, _testCtx)
+        var consumer = new SimpleEnergyConsumer2Builder()
             .WithRuntime(TimeSpan.FromSeconds(90), TimeSpan.FromMinutes(60))
             .WithLoad(-50, 200, 100)
             .Build();
@@ -244,7 +244,7 @@ public class EnergyManager2Tests
     public async Task MaximumRuntime_SwitchesOffLoad()
     {
         // Arrange
-        var consumer = new SimpleEnergyConsumer2Builder(_logger, _testCtx)
+        var consumer = new SimpleEnergyConsumer2Builder()
             .WithRuntime(TimeSpan.FromSeconds(55), TimeSpan.FromSeconds(180))
             .Build();
 
@@ -276,7 +276,7 @@ public class EnergyManager2Tests
             LastRun = null,
         });
 
-        var consumer = new SimpleEnergyConsumer2Builder(_logger, _testCtx)
+        var consumer = new SimpleEnergyConsumer2Builder()
             .WithRuntime(TimeSpan.FromSeconds(55), TimeSpan.FromSeconds(180))
             .Build();
 
@@ -298,7 +298,7 @@ public class EnergyManager2Tests
     public async Task Respects_Timeout()
     {
         // Arrange
-        var consumer = new SimpleEnergyConsumer2Builder(_logger, _testCtx)
+        var consumer = new SimpleEnergyConsumer2Builder()
             .WithRuntime(TimeSpan.FromSeconds(55), TimeSpan.FromSeconds(180))
             .WithTimeout(TimeSpan.FromSeconds(60), TimeSpan.FromSeconds(300))
             .Build();
@@ -322,7 +322,7 @@ public class EnergyManager2Tests
     public async Task Can_Turn_On_After_Timeout()
     {
         // Arrange
-        var consumer = new SimpleEnergyConsumer2Builder(_logger, _testCtx)
+        var consumer = new SimpleEnergyConsumer2Builder()
             .WithRuntime(TimeSpan.FromSeconds(55), TimeSpan.FromSeconds(180))
             .WithTimeout(TimeSpan.FromSeconds(15), TimeSpan.FromSeconds(300))
             .Build();
@@ -346,10 +346,10 @@ public class EnergyManager2Tests
     public async Task MultipleConsumers_SwitchOn_One_If_Not_Enough_Power()
     {
         // Arrange
-        var consumer1 = new SimpleEnergyConsumer2Builder(_logger, _testCtx)
+        var consumer1 = new SimpleEnergyConsumer2Builder()
             .Build();
 
-        var consumer2 = new SimpleEnergyConsumer2Builder(_logger, _testCtx)
+        var consumer2 = new SimpleEnergyConsumer2Builder()
             .WithLoad(-60, 200, 100)
             .WithName("fridge")
             .Build();
@@ -373,10 +373,10 @@ public class EnergyManager2Tests
     public async Task MultipleConsumers_SwitchOn_Both_If_Enough_Power()
     {
         // Arrange
-        var consumer1 = new SimpleEnergyConsumer2Builder(_logger, _testCtx)
+        var consumer1 = new SimpleEnergyConsumer2Builder()
             .Build();
 
-        var consumer2 = new SimpleEnergyConsumer2Builder(_logger, _testCtx)
+        var consumer2 = new SimpleEnergyConsumer2Builder()
             .WithLoad(-60, 200, 100)
             .WithName("fridge")
             .Build();
@@ -400,10 +400,10 @@ public class EnergyManager2Tests
     public async Task MultipleConsumers_Prioritizes_Critical()
     {
         // Arrange
-        var consumer1 = new SimpleEnergyConsumer2Builder(_logger, _testCtx)
+        var consumer1 = new SimpleEnergyConsumer2Builder()
             .Build();
 
-        var consumer2 = new SimpleEnergyConsumer2Builder(_logger, _testCtx)
+        var consumer2 = new SimpleEnergyConsumer2Builder()
             .WithLoad(-60, 200, 100)
             .WithName("fridge")
             .WithCriticalSensor("binary_sensor.fridge_too_hot")
@@ -431,7 +431,7 @@ public class EnergyManager2Tests
         _testCtx.SetCurrentTime(DateTime.Today.AddDays(1).AddHours(10));
 
         // Arrange
-        var consumer = new SimpleEnergyConsumer2Builder(_logger, _testCtx)
+        var consumer = new SimpleEnergyConsumer2Builder()
             .AddTimeWindow(null, TimeSpan.FromHours(8), TimeSpan.FromHours(12))
             .Build();
 
@@ -453,7 +453,7 @@ public class EnergyManager2Tests
         _testCtx.SetCurrentTime(DateTime.Today.AddDays(1).AddHours(10));
 
         // Arrange
-        var consumer = new SimpleEnergyConsumer2Builder(_logger, _testCtx)
+        var consumer = new SimpleEnergyConsumer2Builder()
             .AddTimeWindow("binary_sensor.time_window_active", TimeSpan.FromHours(8), TimeSpan.FromHours(12))
             .Build();
 
@@ -477,7 +477,7 @@ public class EnergyManager2Tests
         _testCtx.SetCurrentTime(DateTime.Today.AddDays(1).AddHours(13));
 
         // Arrange
-        var consumer = new SimpleEnergyConsumer2Builder(_logger, _testCtx)
+        var consumer = new SimpleEnergyConsumer2Builder()
             .AddTimeWindow(null, TimeSpan.FromHours(8), TimeSpan.FromHours(12))
             .Build();
 
@@ -504,7 +504,7 @@ public class EnergyManager2Tests
         _testCtx.SetCurrentTime(DateTime.Today.AddDays(1).AddHours(10));
 
         // Arrange
-        var consumer = new SimpleEnergyConsumer2Builder(_logger, _testCtx)
+        var consumer = new SimpleEnergyConsumer2Builder()
             .AddTimeWindow("binary_sensor.time_window_active", TimeSpan.FromHours(8), TimeSpan.FromHours(12))
             .Build();
 
@@ -527,7 +527,7 @@ public class EnergyManager2Tests
         _testCtx.SetCurrentTime(DateTime.Today.AddDays(1).AddHours(10));
 
         // Arrange
-        var consumer = new SimpleEnergyConsumer2Builder(_logger, _testCtx)
+        var consumer = new SimpleEnergyConsumer2Builder()
             .AddTimeWindow(null, TimeSpan.FromHours(9), TimeSpan.FromHours(12))
             .AddTimeWindow(null, TimeSpan.FromHours(13), TimeSpan.FromHours(16))
             .Build();
@@ -550,7 +550,7 @@ public class EnergyManager2Tests
         _testCtx.SetCurrentTime(DateTime.Today.AddDays(1).AddHours(10));
 
         // Arrange
-        var consumer = new SimpleEnergyConsumer2Builder(_logger, _testCtx)
+        var consumer = new SimpleEnergyConsumer2Builder()
             .AddTimeWindow("binary_sensor.away", TimeSpan.FromHours(9), TimeSpan.FromHours(12))
             .AddTimeWindow("binary_sensor.away", TimeSpan.FromHours(13), TimeSpan.FromHours(16))
             .Build();
@@ -573,7 +573,7 @@ public class EnergyManager2Tests
         _testCtx.SetCurrentTime(DateTime.Today.AddDays(1).AddHours(13));
 
         // Arrange
-        var consumer = new SimpleEnergyConsumer2Builder(_logger, _testCtx)
+        var consumer = new SimpleEnergyConsumer2Builder()
             .AddTimeWindow(null, TimeSpan.FromHours(9), TimeSpan.FromHours(12))
             .AddTimeWindow(null, TimeSpan.FromHours(14), TimeSpan.FromHours(16))
             .Build();
