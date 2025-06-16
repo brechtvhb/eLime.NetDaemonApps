@@ -6,6 +6,7 @@ using FakeItEasy;
 using Microsoft.Extensions.Logging;
 using NetDaemon.Extensions.MqttEntityManager;
 using EnergyManager = eLime.NetDaemonApps.Domain.EnergyManager.EnergyManager;
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
 
 namespace eLime.NetDaemonApps.Tests;
 
@@ -16,7 +17,6 @@ public class CoolingEnergyConsumer2Tests
     private ILogger _logger;
     private IMqttEntityManager _mqttEntityManager;
     private IFileStorage _fileStorage;
-    private IGridMonitor _gridMonitor;
 
     [TestInitialize]
     public void Init()
@@ -26,7 +26,6 @@ public class CoolingEnergyConsumer2Tests
         _logger = A.Fake<ILogger<EnergyManager>>();
         _mqttEntityManager = A.Fake<IMqttEntityManager>();
         _fileStorage = A.Fake<IFileStorage>();
-        _gridMonitor = A.Fake<IGridMonitor>();
     }
 
 

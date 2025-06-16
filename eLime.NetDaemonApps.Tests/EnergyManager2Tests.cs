@@ -8,6 +8,7 @@ using FakeItEasy;
 using Microsoft.Extensions.Logging;
 using NetDaemon.Extensions.MqttEntityManager;
 using EnergyManager = eLime.NetDaemonApps.Domain.EnergyManager.EnergyManager;
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
 
 namespace eLime.NetDaemonApps.Tests;
 
@@ -21,7 +22,6 @@ public class EnergyManager2Tests
     private ILogger _logger;
     private IMqttEntityManager _mqttEntityManager;
     private IFileStorage _fileStorage;
-    private IGridMonitor _gridMonitor;
 
 
     [TestInitialize]
@@ -32,7 +32,6 @@ public class EnergyManager2Tests
         _logger = A.Fake<ILogger<EnergyManager>>();
         _mqttEntityManager = A.Fake<IMqttEntityManager>();
         _fileStorage = A.Fake<IFileStorage>();
-        _gridMonitor = A.Fake<IGridMonitor>();
     }
 
 
@@ -487,11 +486,6 @@ public class EnergyManager2Tests
 
         //Act
         _testCtx.TriggerStateChange(builder._grid.ExportEntity, "2000");
-        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
-
-        //Act
-        A.CallTo(() => _gridMonitor.CurrentLoadMinusBatteries).Returns(-2000);
-        A.CallTo(() => _gridMonitor.AverageLoadMinusBatteriesSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-2000);
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
 
         //Assert

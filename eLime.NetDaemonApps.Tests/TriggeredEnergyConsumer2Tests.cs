@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using NetDaemon.Extensions.MqttEntityManager;
 using System.Globalization;
 using EnergyManager = eLime.NetDaemonApps.Domain.EnergyManager.EnergyManager;
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
 
 namespace eLime.NetDaemonApps.Tests;
 
@@ -17,7 +18,6 @@ public class TriggeredEnergyConsumer2Tests
     private ILogger _logger;
     private IMqttEntityManager _mqttEntityManager;
     private IFileStorage _fileStorage;
-    private IGridMonitor _gridMonitor;
 
     [TestInitialize]
     public void Init()
@@ -27,7 +27,6 @@ public class TriggeredEnergyConsumer2Tests
         _logger = A.Fake<ILogger<EnergyManager>>();
         _mqttEntityManager = A.Fake<IMqttEntityManager>();
         _fileStorage = A.Fake<IFileStorage>();
-        _gridMonitor = A.Fake<IGridMonitor>();
     }
 
     //TODO: Temp fix - should use last known values if value did not change in the wanted timeframe
@@ -279,7 +278,7 @@ public class TriggeredEnergyConsumer2Tests
 
         var builder = new EnergyManager2Builder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
             .AddConsumer(consumer);
-        var energyManager = await builder.Build();
+        _ = await builder.Build();
 
         _testCtx.TriggerStateChange(consumer.Triggered!.SocketEntity, "on");
         _testCtx.TriggerStateChange(consumer.Triggered!.StateSensor, "Running");
