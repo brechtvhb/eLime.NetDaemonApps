@@ -4,18 +4,14 @@ using eLime.NetDaemonApps.Domain.EnergyManager2.HomeAssistant;
 using eLime.NetDaemonApps.Domain.EnergyManager2.Mqtt;
 using eLime.NetDaemonApps.Domain.EnergyManager2.PersistableState;
 using eLime.NetDaemonApps.Domain.Helper;
-using eLime.NetDaemonApps.Domain.Storage;
 using Microsoft.Extensions.Logging;
-using NetDaemon.Extensions.MqttEntityManager;
 using System.Reactive.Concurrency;
 
 namespace eLime.NetDaemonApps.Domain.EnergyManager2.Consumers;
 
 public abstract class EnergyConsumer2 : IDisposable
 {
-    protected ILogger Logger { get; }
-    protected IFileStorage FileStorage { get; }
-    protected IScheduler Scheduler { get; }
+    protected EnergyManagerContext Context { get; }
 
     internal ConsumerState State { get; private set; }
     internal abstract EnergyConsumerHomeAssistantEntities HomeAssistant { get; }
@@ -26,7 +22,6 @@ public abstract class EnergyConsumer2 : IDisposable
 
     internal double CurrentLoad => HomeAssistant.PowerUsageSensor.State ?? 0;
     internal List<TimeWindow> TimeWindows;
-    internal string Timezone;
     internal TimeSpan? MinimumRuntime;
     internal TimeSpan? MaximumRuntime;
     internal TimeSpan? MinimumTimeout;
@@ -38,15 +33,11 @@ public abstract class EnergyConsumer2 : IDisposable
     internal DebounceDispatcher? SaveAndPublishStateDebounceDispatcher { get; private set; }
     public IDisposable? StopTimer { get; set; }
 
-    protected EnergyConsumer2(ILogger logger, IFileStorage fileStorage, IScheduler scheduler, string timeZone, EnergyConsumerConfiguration config)
+    protected EnergyConsumer2(EnergyManagerContext context, EnergyConsumerConfiguration config)
     {
-        Logger = logger;
-        FileStorage = fileStorage;
-        Scheduler = scheduler;
-
+        Context = context;
         Name = config.Name;
         TimeWindows = config.TimeWindows.Select(x => new TimeWindow(x.ActiveSensor, new TimeOnly(0, 0).Add(x.Start), new TimeOnly(0, 0).Add(x.End))).ToList(); //TODO clean up
-        Timezone = timeZone;
 
         MinimumRuntime = config.MinimumRuntime;
         MaximumRuntime = config.MaximumRuntime;
@@ -56,39 +47,59 @@ public abstract class EnergyConsumer2 : IDisposable
         SwitchOnLoad = config.SwitchOnLoad;
         SwitchOffLoad = config.SwitchOffLoad;
     }
-    public static async Task<EnergyConsumer2> Create(ILogger logger, IFileStorage fileStorage, IScheduler scheduler, IMqttEntityManager mqttEntityManager, string timeZone, EnergyConsumerConfiguration config)
+    public static async Task<EnergyConsumer2> Create(EnergyManagerContext context, EnergyConsumerConfiguration config)
     {
         EnergyConsumer2 consumer;
 
         if (config.Simple != null)
-            consumer = new SimpleEnergyConsumer2(logger, fileStorage, scheduler, mqttEntityManager, timeZone, config);
+            consumer = new SimpleEnergyConsumer2(context, config);
         else if (config.Cooling != null)
-            consumer = new CoolingEnergyConsumer2(logger, fileStorage, scheduler, mqttEntityManager, timeZone, config);
+            consumer = new CoolingEnergyConsumer2(context, config);
         else if (config.Triggered != null)
-            consumer = new TriggeredEnergyConsumer2(logger, fileStorage, scheduler, mqttEntityManager, timeZone, config);
+            consumer = new TriggeredEnergyConsumer2(context, config);
         else if (config.CarCharger != null)
-            consumer = new CarChargerEnergyConsumer2(logger, fileStorage, scheduler, mqttEntityManager, timeZone, config);
+            consumer = new CarChargerEnergyConsumer2(context, config);
         else
             throw new NotSupportedException($"The energy consumer type '{config.GetType().Name}' is not supported.");
 
-        consumer.SaveAndPublishStateDebounceDispatcher = new DebounceDispatcher(TimeSpan.FromSeconds(1));
+        if (context.DebounceDuration != TimeSpan.Zero)
+            consumer.SaveAndPublishStateDebounceDispatcher = new DebounceDispatcher(context.DebounceDuration);
 
         await consumer.MqttSensors.CreateOrUpdateEntities(config.ConsumerGroups);
         consumer.GetAndSanitizeState();
+        consumer.StopIfPastRuntime();
         await consumer.SaveAndPublishState();
 
         return consumer;
     }
 
-
     internal event EventHandler<EnergyConsumer2StateChangedEvent>? StateChanged;
 
     internal void GetAndSanitizeState()
     {
-        var persistedState = FileStorage.Get<ConsumerState>("EnergyManager", Name);
+        var persistedState = Context.FileStorage.Get<ConsumerState>("EnergyManager", Name);
         State = persistedState ?? new ConsumerState();
 
-        Logger.LogDebug("{Name}: Retrieved state", Name);
+        Context.Logger.LogDebug("{Name}: Retrieved state", Name);
+    }
+
+    internal void StopIfPastRuntime()
+    {
+        var timespan = GetRunTime();
+
+        switch (timespan)
+        {
+            case null:
+                break;
+            case not null when timespan <= TimeSpan.Zero:
+                Context.Logger.LogDebug("{EnergyConsumer}: Will stop right now.", Name);
+                TurnOff();
+                break;
+            case not null when timespan > TimeSpan.Zero:
+                Context.Logger.LogDebug("{EnergyConsumer}: Will run for maximum span of '{TimeSpan}'", Name, timespan.Round().ToString());
+                StopTimer = Context.Scheduler.Schedule(timespan.Value, TurnOff);
+                break;
+        }
     }
 
     protected async Task DebounceSaveAndPublishState()
@@ -104,7 +115,7 @@ public abstract class EnergyConsumer2 : IDisposable
 
     internal async Task SaveAndPublishState()
     {
-        FileStorage.Save("EnergyManager", Name, State);
+        Context.FileStorage.Save("EnergyManager", Name, State);
         await MqttSensors.PublishState(State);
     }
 
@@ -118,8 +129,15 @@ public abstract class EnergyConsumer2 : IDisposable
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "{EnergyConsumer}: Error while processing state change.", Name);
+            Context.Logger.LogError(ex, "{EnergyConsumer}: Error while processing state change.", Name);
         }
+    }
+
+    internal void Started()
+    {
+        State.StartedAt = Context.Scheduler.Now;
+        State.State = EnergyConsumerState.Running;
+        Context.Logger.LogDebug("{EnergyConsumer}: Was started.", Name);
     }
 
     internal void Stop()
@@ -129,26 +147,26 @@ public abstract class EnergyConsumer2 : IDisposable
         StopTimer = null;
     }
 
-    internal void Stopped(DateTimeOffset now)
+    internal void Stopped()
     {
         State.StartedAt = null;
-        State.LastRun = now;
-
-        Logger.LogDebug("{EnergyConsumer}: Was stopped.", Name);
-
-        CheckDesiredState(now);
+        State.LastRun = Context.Scheduler.Now;
+        State.State = GetDesiredState();
+        Context.Logger.LogDebug("{EnergyConsumer}: Was stopped.", Name);
     }
 
 
+    //TODO: This is shit
     internal void CheckDesiredState(EnergyConsumer2StateChangedEvent eventToEmit)
     {
         State.State = eventToEmit.State;
         OnStateCHanged(eventToEmit);
     }
 
-    public void CheckDesiredState(DateTimeOffset? now)
+    //TODO: I want to get rid of this
+    public void CheckDesiredState()
     {
-        var desiredState = GetDesiredState(now);
+        var desiredState = GetDesiredState();
 
         if (State.State == desiredState)
             return;
@@ -169,37 +187,37 @@ public abstract class EnergyConsumer2 : IDisposable
             OnStateCHanged(@event);
     }
 
-    public TimeSpan? GetRunTime(DateTimeOffset now)
+    public TimeSpan? GetRunTime()
     {
-        var timeWindow = GetCurrentTimeWindow(now);
+        var timeWindow = GetCurrentTimeWindow();
 
         if (timeWindow == null)
-            return GetRemainingRunTime(MaximumRuntime, now);
+            return GetRemainingRunTime(MaximumRuntime);
 
-        var end = now.Add(-now.TimeOfDay).Add(timeWindow.End.ToTimeSpan());
-        if (now > end)
+        var end = Context.Scheduler.Now.Add(-Context.Scheduler.Now.TimeOfDay).Add(timeWindow.End.ToTimeSpan());
+        if (Context.Scheduler.Now > end)
             end = end.AddDays(1);
 
-        var timeUntilEndOfWindow = end - now;
+        var timeUntilEndOfWindow = end - Context.Scheduler.Now;
 
         if (MaximumRuntime == null)
-            return GetRemainingRunTime(timeUntilEndOfWindow, now);
+            return GetRemainingRunTime(timeUntilEndOfWindow);
 
         return MaximumRuntime < timeUntilEndOfWindow
-            ? GetRemainingRunTime(MaximumRuntime, now)
-            : GetRemainingRunTime(timeUntilEndOfWindow, now);
+            ? GetRemainingRunTime(MaximumRuntime)
+            : GetRemainingRunTime(timeUntilEndOfWindow);
     }
 
     protected bool HasTimeWindow()
     {
         return TimeWindows.Count > 0;
     }
-    protected bool IsWithinTimeWindow(DateTimeOffset now)
+    protected bool IsWithinTimeWindow()
     {
-        return GetCurrentTimeWindow(now) != null;
+        return GetCurrentTimeWindow() != null;
     }
 
-    protected TimeWindow? GetCurrentTimeWindow(DateTimeOffset now)
+    protected TimeWindow? GetCurrentTimeWindow()
     {
         if (!HasTimeWindow())
             return null;
@@ -207,40 +225,21 @@ public abstract class EnergyConsumer2 : IDisposable
         //if (Name == "Washing machine")
         //    Logger.LogDebug($"TimeWindows: {String.Join(" / ", TimeWindows.Select(x => x.ToString()))}");
 
-        return TimeWindows.FirstOrDefault(timeWindow => timeWindow.IsActive(now, Timezone));
+        return TimeWindows.FirstOrDefault(timeWindow => timeWindow.IsActive(Context.Scheduler.Now, Context.Timezone));
     }
 
-    internal void Started(IScheduler scheduler, DateTimeOffset? startTime = null)
-    {
-        State.StartedAt = startTime ?? scheduler.Now;
-        var timespan = GetRunTime(scheduler.Now);
 
-        switch (timespan)
-        {
-            case null:
-                break;
-            case not null when timespan <= TimeSpan.Zero:
-                Logger.LogDebug("{EnergyConsumer}: Will stop right now.", Name);
-                TurnOff();
-                break;
-            case not null when timespan > TimeSpan.Zero:
-                Logger.LogDebug("{EnergyConsumer}: Will run for maximum span of '{TimeSpan}'", Name, timespan.Round().ToString());
-                StopTimer = scheduler.Schedule(timespan.Value, TurnOff);
-                break;
-        }
-    }
-
-    protected TimeSpan? GetRemainingRunTime(TimeSpan? suggestedRunTime, DateTimeOffset now)
+    protected TimeSpan? GetRemainingRunTime(TimeSpan? suggestedRunTime)
     {
-        var currentRuntime = now - State.StartedAt;
+        var currentRuntime = Context.Scheduler.Now - State.StartedAt;
         var remainingDuration = suggestedRunTime - currentRuntime;
         return remainingDuration < suggestedRunTime ? remainingDuration : suggestedRunTime;
     }
 
-    protected abstract EnergyConsumerState GetDesiredState(DateTimeOffset? now);
-    public abstract bool CanStart(DateTimeOffset now);
-    public abstract bool CanForceStop(DateTimeOffset now);
-    public abstract bool CanForceStopOnPeakLoad(DateTimeOffset now);
+    protected abstract EnergyConsumerState GetDesiredState();
+    public abstract bool CanStart();
+    public abstract bool CanForceStop();
+    public abstract bool CanForceStopOnPeakLoad();
     public abstract void TurnOn();
     public abstract void TurnOff();
     public abstract void Dispose();

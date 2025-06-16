@@ -2,19 +2,14 @@
 using eLime.NetDaemonApps.Domain.EnergyManager2.HomeAssistant;
 using eLime.NetDaemonApps.Domain.EnergyManager2.PersistableState;
 using eLime.NetDaemonApps.Domain.Helper;
-using eLime.NetDaemonApps.Domain.Storage;
 using Microsoft.Extensions.Logging;
-using NetDaemon.Extensions.MqttEntityManager;
 using System.Reactive.Concurrency;
 
 namespace eLime.NetDaemonApps.Domain.EnergyManager2;
 
 public class Battery2 : IDisposable
 {
-    protected ILogger Logger { get; }
-    protected IFileStorage FileStorage { get; }
-    protected IScheduler Scheduler { get; }
-
+    protected EnergyManagerContext Context { get; }
     internal BatteryState State { get; private set; }
     internal BatteryHomeAssistantEntities HomeAssistant { get; }
 
@@ -26,19 +21,12 @@ public class Battery2 : IDisposable
     internal bool CanDischarge => HomeAssistant.MaxDischargePowerNumber.State is > 0;
     internal double CurrentLoad => HomeAssistant.PowerSensor.State ?? 0;
 
-    internal string Timezone { get; private set; }
-
     internal DebounceDispatcher? SaveAndPublishStateDebounceDispatcher { get; private set; }
 
-    internal Battery2(ILogger logger, IFileStorage fileStorage, IScheduler scheduler, string timeZone, BatteryConfiguration config)
+    internal Battery2(EnergyManagerContext context, BatteryConfiguration config)
     {
-        Logger = logger;
-        FileStorage = fileStorage;
-        Scheduler = scheduler;
-
+        Context = context;
         HomeAssistant = new BatteryHomeAssistantEntities(config);
-
-        Timezone = timeZone;
 
         Name = config.Name;
         Capacity = config.Capacity;
@@ -46,11 +34,12 @@ public class Battery2 : IDisposable
         MaxDischargePower = config.MaxDischargePower;
 
     }
-    public static async Task<Battery2> Create(ILogger logger, IFileStorage fileStorage, IScheduler scheduler, IMqttEntityManager mqttEntityManager, string timeZone, BatteryConfiguration config)
+    public static async Task<Battery2> Create(EnergyManagerContext context, BatteryConfiguration config)
     {
-        var battery = new Battery2(logger, fileStorage, scheduler, timeZone, config);
+        var battery = new Battery2(context, config);
 
-        battery.SaveAndPublishStateDebounceDispatcher = new DebounceDispatcher(TimeSpan.FromSeconds(1));
+        if (context.DebounceDuration != TimeSpan.Zero)
+            battery.SaveAndPublishStateDebounceDispatcher = new DebounceDispatcher(context.DebounceDuration);
 
         //await battery.MqttSensors.CreateOrUpdateEntities(config.ConsumerGroups);
         battery.GetAndSanitizeState();
@@ -61,10 +50,10 @@ public class Battery2 : IDisposable
 
     internal void GetAndSanitizeState()
     {
-        var persistedState = FileStorage.Get<BatteryState>("EnergyManager", Name);
+        var persistedState = Context.FileStorage.Get<BatteryState>("EnergyManager", Name);
         State = persistedState ?? new BatteryState();
 
-        Logger.LogDebug("{Name}: Retrieved state", Name);
+        Context.Logger.LogDebug("{Name}: Retrieved state", Name);
     }
 
     protected async Task DebounceSaveAndPublishState()
@@ -80,7 +69,7 @@ public class Battery2 : IDisposable
 
     internal Task SaveAndPublishState()
     {
-        FileStorage.Save("EnergyManager", Name, State);
+        Context.FileStorage.Save("EnergyManager", Name, State);
         //await MqttSensors.PublishState(State);
         return Task.CompletedTask;
     }
@@ -92,7 +81,7 @@ public class Battery2 : IDisposable
 
         HomeAssistant.MaxChargePowerNumber.Change(0);
         State.LastChange = Scheduler.Now;
-        Logger.LogInformation("{Battery}: Battery will no longer charge.", Name);
+        Context.Logger.LogInformation("{Battery}: Battery will no longer charge.", Name);
         await DebounceSaveAndPublishState();
     }
 
@@ -103,7 +92,7 @@ public class Battery2 : IDisposable
 
         HomeAssistant.MaxChargePowerNumber.Change(MaxChargePower);
         State.LastChange = Scheduler.Now;
-        Logger.LogInformation("{Battery}: Battery is allowed to charge at max {maxChargePower}W.", Name, MaxChargePower);
+        Context.Logger.LogInformation("{Battery}: Battery is allowed to charge at max {maxChargePower}W.", Name, MaxChargePower);
         await DebounceSaveAndPublishState();
     }
 
@@ -114,7 +103,7 @@ public class Battery2 : IDisposable
 
         HomeAssistant.MaxDischargePowerNumber.Change(0);
         State.LastChange = Scheduler.Now;
-        Logger.LogInformation("{Battery}: Battery will no longer discharge.", Name);
+        Context.Logger.LogInformation("{Battery}: Battery will no longer discharge.", Name);
         await DebounceSaveAndPublishState();
     }
 
@@ -125,7 +114,7 @@ public class Battery2 : IDisposable
 
         HomeAssistant.MaxDischargePowerNumber.Change(MaxDischargePower);
         State.LastChange = Scheduler.Now;
-        Logger.LogInformation("{Battery}: Battery is allowed to discharge at max {maxDisChargePower}W.", Name, MaxDischargePower);
+        Context.Logger.LogInformation("{Battery}: Battery is allowed to discharge at max {maxDisChargePower}W.", Name, MaxDischargePower);
         await DebounceSaveAndPublishState();
     }
 

@@ -10,35 +10,31 @@ namespace eLime.NetDaemonApps.Domain.EnergyManager2.Configuration;
 
 public class EnergyManagerConfiguration
 {
+    public GridConfiguration Grid { get; private init; }
+    public NumericSensor SolarProductionRemainingTodaySensor { get; private init; }
+
+    public List<EnergyConsumerConfiguration> Consumers { get; private init; }
+    public BatteryManagerConfiguration BatteryManager { get; private init; }
+    public EnergyManagerContext Context { get; private init; }
+
     public EnergyManagerConfiguration(IHaContext haContext, ILogger logger, IScheduler scheduler, IFileStorage fileStorage, IMqttEntityManager mqttEntityManager, EnergyManagerConfig config, TimeSpan debounceDuration)
     {
-        HaContext = haContext;
-        Logger = logger;
-        Scheduler = scheduler;
-        FileStorage = fileStorage;
-        MqttEntityManager = mqttEntityManager;
-
-        Timezone = config.Timezone;
-        DebounceDuration = debounceDuration;
-
+        Context = new EnergyManagerContext(haContext, logger, scheduler, fileStorage, mqttEntityManager, config.Timezone, debounceDuration);
         Grid = new GridConfiguration(haContext, config.Grid);
         SolarProductionRemainingTodaySensor = NumericSensor.Create(haContext, config.SolarProductionRemainingTodayEntity);
         Consumers = config.Consumers.Select(c => new EnergyConsumerConfiguration(haContext, c)).ToList();
         BatteryManager = new BatteryManagerConfiguration(haContext, config.BatteryManager);
 
     }
-    public IHaContext HaContext { get; set; }
-    public ILogger Logger { get; set; }
-    public IScheduler Scheduler { get; set; }
-    public IFileStorage FileStorage { get; set; }
-    public IMqttEntityManager MqttEntityManager { get; set; }
-    public string Timezone { get; set; }
-    public TimeSpan DebounceDuration { get; set; }
+}
 
-    public GridConfiguration Grid { get; set; }
-    public NumericSensor SolarProductionRemainingTodaySensor { get; set; }
-
-    public List<EnergyConsumerConfiguration> Consumers { get; set; }
-    public BatteryManagerConfiguration BatteryManager { get; set; }
-
+public class EnergyManagerContext(IHaContext haContext, ILogger logger, IScheduler scheduler, IFileStorage fileStorage, IMqttEntityManager mqttEntityManager, string timezone, TimeSpan debounceDuration)
+{
+    public IHaContext HaContext { get; private init; } = haContext;
+    public ILogger Logger { get; private init; } = logger;
+    public IScheduler Scheduler { get; private init; } = scheduler;
+    public IFileStorage FileStorage { get; private init; } = fileStorage;
+    public IMqttEntityManager MqttEntityManager { get; private init; } = mqttEntityManager;
+    public string Timezone { get; private init; } = timezone;
+    public TimeSpan DebounceDuration { get; private init; } = debounceDuration;
 }

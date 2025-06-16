@@ -5,11 +5,8 @@ using eLime.NetDaemonApps.Domain.EnergyManager2.HomeAssistant;
 using eLime.NetDaemonApps.Domain.EnergyManager2.Mqtt;
 using eLime.NetDaemonApps.Domain.EnergyManager2.PersistableState;
 using eLime.NetDaemonApps.Domain.Helper;
-using eLime.NetDaemonApps.Domain.Storage;
 using Microsoft.Extensions.Logging;
 using NetDaemon.Extensions.Scheduler;
-using NetDaemon.HassModel;
-using System.Reactive.Concurrency;
 using System.Runtime.CompilerServices;
 using AllowBatteryPower = eLime.NetDaemonApps.Domain.EnergyManager2.Consumers.AllowBatteryPower;
 
@@ -22,11 +19,7 @@ public class EnergyManager2 : IDisposable
 {
     private static readonly object _lock = new();
 
-    internal IHaContext HaContext { get; private set; }
-    internal ILogger Logger { get; private set; }
-    internal IScheduler Scheduler { get; private set; }
-    internal IFileStorage FileStorage { get; private set; }
-
+    internal EnergyManagerContext Context { get; private set; }
     internal EnergyManagerState State { get; private set; }
     internal EnergyManagerHomeAssistantEntities HomeAssistant { get; private set; }
     internal EnergyManagerMqttSensors MqttSensors { get; private set; }
@@ -56,47 +49,45 @@ public class EnergyManager2 : IDisposable
 
     private async Task Initialize(EnergyManagerConfiguration configuration)
     {
-        HaContext = configuration.HaContext;
-        Logger = configuration.Logger;
-        Scheduler = configuration.Scheduler;
-        FileStorage = configuration.FileStorage;
+        Context = configuration.Context;
 
         HomeAssistant = new EnergyManagerHomeAssistantEntities(configuration);
 
         GridMonitor = GridMonitor2.Create(configuration);
         foreach (var x in configuration.Consumers)
         {
-            var consumer = await EnergyConsumer2.Create(Logger, FileStorage, Scheduler, configuration.MqttEntityManager, configuration.Timezone, x);
+            var consumer = await EnergyConsumer2.Create(Context, x);
             consumer.StateChanged += EnergyConsumer_StateChanged;
             Consumers.Add(consumer);
         }
-        BatteryManager = await BatteryManager.Create(Logger, FileStorage, Scheduler, configuration.Timezone, configuration.MqttEntityManager, configuration.BatteryManager);
+        BatteryManager = await BatteryManager.Create(Context, configuration.BatteryManager);
 
-        MqttSensors = new EnergyManagerMqttSensors(Scheduler, configuration.MqttEntityManager);
-        if (configuration.DebounceDuration != TimeSpan.Zero)
-            ManageConsumersDebounceDispatcher = new DebounceDispatcher(configuration.DebounceDuration);
+        MqttSensors = new EnergyManagerMqttSensors(Context);
+        if (Context.DebounceDuration != TimeSpan.Zero)
+            ManageConsumersDebounceDispatcher = new DebounceDispatcher(Context.DebounceDuration);
 
-        SaveAndPublishStateDebounceDispatcher = new DebounceDispatcher(TimeSpan.FromSeconds(1));
+        if (Context.DebounceDuration != TimeSpan.Zero)
+            SaveAndPublishStateDebounceDispatcher = new DebounceDispatcher(Context.DebounceDuration);
 
         await MqttSensors.CreateOrUpdateEntities();
         GetAndSanitizeState();
         await SaveAndPublishState();
 
-        GuardTask = Scheduler.RunEvery(TimeSpan.FromSeconds(5), Scheduler.Now, async void () =>
+        GuardTask = Context.Scheduler.RunEvery(TimeSpan.FromSeconds(5), Context.Scheduler.Now, async void () =>
         {
             try
             {
-                if (_lastChange.Add(_minimumChangeInterval) > Scheduler.Now)
+                if (_lastChange.Add(_minimumChangeInterval) > Context.Scheduler.Now)
                     return;
 
                 foreach (var consumer in Consumers)
-                    consumer.CheckDesiredState(Scheduler.Now);
+                    consumer.CheckDesiredState();
 
                 await DebounceManageConsumers();
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "Fatal excepting when trying to manage consumers");
+                Context.Logger.LogError(ex, "Fatal excepting when trying to manage consumers");
             }
         });
     }
@@ -127,7 +118,7 @@ public class EnergyManager2 : IDisposable
     {
         if (!Monitor.TryEnter(_lock))
         {
-            Logger.LogInformation("Could not manage consumers because lock object is still locked.");
+            Context.Logger.LogInformation("Could not manage consumers because lock object is still locked.");
             return;
         }
 
@@ -139,11 +130,11 @@ public class EnergyManager2 : IDisposable
             await ManageBatteriesIfNeeded();
 
             if (dynamicNetChange != 0 || startNetChange != 0 || stopNetChange != 0)
-                _lastChange = Scheduler.Now;
+                _lastChange = Context.Scheduler.Now;
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error while managing consumers.");
+            Context.Logger.LogError(ex, "Error while managing consumers.");
         }
         finally
         {
@@ -164,7 +155,7 @@ public class EnergyManager2 : IDisposable
             if (netChange == 0)
                 continue;
 
-            Logger.LogDebug("{Consumer}: Changed current for dynamic consumer, to {DynamicCurrent}A (Net change: {NetLoadChange}W).", dynamicLoadConsumer.Name, current, netChange);
+            Context.Logger.LogDebug("{Consumer}: Changed current for dynamic consumer, to {DynamicCurrent}A (Net change: {NetLoadChange}W).", dynamicLoadConsumer.Name, current, netChange);
             dynamicNetChange += netChange;
         }
 
@@ -176,7 +167,7 @@ public class EnergyManager2 : IDisposable
     private double StartConsumersIfNeeded(double dynamicLoadNetChange)
     {
         var preStartEstimatedLoad = GridMonitor.CurrentLoadMinusBatteries + dynamicLoadNetChange;
-        var preStartEstimatedAveragedLoad = GridMonitor.AverageLoadMinusBatteriesSince(Scheduler.Now, _minimumChangeInterval) + dynamicLoadNetChange;
+        var preStartEstimatedAveragedLoad = GridMonitor.AverageLoadMinusBatteriesSince(_minimumChangeInterval) + dynamicLoadNetChange;
         var startNetChange = 0d;
 
         var runningConsumers = Consumers.Where(x => x.State.State == EnergyConsumerState.Running).ToList();
@@ -189,7 +180,7 @@ public class EnergyManager2 : IDisposable
 
         foreach (var criticalConsumer in consumersThatCriticallyNeedEnergy)
         {
-            if (!criticalConsumer.CanStart(Scheduler.Now))
+            if (!criticalConsumer.CanStart())
                 continue;
 
             var dynamicLoadThatCanBeScaledDownOnBehalfOf = GetDynamicLoadThatCanBeScaledDownOnBehalfOf(criticalConsumer, dynamicLoadNetChange);
@@ -202,7 +193,7 @@ public class EnergyManager2 : IDisposable
 
             criticalConsumer.TurnOn();
 
-            Logger.LogDebug("{Consumer}: Started consumer, consumer is in critical need of energy. Current load/estimated load (dynamicLoadThatCanBeScaledDownOnBehalfOf) was: {CurrentLoad}/{EstimatedLoad} ({DynamicLoadThatCanBeScaledDownOnBehalfOf}). Switch-on/peak load of consumer is: {SwitchOnLoad}/{PeakLoad}.", criticalConsumer.Name, GridMonitor.CurrentLoad, estimatedAverageLoad, dynamicLoadThatCanBeScaledDownOnBehalfOf, criticalConsumer.SwitchOnLoad, criticalConsumer.PeakLoad);
+            Context.Logger.LogDebug("{Consumer}: Started consumer, consumer is in critical need of energy. Current load/estimated load (dynamicLoadThatCanBeScaledDownOnBehalfOf) was: {CurrentLoad}/{EstimatedLoad} ({DynamicLoadThatCanBeScaledDownOnBehalfOf}). Switch-on/peak load of consumer is: {SwitchOnLoad}/{PeakLoad}.", criticalConsumer.Name, GridMonitor.CurrentLoad, estimatedAverageLoad, dynamicLoadThatCanBeScaledDownOnBehalfOf, criticalConsumer.SwitchOnLoad, criticalConsumer.PeakLoad);
             estimatedLoad += criticalConsumer.PeakLoad;
             estimatedAverageLoad += criticalConsumer.PeakLoad;
             startNetChange += criticalConsumer.PeakLoad;
@@ -211,7 +202,7 @@ public class EnergyManager2 : IDisposable
         var consumersThatNeedEnergy = Consumers.Where(x => x is { State.State: EnergyConsumerState.NeedsEnergy });
         foreach (var consumer in consumersThatNeedEnergy)
         {
-            if (!consumer.CanStart(Scheduler.Now))
+            if (!consumer.CanStart())
                 continue;
 
             var dynamicLoadThatCanBeScaledDownOnBehalfOf = GetDynamicLoadThatCanBeScaledDownOnBehalfOf(consumer, dynamicLoadNetChange);
@@ -234,7 +225,7 @@ public class EnergyManager2 : IDisposable
 
             consumer.TurnOn();
 
-            Logger.LogDebug("{Consumer}: Will start consumer. Current load/estimated (expectedLoad/dynamicLoadThatCanBeScaledDownOnBehalfOf) load was: {CurrentLoad}/{EstimatedLoad} ({ExpectedLoad}/{DynamicLoadThatCanBeScaledDownOnBehalfOf}). Switch-on/peak load of consumer is: {SwitchOnLoad}/{PeakLoad}. Last change was at: {LastChange}", consumer.Name, GridMonitor.CurrentLoad, estimatedLoad, expectedLoad, dynamicLoadThatCanBeScaledDownOnBehalfOf, consumer.SwitchOnLoad, consumer.PeakLoad, _lastChange.ToString("O"));
+            Context.Logger.LogDebug("{Consumer}: Will start consumer. Current load/estimated (expectedLoad/dynamicLoadThatCanBeScaledDownOnBehalfOf) load was: {CurrentLoad}/{EstimatedLoad} ({ExpectedLoad}/{DynamicLoadThatCanBeScaledDownOnBehalfOf}). Switch-on/peak load of consumer is: {SwitchOnLoad}/{PeakLoad}. Last change was at: {LastChange}", consumer.Name, GridMonitor.CurrentLoad, estimatedLoad, expectedLoad, dynamicLoadThatCanBeScaledDownOnBehalfOf, consumer.SwitchOnLoad, consumer.PeakLoad, _lastChange.ToString("O"));
             estimatedLoad += consumer.PeakLoad;
             estimatedAverageLoad += consumer.PeakLoad;
             startNetChange += consumer.PeakLoad;
@@ -246,20 +237,20 @@ public class EnergyManager2 : IDisposable
     private double StopConsumersIfNeeded(double dynamicLoadNetChange, double startLoadNetChange)
     {
         var estimatedLoad = GridMonitor.CurrentLoadMinusBatteries + dynamicLoadNetChange + startLoadNetChange;
-        var estimatedAverageLoad = GridMonitor.AverageLoadMinusBatteriesSince(Scheduler.Now, TimeSpan.FromMinutes(3)) + dynamicLoadNetChange + startLoadNetChange;
+        var estimatedAverageLoad = GridMonitor.AverageLoadMinusBatteriesSince(TimeSpan.FromMinutes(3)) + dynamicLoadNetChange + startLoadNetChange;
         var stopNetChange = 0d;
 
         var consumersThatNoLongerNeedEnergy = Consumers.Where(x => x is { State.State: EnergyConsumerState.Off, IsRunning: true });
         foreach (var consumer in consumersThatNoLongerNeedEnergy)
         {
-            Logger.LogDebug("{Consumer}: Will stop consumer because it no longer needs energy.", consumer.Name);
+            Context.Logger.LogDebug("{Consumer}: Will stop consumer because it no longer needs energy.", consumer.Name);
             consumer.Stop();
             estimatedLoad -= consumer.CurrentLoad;
             estimatedAverageLoad -= consumer.CurrentLoad;
             stopNetChange -= consumer.CurrentLoad;
         }
 
-        var consumersThatPreferSolar = Consumers.OrderByDescending(x => x.SwitchOffLoad).Where(x => x.IsRunning).Where(x => x.CanForceStop(Scheduler.Now)).ToList();
+        var consumersThatPreferSolar = Consumers.OrderByDescending(x => x.SwitchOffLoad).Where(x => x.IsRunning).Where(x => x.CanForceStop()).ToList();
         foreach (var consumer in consumersThatPreferSolar)
         {
             var dynamicLoadThatCanBeScaledDownOnBehalfOf = GetDynamicLoadThatCanBeScaledDownOnBehalfOf(consumer, dynamicLoadNetChange);
@@ -270,7 +261,7 @@ public class EnergyManager2 : IDisposable
             if (consumer.SwitchOffLoad > estimatedLoad - dynamicLoadThatCanBeScaledDownOnBehalfOf)
                 continue;
 
-            Logger.LogDebug("{Consumer}: Will stop consumer because current load is above switch off load. Current load/estimated (dynamicLoadThatCanBeScaledDownOnBehalfOf) load was: {CurrentLoad}/{EstimatedLoad} ({DynamicLoadThatCanBeScaledDownOnBehalfOf}). Switch-off/peak load of consumer is: {SwitchOffLoad}/{PeakLoad}", consumer.Name, GridMonitor.CurrentLoad, estimatedAverageLoad, dynamicLoadThatCanBeScaledDownOnBehalfOf, consumer.SwitchOffLoad, consumer.PeakLoad);
+            Context.Logger.LogDebug("{Consumer}: Will stop consumer because current load is above switch off load. Current load/estimated (dynamicLoadThatCanBeScaledDownOnBehalfOf) load was: {CurrentLoad}/{EstimatedLoad} ({DynamicLoadThatCanBeScaledDownOnBehalfOf}). Switch-off/peak load of consumer is: {SwitchOffLoad}/{PeakLoad}", consumer.Name, GridMonitor.CurrentLoad, estimatedAverageLoad, dynamicLoadThatCanBeScaledDownOnBehalfOf, consumer.SwitchOffLoad, consumer.PeakLoad);
             consumer.Stop();
             estimatedLoad -= consumer.CurrentLoad;
             estimatedAverageLoad -= consumer.CurrentLoad;
@@ -288,16 +279,16 @@ public class EnergyManager2 : IDisposable
         if (dynamicLoadThatCanBeScaledDownOnBehalfOfForAllConsumers > 0)
             return stopNetChange;
 
-        var consumersThatShouldForceStopped = Consumers.Where(x => x.CanForceStopOnPeakLoad(Scheduler.Now) && x.IsRunning);
+        var consumersThatShouldForceStopped = Consumers.Where(x => x.CanForceStopOnPeakLoad() && x.IsRunning);
         foreach (var consumer in consumersThatShouldForceStopped)
         {
             if (consumer is IDynamicLoadConsumer2 && dynamicLoadNetChange != 0)
             {
-                Logger.LogDebug("{Consumer}: Should force stop, but won't do it because dynamic load was adjusted. Current load/estimated load was: {CurrentLoad}/{EstimatedLoad}. Switch-off/peak load of consumer is: {SwitchOffLoad}/{PeakLoad}", consumer.Name, GridMonitor.CurrentLoad, estimatedAverageLoad, consumer.SwitchOffLoad, consumer.PeakLoad);
+                Context.Logger.LogDebug("{Consumer}: Should force stop, but won't do it because dynamic load was adjusted. Current load/estimated load was: {CurrentLoad}/{EstimatedLoad}. Switch-off/peak load of consumer is: {SwitchOffLoad}/{PeakLoad}", consumer.Name, GridMonitor.CurrentLoad, estimatedAverageLoad, consumer.SwitchOffLoad, consumer.PeakLoad);
                 continue;
             }
 
-            Logger.LogDebug("{Consumer}: Will stop consumer right now because peak load was exceeded. Current load/estimated load was: {CurrentLoad}/{EstimatedLoad}. Switch-off/peak load of consumer is: {SwitchOffLoad}/{PeakLoad}", consumer.Name, GridMonitor.CurrentLoad, estimatedAverageLoad, consumer.SwitchOffLoad, consumer.PeakLoad);
+            Context.Logger.LogDebug("{Consumer}: Will stop consumer right now because peak load was exceeded. Current load/estimated load was: {CurrentLoad}/{EstimatedLoad}. Switch-off/peak load of consumer is: {SwitchOffLoad}/{PeakLoad}", consumer.Name, GridMonitor.CurrentLoad, estimatedAverageLoad, consumer.SwitchOffLoad, consumer.PeakLoad);
             consumer.Stop();
             estimatedLoad -= consumer.CurrentLoad;
             estimatedAverageLoad -= consumer.CurrentLoad;
@@ -347,26 +338,25 @@ public class EnergyManager2 : IDisposable
         return Math.Round(dynamicLoadThatCanBeScaledDownOnBehalfOf < 0 ? 0 : dynamicLoadThatCanBeScaledDownOnBehalfOf);
     }
 
+    //TODO: I want to get rid of this
     private async void EnergyConsumer_StateChanged(object? sender, EnergyConsumer2StateChangedEvent e)
     {
         try
         {
             var energyConsumer = Consumers.Single(x => x.Name == e.Consumer.Name);
 
-            Logger.LogInformation("{EnergyConsumer}: State changed to: {State}.", e.Consumer.Name, e.State);
+            Context.Logger.LogInformation("{EnergyConsumer}: State changed to: {State}.", e.Consumer.Name, e.State);
 
             switch (e)
             {
                 case EnergyConsumer2StartCommand:
                     break;
                 case EnergyConsumer2StartedEvent:
-                    energyConsumer.Started(Scheduler);
+                    break;
+                case EnergyConsumer2StoppedEvent:
                     break;
                 case EnergyConsumer2StopCommand:
                     energyConsumer.Stop();
-                    break;
-                case EnergyConsumer2StoppedEvent:
-                    energyConsumer.Stopped(Scheduler.Now);
                     break;
             }
 
@@ -374,19 +364,18 @@ public class EnergyManager2 : IDisposable
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "{EnergyConsumer}: Error while processing state change.", e.Consumer.Name);
+            Context.Logger.LogError(ex, "{EnergyConsumer}: Error while processing state change.", e.Consumer.Name);
         }
     }
     private void GetAndSanitizeState()
     {
-        var persistedState = FileStorage.Get<EnergyManagerState>("EnergyManager", "EnergyManager"); //TODO: per battery state is done with consumer?
-
+        var persistedState = Context.FileStorage.Get<EnergyManagerState>("EnergyManager", "EnergyManager");
         State = persistedState ?? new EnergyManagerState();
     }
 
     private async Task SaveAndPublishState()
     {
-        FileStorage.Save("EnergyManager", "EnergyManager", State);
+        Context.FileStorage.Save("EnergyManager", "EnergyManager", State);
         await MqttSensors.PublishState(State);
     }
 

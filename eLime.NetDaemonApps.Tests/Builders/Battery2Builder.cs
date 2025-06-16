@@ -20,12 +20,13 @@ public class Battery2Builder
     private string _maxDischargePowerEntity;
 
     private List<TimeWindow> _timeWindows = [];
-    private string _timezone;
+
 
     public Battery2Builder(ILogger logger, AppTestContext testCtx)
     {
-        _timezone = "Utc";
+
     }
+
     public Battery2Builder MarstekVenusE()
     {
         _name = "Marstek Venus E";

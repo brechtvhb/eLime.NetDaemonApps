@@ -3,10 +3,7 @@ using eLime.NetDaemonApps.Domain.EnergyManager2.Configuration;
 using eLime.NetDaemonApps.Domain.EnergyManager2.HomeAssistant;
 using eLime.NetDaemonApps.Domain.EnergyManager2.Mqtt;
 using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
-using eLime.NetDaemonApps.Domain.Storage;
 using Microsoft.Extensions.Logging;
-using NetDaemon.Extensions.MqttEntityManager;
-using System.Reactive.Concurrency;
 using CarChargingMode = eLime.NetDaemonApps.Domain.EnergyManager2.Configuration.CarChargingMode;
 
 namespace eLime.NetDaemonApps.Domain.EnergyManager2.Consumers;
@@ -44,15 +41,15 @@ public class CarChargerEnergyConsumer2 : EnergyConsumer2, IDynamicLoadConsumer2
     private int CurrentCurrentForConnectedCar => CurrentLoad > 0 ? Convert.ToInt32(CurrentLoad / TotalVoltage) : 0;
     public DateTimeOffset? _lastCurrentChange;
 
-    internal CarChargerEnergyConsumer2(ILogger logger, IFileStorage fileStorage, IScheduler scheduler, IMqttEntityManager mqttEntityManager, string timeZone, EnergyConsumerConfiguration config)
-        : base(logger, fileStorage, scheduler, timeZone, config)
+    internal CarChargerEnergyConsumer2(EnergyManagerContext context, EnergyConsumerConfiguration config)
+        : base(context, config)
     {
         if (config.CarCharger == null)
             throw new ArgumentException("Simple configuration is required for CarChargerEnergyConsumer2.");
 
         HomeAssistant = new CarChargerEnergyConsumerHomeAssistantEntities(config);
         HomeAssistant.CurrentNumber.Changed += CurrentNumber_Changed;
-        MqttSensors = new DynamicEnergyConsumerMqttSensors(config.Name, mqttEntityManager);
+        MqttSensors = new DynamicEnergyConsumerMqttSensors(config.Name, context);
         MqttSensors.BalancingMethodChangedEvent += BalancingMethodChangedEvent;
         MqttSensors.BalanceOnBehalfOfChangedEvent += BalanceOnBehalfOfChangedEvent;
         MqttSensors.AllowBatteryPowerChangedEvent += AllowBatteryPowerChangedEvent;
@@ -63,7 +60,7 @@ public class CarChargerEnergyConsumer2 : EnergyConsumer2, IDynamicLoadConsumer2
 
         foreach (var carConfig in config.CarCharger.Cars)
         {
-            var car = new Car2(Logger, Scheduler, carConfig);
+            var car = new Car2(Context, carConfig);
             car.ChargerTurnedOn += Car_ChargerTurnedOn;
             car.ChargerTurnedOff += Car_ChargerTurnedOff;
             car.Connected += Car_Connected;
@@ -76,12 +73,12 @@ public class CarChargerEnergyConsumer2 : EnergyConsumer2, IDynamicLoadConsumer2
         try
         {
             State.BalancingMethod = e.BalancingMethod;
-            _balancingMethodLastChangedAt = Scheduler.Now;
+            _balancingMethodLastChangedAt = Context.Scheduler.Now;
             await DebounceSaveAndPublishState();
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Could not handle Smart grid ready mode state change.");
+            Context.Logger.LogError(ex, "Could not handle Smart grid ready mode state change.");
         }
     }
 
@@ -94,7 +91,7 @@ public class CarChargerEnergyConsumer2 : EnergyConsumer2, IDynamicLoadConsumer2
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Could not handle Balance on behalf of state change.");
+            Context.Logger.LogError(ex, "Could not handle Balance on behalf of state change.");
         }
     }
 
@@ -107,22 +104,22 @@ public class CarChargerEnergyConsumer2 : EnergyConsumer2, IDynamicLoadConsumer2
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Could not handle Allow battery power state change.");
+            Context.Logger.LogError(ex, "Could not handle Allow battery power state change.");
         }
     }
 
 
     public (double current, double netPowerChange) Rebalance(IGridMonitor2 gridMonitor, double totalNetChange)
     {
-        if (_lastCurrentChange?.Add(MinimumRebalancingInterval) > Scheduler.Now)
+        if (_lastCurrentChange?.Add(MinimumRebalancingInterval) > Context.Scheduler.Now)
             return (0, 0);
 
         var currentChargerCurrent = HomeAssistant.CurrentNumber.State ?? 0;
 
         var currentLoad = AllowBatteryPower == AllowBatteryPower.Yes ? gridMonitor.CurrentLoad : gridMonitor.CurrentLoadMinusBatteries;
         var averagedLoad = AllowBatteryPower == AllowBatteryPower.Yes
-            ? gridMonitor.AverageLoadSince(Scheduler.Now, MinimumRebalancingInterval.Subtract(TimeSpan.FromSeconds(10)))
-            : gridMonitor.AverageLoadMinusBatteriesSince(Scheduler.Now, MinimumRebalancingInterval.Subtract(TimeSpan.FromSeconds(10)));
+            ? gridMonitor.AverageLoadSince(MinimumRebalancingInterval.Subtract(TimeSpan.FromSeconds(10)))
+            : gridMonitor.AverageLoadMinusBatteriesSince(MinimumRebalancingInterval.Subtract(TimeSpan.FromSeconds(10)));
 
         var currentAdjustment = GetBalancingAdjustedGridCurrent(currentLoad + totalNetChange, averagedLoad + totalNetChange, gridMonitor.PeakLoad, gridMonitor.CurrentAverageDemand);
 
@@ -145,7 +142,7 @@ public class CarChargerEnergyConsumer2 : EnergyConsumer2, IDynamicLoadConsumer2
         if (!chargerCurrentChanged && !carCurrentChanged)
             return (0, 0);
 
-        _lastCurrentChange = Scheduler.Now;
+        _lastCurrentChange = Context.Scheduler.Now;
 
         var netCurrentChange = ConnectedCar?.CanSetCurrent ?? false
             ? carCurrent - CurrentCurrentForConnectedCar
@@ -174,16 +171,16 @@ public class CarChargerEnergyConsumer2 : EnergyConsumer2, IDynamicLoadConsumer2
     public double GetMaximizeQuarterPeakAdjustedGridCurrent(double netGridUsage, double peakUsageThisMonth, double currentAverageDemand)
     {
         var availableLoadToReachPeak = peakUsageThisMonth - currentAverageDemand;
-        var remainingMinutesThisQuarter = 15 - ((((Scheduler.Now.Minute * 60) + Scheduler.Now.Second) % (15 * 60)) / 60d);
+        var remainingMinutesThisQuarter = 15 - ((((Context.Scheduler.Now.Minute * 60) + Context.Scheduler.Now.Second) % (15 * 60)) / 60d);
 
         if (remainingMinutesThisQuarter < 0.5)
             remainingMinutesThisQuarter = 0.5;
 
         var adjustedLoadForRemainingTime = 15 / remainingMinutesThisQuarter * availableLoadToReachPeak;
 
-        Logger.LogDebug($"Peak this month: {peakUsageThisMonth}W. Average load this quarter: {currentAverageDemand}W. Available load to reach peak: {availableLoadToReachPeak}W. Remaining minutes this quarter: {remainingMinutesThisQuarter:N1}. Adjusted load for remaining time: {adjustedLoadForRemainingTime:#####}W. ");
+        Context.Logger.LogDebug($"Peak this month: {peakUsageThisMonth}W. Average load this quarter: {currentAverageDemand}W. Available load to reach peak: {availableLoadToReachPeak}W. Remaining minutes this quarter: {remainingMinutesThisQuarter:N1}. Adjusted load for remaining time: {adjustedLoadForRemainingTime:#####}W. ");
         var adjustedCurrent = Math.Round((netGridUsage - adjustedLoadForRemainingTime) / TotalVoltage, 0, MidpointRounding.ToPositiveInfinity);
-        Logger.LogDebug($"Adjusted current: {adjustedCurrent}A");
+        Context.Logger.LogDebug($"Adjusted current: {adjustedCurrent}A");
 
         return adjustedCurrent;
     }
@@ -285,14 +282,14 @@ public class CarChargerEnergyConsumer2 : EnergyConsumer2, IDynamicLoadConsumer2
 
     private void ChangeCurrent(double toBeCurrent)
     {
-        if (_lastCurrentChange?.Add(TimeSpan.FromSeconds(5)) > Scheduler.Now)
+        if (_lastCurrentChange?.Add(TimeSpan.FromSeconds(5)) > Context.Scheduler.Now)
             return;
 
         HomeAssistant.CurrentNumber.Change(toBeCurrent);
-        _lastCurrentChange = Scheduler.Now;
+        _lastCurrentChange = Context.Scheduler.Now;
     }
 
-    protected override EnergyConsumerState GetDesiredState(DateTimeOffset? now)
+    protected override EnergyConsumerState GetDesiredState()
     {
         var connectedCarNeedsEnergy = ConnectedCar?.NeedsEnergy ?? false;
         var needsEnergy = (HomeAssistant.StateSensor.State == CarChargerStates.Occupied.ToString() || HomeAssistant.StateSensor.State == CarChargerStates.Charging.ToString()) && connectedCarNeedsEnergy;
@@ -311,39 +308,39 @@ public class CarChargerEnergyConsumer2 : EnergyConsumer2, IDynamicLoadConsumer2
         };
     }
 
-    public override bool CanStart(DateTimeOffset now)
+    public override bool CanStart()
     {
         if (State.State is EnergyConsumerState.Running or EnergyConsumerState.Off)
             return false;
 
-        if (HasTimeWindow() && !IsWithinTimeWindow(now))
+        if (HasTimeWindow() && !IsWithinTimeWindow())
             return false;
 
         if (MinimumTimeout == null)
             return true;
 
-        return !(State.LastRun?.Add(MinimumTimeout.Value) > now);
+        return !(State.LastRun?.Add(MinimumTimeout.Value) > Context.Scheduler.Now);
     }
 
 
-    public override bool CanForceStop(DateTimeOffset now)
+    public override bool CanForceStop()
     {
-        if (MinimumRuntime != null && State.StartedAt?.Add(MinimumRuntime.Value) > now)
+        if (MinimumRuntime != null && State.StartedAt?.Add(MinimumRuntime.Value) > Context.Scheduler.Now)
             return false;
 
         if (HomeAssistant.CriticallyNeededSensor != null && HomeAssistant.CriticallyNeededSensor.IsOn())
             return false;
 
-        if (HomeAssistant.CriticallyNeededSensor?.EntityState?.LastUpdated?.AddMinutes(3) > now)
+        if (HomeAssistant.CriticallyNeededSensor?.EntityState?.LastUpdated?.AddMinutes(3) > Context.Scheduler.Now)
             return false;
 
         if (BalancingMethod is BalancingMethod.MaximizeQuarterPeak or BalancingMethod.NearPeak or BalancingMethod.MidPeak)
             return false;
 
-        if (_balancingMethodLastChangedAt?.AddMinutes(3) > now)
+        if (_balancingMethodLastChangedAt?.AddMinutes(3) > Context.Scheduler.Now)
             return false;
 
-        if (_lastCurrentChange?.AddMinutes(3) > now || ConnectedCar?.LastCurrentChange?.AddMinutes(3) > now)
+        if (_lastCurrentChange?.AddMinutes(3) > Context.Scheduler.Now || ConnectedCar?.LastCurrentChange?.AddMinutes(3) > Context.Scheduler.Now)
             return false;
 
         if (CurrentCurrentForConnectedCar > MinimumCurrentForConnectedCar)
@@ -352,9 +349,9 @@ public class CarChargerEnergyConsumer2 : EnergyConsumer2, IDynamicLoadConsumer2
         return true;
     }
 
-    public override bool CanForceStopOnPeakLoad(DateTimeOffset now)
+    public override bool CanForceStopOnPeakLoad()
     {
-        if (MinimumRuntime != null && State.StartedAt?.Add(MinimumRuntime.Value) > now)
+        if (MinimumRuntime != null && State.StartedAt?.Add(MinimumRuntime.Value) > Context.Scheduler.Now)
             return false;
 
         //Can re-balance
@@ -362,7 +359,7 @@ public class CarChargerEnergyConsumer2 : EnergyConsumer2, IDynamicLoadConsumer2
             return false;
 
         //Just rebalanced, give it one cycle (might need more time as peak load is validated over past 3 minutes, hence * 2 for the moment
-        if (_lastCurrentChange?.Add(MinimumRebalancingInterval * 2) > now || ConnectedCar?.LastCurrentChange?.Add(MinimumRebalancingInterval * 2) > now)
+        if (_lastCurrentChange?.Add(MinimumRebalancingInterval * 2) > Context.Scheduler.Now || ConnectedCar?.LastCurrentChange?.Add(MinimumRebalancingInterval * 2) > Context.Scheduler.Now)
             return false;
 
         return true;
@@ -390,7 +387,7 @@ public class CarChargerEnergyConsumer2 : EnergyConsumer2, IDynamicLoadConsumer2
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error while turning off car charger.");
+            Context.Logger.LogError(ex, "Error while turning off car charger.");
         }
     }
 
@@ -411,7 +408,7 @@ public class CarChargerEnergyConsumer2 : EnergyConsumer2, IDynamicLoadConsumer2
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error while turning off car charger.");
+            Context.Logger.LogError(ex, "Error while turning off car charger.");
         }
     }
 
@@ -445,14 +442,14 @@ public class CarChargerEnergyConsumer2 : EnergyConsumer2, IDynamicLoadConsumer2
 
     private void Car_ChargerTurnedOn(object? sender, BinarySensorEventArgs e)
     {
-        Logger.LogInformation($"Car '{ConnectedCar?.Name}' connected.");
+        Context.Logger.LogInformation($"Car '{ConnectedCar?.Name}' connected.");
 
         if (ConnectedCar?.AutoPowerOnWhenConnecting ?? false)
             TurnOn();
     }
     private void Car_Connected(object? sender, BinarySensorEventArgs e)
     {
-        Logger.LogInformation($"Car '{ConnectedCar?.Name}' connected.");
+        Context.Logger.LogInformation($"Car '{ConnectedCar?.Name}' connected.");
 
         if (ConnectedCar?.AutoPowerOnWhenConnecting ?? false)
             TurnOn();

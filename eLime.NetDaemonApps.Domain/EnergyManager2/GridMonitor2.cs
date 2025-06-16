@@ -2,16 +2,13 @@
 using eLime.NetDaemonApps.Domain.EnergyManager2.HomeAssistant;
 using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
 using eLime.NetDaemonApps.Domain.Helper;
-using Microsoft.Extensions.Logging;
-using System.Reactive.Concurrency;
 
 namespace eLime.NetDaemonApps.Domain.EnergyManager2;
 #pragma warning disable CS8618, CS9264
 
 public class GridMonitor2 : IDisposable, IGridMonitor2
 {
-    internal ILogger Logger { get; private set; }
-    internal IScheduler Scheduler { get; private set; }
+    internal EnergyManagerContext Context { get; private set; }
     internal GridMonitorHomeAssistantEntities HomeAssistant { get; private set; }
 
     private double _lastKnownValidPowerImportValue;
@@ -87,8 +84,7 @@ public class GridMonitor2 : IDisposable, IGridMonitor2
 
     private void Initialize(EnergyManagerConfiguration configuration)
     {
-        Logger = configuration.Logger;
-        Scheduler = configuration.Scheduler;
+        Context = configuration.Context;
         HomeAssistant = new GridMonitorHomeAssistantEntities(configuration.Grid, configuration.BatteryManager);
         HomeAssistant.PowerImportSensor.Changed += GridPowerImportSensor_Changed;
         HomeAssistant.PowerExportSensor.Changed += GridPowerExportSensor_Changed;
@@ -102,14 +98,14 @@ public class GridMonitor2 : IDisposable, IGridMonitor2
         if (e.Sensor.State == null)
             return;
 
-        _lastImportValues.Enqueue((Scheduler.Now, e.Sensor.State.Value));
+        _lastImportValues.Enqueue((Context.Scheduler.Now, e.Sensor.State.Value));
     }
     private void GridPowerExportSensor_Changed(object? sender, NumericSensorEventArgs e)
     {
         if (e.Sensor.State == null)
             return;
 
-        _lastExportValues.Enqueue((Scheduler.Now, e.Sensor.State.Value));
+        _lastExportValues.Enqueue((Context.Scheduler.Now, e.Sensor.State.Value));
     }
 
     private void TotalBatteryChargePowerSensor_Changed(object? sender, NumericSensorEventArgs e)
@@ -117,25 +113,25 @@ public class GridMonitor2 : IDisposable, IGridMonitor2
         if (e.Sensor.State == null)
             return;
 
-        _lastBatteryChargePowerValues.Enqueue((Scheduler.Now, e.Sensor.State.Value));
+        _lastBatteryChargePowerValues.Enqueue((Context.Scheduler.Now, e.Sensor.State.Value));
     }
     private void TotalBatteryDischargePowerSensor_Changed(object? sender, NumericSensorEventArgs e)
     {
         if (e.Sensor.State == null)
             return;
 
-        _lastBatteryDischargePowerValues.Enqueue((Scheduler.Now, e.Sensor.State.Value));
+        _lastBatteryDischargePowerValues.Enqueue((Context.Scheduler.Now, e.Sensor.State.Value));
     }
 
-    public double AverageImportSince(DateTimeOffset now, TimeSpan timeSpan) => Math.Round(_lastImportValues.Where(x => x.Moment.Add(timeSpan) > now).Select(x => x.Value).DefaultIfEmpty().Average());
+    public double AverageImportSince(TimeSpan timeSpan) => Math.Round(_lastImportValues.Where(x => x.Moment.Add(timeSpan) > Context.Scheduler.Now).Select(x => x.Value).DefaultIfEmpty().Average());
 
-    public double AverageExportSince(DateTimeOffset now, TimeSpan timeSpan) => Math.Round(_lastExportValues.Where(x => x.Moment.Add(timeSpan) > now).Select(x => x.Value).DefaultIfEmpty().Average());
-    public double AverageBatteryChargePowerSince(DateTimeOffset now, TimeSpan timeSpan) => Math.Round(_lastBatteryChargePowerValues.Where(x => x.Moment.Add(timeSpan) > now).Select(x => x.Value).DefaultIfEmpty().Average());
-    public double AverageBatteryDischargePowerSince(DateTimeOffset now, TimeSpan timeSpan) => Math.Round(_lastBatteryDischargePowerValues.Where(x => x.Moment.Add(timeSpan) > now).Select(x => x.Value).DefaultIfEmpty().Average());
+    public double AverageExportSince(TimeSpan timeSpan) => Math.Round(_lastExportValues.Where(x => x.Moment.Add(timeSpan) > Context.Scheduler.Now).Select(x => x.Value).DefaultIfEmpty().Average());
+    public double AverageBatteryChargePowerSince(TimeSpan timeSpan) => Math.Round(_lastBatteryChargePowerValues.Where(x => x.Moment.Add(timeSpan) > Context.Scheduler.Now).Select(x => x.Value).DefaultIfEmpty().Average());
+    public double AverageBatteryDischargePowerSince(TimeSpan timeSpan) => Math.Round(_lastBatteryDischargePowerValues.Where(x => x.Moment.Add(timeSpan) > Context.Scheduler.Now).Select(x => x.Value).DefaultIfEmpty().Average());
 
 
-    public double AverageLoadSince(DateTimeOffset now, TimeSpan timeSpan) => AverageImportSince(now, timeSpan) - AverageExportSince(now, timeSpan);
-    public double AverageLoadMinusBatteriesSince(DateTimeOffset now, TimeSpan timeSpan) => AverageLoadSince(now, timeSpan) - AverageBatteryChargePowerSince(now, timeSpan) + AverageBatteryDischargePowerSince(now, timeSpan);
+    public double AverageLoadSince(TimeSpan timeSpan) => AverageImportSince(timeSpan) - AverageExportSince(timeSpan);
+    public double AverageLoadMinusBatteriesSince(TimeSpan timeSpan) => AverageLoadSince(timeSpan) - AverageBatteryChargePowerSince(timeSpan) + AverageBatteryDischargePowerSince(timeSpan);
 
     public void Dispose()
     {

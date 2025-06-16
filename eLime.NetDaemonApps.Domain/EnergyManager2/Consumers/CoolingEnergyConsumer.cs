@@ -3,10 +3,6 @@ using eLime.NetDaemonApps.Domain.EnergyManager2.Configuration;
 using eLime.NetDaemonApps.Domain.EnergyManager2.HomeAssistant;
 using eLime.NetDaemonApps.Domain.EnergyManager2.Mqtt;
 using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
-using eLime.NetDaemonApps.Domain.Storage;
-using Microsoft.Extensions.Logging;
-using NetDaemon.Extensions.MqttEntityManager;
-using System.Reactive.Concurrency;
 
 namespace eLime.NetDaemonApps.Domain.EnergyManager2.Consumers;
 
@@ -19,8 +15,8 @@ public class CoolingEnergyConsumer2 : EnergyConsumer2
     public double TargetTemperature { get; set; }
     public double MaxTemperature { get; set; }
 
-    internal CoolingEnergyConsumer2(ILogger logger, IFileStorage fileStorage, IScheduler scheduler, IMqttEntityManager mqttEntityManager, string timeZone, EnergyConsumerConfiguration config)
-        : base(logger, fileStorage, scheduler, timeZone, config)
+    internal CoolingEnergyConsumer2(EnergyManagerContext context, EnergyConsumerConfiguration config)
+        : base(context, config)
     {
         if (config.Cooling == null)
             throw new ArgumentException("Cooling configuration is required for CoolingEnergyConsumer2.");
@@ -29,31 +25,31 @@ public class CoolingEnergyConsumer2 : EnergyConsumer2
         HomeAssistant.SocketSwitch.TurnedOn += Socket_TurnedOn;
         HomeAssistant.SocketSwitch.TurnedOff += Socket_TurnedOff;
 
-        MqttSensors = new EnergyConsumerMqttSensors(config.Name, mqttEntityManager);
+        MqttSensors = new EnergyConsumerMqttSensors(config.Name, context);
         PeakLoad = config.Cooling.PeakLoad;
         TargetTemperature = config.Cooling.TargetTemperature;
         MaxTemperature = config.Cooling.MaxTemperature;
     }
 
-    protected override EnergyConsumerState GetDesiredState(DateTimeOffset? now)
+    protected override EnergyConsumerState GetDesiredState()
     {
         return IsRunning switch
         {
             true when HomeAssistant.TemperatureSensor.State < TargetTemperature => EnergyConsumerState.Off,
             true => EnergyConsumerState.Running,
-            false when MaximumTimeout != null && State.LastRun?.Add(MaximumTimeout.Value) < now => EnergyConsumerState.CriticallyNeedsEnergy,
+            false when MaximumTimeout != null && State.LastRun?.Add(MaximumTimeout.Value) < Context.Scheduler.Now => EnergyConsumerState.CriticallyNeedsEnergy,
             false when HomeAssistant.CriticallyNeededSensor != null && HomeAssistant.CriticallyNeededSensor.IsOn() => EnergyConsumerState.CriticallyNeedsEnergy,
             false when HomeAssistant.TemperatureSensor.State >= MaxTemperature => EnergyConsumerState.CriticallyNeedsEnergy,
             false when HomeAssistant.TemperatureSensor.State >= TargetTemperature => EnergyConsumerState.NeedsEnergy,
             false => EnergyConsumerState.Off
         };
     }
-    public override bool CanStart(DateTimeOffset now)
+    public override bool CanStart()
     {
         if (State.State is EnergyConsumerState.Running or EnergyConsumerState.Off)
             return false;
 
-        if (!IsWithinTimeWindow(now) && HasTimeWindow())
+        if (!IsWithinTimeWindow() && HasTimeWindow())
             return false;
 
         if (HomeAssistant.TemperatureSensor.State < TargetTemperature)
@@ -62,12 +58,12 @@ public class CoolingEnergyConsumer2 : EnergyConsumer2
         if (MinimumTimeout == null)
             return true;
 
-        return !(State.LastRun?.Add(MinimumTimeout.Value) > now);
+        return !(State.LastRun?.Add(MinimumTimeout.Value) > Context.Scheduler.Now);
     }
 
-    public override bool CanForceStop(DateTimeOffset now)
+    public override bool CanForceStop()
     {
-        if (MinimumRuntime != null && State.StartedAt?.Add(MinimumRuntime.Value) > now)
+        if (MinimumRuntime != null && State.StartedAt?.Add(MinimumRuntime.Value) > Context.Scheduler.Now)
             return false;
 
         if (HomeAssistant.CriticallyNeededSensor != null && HomeAssistant.CriticallyNeededSensor.IsOn())
@@ -79,9 +75,9 @@ public class CoolingEnergyConsumer2 : EnergyConsumer2
         return true;
     }
 
-    public override bool CanForceStopOnPeakLoad(DateTimeOffset now)
+    public override bool CanForceStopOnPeakLoad()
     {
-        if (MinimumRuntime != null && State.StartedAt?.Add(MinimumRuntime.Value) > now)
+        if (MinimumRuntime != null && State.StartedAt?.Add(MinimumRuntime.Value) > Context.Scheduler.Now)
             return false;
 
         return true;

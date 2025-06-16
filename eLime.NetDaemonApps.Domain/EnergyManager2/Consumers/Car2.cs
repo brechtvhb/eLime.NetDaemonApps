@@ -2,7 +2,6 @@
 using eLime.NetDaemonApps.Domain.EnergyManager2.Configuration;
 using eLime.NetDaemonApps.Domain.EnergyManager2.HomeAssistant;
 using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
-using Microsoft.Extensions.Logging;
 using System.Reactive.Concurrency;
 using CarChargingMode = eLime.NetDaemonApps.Domain.EnergyManager2.Configuration.CarChargingMode;
 
@@ -10,8 +9,7 @@ namespace eLime.NetDaemonApps.Domain.EnergyManager2.Consumers;
 
 internal class Car2 : IDisposable
 {
-    protected ILogger Logger;
-    protected IScheduler Scheduler { get; }
+    protected EnergyManagerContext Context { get; }
     internal CarHomeAssistantEntities HomeAssistant { get; }
 
     public string Name { get; set; }
@@ -43,15 +41,12 @@ internal class Car2 : IDisposable
                 : HomeAssistant.ChargerSwitch.IsOn();
 
 
-    internal Car2(ILogger logger, IScheduler scheduler, CarConfiguration config)
+    internal Car2(EnergyManagerContext context, CarConfiguration config)
     {
-        Logger = logger;
-        Scheduler = scheduler;
-
         if (config == null)
             throw new ArgumentException("car configuration is required for Car2.");
 
-
+        Context = context;
         HomeAssistant = new CarHomeAssistantEntities(config);
         if (HomeAssistant.ChargerSwitch != null)
         {

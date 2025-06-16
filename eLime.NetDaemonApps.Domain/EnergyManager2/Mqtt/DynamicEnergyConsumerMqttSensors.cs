@@ -1,4 +1,5 @@
 ﻿
+using eLime.NetDaemonApps.Domain.EnergyManager2.Configuration;
 using eLime.NetDaemonApps.Domain.EnergyManager2.Consumers;
 using eLime.NetDaemonApps.Domain.EnergyManager2.PersistableState;
 using eLime.NetDaemonApps.Domain.Helper;
@@ -15,7 +16,7 @@ public class DynamicEnergyConsumerMqttSensors : EnergyConsumerMqttSensors
     private readonly string SELECT_CONSUMER_BALANCE_ON_BEHALF_OF;
     private readonly string SELECT_CONSUMER_ALLOW_BATTERY_POWER;
 
-    public DynamicEnergyConsumerMqttSensors(string name, IMqttEntityManager mqttEntityManager) : base(name, mqttEntityManager)
+    public DynamicEnergyConsumerMqttSensors(string name, EnergyManagerContext context) : base(name, context)
     {
         SELECT_CONSUMER_BALANCING_METHOD = $"sensor.energy_consumer_{Name.MakeHaFriendly()}_balancing_method";
         SELECT_CONSUMER_BALANCE_ON_BEHALF_OF = $"sensor.energy_consumer_{Name.MakeHaFriendly()}_balance_on_behalf_of";
@@ -74,32 +75,32 @@ public class DynamicEnergyConsumerMqttSensors : EnergyConsumerMqttSensors
 
         var balancingMethodCreationOptions = new EntityCreationOptions(UniqueId: SELECT_CONSUMER_BALANCING_METHOD, Name: $"Dynamic load balancing method - {Name}", DeviceClass: "select", Persist: true);
         var balancingMethodDropdownOptions = new SelectOptions { Icon = "mdi:car-turbocharger", Options = Enum<BalancingMethod>.AllValuesAsStringList(), Device = Device };
-        await MqttEntityManager.CreateAsync(SELECT_CONSUMER_BALANCING_METHOD, balancingMethodCreationOptions, balancingMethodDropdownOptions);
+        await Context.MqttEntityManager.CreateAsync(SELECT_CONSUMER_BALANCING_METHOD, balancingMethodCreationOptions, balancingMethodDropdownOptions);
 
-        var smartGridReadyModeObservable = await MqttEntityManager.PrepareCommandSubscriptionAsync(SELECT_CONSUMER_BALANCING_METHOD);
+        var smartGridReadyModeObservable = await Context.MqttEntityManager.PrepareCommandSubscriptionAsync(SELECT_CONSUMER_BALANCING_METHOD);
         BalancingMethodObservable = smartGridReadyModeObservable.SubscribeAsync(BalancingMethodChangedChangedEventHandler());
 
         var balanceOnBehalfOfCreationOptions = new EntityCreationOptions(UniqueId: SELECT_CONSUMER_BALANCE_ON_BEHALF_OF, Name: $"Dynamic load balance on behalf of - {Name}", DeviceClass: "select", Persist: true);
         var balanceOnBehalfOfDropdownOptions = new SelectOptions { Icon = "mdi:car-turbocharger", Options = consumerGroups, Device = Device };
-        await MqttEntityManager.CreateAsync(SELECT_CONSUMER_BALANCE_ON_BEHALF_OF, balanceOnBehalfOfCreationOptions, balanceOnBehalfOfDropdownOptions);
+        await Context.MqttEntityManager.CreateAsync(SELECT_CONSUMER_BALANCE_ON_BEHALF_OF, balanceOnBehalfOfCreationOptions, balanceOnBehalfOfDropdownOptions);
 
-        var balanceOnBehalfOfObservable = await MqttEntityManager.PrepareCommandSubscriptionAsync(SELECT_CONSUMER_BALANCE_ON_BEHALF_OF);
+        var balanceOnBehalfOfObservable = await Context.MqttEntityManager.PrepareCommandSubscriptionAsync(SELECT_CONSUMER_BALANCE_ON_BEHALF_OF);
         BalanceOnBehalfOfObservable = balanceOnBehalfOfObservable.SubscribeAsync(BalanceOnBehalfOfChangedChangedEventHandler());
 
         var allowBatteryPowerCreationOptions = new EntityCreationOptions(UniqueId: SELECT_CONSUMER_ALLOW_BATTERY_POWER, Name: $"Dynamic load allow battery power - {Name}", DeviceClass: "select", Persist: true);
         var allowBatteryPowerDropdownOptions = new SelectOptions { Icon = "fapro:battery-bolt", Options = Enum<AllowBatteryPower>.AllValuesAsStringList(), Device = Device };
-        await MqttEntityManager.CreateAsync(SELECT_CONSUMER_ALLOW_BATTERY_POWER, allowBatteryPowerCreationOptions, allowBatteryPowerDropdownOptions);
+        await Context.MqttEntityManager.CreateAsync(SELECT_CONSUMER_ALLOW_BATTERY_POWER, allowBatteryPowerCreationOptions, allowBatteryPowerDropdownOptions);
 
-        var allowBatteryPowerObservable = await MqttEntityManager.PrepareCommandSubscriptionAsync(SELECT_CONSUMER_ALLOW_BATTERY_POWER);
+        var allowBatteryPowerObservable = await Context.MqttEntityManager.PrepareCommandSubscriptionAsync(SELECT_CONSUMER_ALLOW_BATTERY_POWER);
         AllowBatteryPowerObservable = allowBatteryPowerObservable.SubscribeAsync(AllowBatteryPowerChangedChangedEventHandler());
     }
 
     internal new async Task PublishState(ConsumerState state)
     {
         await base.PublishState(state);
-        await MqttEntityManager.SetStateAsync(SELECT_CONSUMER_BALANCING_METHOD, state.BalancingMethod.ToString());
-        await MqttEntityManager.SetStateAsync(SELECT_CONSUMER_BALANCE_ON_BEHALF_OF, state.BalanceOnBehalfOf);
-        await MqttEntityManager.SetStateAsync(SELECT_CONSUMER_ALLOW_BATTERY_POWER, state.AllowBatteryPower.ToString());
+        await Context.MqttEntityManager.SetStateAsync(SELECT_CONSUMER_BALANCING_METHOD, state.BalancingMethod.ToString());
+        await Context.MqttEntityManager.SetStateAsync(SELECT_CONSUMER_BALANCE_ON_BEHALF_OF, state.BalanceOnBehalfOf);
+        await Context.MqttEntityManager.SetStateAsync(SELECT_CONSUMER_ALLOW_BATTERY_POWER, state.AllowBatteryPower.ToString());
     }
 
     public new void Dispose()

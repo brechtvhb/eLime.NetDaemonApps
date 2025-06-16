@@ -4,10 +4,7 @@ using eLime.NetDaemonApps.Domain.EnergyManager2.HomeAssistant;
 using eLime.NetDaemonApps.Domain.EnergyManager2.Mqtt;
 using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 using eLime.NetDaemonApps.Domain.Entities.TextSensors;
-using eLime.NetDaemonApps.Domain.Storage;
 using Microsoft.Extensions.Logging;
-using NetDaemon.Extensions.MqttEntityManager;
-using System.Reactive.Concurrency;
 
 namespace eLime.NetDaemonApps.Domain.EnergyManager2.Consumers;
 
@@ -48,8 +45,8 @@ public class TriggeredEnergyConsumer2 : EnergyConsumer2
 
     public List<TriggeredEnergyConsumerState> States { get; set; }
 
-    internal TriggeredEnergyConsumer2(ILogger logger, IFileStorage fileStorage, IScheduler scheduler, IMqttEntityManager mqttEntityManager, string timeZone, EnergyConsumerConfiguration config)
-        : base(logger, fileStorage, scheduler, timeZone, config)
+    internal TriggeredEnergyConsumer2(EnergyManagerContext context, EnergyConsumerConfiguration config)
+        : base(context, config)
     {
         if (config.Triggered == null)
             throw new ArgumentException("Simple configuration is required for TriggeredEnergyConsumer2.");
@@ -73,10 +70,10 @@ public class TriggeredEnergyConsumer2 : EnergyConsumer2
         CanPause = config.Triggered.CanPause;
         ShutDownOnComplete = config.Triggered.ShutDownOnComplete;
 
-        MqttSensors = new EnergyConsumerMqttSensors(config.Name, mqttEntityManager);
+        MqttSensors = new EnergyConsumerMqttSensors(config.Name, context);
     }
 
-    protected override EnergyConsumerState GetDesiredState(DateTimeOffset? now)
+    protected override EnergyConsumerState GetDesiredState()
     {
         var desiredState = IsRunning switch
         {
@@ -92,7 +89,7 @@ public class TriggeredEnergyConsumer2 : EnergyConsumer2
         return desiredState;
     }
 
-    public override bool CanStart(DateTimeOffset now)
+    public override bool CanStart()
     {
         if (HomeAssistant.StateSensor.State == PausedState)
             return true;
@@ -100,19 +97,19 @@ public class TriggeredEnergyConsumer2 : EnergyConsumer2
         if (State.State is EnergyConsumerState.Running or EnergyConsumerState.Off)
             return false;
 
-        if (!IsWithinTimeWindow(now) && HasTimeWindow())
+        if (!IsWithinTimeWindow() && HasTimeWindow())
             return false;
 
         if (MinimumTimeout == null)
             return true;
 
-        return !(State.LastRun?.Add(MinimumTimeout.Value) > now);
+        return !(State.LastRun?.Add(MinimumTimeout.Value) > Context.Scheduler.Now);
     }
 
 
-    public override bool CanForceStop(DateTimeOffset now)
+    public override bool CanForceStop()
     {
-        if (MinimumRuntime != null && State.StartedAt?.Add(MinimumRuntime.Value) > now)
+        if (MinimumRuntime != null && State.StartedAt?.Add(MinimumRuntime.Value) > Context.Scheduler.Now)
             return false;
 
         if (HomeAssistant.CriticallyNeededSensor != null && HomeAssistant.CriticallyNeededSensor.IsOn())
@@ -124,9 +121,9 @@ public class TriggeredEnergyConsumer2 : EnergyConsumer2
         return true;
     }
 
-    public override bool CanForceStopOnPeakLoad(DateTimeOffset now)
+    public override bool CanForceStopOnPeakLoad()
     {
-        if (MinimumRuntime != null && State.StartedAt?.Add(MinimumRuntime.Value) > now)
+        if (MinimumRuntime != null && State.StartedAt?.Add(MinimumRuntime.Value) > Context.Scheduler.Now)
             return false;
 
         if (!CanPause)
@@ -156,7 +153,7 @@ public class TriggeredEnergyConsumer2 : EnergyConsumer2
     {
         if (HomeAssistant.StateSensor.State != CompletedState && CanPause && HomeAssistant.PauseSwitch != null)
         {
-            Logger.LogInformation($"{Name}: Pause was triggered.");
+            Context.Logger.LogInformation($"{Name}: Pause was triggered.");
             HomeAssistant.PauseSwitch.TurnOff();
             return;
         }
@@ -192,7 +189,7 @@ public class TriggeredEnergyConsumer2 : EnergyConsumer2
         }
         else if (e.Sensor.State == CompletedState)
         {
-            Logger.LogInformation($"{Name}: Sensor state ({e.Sensor.State}) = completed state ({CompletedState})");
+            Context.Logger.LogInformation($"{Name}: Sensor state ({e.Sensor.State}) = completed state ({CompletedState})");
             CheckDesiredState(new EnergyConsumer2StopCommand(this, EnergyConsumerState.Off));
         }
         else if (States.Where(x => x.IsRunning).Select(x => x.Name).Contains(HomeAssistant.StateSensor.State) && State.State != EnergyConsumerState.Running)

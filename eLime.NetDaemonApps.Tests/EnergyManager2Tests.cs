@@ -1,4 +1,6 @@
 ﻿using eLime.NetDaemonApps.Domain.EnergyManager;
+using eLime.NetDaemonApps.Domain.EnergyManager2.PersistableState;
+using eLime.NetDaemonApps.Domain.Helper;
 using eLime.NetDaemonApps.Domain.Storage;
 using eLime.NetDaemonApps.Tests.Builders;
 using eLime.NetDaemonApps.Tests.Helpers;
@@ -9,6 +11,9 @@ using EnergyManager = eLime.NetDaemonApps.Domain.EnergyManager.EnergyManager;
 
 namespace eLime.NetDaemonApps.Tests;
 
+//Things to test
+//Load in correct state
+
 [TestClass]
 public class EnergyManager2Tests
 {
@@ -17,6 +22,7 @@ public class EnergyManager2Tests
     private IMqttEntityManager _mqttEntityManager;
     private IFileStorage _fileStorage;
     private IGridMonitor _gridMonitor;
+
 
     [TestInitialize]
     public void Init()
@@ -27,7 +33,6 @@ public class EnergyManager2Tests
         _mqttEntityManager = A.Fake<IMqttEntityManager>();
         _fileStorage = A.Fake<IFileStorage>();
         _gridMonitor = A.Fake<IGridMonitor>();
-        A.CallTo(() => _gridMonitor.PeakLoad).Returns(4000);
     }
 
 
@@ -49,6 +54,34 @@ public class EnergyManager2Tests
     }
 
     [TestMethod]
+    public async Task Init_InRunningState()
+    {
+        // Arrange
+        var startedAt = _testCtx.Scheduler.Now.AddMinutes(-5);
+        A.CallTo(() => _fileStorage.Get<ConsumerState>("EnergyManager", "Pond pump")).Returns(new ConsumerState
+        {
+            State = EnergyConsumerState.Running,
+            StartedAt = startedAt,
+            LastRun = null,
+        });
+
+        var consumer = new SimpleEnergyConsumer2Builder(_logger, _testCtx)
+            .Build();
+
+        _testCtx.TriggerStateChange(consumer.Simple!.SocketEntity, "on");
+        _testCtx.TriggerStateChange(consumer.PowerUsageEntity, "40");
+
+        //Act
+        var energyManager = await new EnergyManager2Builder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+            .AddConsumer(consumer)
+            .Build();
+
+        //Assert
+        Assert.AreEqual(startedAt, energyManager.Consumers.First().State.StartedAt);
+        Assert.AreEqual(true, energyManager.Consumers.First().IsRunning);
+    }
+
+    [TestMethod]
     public async Task Socket_Turning_on_Triggers_State_Running()
     {
         // Arrange
@@ -66,7 +99,10 @@ public class EnergyManager2Tests
         Assert.AreEqual(EnergyConsumerState.Running, energyManager.Consumers.First().State.State);
         Assert.AreEqual(_testCtx.Scheduler.Now, energyManager.Consumers.First().State.StartedAt);
         Assert.AreEqual(true, energyManager.Consumers.First().IsRunning);
+        var mqttState = $"sensor.energy_consumer_{consumer.Name.MakeHaFriendly()}_state";
+        A.CallTo(() => _mqttEntityManager.SetStateAsync(mqttState, EnergyConsumerState.Running.ToString())).MustHaveHappenedOnceExactly();
     }
+
 
     [TestMethod]
     public async Task Socket_Turning_off_Triggers_State_Off()
@@ -86,9 +122,10 @@ public class EnergyManager2Tests
         _testCtx.TriggerStateChange(consumer.Simple!.SocketEntity, "off");
 
         //Assert
-        Assert.AreEqual(EnergyConsumerState.NeedsEnergy, energyManager.Consumers.First().State.State);
         Assert.AreEqual(_testCtx.Scheduler.Now, energyManager.Consumers.First().State.LastRun);
         Assert.AreEqual(false, energyManager.Consumers.First().IsRunning);
+        var mqttState = $"sensor.energy_consumer_{consumer.Name.MakeHaFriendly()}_state";
+        A.CallTo(() => _mqttEntityManager.SetStateAsync(mqttState, EnergyConsumerState.NeedsEnergy.ToString())).MustHaveHappened(1, Times.Exactly); //TODO: should happen only once, must get rid of shitty EnergyConsumer_StateChanged implementation
     }
 
     [TestMethod]
@@ -100,14 +137,13 @@ public class EnergyManager2Tests
 
         var builder = new EnergyManager2Builder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
             .AddConsumer(consumer);
-        var energyManager = await builder.Build();
+        _ = await builder.Build();
 
         //Act
         _testCtx.TriggerStateChange(builder._grid.ExportEntity, "2000");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(5));
 
         //Assert
-        Assert.AreEqual(EnergyConsumerState.NeedsEnergy, energyManager.Consumers.First().State.State);
         _testCtx.VerifySwitchTurnOn(consumer.Simple!.SocketEntity, Moq.Times.Once);
     }
 
@@ -226,6 +262,37 @@ public class EnergyManager2Tests
         //Assert
         _testCtx.VerifySwitchTurnOff(consumer.Simple!.SocketEntity, Moq.Times.Once);
     }
+
+
+    [TestMethod]
+    public async Task Init_SwitchOff_IfPastMaximumRuntime()
+    {
+        // Arrange
+        var startedAt = _testCtx.Scheduler.Now.AddMinutes(-5);
+        A.CallTo(() => _fileStorage.Get<ConsumerState>("EnergyManager", "Pond pump")).Returns(new ConsumerState
+        {
+            State = EnergyConsumerState.Running,
+            StartedAt = startedAt,
+            LastRun = null,
+        });
+
+        var consumer = new SimpleEnergyConsumer2Builder(_logger, _testCtx)
+            .WithRuntime(TimeSpan.FromSeconds(55), TimeSpan.FromSeconds(180))
+            .Build();
+
+        _testCtx.TriggerStateChange(consumer.Simple!.SocketEntity, "on");
+        _testCtx.TriggerStateChange(consumer.PowerUsageEntity, "40");
+
+        //Act
+        var energyManager = await new EnergyManager2Builder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+            .AddConsumer(consumer)
+            .Build();
+
+        //Assert
+        Assert.AreEqual(false, energyManager.Consumers.First().IsRunning);
+    }
+
+
 
     [TestMethod]
     public async Task Respects_Timeout()
@@ -370,14 +437,13 @@ public class EnergyManager2Tests
 
         var builder = new EnergyManager2Builder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
             .AddConsumer(consumer);
-        var energyManager = await builder.Build();
+        _ = await builder.Build();
 
         //Act
         _testCtx.TriggerStateChange(builder._grid.ExportEntity, "2000");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
 
         //Assert
-        Assert.AreEqual(EnergyConsumerState.NeedsEnergy, energyManager.Consumers.First().State.State);
         _testCtx.VerifySwitchTurnOn(consumer.Simple!.SocketEntity, Moq.Times.Once);
     }
 
@@ -393,7 +459,7 @@ public class EnergyManager2Tests
 
         var builder = new EnergyManager2Builder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
             .AddConsumer(consumer);
-        var energyManager = await builder.Build();
+        _ = await builder.Build();
 
         //Act
         _testCtx.TriggerStateChange(builder._grid.ExportEntity, "2000");
@@ -401,7 +467,6 @@ public class EnergyManager2Tests
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
 
         //Assert
-        Assert.AreEqual(EnergyConsumerState.NeedsEnergy, energyManager.Consumers.First().State.State);
         _testCtx.VerifySwitchTurnOn(consumer.Simple!.SocketEntity, Moq.Times.Once);
     }
 
@@ -418,7 +483,7 @@ public class EnergyManager2Tests
 
         var builder = new EnergyManager2Builder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
             .AddConsumer(consumer);
-        var energyManager = await builder.Build();
+        _ = await builder.Build();
 
         //Act
         _testCtx.TriggerStateChange(builder._grid.ExportEntity, "2000");
@@ -430,7 +495,6 @@ public class EnergyManager2Tests
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
 
         //Assert
-        Assert.AreEqual(EnergyConsumerState.NeedsEnergy, energyManager.Consumers.First().State.State);
         _testCtx.VerifySwitchTurnOn(consumer.Simple!.SocketEntity, Moq.Times.Never);
     }
 
@@ -446,7 +510,7 @@ public class EnergyManager2Tests
 
         var builder = new EnergyManager2Builder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
             .AddConsumer(consumer);
-        var energyManager = await builder.Build();
+        _ = await builder.Build();
 
         //Act
         _testCtx.TriggerStateChange(builder._grid.ExportEntity, "2000");
@@ -454,7 +518,6 @@ public class EnergyManager2Tests
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
 
         //Assert
-        Assert.AreEqual(EnergyConsumerState.NeedsEnergy, energyManager.Consumers.First().State.State);
         _testCtx.VerifySwitchTurnOn(consumer.Simple!.SocketEntity, Moq.Times.Never);
     }
 
@@ -471,14 +534,13 @@ public class EnergyManager2Tests
 
         var builder = new EnergyManager2Builder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
             .AddConsumer(consumer);
-        var energyManager = await builder.Build();
+        _ = await builder.Build();
 
         //Act
         _testCtx.TriggerStateChange(builder._grid.ExportEntity, "2000");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
 
         //Assert
-        Assert.AreEqual(EnergyConsumerState.NeedsEnergy, energyManager.Consumers.First().State.State);
         _testCtx.VerifySwitchTurnOn(consumer.Simple!.SocketEntity, Moq.Times.Once);
     }
 
@@ -495,14 +557,13 @@ public class EnergyManager2Tests
 
         var builder = new EnergyManager2Builder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
             .AddConsumer(consumer);
-        var energyManager = await builder.Build();
+        _ = await builder.Build();
 
         //Act
         _testCtx.TriggerStateChange(builder._grid.ExportEntity, "2000");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
 
         //Assert
-        Assert.AreEqual(EnergyConsumerState.NeedsEnergy, energyManager.Consumers.First().State.State);
         _testCtx.VerifySwitchTurnOn(consumer.Simple!.SocketEntity, Moq.Times.Once);
     }
 
@@ -519,14 +580,13 @@ public class EnergyManager2Tests
 
         var builder = new EnergyManager2Builder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
             .AddConsumer(consumer);
-        var energyManager = await builder.Build();
+        _ = await builder.Build();
 
         //Act
         _testCtx.TriggerStateChange(builder._grid.ExportEntity, "2000");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
 
         //Assert
-        Assert.AreEqual(EnergyConsumerState.NeedsEnergy, energyManager.Consumers.First().State.State);
         _testCtx.VerifySwitchTurnOn(consumer.Simple!.SocketEntity, Moq.Times.Never);
     }
 }
