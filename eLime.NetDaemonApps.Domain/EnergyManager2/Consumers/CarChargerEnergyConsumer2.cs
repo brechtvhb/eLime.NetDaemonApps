@@ -31,7 +31,7 @@ public class CarChargerEnergyConsumer2 : EnergyConsumer2, IDynamicLoadConsumer2
     internal List<Car2> Cars { get; set; } = [];
     private Car2? ConnectedCar => Cars.FirstOrDefault(x => x.IsConnectedToHomeCharger);
 
-    private int SinglePhaseVoltage => Convert.ToInt32(HomeAssistant.VoltageSensor?.State ?? 230);
+    private int SinglePhaseVoltage => Convert.ToInt32(HomeAssistant.VoltageSensor.State ?? 230);
     private int TotalVoltage => ConnectedCar?.Mode == CarChargingMode.Ac3Phase ? SinglePhaseVoltage * 3 : SinglePhaseVoltage;
     private int MinimumCurrentForConnectedCar => ConnectedCar == null
         ? MinimumCurrent
@@ -294,7 +294,7 @@ public class CarChargerEnergyConsumer2 : EnergyConsumer2, IDynamicLoadConsumer2
         var connectedCarNeedsEnergy = ConnectedCar?.NeedsEnergy ?? false;
         var needsEnergy = (HomeAssistant.StateSensor.State == CarChargerStates.Occupied.ToString() || HomeAssistant.StateSensor.State == CarChargerStates.Charging.ToString()) && connectedCarNeedsEnergy;
 
-        //Turns of entire charging station if no known car is connected that needs energy.
+        //Turns off entire charging station if no known car is connected that needs energy.
         if (!IsRunning && !needsEnergy && (HomeAssistant.CurrentNumber.State ?? 0) > OffCurrent)
             TurnOff();
 

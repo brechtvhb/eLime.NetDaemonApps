@@ -9,7 +9,7 @@ public class CarChargerEnergyConsumerConfig
     public string CurrentEntity { get; set; }
     public string VoltageEntity { get; set; }
     public string StateSensor { get; set; }
-    public List<CarConfig> Cars { get; set; }
+    public List<CarConfig> Cars { get; set; } = [];
 
 }
 
@@ -18,16 +18,16 @@ public class CarConfig
     public string Name { get; set; }
     public CarChargingMode Mode { get; set; }
 
-    public string ChargerSwitch { get; set; }
-    public string CurrentEntity { get; set; }
+    public string? ChargerSwitch { get; set; }
+    public string? CurrentEntity { get; set; }
 
-    public string ChargingStateSensor { get; set; }
+    public string? ChargingStateSensor { get; set; }
     public int? MinimumCurrent { get; set; }
     public int? MaximumCurrent { get; set; }
 
     public double BatteryCapacity { get; set; }
     public string BatteryPercentageSensor { get; set; }
-    public string MaxBatteryPercentageSensor { get; set; }
+    public string? MaxBatteryPercentageSensor { get; set; }
     public bool RemainOnAtFullBattery { get; set; }
 
     public string CableConnectedSensor { get; set; }

@@ -167,11 +167,14 @@ public abstract class EnergyConsumer2 : IDisposable
     public void CheckDesiredState()
     {
         var desiredState = GetDesiredState();
+        var originalState = State.State;
 
         if (State.State == desiredState)
             return;
-
         State.State = desiredState;
+
+        if (originalState == EnergyConsumerState.Unknown)
+            return;
 
         EnergyConsumer2StateChangedEvent? @event = desiredState switch
         {
