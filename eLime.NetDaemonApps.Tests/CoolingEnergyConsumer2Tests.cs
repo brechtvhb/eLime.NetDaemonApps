@@ -1,5 +1,4 @@
-﻿using eLime.NetDaemonApps.Domain.EnergyManager;
-using eLime.NetDaemonApps.Domain.Storage;
+﻿using eLime.NetDaemonApps.Domain.Storage;
 using eLime.NetDaemonApps.Tests.Builders;
 using eLime.NetDaemonApps.Tests.Helpers;
 using FakeItEasy;
@@ -73,6 +72,7 @@ public class CoolingEnergyConsumer2Tests
         // Arrange
         var consumer = new CoolingEnergyConsumer2Builder()
             .Build();
+        _testCtx.TriggerStateChange(consumer.Cooling!.SocketEntity, "on");
         _testCtx.TriggerStateChange(consumer.Cooling!.TemperatureSensor, "4");
 
         var builder = new EnergyManager2Builder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
@@ -85,7 +85,6 @@ public class CoolingEnergyConsumer2Tests
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
 
         //Assert
-        Assert.AreEqual(EnergyConsumerState.Off, energyManager.Consumers.First().State.State); //Not sure why this is off, state should be off once switch turned off, which is not mocked here
         _testCtx.VerifySwitchTurnOff(consumer.Cooling!.SocketEntity, Moq.Times.Once);
     }
 
