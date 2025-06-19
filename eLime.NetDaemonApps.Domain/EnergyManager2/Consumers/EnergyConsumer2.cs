@@ -1,11 +1,13 @@
 ﻿using eLime.NetDaemonApps.Domain.EnergyManager;
-using eLime.NetDaemonApps.Domain.EnergyManager2.Configuration;
-using eLime.NetDaemonApps.Domain.EnergyManager2.HomeAssistant;
-using eLime.NetDaemonApps.Domain.EnergyManager2.Mqtt;
-using eLime.NetDaemonApps.Domain.EnergyManager2.PersistableState;
+using eLime.NetDaemonApps.Domain.EnergyManager2.Consumers.Cooling;
+using eLime.NetDaemonApps.Domain.EnergyManager2.Consumers.DynamicConsumers.CarCharger;
+using eLime.NetDaemonApps.Domain.EnergyManager2.Consumers.Simple;
+using eLime.NetDaemonApps.Domain.EnergyManager2.Consumers.Triggered;
 using eLime.NetDaemonApps.Domain.Helper;
 using Microsoft.Extensions.Logging;
 using System.Reactive.Concurrency;
+
+#pragma warning disable CS8618, CS9264
 
 namespace eLime.NetDaemonApps.Domain.EnergyManager2.Consumers;
 

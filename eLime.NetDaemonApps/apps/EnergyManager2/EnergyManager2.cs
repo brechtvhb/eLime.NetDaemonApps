@@ -1,5 +1,5 @@
 ﻿using eLime.NetDaemonApps.Config;
-using eLime.NetDaemonApps.Domain.EnergyManager2.Configuration;
+using eLime.NetDaemonApps.Domain.EnergyManager2;
 using eLime.NetDaemonApps.Domain.Storage;
 using NetDaemon.Extensions.MqttEntityManager;
 using System.Reactive.Concurrency;

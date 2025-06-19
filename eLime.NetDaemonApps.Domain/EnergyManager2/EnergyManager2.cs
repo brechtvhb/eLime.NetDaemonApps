@@ -1,14 +1,12 @@
 ﻿using eLime.NetDaemonApps.Domain.EnergyManager;
-using eLime.NetDaemonApps.Domain.EnergyManager2.Configuration;
 using eLime.NetDaemonApps.Domain.EnergyManager2.Consumers;
-using eLime.NetDaemonApps.Domain.EnergyManager2.HomeAssistant;
-using eLime.NetDaemonApps.Domain.EnergyManager2.Mqtt;
-using eLime.NetDaemonApps.Domain.EnergyManager2.PersistableState;
+using eLime.NetDaemonApps.Domain.EnergyManager2.Consumers.DynamicConsumers;
+using eLime.NetDaemonApps.Domain.EnergyManager2.Grid;
 using eLime.NetDaemonApps.Domain.Helper;
 using Microsoft.Extensions.Logging;
 using NetDaemon.Extensions.Scheduler;
 using System.Runtime.CompilerServices;
-using AllowBatteryPower = eLime.NetDaemonApps.Domain.EnergyManager2.Consumers.AllowBatteryPower;
+using AllowBatteryPower = eLime.NetDaemonApps.Domain.EnergyManager2.Consumers.DynamicConsumers.AllowBatteryPower;
 
 #pragma warning disable CS8618, CS9264
 
@@ -29,7 +27,7 @@ public class EnergyManager2 : IDisposable
 
     internal GridMonitor2 GridMonitor { get; set; }
     internal List<EnergyConsumer2> Consumers { get; } = [];
-    internal BatteryManager BatteryManager { get; set; }
+    internal BatteryManager.BatteryManager BatteryManager { get; set; }
     private readonly TimeSpan _minimumChangeInterval = TimeSpan.FromSeconds(20);
 
     private DateTimeOffset _lastChange = DateTimeOffset.MinValue;
@@ -59,7 +57,7 @@ public class EnergyManager2 : IDisposable
             var consumer = await EnergyConsumer2.Create(Context, x);
             Consumers.Add(consumer);
         }
-        BatteryManager = await BatteryManager.Create(Context, configuration.BatteryManager);
+        BatteryManager = await Domain.EnergyManager2.BatteryManager.BatteryManager.Create(Context, configuration.BatteryManager);
 
         MqttSensors = new EnergyManagerMqttSensors(Context);
         if (Context.DebounceDuration != TimeSpan.Zero)

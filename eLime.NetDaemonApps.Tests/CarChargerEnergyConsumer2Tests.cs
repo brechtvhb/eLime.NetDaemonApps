@@ -1,7 +1,7 @@
 ﻿using eLime.NetDaemonApps.Config.EnergyManager;
 using eLime.NetDaemonApps.Domain.EnergyManager;
 using eLime.NetDaemonApps.Domain.EnergyManager2.Consumers;
-using eLime.NetDaemonApps.Domain.EnergyManager2.PersistableState;
+using eLime.NetDaemonApps.Domain.EnergyManager2.Consumers.DynamicConsumers.CarCharger;
 using eLime.NetDaemonApps.Domain.Helper;
 using eLime.NetDaemonApps.Domain.Storage;
 using eLime.NetDaemonApps.Tests.Builders;
@@ -10,8 +10,8 @@ using FakeItEasy;
 using Microsoft.Extensions.Logging;
 using NetDaemon.Extensions.MqttEntityManager;
 using System.Reactive.Subjects;
-using AllowBatteryPower = eLime.NetDaemonApps.Domain.EnergyManager2.Consumers.AllowBatteryPower;
-using BalancingMethod = eLime.NetDaemonApps.Domain.EnergyManager2.Consumers.BalancingMethod;
+using AllowBatteryPower = eLime.NetDaemonApps.Domain.EnergyManager2.Consumers.DynamicConsumers.AllowBatteryPower;
+using BalancingMethod = eLime.NetDaemonApps.Domain.EnergyManager2.Consumers.DynamicConsumers.BalancingMethod;
 using EnergyManager = eLime.NetDaemonApps.Domain.EnergyManager.EnergyManager;
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
 

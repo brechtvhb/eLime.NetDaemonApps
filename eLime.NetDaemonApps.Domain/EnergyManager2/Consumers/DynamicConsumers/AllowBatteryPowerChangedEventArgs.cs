@@ -1,0 +1,8 @@
+﻿namespace eLime.NetDaemonApps.Domain.EnergyManager2.Consumers.DynamicConsumers;
+
+public class AllowBatteryPowerChangedEventArgs : EventArgs
+{
+    public required AllowBatteryPower AllowBatteryPower;
+
+    public static AllowBatteryPowerChangedEventArgs Create(AllowBatteryPower allowBatteryPower) => new() { AllowBatteryPower = allowBatteryPower };
+}
