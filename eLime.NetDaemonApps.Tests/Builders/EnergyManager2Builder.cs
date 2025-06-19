@@ -25,8 +25,8 @@ public class EnergyManager2Builder
 
 
     internal GridConfig _grid { get; private set; }
-    private List<EnergyConsumerConfig> _consumers = [];
-    private BatteryManagerConfig _batteryManager;
+    internal List<EnergyConsumerConfig> _consumers = [];
+    internal BatteryManagerConfig _batteryManager;
 
     public EnergyManager2Builder(AppTestContext testCtx, ILogger logger, IMqttEntityManager mqttEntityManager, IFileStorage fileStorage, IScheduler scheduler)
     {

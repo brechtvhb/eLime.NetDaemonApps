@@ -108,7 +108,6 @@ public class CarChargerEnergyConsumer2 : EnergyConsumer2, IDynamicLoadConsumer2
         }
     }
 
-
     public (double current, double netPowerChange) Rebalance(IGridMonitor2 gridMonitor, double totalNetChange)
     {
         if (_lastCurrentChange?.Add(MinimumRebalancingInterval) > Context.Scheduler.Now)

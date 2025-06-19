@@ -1,12 +1,15 @@
 ﻿using eLime.NetDaemonApps.Config.EnergyManager;
 using eLime.NetDaemonApps.Domain.EnergyManager;
 using eLime.NetDaemonApps.Domain.EnergyManager2.Consumers;
+using eLime.NetDaemonApps.Domain.EnergyManager2.PersistableState;
 using eLime.NetDaemonApps.Domain.Storage;
 using eLime.NetDaemonApps.Tests.Builders;
 using eLime.NetDaemonApps.Tests.Helpers;
 using FakeItEasy;
 using Microsoft.Extensions.Logging;
 using NetDaemon.Extensions.MqttEntityManager;
+using AllowBatteryPower = eLime.NetDaemonApps.Domain.EnergyManager2.Consumers.AllowBatteryPower;
+using BalancingMethod = eLime.NetDaemonApps.Domain.EnergyManager2.Consumers.BalancingMethod;
 using EnergyManager = eLime.NetDaemonApps.Domain.EnergyManager.EnergyManager;
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
 
@@ -453,7 +456,7 @@ public class CarChargerEnergyConsumer2Tests
 
         var builder = new EnergyManager2Builder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
             .AddConsumer(consumer);
-        var energyManager = await builder.Build();
+        _ = await builder.Build();
 
         InitChargerState(consumer, "Charging", 230, true, 50, "home", 5, 4200);
         _testCtx.TriggerStateChange(consumer.CarCharger!.CurrentEntity, "16");
@@ -469,305 +472,291 @@ public class CarChargerEnergyConsumer2Tests
         _testCtx.InputNumberChanged(consumer.CarCharger!.Cars.First().CurrentEntity!, 4, Moq.Times.Once);
     }
 
-    //[TestMethod]
-    //public async Task Balancing_Mode_Near_Peak_Load_Maximizes_Grid_Usage()
-    //{
-    //    // Arrange
-    //    var consumer = new CarChargerEnergyConsumerBuilder(_logger, _testCtx)
-    //        .WithRuntime(TimeSpan.FromMinutes(5), null)
-    //        .InitTeslaTests()
-    //        .Build();
+    [TestMethod]
+    public async Task Balancing_Mode_Near_Peak_Load_Maximizes_Grid_Usage()
+    {
+        // Arrange
+        A.CallTo(() => _fileStorage.Get<ConsumerState>("EnergyManager", "Veton")).Returns(new ConsumerState
+        {
+            BalancingMethod = BalancingMethod.NearPeak
+        });
 
-    //    var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
-    //        .AddConsumer(consumer)
-    //        .Build();
+        var consumer = CarChargerEnergyConsumer2Builder.Tesla()
+            .Build();
+        _testCtx.TriggerStateChange(consumer.CarCharger!.Cars.First().MaxBatteryPercentageSensor!, "80");
 
-    //    _testCtx.TriggerStateChange(consumer.StateSensor, "Occupied");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().ChargingStateSensor, "no_power");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().CableConnectedSensor, "on");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "5");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().MaxBatteryPercentageSensor, "80");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().Location, "home");
-    //    consumer.SetBalancingMethod(_testCtx.Scheduler.Now, BalancingMethod.NearPeak);
+        var builder = new EnergyManager2Builder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+            .AddConsumer(consumer);
+        _ = await builder.Build();
 
-    //    _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
+        InitChargerState(consumer, "Charging", 230, true, 50, "home", 5, 4200);
+        _testCtx.TriggerStateChange(consumer.CarCharger!.CurrentEntity, "16");
+        _testCtx.TriggerStateChange(consumer.CarCharger!.Cars.First().ChargerSwitch!, "on");
+        _testCtx.TriggerStateChange(consumer.CarCharger!.Cars.First().CurrentEntity!, "6");
 
-    //    _testCtx.TriggerStateChange(consumer.StateSensor, "Charging");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().ChargingStateSensor, "charging");
-    //    _testCtx.TriggerStateChange(consumer.CurrentEntity, "16");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().CurrentEntity, "6");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().ChargerSwitch, "on");
-    //    _testCtx.TriggerStateChange(consumer.PowerUsage, "4000");
+        //Act
+        _testCtx.TriggerStateChange(builder._grid.ExportEntity, "0");
+        _testCtx.TriggerStateChange(builder._grid.ImportEntity, "0");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(30));
 
-    //    //Act
-    //    A.CallTo(() => _gridMonitor.CurrentLoadMinusBatteries).Returns(800);
-    //    A.CallTo(() => _gridMonitor.AverageLoadMinusBatteriesSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(800);
+        //Assert
+        _testCtx.InputNumberChanged(consumer.CarCharger!.Cars.First().CurrentEntity!, 9, Moq.Times.Once);
+    }
 
-    //    _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(30));
+    [TestMethod]
+    public async Task Balancing_Mode_Solar_Preferred_Load_Maximizes_Grid_Usage()
+    {
+        A.CallTo(() => _fileStorage.Get<ConsumerState>("EnergyManager", "Veton")).Returns(new ConsumerState
+        {
+            BalancingMethod = BalancingMethod.SolarPreferred
+        });
 
-    //    //Assert
-    //    _testCtx.InputNumberChanged(consumer.Cars.First().CurrentEntity, 10, Moq.Times.Once);
-    //}
+        var consumer = CarChargerEnergyConsumer2Builder.Tesla()
+            .Build();
+        _testCtx.TriggerStateChange(consumer.CarCharger!.Cars.First().MaxBatteryPercentageSensor!, "80");
 
-    //[TestMethod]
-    //public async Task Balancing_Mode_Solar_Preferred_Load_Maximizes_Grid_Usage()
-    //{
-    //    // Arrange
-    //    var consumer = new CarChargerEnergyConsumerBuilder(_logger, _testCtx)
-    //        .WithRuntime(TimeSpan.FromMinutes(5), null)
-    //        .InitTeslaTests()
-    //        .Build();
+        var builder = new EnergyManager2Builder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+            .AddConsumer(consumer);
+        _ = await builder.Build();
 
-    //    var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
-    //        .AddConsumer(consumer)
-    //        .Build();
+        InitChargerState(consumer, "Charging", 230, true, 50, "home", 5, 4200);
+        _testCtx.TriggerStateChange(consumer.CarCharger!.CurrentEntity, "16");
+        _testCtx.TriggerStateChange(consumer.CarCharger!.Cars.First().ChargerSwitch!, "on");
+        _testCtx.TriggerStateChange(consumer.CarCharger!.Cars.First().CurrentEntity!, "6");
 
-    //    _testCtx.TriggerStateChange(consumer.StateSensor, "Occupied");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().ChargingStateSensor, "no_power");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().CableConnectedSensor, "on");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "5");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().MaxBatteryPercentageSensor, "80");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().Location, "home");
+        //Act
+        _testCtx.TriggerStateChange(builder._grid.ExportEntity, "900");
+        _testCtx.TriggerStateChange(builder._grid.ImportEntity, "0");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(30));
 
-    //    consumer.SetBalancingMethod(_testCtx.Scheduler.Now, BalancingMethod.SolarPreferred);
-    //    _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
-
-    //    _testCtx.TriggerStateChange(consumer.StateSensor, "Charging");
-    //    _testCtx.TriggerStateChange(consumer.CurrentEntity, "16");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().ChargingStateSensor, "charging");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().CurrentEntity, "6");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().ChargerSwitch, "on");
-    //    _testCtx.TriggerStateChange(consumer.PowerUsage, "4000");
-
-    //    //Act
-    //    _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(10));
-    //    A.CallTo(() => _gridMonitor.CurrentLoadMinusBatteries).Returns(-900);
-    //    A.CallTo(() => _gridMonitor.AverageLoadMinusBatteriesSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-900);
-
-    //    _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(25));
-
-    //    //Assert
-    //    _testCtx.InputNumberChanged(consumer.Cars.First().CurrentEntity, 8, Moq.Times.Once);
-    //}
+        //Assert
+        _testCtx.InputNumberChanged(consumer.CarCharger!.Cars.First().CurrentEntity!, 8, Moq.Times.Once);
+    }
 
 
-    //[TestMethod]
-    //public async Task Balancing_Mode_Solar_Only_Load_Minimizes_Grid_Usage()
-    //{
-    //    // Arrange
-    //    var consumer = new CarChargerEnergyConsumerBuilder(_logger, _testCtx)
-    //        .WithRuntime(TimeSpan.FromMinutes(5), null)
-    //        .InitTeslaTests()
-    //        .Build();
+    [TestMethod]
+    public async Task Balancing_Mode_Solar_Only_Load_Minimizes_Grid_Usage()
+    {
+        A.CallTo(() => _fileStorage.Get<ConsumerState>("EnergyManager", "Veton")).Returns(new ConsumerState
+        {
+            BalancingMethod = BalancingMethod.SolarOnly
+        });
 
-    //    var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
-    //        .AddConsumer(consumer)
-    //        .Build();
+        var consumer = CarChargerEnergyConsumer2Builder.Tesla()
+            .Build();
+        _testCtx.TriggerStateChange(consumer.CarCharger!.Cars.First().MaxBatteryPercentageSensor!, "80");
 
-    //    _testCtx.TriggerStateChange(consumer.StateSensor, "Occupied");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().ChargingStateSensor, "no_power");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().CableConnectedSensor, "on");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "5");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().MaxBatteryPercentageSensor, "80");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().Location, "home");
+        var builder = new EnergyManager2Builder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+            .AddConsumer(consumer);
+        _ = await builder.Build();
 
-    //    consumer.SetBalancingMethod(_testCtx.Scheduler.Now, BalancingMethod.SolarOnly);
-    //    _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
+        InitChargerState(consumer, "Charging", 230, true, 50, "home", 5, 4200);
+        _testCtx.TriggerStateChange(consumer.CarCharger!.CurrentEntity, "16");
+        _testCtx.TriggerStateChange(consumer.CarCharger!.Cars.First().ChargerSwitch!, "on");
+        _testCtx.TriggerStateChange(consumer.CarCharger!.Cars.First().CurrentEntity!, "6");
 
-    //    _testCtx.TriggerStateChange(consumer.StateSensor, "Charging");
-    //    _testCtx.TriggerStateChange(consumer.CurrentEntity, "16");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().ChargingStateSensor, "charging");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().CurrentEntity, "6");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().ChargerSwitch, "on");
-    //    _testCtx.TriggerStateChange(consumer.PowerUsage, "4000");
+        //Act
+        _testCtx.TriggerStateChange(builder._grid.ExportEntity, "900");
+        _testCtx.TriggerStateChange(builder._grid.ImportEntity, "0");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(30));
 
-    //    //Act
-    //    _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(10));
-    //    A.CallTo(() => _gridMonitor.CurrentLoadMinusBatteries).Returns(-900);
-    //    A.CallTo(() => _gridMonitor.AverageLoadMinusBatteriesSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-900);
+        //Assert
+        _testCtx.InputNumberChanged(consumer.CarCharger!.Cars.First().CurrentEntity!, 7, Moq.Times.Once);
+    }
 
-    //    _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(25));
+    [TestMethod]
+    public async Task Balancing_Mode_Solar_Surplus_Load_Minimizes_Grid_Usage()
+    {
+        A.CallTo(() => _fileStorage.Get<ConsumerState>("EnergyManager", "Veton")).Returns(new ConsumerState
+        {
+            BalancingMethod = BalancingMethod.SolarSurplus
+        });
 
-    //    //Assert
-    //    _testCtx.InputNumberChanged(consumer.Cars.First().CurrentEntity, 7, Moq.Times.Once);
-    //}
+        var consumer = CarChargerEnergyConsumer2Builder.Tesla()
+            .Build();
+        _testCtx.TriggerStateChange(consumer.CarCharger!.Cars.First().MaxBatteryPercentageSensor!, "80");
 
+        var builder = new EnergyManager2Builder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+            .AddConsumer(consumer);
+        _ = await builder.Build();
 
-    //[TestMethod]
-    //public async Task Balancing_Mode_Solar_Surplus_Load_Minimizes_Grid_Usage()
-    //{
-    //    // Arrange
-    //    var consumer = new CarChargerEnergyConsumerBuilder(_logger, _testCtx)
-    //        .WithRuntime(TimeSpan.FromMinutes(5), null)
-    //        .InitTeslaTests()
-    //        .Build();
+        InitChargerState(consumer, "Charging", 230, true, 50, "home", 5, 4200);
+        _testCtx.TriggerStateChange(consumer.CarCharger!.CurrentEntity, "16");
+        _testCtx.TriggerStateChange(consumer.CarCharger!.Cars.First().ChargerSwitch!, "on");
+        _testCtx.TriggerStateChange(consumer.CarCharger!.Cars.First().CurrentEntity!, "6");
 
-    //    var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
-    //        .AddConsumer(consumer)
-    //        .Build();
+        //Act
+        _testCtx.TriggerStateChange(builder._grid.ExportEntity, "1800");
+        _testCtx.TriggerStateChange(builder._grid.ImportEntity, "0");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(30));
 
-    //    _testCtx.TriggerStateChange(consumer.StateSensor, "Occupied");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().ChargingStateSensor, "no_power");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().CableConnectedSensor, "on");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "5");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().MaxBatteryPercentageSensor, "80");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().Location, "home");
+        //Assert
+        _testCtx.InputNumberChanged(consumer.CarCharger!.Cars.First().CurrentEntity!, 7, Moq.Times.Once);
+    }
 
-    //    consumer.SetBalancingMethod(_testCtx.Scheduler.Now, BalancingMethod.SolarSurplus);
-    //    _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
+    [TestMethod]
+    public async Task Balancing_Mode_Solar_Preferred_Load_Maximizes_Grid_Usage_But_IsNotJumpy()
+    {
+        A.CallTo(() => _fileStorage.Get<ConsumerState>("EnergyManager", "Veton")).Returns(new ConsumerState
+        {
+            BalancingMethod = BalancingMethod.SolarPreferred
+        });
 
-    //    _testCtx.TriggerStateChange(consumer.StateSensor, "Charging");
-    //    _testCtx.TriggerStateChange(consumer.CurrentEntity, "16");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().ChargingStateSensor, "charging");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().CurrentEntity, "6");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().ChargerSwitch, "on");
-    //    _testCtx.TriggerStateChange(consumer.PowerUsage, "4000");
+        var consumer = CarChargerEnergyConsumer2Builder.Tesla()
+            .Build();
+        _testCtx.TriggerStateChange(consumer.CarCharger!.Cars.First().MaxBatteryPercentageSensor!, "80");
 
-    //    //Act
-    //    _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(10));
-    //    A.CallTo(() => _gridMonitor.CurrentLoadMinusBatteries).Returns(-1800);
-    //    A.CallTo(() => _gridMonitor.AverageLoadMinusBatteriesSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-1800);
+        var builder = new EnergyManager2Builder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+            .AddConsumer(consumer);
+        _ = await builder.Build();
 
-    //    _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(25));
+        InitChargerState(consumer, "Charging", 230, true, 50, "home", 5, 4200);
+        _testCtx.TriggerStateChange(consumer.CarCharger!.CurrentEntity, "16");
+        _testCtx.TriggerStateChange(consumer.CarCharger!.Cars.First().ChargerSwitch!, "on");
+        _testCtx.TriggerStateChange(consumer.CarCharger!.Cars.First().CurrentEntity!, "6");
 
-    //    //Assert
-    //    _testCtx.InputNumberChanged(consumer.Cars.First().CurrentEntity, 7, Moq.Times.Once);
-    //}
+        _testCtx.TriggerStateChange(builder._grid.ExportEntity, "900");
+        _testCtx.TriggerStateChange(builder._grid.ImportEntity, "0");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(30));
+        _testCtx.TriggerStateChange(consumer.CarCharger!.Cars.First().CurrentEntity!, "8");
+        _testCtx.TriggerStateChange(consumer.PowerUsageEntity, "5600");
 
+        //Act
+        _testCtx.TriggerStateChange(builder._grid.ExportEntity, "200");
+        _testCtx.TriggerStateChange(builder._grid.ImportEntity, "0");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(30));
 
-    //[TestMethod]
-    //public async Task Balancing_Mode_Solar_Preferred_Load_Maximizes_Grid_Usage_But_IsNotJumpy()
-    //{
-    //    // Arrange
-    //    var consumer = new CarChargerEnergyConsumerBuilder(_logger, _testCtx)
-    //        .WithRuntime(TimeSpan.FromMinutes(5), null)
-    //        .InitTeslaTests()
-    //        .Build();
+        //Assert
+        _testCtx.InputNumberChanged(consumer.CarCharger!.Cars.First().CurrentEntity!, 8, Moq.Times.Once);
+        _testCtx.InputNumberChanged(consumer.CarCharger!.Cars.First().CurrentEntity!, 7, Moq.Times.Never);
+        _testCtx.InputNumberChanged(consumer.CarCharger!.Cars.First().CurrentEntity!, 9, Moq.Times.Never);
+    }
 
-    //    var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
-    //        .AddConsumer(consumer)
-    //        .Build();
+    [TestMethod]
+    public async Task Battery_ChargePower_Is_Included()
+    {
+        A.CallTo(() => _fileStorage.Get<ConsumerState>("EnergyManager", "Veton")).Returns(new ConsumerState
+        {
+            BalancingMethod = BalancingMethod.SolarOnly,
+            AllowBatteryPower = AllowBatteryPower.Yes
+        });
 
-    //    _testCtx.TriggerStateChange(consumer.StateSensor, "Occupied");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().ChargingStateSensor, "no_power");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().CableConnectedSensor, "on");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "5");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().MaxBatteryPercentageSensor, "80");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().Location, "home");
-    //    consumer.SetBalancingMethod(_testCtx.Scheduler.Now, BalancingMethod.SolarPreferred);
+        var consumer = CarChargerEnergyConsumer2Builder.Tesla()
+            .Build();
+        _testCtx.TriggerStateChange(consumer.CarCharger!.Cars.First().MaxBatteryPercentageSensor!, "80");
 
-    //    _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
+        var builder = new EnergyManager2Builder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+            .AddConsumer(consumer);
+        _ = await builder.Build();
 
-    //    _testCtx.TriggerStateChange(consumer.StateSensor, "Charging");
-    //    _testCtx.TriggerStateChange(consumer.CurrentEntity, "16");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().ChargingStateSensor, "charging");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().CurrentEntity, "6");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().ChargerSwitch, "on");
-    //    _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(10));
-    //    _testCtx.TriggerStateChange(consumer.PowerUsage, "4000");
-    //    A.CallTo(() => _gridMonitor.CurrentLoadMinusBatteries).Returns(-900);
-    //    A.CallTo(() => _gridMonitor.AverageLoadMinusBatteriesSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-900);
-    //    _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(15));
+        InitChargerState(consumer, "Charging", 230, true, 50, "home", 5, 4200);
+        _testCtx.TriggerStateChange(consumer.CarCharger!.CurrentEntity, "16");
+        _testCtx.TriggerStateChange(consumer.CarCharger!.Cars.First().ChargerSwitch!, "on");
+        _testCtx.TriggerStateChange(consumer.CarCharger!.Cars.First().CurrentEntity!, "6");
 
-    //    //Act
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().CurrentEntity, "8");
-    //    _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(10));
-    //    _testCtx.TriggerStateChange(consumer.PowerUsage, "5400");
-    //    A.CallTo(() => _gridMonitor.CurrentLoadMinusBatteries).Returns(600);
-    //    A.CallTo(() => _gridMonitor.AverageLoadMinusBatteriesSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(600);
-    //    _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(15));
+        //Act
+        _testCtx.TriggerStateChange(builder._grid.ExportEntity, "0");
+        _testCtx.TriggerStateChange(builder._batteryManager.TotalChargePowerSensor, "1800");
+        _testCtx.TriggerStateChange(builder._grid.ImportEntity, "0");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(30));
 
-    //    //Assert
-    //    _testCtx.InputNumberChanged(consumer.Cars.First().CurrentEntity, 8, Moq.Times.Once);
-    //    _testCtx.InputNumberChanged(consumer.Cars.First().CurrentEntity, 7, Moq.Times.Never);
-    //    _testCtx.InputNumberChanged(consumer.Cars.First().CurrentEntity, 9, Moq.Times.Never);
-    //}
+        //Assert
+        _testCtx.InputNumberChanged(consumer.CarCharger!.Cars.First().CurrentEntity!, 8, Moq.Times.Never);
+    }
 
-    //[TestMethod]
-    //public async Task Battery_ChargePower_Is_Included()
-    //{
-    //    // Arrange
-    //    var consumer = new CarChargerEnergyConsumerBuilder(_logger, _testCtx)
-    //        .WithRuntime(TimeSpan.FromMinutes(5), null)
-    //        .InitTeslaTests()
-    //        .Build();
+    [TestMethod]
+    public async Task Battery_ChargePower_Is_ExcludedIfNotAllowed()
+    {
+        A.CallTo(() => _fileStorage.Get<ConsumerState>("EnergyManager", "Veton")).Returns(new ConsumerState
+        {
+            BalancingMethod = BalancingMethod.SolarOnly,
+            AllowBatteryPower = AllowBatteryPower.No
+        });
 
-    //    var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
-    //        .AddConsumer(consumer)
-    //        .Build();
+        var consumer = CarChargerEnergyConsumer2Builder.Tesla()
+            .Build();
+        _testCtx.TriggerStateChange(consumer.CarCharger!.Cars.First().MaxBatteryPercentageSensor!, "80");
 
-    //    _testCtx.TriggerStateChange(consumer.StateSensor, "Occupied");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().ChargingStateSensor, "no_power");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().CableConnectedSensor, "on");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "5");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().MaxBatteryPercentageSensor, "80");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().Location, "home");
-    //    _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
-    //    consumer.SetBalancingMethod(_testCtx.Scheduler.Now, BalancingMethod.SolarOnly);
-    //    consumer.SetAllowBatteryPower(AllowBatteryPower.Yes);
+        var builder = new EnergyManager2Builder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+            .AddConsumer(consumer);
+        _ = await builder.Build();
 
-    //    _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
+        InitChargerState(consumer, "Charging", 230, true, 50, "home", 5, 4200);
+        _testCtx.TriggerStateChange(consumer.CarCharger!.CurrentEntity, "16");
+        _testCtx.TriggerStateChange(consumer.CarCharger!.Cars.First().ChargerSwitch!, "on");
+        _testCtx.TriggerStateChange(consumer.CarCharger!.Cars.First().CurrentEntity!, "6");
 
-    //    _testCtx.TriggerStateChange(consumer.StateSensor, "Charging");
-    //    _testCtx.TriggerStateChange(consumer.CurrentEntity, "16");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().ChargingStateSensor, "charging");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().CurrentEntity, "6");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().ChargerSwitch, "on");
-    //    _testCtx.TriggerStateChange(consumer.PowerUsage, "4000");
+        //Act
+        _testCtx.TriggerStateChange(builder._grid.ExportEntity, "0");
+        _testCtx.TriggerStateChange(builder._batteryManager.TotalChargePowerSensor, "1800");
+        _testCtx.TriggerStateChange(builder._grid.ImportEntity, "0");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(30));
 
-    //    //Act
-    //    _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(10));
-    //    A.CallTo(() => _gridMonitor.CurrentLoad).Returns(0);
-    //    A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(0);
-    //    A.CallTo(() => _gridMonitor.CurrentLoadMinusBatteries).Returns(-1800);
-    //    A.CallTo(() => _gridMonitor.AverageLoadMinusBatteriesSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-1800);
-    //    _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(15));
+        //Assert
+        _testCtx.InputNumberChanged(consumer.CarCharger!.Cars.First().CurrentEntity!, 8, Moq.Times.Once);
+    }
 
-    //    //Assert
-    //    _testCtx.InputNumberChanged(consumer.Cars.First().CurrentEntity, 8, Moq.Times.Never);
-    //}
+    [TestMethod]
+    public async Task Battery_DischargePower_Is_Included()
+    {
+        A.CallTo(() => _fileStorage.Get<ConsumerState>("EnergyManager", "Veton")).Returns(new ConsumerState
+        {
+            BalancingMethod = BalancingMethod.SolarOnly,
+            AllowBatteryPower = AllowBatteryPower.Yes
+        });
 
-    //[TestMethod]
-    //public async Task Battery_DischargePower_Is_Included()
-    //{
-    //    // Arrange
-    //    var consumer = new CarChargerEnergyConsumerBuilder(_logger, _testCtx)
-    //        .WithRuntime(TimeSpan.FromMinutes(5), null)
-    //        .InitTeslaTests()
-    //        .Build();
+        var consumer = CarChargerEnergyConsumer2Builder.Tesla()
+            .Build();
+        _testCtx.TriggerStateChange(consumer.CarCharger!.Cars.First().MaxBatteryPercentageSensor!, "80");
 
-    //    var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
-    //        .AddConsumer(consumer)
-    //        .Build();
+        var builder = new EnergyManager2Builder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+            .AddConsumer(consumer);
+        _ = await builder.Build();
 
-    //    _testCtx.TriggerStateChange(consumer.StateSensor, "Occupied");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().ChargingStateSensor, "no_power");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().CableConnectedSensor, "on");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "5");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().MaxBatteryPercentageSensor, "80");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().Location, "home");
-    //    _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
-    //    consumer.SetBalancingMethod(_testCtx.Scheduler.Now, BalancingMethod.SolarOnly);
-    //    consumer.SetAllowBatteryPower(AllowBatteryPower.Yes);
+        InitChargerState(consumer, "Charging", 230, true, 50, "home", 5, 4200);
+        _testCtx.TriggerStateChange(consumer.CarCharger!.CurrentEntity, "16");
+        _testCtx.TriggerStateChange(consumer.CarCharger!.Cars.First().ChargerSwitch!, "on");
+        _testCtx.TriggerStateChange(consumer.CarCharger!.Cars.First().CurrentEntity!, "6");
 
-    //    _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
+        //Act
+        _testCtx.TriggerStateChange(builder._grid.ExportEntity, "0");
+        _testCtx.TriggerStateChange(builder._grid.ImportEntity, "0");
+        _testCtx.TriggerStateChange(builder._batteryManager.TotalDischargePowerSensor, "1800");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(30));
 
-    //    _testCtx.TriggerStateChange(consumer.StateSensor, "Charging");
-    //    _testCtx.TriggerStateChange(consumer.CurrentEntity, "16");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().ChargingStateSensor, "charging");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().CurrentEntity, "6");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().ChargerSwitch, "on");
-    //    _testCtx.TriggerStateChange(consumer.PowerUsage, "4000");
+        //Assert
+        _testCtx.InputNumberChanged(consumer.CarCharger!.Cars.First().CurrentEntity!, 8, Moq.Times.Never);
+    }
 
-    //    //Act
-    //    _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(10));
-    //    A.CallTo(() => _gridMonitor.CurrentLoad).Returns(-900);
-    //    A.CallTo(() => _gridMonitor.AverageLoadSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-900);
-    //    A.CallTo(() => _gridMonitor.CurrentLoadMinusBatteries).Returns(900);
-    //    A.CallTo(() => _gridMonitor.AverageLoadMinusBatteriesSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(900);
-    //    _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(15));
+    [TestMethod]
+    public async Task Battery_DischargePower_Is_Excluded_If_Not_Allowed()
+    {
+        A.CallTo(() => _fileStorage.Get<ConsumerState>("EnergyManager", "Veton")).Returns(new ConsumerState
+        {
+            BalancingMethod = BalancingMethod.SolarOnly,
+            AllowBatteryPower = AllowBatteryPower.No
+        });
 
-    //    //Assert
-    //    _testCtx.InputNumberChanged(consumer.Cars.First().CurrentEntity, 4, Moq.Times.Never);
-    //}
+        var consumer = CarChargerEnergyConsumer2Builder.Tesla()
+            .Build();
+        _testCtx.TriggerStateChange(consumer.CarCharger!.Cars.First().MaxBatteryPercentageSensor!, "80");
+
+        var builder = new EnergyManager2Builder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+            .AddConsumer(consumer);
+        _ = await builder.Build();
+
+        InitChargerState(consumer, "Charging", 230, true, 50, "home", 5, 4200);
+        _testCtx.TriggerStateChange(consumer.CarCharger!.CurrentEntity, "16");
+        _testCtx.TriggerStateChange(consumer.CarCharger!.Cars.First().ChargerSwitch!, "on");
+        _testCtx.TriggerStateChange(consumer.CarCharger!.Cars.First().CurrentEntity!, "6");
+
+        //Act
+        _testCtx.TriggerStateChange(builder._grid.ExportEntity, "0");
+        _testCtx.TriggerStateChange(builder._grid.ImportEntity, "0");
+        _testCtx.TriggerStateChange(builder._batteryManager.TotalDischargePowerSensor, "1800");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(30));
+
+        //Assert
+        _testCtx.InputNumberChanged(consumer.CarCharger!.Cars.First().CurrentEntity!, 3, Moq.Times.Once);
+    }
 }
