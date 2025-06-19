@@ -814,7 +814,7 @@ public class CarChargerEnergyConsumer2Tests
 
         var builder = new EnergyManager2Builder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
             .AddConsumer(consumer);
-        var energyManager = await builder.Build();
+        _ = await builder.Build();
 
         //Act
         mqttSubject.OnNext(BalancingMethod.SolarPreferred.ToString());
