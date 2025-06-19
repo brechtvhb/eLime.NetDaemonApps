@@ -26,7 +26,6 @@ public class CarHomeAssistantEntities(CarConfiguration config) : IDisposable
 {
     public BinarySwitch? ChargerSwitch = config.ChargerSwitch;
     public InputNumberEntity? CurrentNumber = config.CurrentNumber;
-    public TextSensor? ChargingStateSensor = config.ChargingStateSensor;
     public NumericSensor BatteryPercentageSensor = config.BatteryPercentageSensor;
     public NumericSensor? MaxBatteryPercentageSensor = config.MaxBatteryPercentageSensor;
     public BinarySensor CableConnectedSensor = config.CableConnectedSensor;
@@ -35,7 +34,6 @@ public class CarHomeAssistantEntities(CarConfiguration config) : IDisposable
     public void Dispose()
     {
         ChargerSwitch?.Dispose();
-        ChargingStateSensor?.Dispose();
         BatteryPercentageSensor.Dispose();
         MaxBatteryPercentageSensor?.Dispose();
         CableConnectedSensor.Dispose();

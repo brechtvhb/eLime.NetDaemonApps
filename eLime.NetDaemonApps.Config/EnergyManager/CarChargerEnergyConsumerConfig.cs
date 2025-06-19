@@ -21,7 +21,6 @@ public class CarConfig
     public string? ChargerSwitch { get; set; }
     public string? CurrentEntity { get; set; }
 
-    public string? ChargingStateSensor { get; set; }
     public int? MinimumCurrent { get; set; }
     public int? MaximumCurrent { get; set; }
 

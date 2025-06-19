@@ -1,5 +1,4 @@
-﻿using eLime.NetDaemonApps.Domain.EnergyManager;
-using eLime.NetDaemonApps.Domain.EnergyManager2.Configuration;
+﻿using eLime.NetDaemonApps.Domain.EnergyManager2.Configuration;
 using eLime.NetDaemonApps.Domain.EnergyManager2.HomeAssistant;
 using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 using System.Reactive.Concurrency;
@@ -25,16 +24,12 @@ internal class Car2 : IDisposable
     public bool CanSetCurrent => IsConnectedToHomeCharger && HomeAssistant.CurrentNumber != null;
     public bool NeedsEnergy => RemainOnAtFullBattery ||
                                (
-                                   HomeAssistant.ChargingStateSensor != null
-                                       ? HomeAssistant.ChargingStateSensor.State == CarChargingStates.starting.ToString() || HomeAssistant.ChargingStateSensor.State == CarChargingStates.stopped.ToString() || HomeAssistant.ChargingStateSensor.State == CarChargingStates.charging.ToString() || HomeAssistant.ChargingStateSensor.State == CarChargingStates.no_power.ToString()
-                                       : HomeAssistant.MaxBatteryPercentageSensor != null
+                                   HomeAssistant.MaxBatteryPercentageSensor != null
                                            ? HomeAssistant.BatteryPercentageSensor.State < HomeAssistant.MaxBatteryPercentageSensor.State
                                            : HomeAssistant.BatteryPercentageSensor.State < 100
                                );
 
-    public bool IsRunning => HomeAssistant.ChargingStateSensor != null
-        ? HomeAssistant.ChargingStateSensor.State == CarChargingStates.charging.ToString()
-        : HomeAssistant.ChargerSwitch == null
+    public bool IsRunning => HomeAssistant.ChargerSwitch == null
             ? !CanSetCurrent || HomeAssistant.CurrentNumber!.State >= MinimumCurrent
             : CanSetCurrent
                 ? HomeAssistant.ChargerSwitch.IsOn() && HomeAssistant.CurrentNumber!.State >= MinimumCurrent
@@ -57,7 +52,7 @@ internal class Car2 : IDisposable
 
         Name = config.Name;
         Mode = config.Mode;
-        MinimumCurrent = config.MaximumCurrent;
+        MinimumCurrent = config.MinimumCurrent;
         MaximumCurrent = config.MaximumCurrent;
         BatteryCapacity = config.BatteryCapacity;
         RemainOnAtFullBattery = config.RemainOnAtFullBattery;

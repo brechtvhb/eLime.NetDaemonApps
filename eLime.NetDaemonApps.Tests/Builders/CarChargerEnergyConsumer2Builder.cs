@@ -156,7 +156,6 @@ public class CarChargerEnergyConsumer2Builder
             Mode = mode,
             ChargerSwitch = chargerSwitch,
             CurrentEntity = currentEntity,
-            ChargingStateSensor = carChargingState,
             MinimumCurrent = minimumCurrent,
             MaximumCurrent = maximumCurrent,
             BatteryCapacity = batteryCapacity,
