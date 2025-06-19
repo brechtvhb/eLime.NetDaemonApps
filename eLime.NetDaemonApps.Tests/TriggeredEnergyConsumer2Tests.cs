@@ -5,7 +5,6 @@ using eLime.NetDaemonApps.Tests.Helpers;
 using FakeItEasy;
 using Microsoft.Extensions.Logging;
 using NetDaemon.Extensions.MqttEntityManager;
-using System.Globalization;
 using EnergyManager = eLime.NetDaemonApps.Domain.EnergyManager.EnergyManager;
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
 
@@ -27,23 +26,6 @@ public class TriggeredEnergyConsumer2Tests
         _logger = A.Fake<ILogger<EnergyManager>>();
         _mqttEntityManager = A.Fake<IMqttEntityManager>();
         _fileStorage = A.Fake<IFileStorage>();
-    }
-
-    //TODO: Temp fix - should use last known values if value did not change in the wanted timeframe
-    private void SimulateAveragePower(string? importEntity, double import, string? exportEntity, double export, int times, TimeSpan span)
-    {
-        do
-        {
-            var variance = Random.Shared.Next(-500, 500) / 100d;
-
-            if (!string.IsNullOrEmpty(importEntity))
-                _testCtx.TriggerStateChange(importEntity, (import + variance).ToString(CultureInfo.InvariantCulture));
-            if (!string.IsNullOrEmpty(exportEntity))
-                _testCtx.TriggerStateChange(exportEntity, (export + variance).ToString(CultureInfo.InvariantCulture));
-
-            _testCtx.AdvanceTimeBy(span);
-            times--;
-        } while (times > 0);
     }
 
     [TestMethod]
@@ -122,7 +104,7 @@ public class TriggeredEnergyConsumer2Tests
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
 
         _testCtx.TriggerStateChange(consumer.Triggered!.SocketEntity, "on");
-        SimulateAveragePower(null, 0, builder._grid.ExportEntity, 1000, 2, TimeSpan.FromSeconds(10));
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(20));
 
         //Assert
         _testCtx.VerifySwitchTurnOn(consumer.Triggered!.SocketEntity, Moq.Times.Once);
@@ -284,11 +266,15 @@ public class TriggeredEnergyConsumer2Tests
         _testCtx.TriggerStateChange(consumer.Triggered!.StateSensor, "Running");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
 
-        SimulateAveragePower(builder._grid.ImportEntity, 3500, builder._grid.ExportEntity, 0, 1, TimeSpan.FromSeconds(10));
+        _testCtx.TriggerStateChange(builder._grid.ExportEntity, "0");
+        _testCtx.TriggerStateChange(builder._grid.ImportEntity, "3500");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(20));
         _testCtx.TriggerStateChange(consumer.Triggered!.StateSensor, "Paused");
 
         //Act
-        SimulateAveragePower(builder._grid.ImportEntity, 0, builder._grid.ExportEntity, 1000, 2, TimeSpan.FromSeconds(10));
+        _testCtx.TriggerStateChange(builder._grid.ExportEntity, "1000");
+        _testCtx.TriggerStateChange(builder._grid.ImportEntity, "0");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(20));
 
         //Assert
         _testCtx.VerifySwitchTurnOn(consumer.Triggered!.PauseSwitch!, Moq.Times.Once);
