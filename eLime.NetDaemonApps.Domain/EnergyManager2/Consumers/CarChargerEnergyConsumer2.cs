@@ -285,8 +285,8 @@ public class CarChargerEnergyConsumer2 : EnergyConsumer2, IDynamicLoadConsumer2
         if (_lastCurrentChange?.Add(TimeSpan.FromSeconds(5)) > Context.Scheduler.Now)
             return;
 
-        HomeAssistant.CurrentNumber.Change(toBeCurrent);
         _lastCurrentChange = Context.Scheduler.Now;
+        HomeAssistant.CurrentNumber.Change(toBeCurrent);
     }
 
     protected override EnergyConsumerState GetDesiredState()
@@ -417,7 +417,7 @@ public class CarChargerEnergyConsumer2 : EnergyConsumer2, IDynamicLoadConsumer2
         if (e.New.State < MinimumCurrent)
         {
             if (State.State == EnergyConsumerState.Running)
-                CheckDesiredState(new EnergyConsumer2StoppedEvent(this, EnergyConsumerState.Off));
+                Stop();
 
             return;
         }
@@ -425,19 +425,19 @@ public class CarChargerEnergyConsumer2 : EnergyConsumer2, IDynamicLoadConsumer2
         if (ConnectedCar?.HomeAssistant.ChargerSwitch == null)
         {
             if (State.State != EnergyConsumerState.Running)
-                CheckDesiredState(new EnergyConsumer2StartedEvent(this, EnergyConsumerState.Running));
+                TurnOn();
 
             return;
         }
 
         if (State.State != EnergyConsumerState.Running && ConnectedCar.HomeAssistant.ChargerSwitch.IsOn())
-            CheckDesiredState(new EnergyConsumer2StartedEvent(this, EnergyConsumerState.Running));
+            TurnOn();
     }
 
     private void Car_ChargerTurnedOff(object? sender, BinarySensorEventArgs e)
     {
         if (State.State == EnergyConsumerState.Running)
-            CheckDesiredState(new EnergyConsumer2StoppedEvent(this, EnergyConsumerState.Off));
+            Stop();
     }
 
     private void Car_ChargerTurnedOn(object? sender, BinarySensorEventArgs e)

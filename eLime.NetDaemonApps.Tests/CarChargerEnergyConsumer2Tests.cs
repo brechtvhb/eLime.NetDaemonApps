@@ -54,7 +54,7 @@ public class CarChargerEnergyConsumer2Tests
 
         var builder = new EnergyManager2Builder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
             .AddConsumer(consumer);
-        _ = await builder.Build();
+        var energyManager = await builder.Build();
 
         _testCtx.TriggerStateChange(builder._grid.ExportEntity, "5000");
         _testCtx.TriggerStateChange(builder._grid.ImportEntity, "0");
@@ -65,9 +65,10 @@ public class CarChargerEnergyConsumer2Tests
         _testCtx.TriggerStateChange(consumer.CarCharger!.Cars.First().CableConnectedSensor, "on");
         _testCtx.TriggerStateChange(consumer.CarCharger!.Cars.First().BatteryPercentageSensor, "5");
         _testCtx.TriggerStateChange(consumer.CarCharger!.Cars.First().Location, "home");
-        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(6));
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
 
         //Assert
+        Assert.AreEqual(EnergyConsumerState.NeedsEnergy, energyManager.Consumers.First().State.State);
         _testCtx.InputNumberChanged(consumer.CarCharger!.CurrentEntity, 6, Moq.Times.Once);
     }
 
@@ -81,12 +82,14 @@ public class CarChargerEnergyConsumer2Tests
             .AddConsumer(consumer);
         var energyManager = await builder.Build();
 
+        _testCtx.TriggerStateChange(builder._grid.ExportEntity, "5000");
+        _testCtx.TriggerStateChange(builder._grid.ImportEntity, "0");
+
         //Act
         _testCtx.TriggerStateChange(consumer.CarCharger!.StateSensor, "Occupied");
         _testCtx.TriggerStateChange(consumer.CarCharger!.VoltageEntity, "230");
         _testCtx.TriggerStateChange(consumer.CarCharger!.Cars.First().CableConnectedSensor, "off");
         _testCtx.TriggerStateChange(consumer.CarCharger!.Cars.First().BatteryPercentageSensor, "5");
-
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
 
         //Assert
@@ -94,116 +97,115 @@ public class CarChargerEnergyConsumer2Tests
         _testCtx.InputNumberChanged(consumer.CarCharger!.CurrentEntity, 6, Moq.Times.Never);
     }
 
-    //[TestMethod]
-    //public void Occupied_ButCarNotHome_DoesNotTrigger_TurnsOn()
-    //{
-    //    // Arrange
-    //    var consumer = new CarChargerEnergyConsumerBuilder(_logger, _testCtx)
-    //        .Build();
+    [TestMethod]
+    public async Task Occupied_ButCarNotHome_DoesNotTrigger_TurnsOn()
+    {
+        // Arrange
+        var consumer = CarChargerEnergyConsumer2Builder.Passat().Build();
 
-    //    var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
-    //        .AddConsumer(consumer)
-    //        .Build();
+        var builder = new EnergyManager2Builder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+            .AddConsumer(consumer);
+        var energyManager = await builder.Build();
 
-    //    //Act
-    //    _testCtx.TriggerStateChange(consumer.StateSensor, "Occupied");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().CableConnectedSensor, "on");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "5");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().Location, "away");
+        _testCtx.TriggerStateChange(builder._grid.ExportEntity, "5000");
+        _testCtx.TriggerStateChange(builder._grid.ImportEntity, "0");
 
-    //    _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
+        //Act
+        _testCtx.TriggerStateChange(consumer.CarCharger!.StateSensor, "Occupied");
+        _testCtx.TriggerStateChange(consumer.CarCharger!.VoltageEntity, "230");
+        _testCtx.TriggerStateChange(consumer.CarCharger!.Cars.First().CableConnectedSensor, "off");
+        _testCtx.TriggerStateChange(consumer.CarCharger!.Cars.First().BatteryPercentageSensor, "5");
+        _testCtx.TriggerStateChange(consumer.CarCharger!.Cars.First().Location, "away");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
 
-    //    //Assert
-    //    Assert.AreEqual(EnergyConsumerState.Off, energyManager.Consumers.First().State);
-    //    _testCtx.InputNumberChanged(consumer.CurrentEntity, 6, Moq.Times.Never);
-    //}
-
-
-    //[TestMethod]
-    //public void Occupied_ButNotEnoughPower_DoesNotTrigger_TurnsOn()
-    //{
-    //    // Arrange
-    //    var consumer = new CarChargerEnergyConsumerBuilder(_logger, _testCtx)
-    //        .Build();
-
-    //    var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
-    //        .AddConsumer(consumer)
-    //        .Build();
-
-    //    //Act
-    //    _testCtx.TriggerStateChange(new Entity(_testCtx.HaContext, "sensor.electricity_meter_power_production_watt"), "200");
-    //    _testCtx.TriggerStateChange(consumer.StateSensor, "Occupied");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().CableConnectedSensor, "on");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "5");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().Location, "home");
-
-    //    _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
-
-    //    //Assert
-    //    Assert.AreEqual(EnergyConsumerState.NeedsEnergy, energyManager.Consumers.First().State);
-    //    _testCtx.InputNumberChanged(consumer.CurrentEntity, 6, Moq.Times.Never);
-    //}
-
-    //[TestMethod]
-    //public void ExcessEnergy_Adjusts_Load()
-    //{
-    //    // Arrange
-    //    var consumer = new CarChargerEnergyConsumerBuilder(_logger, _testCtx)
-    //        .Build();
-
-    //    var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
-    //        .AddConsumer(consumer)
-    //        .Build();
+        //Assert
+        Assert.AreEqual(EnergyConsumerState.Off, energyManager.Consumers.First().State.State);
+        _testCtx.InputNumberChanged(consumer.CarCharger!.CurrentEntity, 6, Moq.Times.Never);
+    }
 
 
-    //    _testCtx.TriggerStateChange(consumer.StateSensor, "Occupied");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().CableConnectedSensor, "on");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "5");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().Location, "home");
-    //    _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
+    [TestMethod]
+    public async Task Occupied_ButNotEnoughPower_DoesNotTrigger_TurnsOn()
+    {
+        // Arrange
+        var consumer = CarChargerEnergyConsumer2Builder.Passat().Build();
 
-    //    //Act
-    //    _testCtx.TriggerStateChange(consumer.StateSensor, "Charging");
-    //    _testCtx.TriggerStateChange(consumer.CurrentEntity, "6");
-    //    _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(15));
-    //    A.CallTo(() => _gridMonitor.CurrentLoadMinusBatteries).Returns(-600);
-    //    A.CallTo(() => _gridMonitor.AverageLoadMinusBatteriesSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(-600);
-    //    _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(20));
+        var builder = new EnergyManager2Builder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+            .AddConsumer(consumer);
+        var energyManager = await builder.Build();
 
-    //    //Assert
-    //    _testCtx.InputNumberChanged(consumer.CurrentEntity, 8, Moq.Times.Once);
-    //}
+        _testCtx.TriggerStateChange(builder._grid.ExportEntity, "200");
+        _testCtx.TriggerStateChange(builder._grid.ImportEntity, "0");
 
-    //[TestMethod]
-    //public void ConsumingEnergy_Adjusts_Load()
-    //{
-    //    // Arrange
-    //    var consumer = new CarChargerEnergyConsumerBuilder(_logger, _testCtx)
-    //        .WithRuntime(TimeSpan.FromMinutes(5), null)
-    //        .Build();
+        //Act
+        _testCtx.TriggerStateChange(consumer.CarCharger!.StateSensor, "Occupied");
+        _testCtx.TriggerStateChange(consumer.CarCharger!.VoltageEntity, "230");
+        _testCtx.TriggerStateChange(consumer.CarCharger!.Cars.First().CableConnectedSensor, "on");
+        _testCtx.TriggerStateChange(consumer.CarCharger!.Cars.First().BatteryPercentageSensor, "5");
+        _testCtx.TriggerStateChange(consumer.CarCharger!.Cars.First().Location, "home");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
 
-    //    var energyManager = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler, _gridMonitor)
-    //        .AddConsumer(consumer)
-    //        .Build();
+        //Assert
+        Assert.AreEqual(EnergyConsumerState.NeedsEnergy, energyManager.Consumers.First().State.State);
+        _testCtx.InputNumberChanged(consumer.CarCharger!.CurrentEntity, 6, Moq.Times.Never);
+    }
 
-    //    _testCtx.TriggerStateChange(consumer.StateSensor, "Occupied");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().CableConnectedSensor, "on");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().BatteryPercentageSensor, "5");
-    //    _testCtx.TriggerStateChange(consumer.Cars.First().Location, "home");
-    //    _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
+    [TestMethod]
+    public async Task ExcessEnergy_Adjusts_Load()
+    {
+        // Arrange
+        var consumer = CarChargerEnergyConsumer2Builder.Passat().Build();
 
-    //    //Act
-    //    _testCtx.TriggerStateChange(consumer.StateSensor, "Charging");
-    //    _testCtx.TriggerStateChange(consumer.CurrentEntity, "16");
-    //    _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(15));
-    //    A.CallTo(() => _gridMonitor.CurrentLoadMinusBatteries).Returns(800);
-    //    A.CallTo(() => _gridMonitor.AverageLoadMinusBatteriesSince(A<DateTimeOffset>._, A<TimeSpan>._)).Returns(800);
+        var builder = new EnergyManager2Builder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+            .AddConsumer(consumer);
+        _ = await builder.Build();
 
-    //    _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(20));
+        _testCtx.TriggerStateChange(builder._grid.ExportEntity, "0");
+        _testCtx.TriggerStateChange(builder._grid.ImportEntity, "0");
 
-    //    //Assert
-    //    _testCtx.InputNumberChanged(consumer.CurrentEntity, 12, Times.Once);
-    //}
+        _testCtx.TriggerStateChange(consumer.CarCharger!.StateSensor, "Charging");
+        _testCtx.TriggerStateChange(consumer.CarCharger!.VoltageEntity, "230");
+        _testCtx.TriggerStateChange(consumer.CarCharger!.Cars.First().CableConnectedSensor, "on");
+        _testCtx.TriggerStateChange(consumer.CarCharger!.Cars.First().BatteryPercentageSensor, "5");
+        _testCtx.TriggerStateChange(consumer.CarCharger!.Cars.First().Location, "home");
+        _testCtx.TriggerStateChange(consumer.CarCharger!.CurrentEntity, "6");
+
+        //Act
+        _testCtx.TriggerStateChange(builder._grid.ExportEntity, "600");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(31));
+
+        //Assert
+        _testCtx.InputNumberChanged(consumer.CarCharger!.CurrentEntity, 8, Moq.Times.Never);
+    }
+
+    [TestMethod]
+    public async Task ConsumingEnergy_Adjusts_Load()
+    {
+        // Arrange
+        var consumer = CarChargerEnergyConsumer2Builder.Passat().Build();
+
+        var builder = new EnergyManager2Builder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+            .AddConsumer(consumer);
+        _ = await builder.Build();
+
+        _testCtx.TriggerStateChange(builder._grid.ExportEntity, "0");
+        _testCtx.TriggerStateChange(builder._grid.ImportEntity, "0");
+
+        _testCtx.TriggerStateChange(consumer.CarCharger!.StateSensor, "Charging");
+        _testCtx.TriggerStateChange(consumer.CarCharger!.VoltageEntity, "230");
+        _testCtx.TriggerStateChange(consumer.CarCharger!.Cars.First().CableConnectedSensor, "on");
+        _testCtx.TriggerStateChange(consumer.CarCharger!.Cars.First().BatteryPercentageSensor, "5");
+        _testCtx.TriggerStateChange(consumer.CarCharger!.Cars.First().Location, "home");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
+        _testCtx.TriggerStateChange(consumer.CarCharger!.CurrentEntity, "16");
+
+        //Act
+        _testCtx.TriggerStateChange(builder._grid.ImportEntity, "800");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(31));
+
+        //Assert
+        _testCtx.InputNumberChanged(consumer.CarCharger!.CurrentEntity, 12, Moq.Times.Once);
+    }
 
     //[TestMethod]
     //public void ConsumingEnergy_Respects_MinimumTimeRuntime()
