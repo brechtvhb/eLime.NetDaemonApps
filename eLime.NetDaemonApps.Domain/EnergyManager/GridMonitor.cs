@@ -133,13 +133,13 @@ public class GridMonitor : IDisposable, IGridMonitor
     public double AverageImportSince(DateTimeOffset now, TimeSpan timeSpan)
     {
         var values = _lastImportValues.Where(x => x.Moment.Add(timeSpan) > now).Select(x => x.Value).DefaultIfEmpty().ToList();
-        return values.Count == 0 ? CurrentBatteryChargePower : Math.Round(values.Average());
+        return values.Count == 0 ? CurrentPowerImport : Math.Round(values.Average());
     }
 
     public double AverageExportSince(DateTimeOffset now, TimeSpan timeSpan)
     {
         var values = _lastExportValues.Where(x => x.Moment.Add(timeSpan) > now).Select(x => x.Value).DefaultIfEmpty().ToList();
-        return values.Count == 0 ? CurrentBatteryChargePower : Math.Round(values.Average());
+        return values.Count == 0 ? CurrentPowerExport : Math.Round(values.Average());
     }
 
     public double AverageBatteryChargePowerSince(DateTimeOffset now, TimeSpan timeSpan)
@@ -151,7 +151,7 @@ public class GridMonitor : IDisposable, IGridMonitor
     public double AverageBatteryDischargePowerSince(DateTimeOffset now, TimeSpan timeSpan)
     {
         var values = _lastBatteryDischargePowerValues.Where(x => x.Moment.Add(timeSpan) > now).Select(x => x.Value).DefaultIfEmpty().ToList();
-        return values.Count == 0 ? CurrentBatteryChargePower : Math.Round(values.Average());
+        return values.Count == 0 ? CurrentBatteryDischargePower : Math.Round(values.Average());
     }
 
     public double AverageLoadSince(DateTimeOffset now, TimeSpan timeSpan) => AverageImportSince(now, timeSpan) - AverageExportSince(now, timeSpan);
