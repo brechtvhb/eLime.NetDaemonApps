@@ -57,7 +57,6 @@ public class EnergyManager2 : IDisposable
         foreach (var x in configuration.Consumers)
         {
             var consumer = await EnergyConsumer2.Create(Context, x);
-            consumer.StateChanged += EnergyConsumer_StateChanged;
             Consumers.Add(consumer);
         }
         BatteryManager = await BatteryManager.Create(Context, configuration.BatteryManager);
@@ -81,7 +80,7 @@ public class EnergyManager2 : IDisposable
                     return;
 
                 foreach (var consumer in Consumers)
-                    consumer.CheckDesiredState();
+                    consumer.UpdateState();
 
                 await DebounceManageConsumers();
             }
@@ -338,35 +337,6 @@ public class EnergyManager2 : IDisposable
         return Math.Round(dynamicLoadThatCanBeScaledDownOnBehalfOf < 0 ? 0 : dynamicLoadThatCanBeScaledDownOnBehalfOf);
     }
 
-    //TODO: I want to get rid of this
-    private async void EnergyConsumer_StateChanged(object? sender, EnergyConsumer2StateChangedEvent e)
-    {
-        try
-        {
-            var energyConsumer = Consumers.Single(x => x.Name == e.Consumer.Name);
-
-            Context.Logger.LogInformation("{EnergyConsumer}: State changed to: {State}.", e.Consumer.Name, e.State);
-
-            switch (e)
-            {
-                case EnergyConsumer2StartCommand:
-                    break;
-                case EnergyConsumer2StartedEvent:
-                    break;
-                case EnergyConsumer2StoppedEvent:
-                    break;
-                case EnergyConsumer2StopCommand:
-                    energyConsumer.Stop();
-                    break;
-            }
-
-            await DebounceSaveAndPublishState();
-        }
-        catch (Exception ex)
-        {
-            Context.Logger.LogError(ex, "{EnergyConsumer}: Error while processing state change.", e.Consumer.Name);
-        }
-    }
     private void GetAndSanitizeState()
     {
         var persistedState = Context.FileStorage.Get<EnergyManagerState>("EnergyManager", "EnergyManager");

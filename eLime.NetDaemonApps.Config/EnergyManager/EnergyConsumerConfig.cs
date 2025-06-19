@@ -1,10 +1,12 @@
 ﻿namespace eLime.NetDaemonApps.Config.EnergyManager;
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
 
 public class EnergyConsumerConfig
 {
     public string Name { get; set; }
     public List<string> ConsumerGroups { get; set; } = [];
 
+    //Rename dunglish to PowerConsumptionEntity
     public string PowerUsageEntity { get; set; }
     public double SwitchOnLoad { get; set; }
     public double SwitchOffLoad { get; set; }

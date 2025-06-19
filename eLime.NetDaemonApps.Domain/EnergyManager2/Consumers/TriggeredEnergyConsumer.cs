@@ -12,6 +12,15 @@ public class TriggeredEnergyConsumer2 : EnergyConsumer2
     internal sealed override EnergyConsumerMqttSensors MqttSensors { get; }
     internal sealed override TriggeredEnergyConsumerHomeAssistantEntities HomeAssistant { get; }
 
+    public string StartState { get; set; }
+    public string? PausedState { get; set; }
+    public string CompletedState { get; set; }
+    public string? CriticalState { get; set; }
+    public bool CanPause { get; set; }
+    public bool ShutDownOnComplete { get; set; }
+
+    public List<TriggeredEnergyConsumerState> States { get; set; }
+
     internal override bool IsRunning => (HomeAssistant.SocketSwitch == null || HomeAssistant.SocketSwitch.IsOn()) && States.Where(x => x.IsRunning).Select(x => x.Name).Contains(HomeAssistant.StateSensor.State);
     internal override double PeakLoad
     {
@@ -35,15 +44,6 @@ public class TriggeredEnergyConsumer2 : EnergyConsumer2
         }
     }
 
-    public string StartState { get; set; }
-    public string? PausedState { get; set; }
-    public string CompletedState { get; set; }
-    public string? CriticalState { get; set; }
-    public bool CanPause { get; set; }
-    public bool ShutDownOnComplete { get; set; }
-
-    public List<TriggeredEnergyConsumerState> States { get; set; }
-
     internal TriggeredEnergyConsumer2(EnergyManagerContext context, EnergyConsumerConfiguration config)
         : base(context, config)
     {
@@ -57,6 +57,7 @@ public class TriggeredEnergyConsumer2 : EnergyConsumer2
             HomeAssistant.SocketSwitch.TurnedOn += Socket_TurnedOn;
             HomeAssistant.SocketSwitch.TurnedOff += Socket_TurnedOff;
         }
+        HomeAssistant.StateSensor.StateChanged += StateSensor_StateChanged;
 
         StartState = config.Triggered.StartState;
         PausedState = config.Triggered.PausedState;
@@ -70,12 +71,39 @@ public class TriggeredEnergyConsumer2 : EnergyConsumer2
         MqttSensors = new EnergyConsumerMqttSensors(config.Name, context);
     }
 
-    protected override EnergyConsumerState GetDesiredState()
+    private void StateSensor_StateChanged(object? sender, Entities.TextSensors.TextSensorEventArgs e)
+    {
+        if (HomeAssistant.SocketSwitch != null && HomeAssistant.SocketSwitch.IsOff())
+            return;
+
+        if (e.Sensor.State == StartState || e.Sensor.State == PausedState)
+        {
+            State.State = EnergyConsumerState.NeedsEnergy;
+        }
+        else if (e.Sensor.State == CriticalState)
+        {
+            State.State = EnergyConsumerState.CriticallyNeedsEnergy;
+        }
+        else if (e.Sensor.State == CompletedState)
+        {
+            Stop();
+        }
+        else if (States.Where(x => x.IsRunning).Select(x => x.Name).Contains(e.Sensor.State) && State.State != EnergyConsumerState.Running)
+        {
+            State.State = EnergyConsumerState.Running;
+        }
+    }
+
+    protected override void StopOnBootIfEnergyIsNoLongerNeeded()
+    {
+        if (IsRunning && HomeAssistant.StateSensor.State == CompletedState)
+            Stop();
+    }
+
+    protected override EnergyConsumerState GetState()
     {
         var desiredState = IsRunning switch
         {
-            true when HomeAssistant.StateSensor.State == CompletedState => EnergyConsumerState.Off,
-            true when HomeAssistant.StateSensor.State == PausedState => EnergyConsumerState.NeedsEnergy,
             true => EnergyConsumerState.Running,
             false when (HomeAssistant.StateSensor.State == StartState || HomeAssistant.StateSensor.State == PausedState) && HomeAssistant.CriticallyNeededSensor != null && HomeAssistant.CriticallyNeededSensor.IsOn() => EnergyConsumerState.CriticallyNeedsEnergy,
             false when HomeAssistant.StateSensor.State == CriticalState && !string.IsNullOrWhiteSpace(CriticalState) => EnergyConsumerState.CriticallyNeedsEnergy,

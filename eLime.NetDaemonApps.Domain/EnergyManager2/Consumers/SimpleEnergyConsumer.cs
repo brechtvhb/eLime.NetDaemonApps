@@ -29,7 +29,12 @@ public class SimpleEnergyConsumer2 : EnergyConsumer2
         PeakLoad = config.Simple.PeakLoad;
     }
 
-    protected override EnergyConsumerState GetDesiredState()
+    protected override void StopOnBootIfEnergyIsNoLongerNeeded()
+    {
+
+    }
+
+    protected override EnergyConsumerState GetState()
     {
         return IsRunning switch
         {
@@ -42,6 +47,8 @@ public class SimpleEnergyConsumer2 : EnergyConsumer2
 
     public override bool CanStart()
     {
+        State.State = GetState();
+
         if (State.State is EnergyConsumerState.Running or EnergyConsumerState.Off)
             return false;
 

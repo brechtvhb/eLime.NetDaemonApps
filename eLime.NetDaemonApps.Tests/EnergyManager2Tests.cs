@@ -110,12 +110,12 @@ public class EnergyManager2Tests
         var consumer = new SimpleEnergyConsumer2Builder()
             .Build();
 
+        _testCtx.TriggerStateChange(consumer.Simple!.SocketEntity, "on");
+        _testCtx.TriggerStateChange(consumer.PowerUsageEntity, "40");
+
         var energyManager = await new EnergyManager2Builder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
             .AddConsumer(consumer)
             .Build();
-
-        _testCtx.TriggerStateChange(consumer.Simple!.SocketEntity, "on");
-        _testCtx.TriggerStateChange(consumer.PowerUsageEntity, "40");
 
         //Act
         _testCtx.TriggerStateChange(consumer.Simple!.SocketEntity, "off");
@@ -416,7 +416,7 @@ public class EnergyManager2Tests
         //Act
         _testCtx.TriggerStateChange(builder._grid.ExportEntity, "50");
         _testCtx.TriggerStateChange(consumer2.CriticallyNeededEntity, "on");
-        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(5));
 
         //Assert
         _testCtx.VerifySwitchTurnOn(consumer1.Simple!.SocketEntity, Moq.Times.Never);

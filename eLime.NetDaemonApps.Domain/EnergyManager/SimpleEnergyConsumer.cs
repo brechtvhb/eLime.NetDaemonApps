@@ -21,6 +21,7 @@ public class SimpleEnergyConsumer : EnergyConsumer
 
         PeakLoad = peakLoad;
     }
+
     protected override EnergyConsumerState GetDesiredState(DateTimeOffset? now)
     {
         return Running switch

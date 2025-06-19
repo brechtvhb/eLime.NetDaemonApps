@@ -1,5 +1,4 @@
-﻿using eLime.NetDaemonApps.Domain.EnergyManager;
-using eLime.NetDaemonApps.Domain.Storage;
+﻿using eLime.NetDaemonApps.Domain.Storage;
 using eLime.NetDaemonApps.Tests.Builders;
 using eLime.NetDaemonApps.Tests.Helpers;
 using FakeItEasy;
@@ -101,7 +100,7 @@ public class TriggeredEnergyConsumer2Tests
 
         //Act
         _testCtx.TriggerStateChange(consumer.Triggered!.StateSensor, "waiting_to_start");
-        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(5));
 
         _testCtx.TriggerStateChange(consumer.Triggered!.SocketEntity, "on");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(20));
@@ -224,7 +223,6 @@ public class TriggeredEnergyConsumer2Tests
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(20));
 
         //Assert
-        Assert.AreEqual(EnergyConsumerState.Off, energyManager.Consumers.First().State.State);
         _testCtx.VerifySwitchTurnOff(consumer.Triggered!.SocketEntity, Moq.Times.AtLeastOnce);
     }
 

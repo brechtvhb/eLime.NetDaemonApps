@@ -11,7 +11,7 @@ public class EnergyConsumerConfiguration
     {
         Name = config.Name;
         ConsumerGroups = config.ConsumerGroups;
-        PowerUsageSensor = NumericSensor.Create(haContext, config.PowerUsageEntity);
+        PowerConsumptionSensor = NumericSensor.Create(haContext, config.PowerUsageEntity);
         SwitchOnLoad = config.SwitchOnLoad;
         SwitchOffLoad = config.SwitchOffLoad;
         MinimumRuntime = config.MinimumRuntime;
@@ -27,7 +27,7 @@ public class EnergyConsumerConfiguration
     }
     public string Name { get; set; }
     public List<string> ConsumerGroups { get; set; }
-    public NumericSensor PowerUsageSensor { get; set; }
+    public NumericSensor PowerConsumptionSensor { get; set; }
     public double SwitchOnLoad { get; set; }
     public double SwitchOffLoad { get; set; }
     public TimeSpan? MinimumRuntime { get; set; }

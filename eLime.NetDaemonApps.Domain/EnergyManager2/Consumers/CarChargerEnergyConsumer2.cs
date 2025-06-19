@@ -288,14 +288,24 @@ public class CarChargerEnergyConsumer2 : EnergyConsumer2, IDynamicLoadConsumer2
         HomeAssistant.CurrentNumber.Change(toBeCurrent);
     }
 
-    protected override EnergyConsumerState GetDesiredState()
+    protected override void StopOnBootIfEnergyIsNoLongerNeeded()
     {
         var connectedCarNeedsEnergy = ConnectedCar?.NeedsEnergy ?? false;
         var needsEnergy = (HomeAssistant.StateSensor.State == CarChargerStates.Occupied.ToString() || HomeAssistant.StateSensor.State == CarChargerStates.Charging.ToString()) && connectedCarNeedsEnergy;
 
+        if (IsRunning && !needsEnergy)
+            TurnOff();
+
         //Turns off entire charging station if no known car is connected that needs energy.
         if (!IsRunning && !needsEnergy && (HomeAssistant.CurrentNumber.State ?? 0) > OffCurrent)
             TurnOff();
+    }
+
+
+    protected override EnergyConsumerState GetState()
+    {
+        var connectedCarNeedsEnergy = ConnectedCar?.NeedsEnergy ?? false;
+        var needsEnergy = (HomeAssistant.StateSensor.State == CarChargerStates.Occupied.ToString() || HomeAssistant.StateSensor.State == CarChargerStates.Charging.ToString()) && connectedCarNeedsEnergy;
 
         return IsRunning switch
         {

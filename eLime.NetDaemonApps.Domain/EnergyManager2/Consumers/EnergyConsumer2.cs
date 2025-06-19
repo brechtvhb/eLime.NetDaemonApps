@@ -20,7 +20,7 @@ public abstract class EnergyConsumer2 : IDisposable
     internal abstract EnergyConsumerMqttSensors MqttSensors { get; }
     public string Name { get; private set; }
 
-    internal double CurrentLoad => HomeAssistant.PowerUsageSensor.State ?? 0;
+    internal double CurrentLoad => HomeAssistant.PowerConsumptionSensor.State ?? 0;
     internal List<TimeWindow> TimeWindows;
     internal TimeSpan? MinimumRuntime;
     internal TimeSpan? MaximumRuntime;
@@ -68,17 +68,19 @@ public abstract class EnergyConsumer2 : IDisposable
         await consumer.MqttSensors.CreateOrUpdateEntities(config.ConsumerGroups);
         consumer.GetAndSanitizeState();
         consumer.StopIfPastRuntime();
+        consumer.StopOnBootIfEnergyIsNoLongerNeeded();
         await consumer.SaveAndPublishState();
 
         return consumer;
     }
 
-    internal event EventHandler<EnergyConsumer2StateChangedEvent>? StateChanged;
-
+    protected abstract void StopOnBootIfEnergyIsNoLongerNeeded();
     internal void GetAndSanitizeState()
     {
         var persistedState = Context.FileStorage.Get<ConsumerState>("EnergyManager", Name);
         State = persistedState ?? new ConsumerState();
+        if (State.State == EnergyConsumerState.Unknown)
+            State.State = GetState();
 
         Context.Logger.LogDebug("{Name}: Retrieved state", Name);
     }
@@ -119,18 +121,9 @@ public abstract class EnergyConsumer2 : IDisposable
         await MqttSensors.PublishState(State);
     }
 
-
-    internal async void OnStateCHanged(EnergyConsumer2StateChangedEvent e)
+    public void UpdateState()
     {
-        try
-        {
-            StateChanged?.Invoke(this, e);
-            await DebounceSaveAndPublishState();
-        }
-        catch (Exception ex)
-        {
-            Context.Logger.LogError(ex, "{EnergyConsumer}: Error while processing state change.", Name);
-        }
+        State.State = GetState();
     }
 
     internal void Started()
@@ -151,35 +144,8 @@ public abstract class EnergyConsumer2 : IDisposable
     {
         State.StartedAt = null;
         State.LastRun = Context.Scheduler.Now;
-        State.State = GetDesiredState();
+        State.State = GetState();
         Context.Logger.LogDebug("{EnergyConsumer}: Was stopped.", Name);
-    }
-
-    //TODO: I want to get rid of this
-    public void CheckDesiredState()
-    {
-        var desiredState = GetDesiredState();
-        var originalState = State.State;
-
-        if (State.State == desiredState)
-            return;
-        State.State = desiredState;
-
-        if (originalState == EnergyConsumerState.Unknown)
-            return;
-
-        EnergyConsumer2StateChangedEvent? @event = desiredState switch
-        {
-            EnergyConsumerState.NeedsEnergy => new EnergyConsumer2StartCommand(this, State.State),
-            EnergyConsumerState.CriticallyNeedsEnergy => new EnergyConsumer2StartCommand(this, State.State),
-            EnergyConsumerState.Off => new EnergyConsumer2StopCommand(this, State.State),
-            EnergyConsumerState.Running => null,
-            EnergyConsumerState.Unknown => null,
-            _ => null
-        };
-
-        if (@event != null)
-            OnStateCHanged(@event);
     }
 
     public TimeSpan? GetRunTime()
@@ -231,7 +197,7 @@ public abstract class EnergyConsumer2 : IDisposable
         return remainingDuration < suggestedRunTime ? remainingDuration : suggestedRunTime;
     }
 
-    protected abstract EnergyConsumerState GetDesiredState();
+    protected abstract EnergyConsumerState GetState();
     public abstract bool CanStart();
     public abstract bool CanForceStop();
     public abstract bool CanForceStopOnPeakLoad();

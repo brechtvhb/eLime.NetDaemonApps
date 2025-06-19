@@ -26,17 +26,35 @@ public class CoolingEnergyConsumer2 : EnergyConsumer2
         HomeAssistant.SocketSwitch.TurnedOn += Socket_TurnedOn;
         HomeAssistant.SocketSwitch.TurnedOff += Socket_TurnedOff;
 
+        HomeAssistant.TemperatureSensor.Changed += TemperatureSensor_Changed;
         MqttSensors = new EnergyConsumerMqttSensors(config.Name, context);
         PeakLoad = config.Cooling.PeakLoad;
         TargetTemperature = config.Cooling.TargetTemperature;
         MaxTemperature = config.Cooling.MaxTemperature;
     }
 
-    protected override EnergyConsumerState GetDesiredState()
+    private void TemperatureSensor_Changed(object? sender, Entities.NumericSensors.NumericSensorEventArgs e)
+    {
+        if (e.Sensor.State <= TargetTemperature)
+        {
+            Stop();
+            return;
+        }
+
+        State.State = GetState();
+    }
+
+
+    protected override void StopOnBootIfEnergyIsNoLongerNeeded()
+    {
+        if (IsRunning && HomeAssistant.TemperatureSensor.State <= TargetTemperature)
+            Stop();
+    }
+
+    protected override EnergyConsumerState GetState()
     {
         return IsRunning switch
         {
-            true when HomeAssistant.TemperatureSensor.State < TargetTemperature => EnergyConsumerState.Off,
             true => EnergyConsumerState.Running,
             false when MaximumTimeout != null && State.LastRun?.Add(MaximumTimeout.Value) < Context.Scheduler.Now => EnergyConsumerState.CriticallyNeedsEnergy,
             false when HomeAssistant.CriticallyNeededSensor != null && HomeAssistant.CriticallyNeededSensor.IsOn() => EnergyConsumerState.CriticallyNeedsEnergy,

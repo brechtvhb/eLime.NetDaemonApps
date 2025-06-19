@@ -77,12 +77,12 @@ public class CoolingEnergyConsumer2Tests
 
         var builder = new EnergyManager2Builder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
             .AddConsumer(consumer);
-        var energyManager = await builder.Build();
+        _ = await builder.Build();
         _testCtx.TriggerStateChange(builder._grid.ExportEntity, "100");
 
         //Act
         _testCtx.TriggerStateChange(consumer.Cooling!.TemperatureSensor, "0");
-        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(5));
 
         //Assert
         _testCtx.VerifySwitchTurnOff(consumer.Cooling!.SocketEntity, Moq.Times.Once);
@@ -104,14 +104,14 @@ public class CoolingEnergyConsumer2Tests
             .AddConsumer(consumer1)
             .AddConsumer(consumer2);
 
-        var energyManager = await builder.Build();
+        _ = await builder.Build();
         _testCtx.TriggerStateChange(builder._grid.ExportEntity, "100");
 
 
         //Act
         _testCtx.TriggerStateChange(consumer1.Cooling!.TemperatureSensor, "7");
         _testCtx.TriggerStateChange(consumer2.Cooling!.TemperatureSensor, "12");
-        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(6));
 
         //Assert
         _testCtx.VerifySwitchTurnOn(consumer1.Cooling!.SocketEntity, Moq.Times.Never);

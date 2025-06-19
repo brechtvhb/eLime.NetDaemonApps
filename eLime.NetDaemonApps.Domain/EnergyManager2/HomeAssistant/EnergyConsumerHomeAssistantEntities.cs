@@ -6,12 +6,12 @@ namespace eLime.NetDaemonApps.Domain.EnergyManager2.HomeAssistant;
 
 public class EnergyConsumerHomeAssistantEntities(EnergyConsumerConfiguration config) : IDisposable
 {
-    internal NumericSensor PowerUsageSensor = config.PowerUsageSensor;
+    internal NumericSensor PowerConsumptionSensor = config.PowerConsumptionSensor;
     internal BinarySensor? CriticallyNeededSensor = config.CriticallyNeededSensor;
 
     public void Dispose()
     {
-        PowerUsageSensor.Dispose();
+        PowerConsumptionSensor.Dispose();
         CriticallyNeededSensor?.Dispose();
     }
 }
