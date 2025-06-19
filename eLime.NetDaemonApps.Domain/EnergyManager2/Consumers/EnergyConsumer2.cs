@@ -155,14 +155,6 @@ public abstract class EnergyConsumer2 : IDisposable
         Context.Logger.LogDebug("{EnergyConsumer}: Was stopped.", Name);
     }
 
-
-    //TODO: This is shit
-    internal void CheckDesiredState(EnergyConsumer2StateChangedEvent eventToEmit)
-    {
-        State.State = eventToEmit.State;
-        OnStateCHanged(eventToEmit);
-    }
-
     //TODO: I want to get rid of this
     public void CheckDesiredState()
     {
