@@ -6,7 +6,6 @@ using eLime.NetDaemonApps.Tests.Helpers;
 using FakeItEasy;
 using Microsoft.Extensions.Logging;
 using NetDaemon.Extensions.MqttEntityManager;
-using System.Globalization;
 using EnergyManager = eLime.NetDaemonApps.Domain.EnergyManager.EnergyManager;
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
 
@@ -28,23 +27,6 @@ public class CarChargerEnergyConsumer2Tests
         _logger = A.Fake<ILogger<EnergyManager>>();
         _mqttEntityManager = A.Fake<IMqttEntityManager>();
         _fileStorage = A.Fake<IFileStorage>();
-    }
-
-    //TODO: Temp fix - should use last known values if value did not change in the wanted timeframe
-    private void SimulateAveragePower(string? importEntity, double import, string? exportEntity, double export, int times, TimeSpan span)
-    {
-        do
-        {
-            var variance = Random.Shared.Next(-500, 500) / 100d;
-
-            if (!string.IsNullOrEmpty(importEntity))
-                _testCtx.TriggerStateChange(importEntity, (import + variance).ToString(CultureInfo.InvariantCulture));
-            if (!string.IsNullOrEmpty(exportEntity))
-                _testCtx.TriggerStateChange(exportEntity, (export + variance).ToString(CultureInfo.InvariantCulture));
-
-            _testCtx.AdvanceTimeBy(span);
-            times--;
-        } while (times > 0);
     }
 
     [TestMethod]
@@ -74,15 +56,16 @@ public class CarChargerEnergyConsumer2Tests
             .AddConsumer(consumer);
         _ = await builder.Build();
 
+        _testCtx.TriggerStateChange(builder._grid.ExportEntity, "5000");
+        _testCtx.TriggerStateChange(builder._grid.ImportEntity, "0");
+
         //Act
-        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
         _testCtx.TriggerStateChange(consumer.CarCharger!.StateSensor, "Occupied");
         _testCtx.TriggerStateChange(consumer.CarCharger!.VoltageEntity, "230");
         _testCtx.TriggerStateChange(consumer.CarCharger!.Cars.First().CableConnectedSensor, "on");
         _testCtx.TriggerStateChange(consumer.CarCharger!.Cars.First().BatteryPercentageSensor, "5");
         _testCtx.TriggerStateChange(consumer.CarCharger!.Cars.First().Location, "home");
-
-        SimulateAveragePower(builder._grid.ImportEntity, 0, builder._grid.ExportEntity, 5000, 2, TimeSpan.FromSeconds(10));
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(6));
 
         //Assert
         _testCtx.InputNumberChanged(consumer.CarCharger!.CurrentEntity, 6, Moq.Times.Once);

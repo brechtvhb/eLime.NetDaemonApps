@@ -123,11 +123,29 @@ public class GridMonitor2 : IDisposable, IGridMonitor2
         _lastBatteryDischargePowerValues.Enqueue((Context.Scheduler.Now, e.Sensor.State.Value));
     }
 
-    public double AverageImportSince(TimeSpan timeSpan) => Math.Round(_lastImportValues.Where(x => x.Moment.Add(timeSpan) > Context.Scheduler.Now).Select(x => x.Value).DefaultIfEmpty().Average());
+    public double AverageImportSince(TimeSpan timeSpan)
+    {
+        var values = _lastImportValues.Where(x => x.Moment.Add(timeSpan) > Context.Scheduler.Now).Select(x => x.Value).DefaultIfEmpty().ToList();
+        return values.Count == 0 ? CurrentPowerImport : Math.Round(values.Average());
+    }
 
-    public double AverageExportSince(TimeSpan timeSpan) => Math.Round(_lastExportValues.Where(x => x.Moment.Add(timeSpan) > Context.Scheduler.Now).Select(x => x.Value).DefaultIfEmpty().Average());
-    public double AverageBatteryChargePowerSince(TimeSpan timeSpan) => Math.Round(_lastBatteryChargePowerValues.Where(x => x.Moment.Add(timeSpan) > Context.Scheduler.Now).Select(x => x.Value).DefaultIfEmpty().Average());
-    public double AverageBatteryDischargePowerSince(TimeSpan timeSpan) => Math.Round(_lastBatteryDischargePowerValues.Where(x => x.Moment.Add(timeSpan) > Context.Scheduler.Now).Select(x => x.Value).DefaultIfEmpty().Average());
+    public double AverageExportSince(TimeSpan timeSpan)
+    {
+        var values = _lastExportValues.Where(x => x.Moment.Add(timeSpan) > Context.Scheduler.Now).Select(x => x.Value).DefaultIfEmpty().ToList();
+        return values.Count == 0 ? CurrentPowerExport : Math.Round(values.Average());
+    }
+
+    public double AverageBatteryChargePowerSince(TimeSpan timeSpan)
+    {
+        var values = _lastBatteryChargePowerValues.Where(x => x.Moment.Add(timeSpan) > Context.Scheduler.Now).Select(x => x.Value).DefaultIfEmpty().ToList();
+        return values.Count == 0 ? CurrentBatteryChargePower : Math.Round(values.Average());
+    }
+
+    public double AverageBatteryDischargePowerSince(TimeSpan timeSpan)
+    {
+        var values = _lastBatteryDischargePowerValues.Where(x => x.Moment.Add(timeSpan) > Context.Scheduler.Now).Select(x => x.Value).DefaultIfEmpty().ToList();
+        return values.Count == 0 ? CurrentBatteryDischargePower : Math.Round(values.Average());
+    }
 
 
     public double AverageLoadSince(TimeSpan timeSpan) => AverageImportSince(timeSpan) - AverageExportSince(timeSpan);
