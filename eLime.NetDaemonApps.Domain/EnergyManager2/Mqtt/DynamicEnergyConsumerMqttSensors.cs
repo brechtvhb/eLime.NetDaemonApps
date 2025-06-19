@@ -69,7 +69,7 @@ public class DynamicEnergyConsumerMqttSensors : EnergyConsumerMqttSensors
         };
     }
 
-    internal new async Task CreateOrUpdateEntities(List<string> consumerGroups)
+    internal override async Task CreateOrUpdateEntities(List<string> consumerGroups)
     {
         await base.CreateOrUpdateEntities(consumerGroups);
 
@@ -77,8 +77,8 @@ public class DynamicEnergyConsumerMqttSensors : EnergyConsumerMqttSensors
         var balancingMethodDropdownOptions = new SelectOptions { Icon = "mdi:car-turbocharger", Options = Enum<BalancingMethod>.AllValuesAsStringList(), Device = Device };
         await Context.MqttEntityManager.CreateAsync(SELECT_CONSUMER_BALANCING_METHOD, balancingMethodCreationOptions, balancingMethodDropdownOptions);
 
-        var smartGridReadyModeObservable = await Context.MqttEntityManager.PrepareCommandSubscriptionAsync(SELECT_CONSUMER_BALANCING_METHOD);
-        BalancingMethodObservable = smartGridReadyModeObservable.SubscribeAsync(BalancingMethodChangedChangedEventHandler());
+        var balancingMethodObservable = await Context.MqttEntityManager.PrepareCommandSubscriptionAsync(SELECT_CONSUMER_BALANCING_METHOD);
+        BalancingMethodObservable = balancingMethodObservable.SubscribeAsync(BalancingMethodChangedChangedEventHandler());
 
         var balanceOnBehalfOfCreationOptions = new EntityCreationOptions(UniqueId: SELECT_CONSUMER_BALANCE_ON_BEHALF_OF, Name: $"Dynamic load balance on behalf of - {Name}", DeviceClass: "select", Persist: true);
         var balanceOnBehalfOfDropdownOptions = new SelectOptions { Icon = "mdi:car-turbocharger", Options = consumerGroups, Device = Device };
@@ -95,7 +95,7 @@ public class DynamicEnergyConsumerMqttSensors : EnergyConsumerMqttSensors
         AllowBatteryPowerObservable = allowBatteryPowerObservable.SubscribeAsync(AllowBatteryPowerChangedChangedEventHandler());
     }
 
-    internal new async Task PublishState(ConsumerState state)
+    internal override async Task PublishState(ConsumerState state)
     {
         await base.PublishState(state);
         await Context.MqttEntityManager.SetStateAsync(SELECT_CONSUMER_BALANCING_METHOD, state.BalancingMethod.ToString());
@@ -103,7 +103,7 @@ public class DynamicEnergyConsumerMqttSensors : EnergyConsumerMqttSensors
         await Context.MqttEntityManager.SetStateAsync(SELECT_CONSUMER_ALLOW_BATTERY_POWER, state.AllowBatteryPower.ToString());
     }
 
-    public new void Dispose()
+    public override void Dispose()
     {
         base.Dispose();
         BalancingMethodObservable?.Dispose();

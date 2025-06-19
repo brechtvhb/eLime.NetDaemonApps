@@ -29,7 +29,7 @@ public class EnergyConsumerMqttSensors : IDisposable
         SENSOR_CONSUMER_LAST_RUN = $"sensor.energy_consumer_{Name.MakeHaFriendly()}_last_run";
     }
 
-    internal async Task CreateOrUpdateEntities(List<string> consumerGroups)
+    internal virtual async Task CreateOrUpdateEntities(List<string> consumerGroups)
     {
         var stateCreationOptions = new EntityCreationOptions(DeviceClass: "enum", UniqueId: SENSOR_CONSUMER_STATE, Name: $"Consumer {Name} - sate", Persist: true);
         var stateOptions = new EnumSensorOptions { Icon = "fapro:square-bolt", Device = Device, Options = Enum<EnergyConsumerState>.AllValuesAsStringList() };
@@ -44,15 +44,15 @@ public class EnergyConsumerMqttSensors : IDisposable
         await Context.MqttEntityManager.CreateAsync(SENSOR_CONSUMER_LAST_RUN, lastRunCreationOptions, lastRunOptions);
     }
 
-    internal async Task PublishState(ConsumerState state)
+    internal virtual async Task PublishState(ConsumerState state)
     {
         await Context.MqttEntityManager.SetStateAsync(SENSOR_CONSUMER_STATE, state.State.ToString());
         await Context.MqttEntityManager.SetStateAsync(SENSOR_CONSUMER_STARTED_AT, state.StartedAt?.ToString("O") ?? "None");
         await Context.MqttEntityManager.SetStateAsync(SENSOR_CONSUMER_LAST_RUN, state.LastRun?.ToString("O") ?? "None");
     }
 
-    public void Dispose()
+    public virtual void Dispose()
     {
-
+        // TODO release managed resources here
     }
 }

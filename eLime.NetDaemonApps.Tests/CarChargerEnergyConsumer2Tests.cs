@@ -2,12 +2,14 @@
 using eLime.NetDaemonApps.Domain.EnergyManager;
 using eLime.NetDaemonApps.Domain.EnergyManager2.Consumers;
 using eLime.NetDaemonApps.Domain.EnergyManager2.PersistableState;
+using eLime.NetDaemonApps.Domain.Helper;
 using eLime.NetDaemonApps.Domain.Storage;
 using eLime.NetDaemonApps.Tests.Builders;
 using eLime.NetDaemonApps.Tests.Helpers;
 using FakeItEasy;
 using Microsoft.Extensions.Logging;
 using NetDaemon.Extensions.MqttEntityManager;
+using System.Reactive.Subjects;
 using AllowBatteryPower = eLime.NetDaemonApps.Domain.EnergyManager2.Consumers.AllowBatteryPower;
 using BalancingMethod = eLime.NetDaemonApps.Domain.EnergyManager2.Consumers.BalancingMethod;
 using EnergyManager = eLime.NetDaemonApps.Domain.EnergyManager.EnergyManager;
@@ -758,5 +760,66 @@ public class CarChargerEnergyConsumer2Tests
 
         //Assert
         _testCtx.InputNumberChanged(consumer.CarCharger!.Cars.First().CurrentEntity!, 3, Moq.Times.Once);
+    }
+
+    [TestMethod]
+    public async Task Saves_State()
+    {
+        A.CallTo(() => _fileStorage.Get<ConsumerState>("EnergyManager", "Veton")).Returns(new ConsumerState
+        {
+            BalancingMethod = BalancingMethod.SolarOnly,
+            AllowBatteryPower = AllowBatteryPower.Yes
+        });
+
+        var consumer = CarChargerEnergyConsumer2Builder.Tesla()
+            .Build();
+        _testCtx.TriggerStateChange(consumer.CarCharger!.Cars.First().MaxBatteryPercentageSensor!, "80");
+
+        var builder = new EnergyManager2Builder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+            .AddConsumer(consumer);
+        _ = await builder.Build();
+        _testCtx.TriggerStateChange(builder._grid.ExportEntity, "1000");
+        _testCtx.TriggerStateChange(builder._grid.ImportEntity, "0");
+
+        //Act
+        InitChargerState(consumer, "Occupied", 230, true, 50, "home", 5, 0);
+
+        //Assert
+        var mqttState = $"sensor.energy_consumer_{consumer.Name.MakeHaFriendly()}_state";
+        var mqttBalancingMethod = $"sensor.energy_consumer_{consumer.Name.MakeHaFriendly()}_balancing_method";
+        var mqttAllowBatteryPower = $"sensor.energy_consumer_{consumer.Name.MakeHaFriendly()}_allow_battery_power";
+        A.CallTo(() => _mqttEntityManager.SetStateAsync(mqttState, EnergyConsumerState.NeedsEnergy.ToString())).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _mqttEntityManager.SetStateAsync(mqttBalancingMethod, BalancingMethod.SolarOnly.ToString())).MustHaveHappened();
+        A.CallTo(() => _mqttEntityManager.SetStateAsync(mqttAllowBatteryPower, AllowBatteryPower.Yes.ToString())).MustHaveHappened();
+        A.CallTo(() => _fileStorage.Save("EnergyManager", "Veton", A<ConsumerState>._)).MustHaveHappened();
+    }
+
+    [TestMethod]
+    public async Task Listens_To_Mqtt_Events()
+    {
+        var mqttBalancingMethod = $"sensor.energy_consumer_veton_balancing_method";
+        A.CallTo(() => _fileStorage.Get<ConsumerState>("EnergyManager", "Veton")).Returns(new ConsumerState
+        {
+            BalancingMethod = BalancingMethod.SolarOnly,
+            AllowBatteryPower = AllowBatteryPower.Yes
+        });
+        var mqttSubject = new Subject<string>();
+
+        A.CallTo(() => _mqttEntityManager.PrepareCommandSubscriptionAsync(mqttBalancingMethod))
+            .Returns(Task.FromResult<IObservable<string>>(mqttSubject));
+
+        var consumer = CarChargerEnergyConsumer2Builder.Tesla()
+            .Build();
+        _testCtx.TriggerStateChange(consumer.CarCharger!.Cars.First().MaxBatteryPercentageSensor!, "80");
+
+        var builder = new EnergyManager2Builder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+            .AddConsumer(consumer);
+        var energyManager = await builder.Build();
+
+        //Act
+        mqttSubject.OnNext(BalancingMethod.SolarPreferred.ToString());
+
+        //Assert
+        A.CallTo(() => _mqttEntityManager.SetStateAsync(mqttBalancingMethod, BalancingMethod.SolarPreferred.ToString())).MustHaveHappened();
     }
 }
