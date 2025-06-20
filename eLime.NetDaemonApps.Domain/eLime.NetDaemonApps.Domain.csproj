@@ -23,8 +23,4 @@
       <_Parameter1>eLime.NetDaemonApps.Tests</_Parameter1>
     </AssemblyAttribute>
   </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="EnergyManager2\Mqtt\" />
-  </ItemGroup>
 </Project>

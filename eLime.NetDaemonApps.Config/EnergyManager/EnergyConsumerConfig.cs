@@ -6,7 +6,7 @@ public class EnergyConsumerConfig
     public string Name { get; set; }
     public List<string> ConsumerGroups { get; set; } = [];
 
-    //Rename dunglish to PowerConsumptionEntity
+    //Rename dunglish to PowerConsumptionSensor
     public string PowerUsageEntity { get; set; }
     public double SwitchOnLoad { get; set; }
     public double SwitchOffLoad { get; set; }
@@ -16,7 +16,7 @@ public class EnergyConsumerConfig
     public TimeSpan? MinimumTimeout { get; set; }
     public TimeSpan? MaximumTimeout { get; set; }
 
-    //Extra entity to force something to run (Eg : pond pump when it is freezing)
+    //Extra entity to force something to run (Eg : pond pump when it is freezing), rename to CriticallyNeededSensor
     public string? CriticallyNeededEntity { get; set; }
 
     public List<TimeWindowConfig> TimeWindows { get; set; } = [];
