@@ -22,7 +22,10 @@ public class EnergyManagerMqttSensors(EnergyManagerContext context)
     {
         var globalAttributes = new EnergyManagerAttributes
         {
-            LastUpdated = context.Scheduler.Now.ToString("O"),
+            RunningConsumers = state.RunningConsumers,
+            NeedEnergyConsumers = state.NeedEnergyConsumers,
+            CriticalNeedEnergyConsumers = state.CriticalNeedEnergyConsumers,
+            LastUpdated = state.LastChange.ToString("O"),
         };
 
         await context.MqttEntityManager.SetStateAsync(SENSOR_STATE, state.State.ToString());

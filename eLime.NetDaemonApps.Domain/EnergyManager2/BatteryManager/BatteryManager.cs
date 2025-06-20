@@ -50,7 +50,7 @@ internal class BatteryManager
 
     private void GetAndSanitizeState()
     {
-        var persistedState = Context.FileStorage.Get<BatteryManagerState>("EnergyManager", "Batteries");
+        var persistedState = Context.FileStorage.Get<BatteryManagerState>("EnergyManager", "_batteries");
         State = persistedState ?? new BatteryManagerState();
 
         Context.Logger.LogDebug("Retrieved state of battery manager");
@@ -58,7 +58,7 @@ internal class BatteryManager
 
     private Task SaveAndPublishState()
     {
-        Context.FileStorage.Save("EnergyManager", "Batteries", State);
+        Context.FileStorage.Save("EnergyManager", "_batteries", State);
         //await MqttSensors.PublishState(State);
         return Task.CompletedTask;
     }

@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace eLime.NetDaemonApps.apps.SmartHeatPump;
 
-[NetDaemonApp(Id = "smartHeatPump"), Focus]
+[NetDaemonApp(Id = "smartHeatPump")]
 public class SmartHeatPump : IAsyncInitializable, IAsyncDisposable
 {
     private readonly IHaContext _ha;

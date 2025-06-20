@@ -15,7 +15,7 @@ namespace eLime.NetDaemonApps.Domain.EnergyManager2;
 
 public class EnergyManager2 : IDisposable
 {
-    private static readonly object _lock = new();
+    private readonly SemaphoreSlim _semaphore = new(1, 1);
 
     internal EnergyManagerContext Context { get; private set; }
     internal EnergyManagerState State { get; private set; }
@@ -32,7 +32,6 @@ public class EnergyManager2 : IDisposable
 
     private DateTimeOffset _lastChange = DateTimeOffset.MinValue;
     private IDisposable? GuardTask { get; set; }
-
 
     private EnergyManager2()
     {
@@ -89,6 +88,14 @@ public class EnergyManager2 : IDisposable
         });
     }
 
+    public EnergyConsumerState CheckState() => Consumers.Any(x => x.State.State == EnergyConsumerState.CriticallyNeedsEnergy)
+        ? EnergyConsumerState.CriticallyNeedsEnergy
+        : Consumers.Any(x => x.State.State == EnergyConsumerState.NeedsEnergy)
+            ? EnergyConsumerState.NeedsEnergy
+            : Consumers.Any(x => x.State.State == EnergyConsumerState.Running)
+                ? EnergyConsumerState.Running
+                : EnergyConsumerState.Off;
+
 
     private async Task DebounceSaveAndPublishState()
     {
@@ -113,7 +120,7 @@ public class EnergyManager2 : IDisposable
 
     private async Task ManageConsumersIfNeeded()
     {
-        if (!Monitor.TryEnter(_lock))
+        if (!await _semaphore.WaitAsync(0))
         {
             Context.Logger.LogInformation("Could not manage consumers because lock object is still locked.");
             return;
@@ -127,7 +134,16 @@ public class EnergyManager2 : IDisposable
             await ManageBatteriesIfNeeded();
 
             if (dynamicNetChange != 0 || startNetChange != 0 || stopNetChange != 0)
+            {
                 _lastChange = Context.Scheduler.Now;
+                State.State = CheckState();
+                State.LastChange = _lastChange;
+                State.RunningConsumers = Consumers.Where(x => x.State.State == EnergyConsumerState.Running).Select(x => x.Name).ToList();
+                State.NeedEnergyConsumers = Consumers.Where(x => x.State.State == EnergyConsumerState.NeedsEnergy).Select(x => x.Name).ToList();
+                State.CriticalNeedEnergyConsumers = Consumers.Where(x => x.State.State == EnergyConsumerState.CriticallyNeedsEnergy).Select(x => x.Name).ToList();
+
+                await DebounceSaveAndPublishState();
+            }
         }
         catch (Exception ex)
         {
@@ -135,7 +151,7 @@ public class EnergyManager2 : IDisposable
         }
         finally
         {
-            Monitor.Exit(_lock);
+            _semaphore.Release();
         }
 
     }
@@ -337,13 +353,13 @@ public class EnergyManager2 : IDisposable
 
     private void GetAndSanitizeState()
     {
-        var persistedState = Context.FileStorage.Get<EnergyManagerState>("EnergyManager", "EnergyManager");
+        var persistedState = Context.FileStorage.Get<EnergyManagerState>("EnergyManager", "_energy_manager");
         State = persistedState ?? new EnergyManagerState();
     }
 
     private async Task SaveAndPublishState()
     {
-        Context.FileStorage.Save("EnergyManager", "EnergyManager", State);
+        Context.FileStorage.Save("EnergyManager", "_energy_manager", State);
         await MqttSensors.PublishState(State);
     }
 

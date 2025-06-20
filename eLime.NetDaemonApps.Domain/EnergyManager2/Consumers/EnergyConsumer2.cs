@@ -79,7 +79,7 @@ public abstract class EnergyConsumer2 : IDisposable
     protected abstract void StopOnBootIfEnergyIsNoLongerNeeded();
     internal void GetAndSanitizeState()
     {
-        var persistedState = Context.FileStorage.Get<ConsumerState>("EnergyManager", Name);
+        var persistedState = Context.FileStorage.Get<ConsumerState>("EnergyManager", Name.MakeHaFriendly());
         State = persistedState ?? new ConsumerState();
         if (State.State == EnergyConsumerState.Unknown)
             State.State = GetState();
@@ -119,7 +119,7 @@ public abstract class EnergyConsumer2 : IDisposable
 
     internal async Task SaveAndPublishState()
     {
-        Context.FileStorage.Save("EnergyManager", Name, State);
+        Context.FileStorage.Save("EnergyManager", Name.MakeHaFriendly(), State);
         await MqttSensors.PublishState(State);
     }
 
@@ -133,6 +133,13 @@ public abstract class EnergyConsumer2 : IDisposable
         State.StartedAt = Context.Scheduler.Now;
         State.State = EnergyConsumerState.Running;
         Context.Logger.LogDebug("{EnergyConsumer}: Was started.", Name);
+
+        if (MaximumRuntime != null)
+        {
+            var runTime = GetRunTime();
+            if (runTime != null)
+                StopTimer = Context.Scheduler.Schedule(runTime.Value, TurnOff);
+        }
     }
 
     internal void Stop()
@@ -152,6 +159,9 @@ public abstract class EnergyConsumer2 : IDisposable
 
     public TimeSpan? GetRunTime()
     {
+        if (State.State != EnergyConsumerState.Running)
+            return null;
+
         var timeWindow = GetCurrentTimeWindow();
 
         if (timeWindow == null)

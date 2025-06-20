@@ -6,4 +6,8 @@ namespace eLime.NetDaemonApps.Domain.EnergyManager2;
 internal class EnergyManagerState
 {
     public EnergyConsumerState State { get; set; }
+    public List<string>? NeedEnergyConsumers { get; set; }
+    public List<string>? CriticalNeedEnergyConsumers { get; set; }
+    public List<string>? RunningConsumers { get; set; }
+    public DateTimeOffset LastChange { get; set; }
 }

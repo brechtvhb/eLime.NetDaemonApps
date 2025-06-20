@@ -1,6 +1,7 @@
 ﻿using eLime.NetDaemonApps.Domain.Helper;
 using Microsoft.Extensions.Logging;
 using System.Reactive.Concurrency;
+#pragma warning disable CS8618, CS9264
 
 namespace eLime.NetDaemonApps.Domain.EnergyManager2.BatteryManager;
 
@@ -47,7 +48,7 @@ public class Battery2 : IDisposable
 
     internal void GetAndSanitizeState()
     {
-        var persistedState = Context.FileStorage.Get<BatteryState>("EnergyManager", Name);
+        var persistedState = Context.FileStorage.Get<BatteryState>("EnergyManager", Name.MakeHaFriendly());
         State = persistedState ?? new BatteryState();
 
         Context.Logger.LogDebug("{Name}: Retrieved state", Name);
@@ -66,7 +67,7 @@ public class Battery2 : IDisposable
 
     internal Task SaveAndPublishState()
     {
-        Context.FileStorage.Save("EnergyManager", Name, State);
+        Context.FileStorage.Save("EnergyManager", Name.MakeHaFriendly(), State);
         //await MqttSensors.PublishState(State);
         return Task.CompletedTask;
     }

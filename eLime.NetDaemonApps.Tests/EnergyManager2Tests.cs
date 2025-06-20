@@ -57,7 +57,7 @@ public class EnergyManager2Tests
     {
         // Arrange
         var startedAt = _testCtx.Scheduler.Now.AddMinutes(-5);
-        A.CallTo(() => _fileStorage.Get<ConsumerState>("EnergyManager", "Pond pump")).Returns(new ConsumerState
+        A.CallTo(() => _fileStorage.Get<ConsumerState>("EnergyManager", "pond_pump")).Returns(new ConsumerState
         {
             State = EnergyConsumerState.Running,
             StartedAt = startedAt,
@@ -268,7 +268,7 @@ public class EnergyManager2Tests
     {
         // Arrange
         var startedAt = _testCtx.Scheduler.Now.AddMinutes(-5);
-        A.CallTo(() => _fileStorage.Get<ConsumerState>("EnergyManager", "Pond pump")).Returns(new ConsumerState
+        A.CallTo(() => _fileStorage.Get<ConsumerState>("EnergyManager", "pond_pump")).Returns(new ConsumerState
         {
             State = EnergyConsumerState.Running,
             StartedAt = startedAt,

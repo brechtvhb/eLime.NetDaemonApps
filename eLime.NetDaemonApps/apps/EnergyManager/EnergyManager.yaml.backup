@@ -1,4 +1,4 @@
-﻿eLime.NetDaemonApps.Config.EnergyManagerConfig:
+﻿eLime.NetDaemonApps.Config.EnergyManagerConfig_______________________:
   netDaemonUserId: "17e75fc5e676439783970c2536a6c3d9"
   grid:
     VoltageEntity: "sensor.grid_voltage"

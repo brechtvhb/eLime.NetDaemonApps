@@ -478,7 +478,7 @@ public class CarChargerEnergyConsumer2Tests
     public async Task Balancing_Mode_Near_Peak_Load_Maximizes_Grid_Usage()
     {
         // Arrange
-        A.CallTo(() => _fileStorage.Get<ConsumerState>("EnergyManager", "Veton")).Returns(new ConsumerState
+        A.CallTo(() => _fileStorage.Get<ConsumerState>("EnergyManager", "veton")).Returns(new ConsumerState
         {
             BalancingMethod = BalancingMethod.NearPeak
         });
@@ -508,7 +508,7 @@ public class CarChargerEnergyConsumer2Tests
     [TestMethod]
     public async Task Balancing_Mode_Solar_Preferred_Load_Maximizes_Grid_Usage()
     {
-        A.CallTo(() => _fileStorage.Get<ConsumerState>("EnergyManager", "Veton")).Returns(new ConsumerState
+        A.CallTo(() => _fileStorage.Get<ConsumerState>("EnergyManager", "veton")).Returns(new ConsumerState
         {
             BalancingMethod = BalancingMethod.SolarPreferred
         });
@@ -539,7 +539,7 @@ public class CarChargerEnergyConsumer2Tests
     [TestMethod]
     public async Task Balancing_Mode_Solar_Only_Load_Minimizes_Grid_Usage()
     {
-        A.CallTo(() => _fileStorage.Get<ConsumerState>("EnergyManager", "Veton")).Returns(new ConsumerState
+        A.CallTo(() => _fileStorage.Get<ConsumerState>("EnergyManager", "veton")).Returns(new ConsumerState
         {
             BalancingMethod = BalancingMethod.SolarOnly
         });
@@ -569,7 +569,7 @@ public class CarChargerEnergyConsumer2Tests
     [TestMethod]
     public async Task Balancing_Mode_Solar_Surplus_Load_Minimizes_Grid_Usage()
     {
-        A.CallTo(() => _fileStorage.Get<ConsumerState>("EnergyManager", "Veton")).Returns(new ConsumerState
+        A.CallTo(() => _fileStorage.Get<ConsumerState>("EnergyManager", "veton")).Returns(new ConsumerState
         {
             BalancingMethod = BalancingMethod.SolarSurplus
         });
@@ -599,7 +599,7 @@ public class CarChargerEnergyConsumer2Tests
     [TestMethod]
     public async Task Balancing_Mode_Solar_Preferred_Load_Maximizes_Grid_Usage_But_IsNotJumpy()
     {
-        A.CallTo(() => _fileStorage.Get<ConsumerState>("EnergyManager", "Veton")).Returns(new ConsumerState
+        A.CallTo(() => _fileStorage.Get<ConsumerState>("EnergyManager", "veton")).Returns(new ConsumerState
         {
             BalancingMethod = BalancingMethod.SolarPreferred
         });
@@ -637,7 +637,7 @@ public class CarChargerEnergyConsumer2Tests
     [TestMethod]
     public async Task Battery_ChargePower_Is_Included()
     {
-        A.CallTo(() => _fileStorage.Get<ConsumerState>("EnergyManager", "Veton")).Returns(new ConsumerState
+        A.CallTo(() => _fileStorage.Get<ConsumerState>("EnergyManager", "veton")).Returns(new ConsumerState
         {
             BalancingMethod = BalancingMethod.SolarOnly,
             AllowBatteryPower = AllowBatteryPower.Yes
@@ -669,7 +669,7 @@ public class CarChargerEnergyConsumer2Tests
     [TestMethod]
     public async Task Battery_ChargePower_Is_ExcludedIfNotAllowed()
     {
-        A.CallTo(() => _fileStorage.Get<ConsumerState>("EnergyManager", "Veton")).Returns(new ConsumerState
+        A.CallTo(() => _fileStorage.Get<ConsumerState>("EnergyManager", "veton")).Returns(new ConsumerState
         {
             BalancingMethod = BalancingMethod.SolarOnly,
             AllowBatteryPower = AllowBatteryPower.No
@@ -701,7 +701,7 @@ public class CarChargerEnergyConsumer2Tests
     [TestMethod]
     public async Task Battery_DischargePower_Is_Included()
     {
-        A.CallTo(() => _fileStorage.Get<ConsumerState>("EnergyManager", "Veton")).Returns(new ConsumerState
+        A.CallTo(() => _fileStorage.Get<ConsumerState>("EnergyManager", "veton")).Returns(new ConsumerState
         {
             BalancingMethod = BalancingMethod.SolarOnly,
             AllowBatteryPower = AllowBatteryPower.Yes
@@ -733,7 +733,7 @@ public class CarChargerEnergyConsumer2Tests
     [TestMethod]
     public async Task Battery_DischargePower_Is_Excluded_If_Not_Allowed()
     {
-        A.CallTo(() => _fileStorage.Get<ConsumerState>("EnergyManager", "Veton")).Returns(new ConsumerState
+        A.CallTo(() => _fileStorage.Get<ConsumerState>("EnergyManager", "veton")).Returns(new ConsumerState
         {
             BalancingMethod = BalancingMethod.SolarOnly,
             AllowBatteryPower = AllowBatteryPower.No
@@ -765,7 +765,7 @@ public class CarChargerEnergyConsumer2Tests
     [TestMethod]
     public async Task Saves_State()
     {
-        A.CallTo(() => _fileStorage.Get<ConsumerState>("EnergyManager", "Veton")).Returns(new ConsumerState
+        A.CallTo(() => _fileStorage.Get<ConsumerState>("EnergyManager", "veton")).Returns(new ConsumerState
         {
             BalancingMethod = BalancingMethod.SolarOnly,
             AllowBatteryPower = AllowBatteryPower.Yes
@@ -791,14 +791,14 @@ public class CarChargerEnergyConsumer2Tests
         A.CallTo(() => _mqttEntityManager.SetStateAsync(mqttState, EnergyConsumerState.NeedsEnergy.ToString())).MustHaveHappenedOnceExactly();
         A.CallTo(() => _mqttEntityManager.SetStateAsync(mqttBalancingMethod, BalancingMethod.SolarOnly.ToString())).MustHaveHappened();
         A.CallTo(() => _mqttEntityManager.SetStateAsync(mqttAllowBatteryPower, AllowBatteryPower.Yes.ToString())).MustHaveHappened();
-        A.CallTo(() => _fileStorage.Save("EnergyManager", "Veton", A<ConsumerState>._)).MustHaveHappened();
+        A.CallTo(() => _fileStorage.Save("EnergyManager", "veton", A<ConsumerState>._)).MustHaveHappened();
     }
 
     [TestMethod]
     public async Task Listens_To_Mqtt_Events()
     {
         var mqttBalancingMethod = $"sensor.energy_consumer_veton_balancing_method";
-        A.CallTo(() => _fileStorage.Get<ConsumerState>("EnergyManager", "Veton")).Returns(new ConsumerState
+        A.CallTo(() => _fileStorage.Get<ConsumerState>("EnergyManager", "veton")).Returns(new ConsumerState
         {
             BalancingMethod = BalancingMethod.SolarOnly,
             AllowBatteryPower = AllowBatteryPower.Yes
