@@ -441,14 +441,17 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 
     private void Car_ChargerTurnedOff(object? sender, BinarySensorEventArgs e)
     {
+        Context.Logger.LogInformation($"Car '{ConnectedCar?.Name}' charger turned off.");
+
         if (State.State == EnergyConsumerState.Running)
             Stop();
     }
 
     private void Car_ChargerTurnedOn(object? sender, BinarySensorEventArgs e)
     {
-        Context.Logger.LogInformation($"Car '{ConnectedCar?.Name}' connected.");
+        Context.Logger.LogInformation($"Car '{ConnectedCar?.Name}' charger turned on.");
 
+        //Should debounce with Car_Connected event
         if (ConnectedCar?.AutoPowerOnWhenConnecting ?? false)
             TurnOn();
     }
@@ -456,6 +459,7 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
     {
         Context.Logger.LogInformation($"Car '{ConnectedCar?.Name}' connected.");
 
+        //Should debounce with Car_ChargerTurnedOn event
         if (ConnectedCar?.AutoPowerOnWhenConnecting ?? false)
             TurnOn();
     }
