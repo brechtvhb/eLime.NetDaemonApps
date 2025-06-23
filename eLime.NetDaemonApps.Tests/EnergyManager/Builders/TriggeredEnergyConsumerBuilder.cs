@@ -30,7 +30,7 @@ public class TriggeredEnergyConsumerBuilder
     private string _completedState;
     private string? _criticalState;
     private bool _shutDownOnComplete;
-    private readonly List<State> _states = [];
+    private readonly List<TriggeredEnergyConsumerStateConfig> _states = [];
 
     public TriggeredEnergyConsumerBuilder()
     {
@@ -183,7 +183,7 @@ public class TriggeredEnergyConsumerBuilder
 
     public TriggeredEnergyConsumerBuilder AddStatePeakLoad(string name, double peakLoad, bool isRunning)
     {
-        _states.Add(new State { IsRunning = isRunning, Name = name, PeakLoad = peakLoad });
+        _states.Add(new TriggeredEnergyConsumerStateConfig { IsRunning = isRunning, Name = name, PeakLoad = peakLoad });
         return this;
     }
 

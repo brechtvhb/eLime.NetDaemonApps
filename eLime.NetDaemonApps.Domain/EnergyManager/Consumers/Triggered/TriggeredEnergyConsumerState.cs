@@ -4,7 +4,7 @@ namespace eLime.NetDaemonApps.Domain.EnergyManager.Consumers.Triggered;
 
 public class TriggeredEnergyConsumerState
 {
-    public TriggeredEnergyConsumerState(State config)
+    public TriggeredEnergyConsumerState(TriggeredEnergyConsumerStateConfig config)
     {
         Name = config.Name;
         PeakLoad = config.PeakLoad;

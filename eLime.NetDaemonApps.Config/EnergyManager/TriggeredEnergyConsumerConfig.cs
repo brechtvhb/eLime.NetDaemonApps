@@ -13,12 +13,11 @@ public class TriggeredEnergyConsumerConfig
     public string? CriticalState { get; set; }
     public bool CanPause { get; set; }
     public bool ShutDownOnComplete { get; set; }
-    public List<State> States { get; set; }
+    public List<TriggeredEnergyConsumerStateConfig> States { get; set; }
 
 }
 
-//TODO: Rename this shit
-public class State
+public class TriggeredEnergyConsumerStateConfig
 {
     public string Name { get; set; }
     public double PeakLoad { get; set; }
