@@ -49,7 +49,7 @@ public class EnergyManager : IDisposable
         Context = configuration.Context;
 
         ConsumerGroups = [IDynamicLoadConsumer.CONSUMER_GROUP_SELF];
-        ConsumerGroups.AddRange(Consumers.SelectMany(x => x.ConsumerGroups).Distinct());
+        ConsumerGroups.AddRange(configuration.Consumers.SelectMany(x => x.ConsumerGroups).Distinct());
         ConsumerGroups.Add(IDynamicLoadConsumer.CONSUMER_GROUP_ALL);
 
         HomeAssistant = new EnergyManagerHomeAssistantEntities(configuration);
