@@ -50,6 +50,5 @@ public class EnergyConsumerMqttSensors : IDisposable
 
     public virtual void Dispose()
     {
-        // TODO release managed resources here
     }
 }

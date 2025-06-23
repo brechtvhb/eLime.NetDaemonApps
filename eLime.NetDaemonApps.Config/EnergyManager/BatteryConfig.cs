@@ -16,6 +16,6 @@ public class BatteryConfig
     public string MaxChargePowerEntity { get; set; }
     public string MaxDischargePowerEntity { get; set; }
 
-    //to generate: OperatingMode (Automatic, Manual), ReservedPeakShavingStateOfCharge, RoundTripEfficiency
+    //to generate: OperatingMode (Automatic, Manual), ReservedPeakShavingStateOfCharge
 
 }

@@ -48,7 +48,7 @@ public abstract class EnergyConsumer : IDisposable
         SwitchOnLoad = config.SwitchOnLoad;
         SwitchOffLoad = config.SwitchOffLoad;
     }
-    public static async Task<EnergyConsumer> Create(EnergyManagerContext context, EnergyConsumerConfiguration config)
+    public static async Task<EnergyConsumer> Create(EnergyManagerContext context, List<String> allConsumerGroups, EnergyConsumerConfiguration config)
     {
         EnergyConsumer consumer;
 
@@ -66,7 +66,7 @@ public abstract class EnergyConsumer : IDisposable
         if (context.DebounceDuration != TimeSpan.Zero)
             consumer.SaveAndPublishStateDebounceDispatcher = new DebounceDispatcher(context.DebounceDuration);
 
-        await consumer.MqttSensors.CreateOrUpdateEntities(config.ConsumerGroups);
+        await consumer.MqttSensors.CreateOrUpdateEntities(allConsumerGroups);
         consumer.GetAndSanitizeState();
         consumer.StopIfPastRuntime();
         consumer.StopOnBootIfEnergyIsNoLongerNeeded();

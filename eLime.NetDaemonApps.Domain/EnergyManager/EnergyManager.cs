@@ -17,6 +17,7 @@ public class EnergyManager : IDisposable
     private readonly SemaphoreSlim _semaphore = new(1, 1);
 
     internal EnergyManagerContext Context { get; private set; }
+    internal List<string> ConsumerGroups { get; private set; }
     internal EnergyManagerState State { get; private set; }
     internal EnergyManagerHomeAssistantEntities HomeAssistant { get; private set; }
     internal EnergyManagerMqttSensors MqttSensors { get; private set; }
@@ -47,12 +48,16 @@ public class EnergyManager : IDisposable
     {
         Context = configuration.Context;
 
+        ConsumerGroups = [IDynamicLoadConsumer.CONSUMER_GROUP_SELF];
+        ConsumerGroups.AddRange(Consumers.SelectMany(x => x.ConsumerGroups).Distinct());
+        ConsumerGroups.Add(IDynamicLoadConsumer.CONSUMER_GROUP_ALL);
+
         HomeAssistant = new EnergyManagerHomeAssistantEntities(configuration);
 
         GridMonitor = GridMonitor.Create(configuration);
         foreach (var x in configuration.Consumers)
         {
-            var consumer = await EnergyConsumer.Create(Context, x);
+            var consumer = await EnergyConsumer.Create(Context, ConsumerGroups, x);
             Consumers.Add(consumer);
         }
         BatteryManager = await Domain.EnergyManager.BatteryManager.BatteryManager.Create(Context, configuration.BatteryManager);
