@@ -422,7 +422,7 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         if (e.New.State < MinimumCurrent)
         {
             if (State.State == EnergyConsumerState.Running)
-                Stop();
+                Stopped();
 
             return;
         }
