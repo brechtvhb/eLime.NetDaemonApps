@@ -20,7 +20,7 @@ public class InitLightsRandomizerZoneCommandHandler(ILogger<InitLightsRandomizer
         }
     }
 
-    private async Task InitScene(String zone, String scene)
+    private async Task InitScene(string zone, string scene)
     {
         logger.LogDebug("InitLightsRandomizerZoneCommandHandler: Initialized Zone: {Zone} ({Scene})", zone, scene);
         var sensorName = $"binary_sensor.light_randomizer_{zone.MakeHaFriendly()}_{scene.MakeHaFriendly()}";

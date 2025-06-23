@@ -2,7 +2,7 @@
 
 public class TimeWindowConfig
 {
-    public string ActiveEntity { get; set; }
+    public string? ActiveSensor { get; set; }
     public TimeSpan Start { get; set; }
     public TimeSpan End { get; set; }
 }

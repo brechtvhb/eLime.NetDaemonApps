@@ -18,19 +18,19 @@ public class SmartIrrigation : IDisposable
     public List<IrrigationZone> Zones { get; }
 
     public BinarySwitch PumpSocket { get; }
-    public Int32 PumpFlowRate { get; }
+    public int PumpFlowRate { get; }
 
     public NumericSensor AvailableRainWaterSensor { get; }
-    public Int32 MinimumAvailableRainWater { get; }
+    public int MinimumAvailableRainWater { get; }
 
-    public String? PhoneToNotify { get; }
+    public string? PhoneToNotify { get; }
     public Service Services { get; }
 
     private Weather? Weather { get; }
-    public Int32? RainPredictionDays { get; }
-    public Double? RainPredictionLiters { get; }
+    public int? RainPredictionDays { get; }
+    public double? RainPredictionLiters { get; }
 
-    public Boolean EnergyAvailable { get; internal set; }
+    public bool EnergyAvailable { get; internal set; }
 
     public NeedsWatering State => Zones.Any(x => x.State == NeedsWatering.Critical)
         ? NeedsWatering.Critical
@@ -57,7 +57,7 @@ public class SmartIrrigation : IDisposable
     private IDisposable? EnergyAvailableStateCHangedCommandHandler { get; set; }
     private IDisposable? GuardTask { get; set; }
 
-    public SmartIrrigation(IHaContext haContext, ILogger logger, IScheduler scheduler, IMqttEntityManager mqttEntityManager, IFileStorage fileStorage, BinarySwitch pumpSocket, Int32 pumpFlowRate, NumericSensor availableRainWaterSensor, Int32 minimumAvailableRainWater, Weather? weather, Int32? rainPredictionDays, Double? rainPredictionLiters, String? phoneToNotify, List<IrrigationZone> zones, TimeSpan debounceDuration)
+    public SmartIrrigation(IHaContext haContext, ILogger logger, IScheduler scheduler, IMqttEntityManager mqttEntityManager, IFileStorage fileStorage, BinarySwitch pumpSocket, int pumpFlowRate, NumericSensor availableRainWaterSensor, int minimumAvailableRainWater, Weather? weather, int? rainPredictionDays, double? rainPredictionLiters, string? phoneToNotify, List<IrrigationZone> zones, TimeSpan debounceDuration)
     {
         _haContext = haContext;
         _logger = logger;
@@ -118,11 +118,11 @@ public class SmartIrrigation : IDisposable
             var canSendNotification = zone.LastNotification == null || zone.LastNotification.Value.AddHours(4) < _scheduler.Now;
             switch (e)
             {
-                case IrrigationZoneWateringNeededEvent { State: NeedsWatering.Critical } when !String.IsNullOrWhiteSpace(PhoneToNotify) && canSendNotification:
+                case IrrigationZoneWateringNeededEvent { State: NeedsWatering.Critical } when !string.IsNullOrWhiteSpace(PhoneToNotify) && canSendNotification:
                     Services.NotifyPhone(PhoneToNotify, $"{e.Zone.Name} is in critical need of water but it is set to manual watering.", null, "Water");
                     e.Zone.NotificationSent(_scheduler.Now);
                     break;
-                case IrrigationZoneWateringNeededEvent when !String.IsNullOrWhiteSpace(PhoneToNotify) && canSendNotification:
+                case IrrigationZoneWateringNeededEvent when !string.IsNullOrWhiteSpace(PhoneToNotify) && canSendNotification:
                     Services.NotifyPhone(PhoneToNotify, $"{e.Zone.Name} needs water but it is set to manual watering.", null, "Water");
                     e.Zone.NotificationSent(_scheduler.Now);
                     break;

@@ -9,7 +9,7 @@ public class LightRandomizer
     public List<LightingZone> Zones { get; private init; } = [];
     public int AmountOfZonesToLight { get; private init; }
 
-    public List<(String zone, String scene)> SelectedZones { get; private set; } = [];
+    public List<(string zone, string scene)> SelectedZones { get; private set; } = [];
 
     public static LightRandomizer Create(IMediator mediator, List<LightingZone> zones, int amountOfZonesToLight, LightsRandomizerStorage storage)
     {

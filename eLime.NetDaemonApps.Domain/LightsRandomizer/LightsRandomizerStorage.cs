@@ -16,8 +16,8 @@ public class LightsRandomizerStorage
 
 public class SelectedZoneStorage
 {
-    public String Zone { get; set; }
-    public String Scene { get; set; }
+    public string Zone { get; set; }
+    public string Scene { get; set; }
 
     public bool Equals(SelectedZoneStorage? r)
     {

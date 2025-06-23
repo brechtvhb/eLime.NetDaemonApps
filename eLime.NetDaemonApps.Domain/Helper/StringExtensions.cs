@@ -6,9 +6,9 @@ namespace eLime.NetDaemonApps.Domain.Helper;
 
 internal static class StringExtensions
 {
-    public static String MakeHaFriendly(this String slug, Int32 length = 80)
+    public static string MakeHaFriendly(this string slug, int length = 80)
     {
-        if (String.IsNullOrEmpty(slug)) return "";
+        if (string.IsNullOrEmpty(slug)) return "";
 
         slug = slug.ToLowerInvariant();
         // remove entities

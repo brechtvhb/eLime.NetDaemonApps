@@ -9,6 +9,6 @@ public class LightsRandomizerConfig
 
 public class LightingZoneConfig
 {
-    public String Name { get; set; }
-    public List<String> Scenes { get; set; }
+    public string Name { get; set; }
+    public List<string> Scenes { get; set; }
 }

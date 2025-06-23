@@ -119,7 +119,6 @@ public record BinarySwitch : BinarySensor, ISwitch, IDisposable
         _subscribeDisposable?.Dispose();
     }
 
-    //TODO: enhance?
     ///<summary>Turn a switch on and off</summary>
     public async Task Pulse(TimeSpan pulseDuration)
     {

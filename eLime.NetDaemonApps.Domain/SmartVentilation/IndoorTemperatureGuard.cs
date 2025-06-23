@@ -25,7 +25,7 @@ public class IndoorTemperatureGuard : IDisposable
         _scheduler = scheduler;
     }
 
-    public (VentilationState? State, Boolean Enforce) GetDesiredState(Climate climate)
+    public (VentilationState? State, bool Enforce) GetDesiredState(Climate climate)
     {
         if (!SummerModeSensor.IsOn() || climate.Attributes == null)
             return (null, false);

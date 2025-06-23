@@ -14,17 +14,17 @@ namespace eLime.NetDaemonApps.apps.FlexiScreens;
 public static class ConfigExtensions
 {
 
-    public static FlexiScreen ToEntities(this FlexiScreenConfig config, IHaContext ha, IScheduler scheduler, IMqttEntityManager mqttEntityManager, IFileStorage storage, ILogger logger, String netDaemonUserId, string name)
+    public static FlexiScreen ToEntities(this FlexiScreenConfig config, IHaContext ha, IScheduler scheduler, IMqttEntityManager mqttEntityManager, IFileStorage storage, ILogger logger, string netDaemonUserId, string name)
     {
         var screen = new Cover(ha, config.ScreenEntity);
         var sun = new Sun(ha, config.SunProtection.SunEntity);
-        var windSpeedSensor = !String.IsNullOrWhiteSpace(config.StormProtection?.WindSpeedEntity) ? NumericThresholdSensor.Create(ha, config.StormProtection.WindSpeedEntity, config.StormProtection.WindSpeedStormStartThreshold, config.StormProtection.WindSpeedStormEndThreshold) : null;
-        var rainRateSensor = !String.IsNullOrWhiteSpace(config.StormProtection?.RainRateEntity) ? NumericThresholdSensor.Create(ha, config.StormProtection.RainRateEntity, config.StormProtection.RainRateStormStartThreshold, config.StormProtection.RainRateStormEndThreshold) : null;
-        var shortTermRainForecastSensor = !String.IsNullOrWhiteSpace(config.StormProtection?.ShortTermRainForecastEntity) ? NumericThresholdSensor.Create(ha, config.StormProtection.ShortTermRainForecastEntity, config.StormProtection.ShortTermRainStormStartThreshold, config.StormProtection.ShortTermRainStormEndThreshold) : null;
-        var solarLuxSensor = !String.IsNullOrWhiteSpace(config.TemperatureProtection?.SolarLuxSensor) ? NumericThresholdSensor.Create(ha, config.TemperatureProtection.SolarLuxSensor, config.TemperatureProtection.SolarLuxAboveThreshold, config.TemperatureProtection.SolarLuxBelowThreshold) : null;
-        var indoorTemperatureSensor = !String.IsNullOrWhiteSpace(config.TemperatureProtection?.IndoorTemperatureSensor) ? NumericSensor.Create(ha, config.TemperatureProtection.IndoorTemperatureSensor) : null;
-        var weather = !String.IsNullOrWhiteSpace(config.TemperatureProtection?.WeatherEntity) ? new Weather(ha, config.TemperatureProtection.WeatherEntity) : null;
-        var hourlyWeather = !String.IsNullOrWhiteSpace(config.StormProtection?.HourlyWeatherEntity) ? new Weather(ha, config.StormProtection.HourlyWeatherEntity) : null;
+        var windSpeedSensor = !string.IsNullOrWhiteSpace(config.StormProtection?.WindSpeedEntity) ? NumericThresholdSensor.Create(ha, config.StormProtection.WindSpeedEntity, config.StormProtection.WindSpeedStormStartThreshold, config.StormProtection.WindSpeedStormEndThreshold) : null;
+        var rainRateSensor = !string.IsNullOrWhiteSpace(config.StormProtection?.RainRateEntity) ? NumericThresholdSensor.Create(ha, config.StormProtection.RainRateEntity, config.StormProtection.RainRateStormStartThreshold, config.StormProtection.RainRateStormEndThreshold) : null;
+        var shortTermRainForecastSensor = !string.IsNullOrWhiteSpace(config.StormProtection?.ShortTermRainForecastEntity) ? NumericThresholdSensor.Create(ha, config.StormProtection.ShortTermRainForecastEntity, config.StormProtection.ShortTermRainStormStartThreshold, config.StormProtection.ShortTermRainStormEndThreshold) : null;
+        var solarLuxSensor = !string.IsNullOrWhiteSpace(config.TemperatureProtection?.SolarLuxSensor) ? NumericThresholdSensor.Create(ha, config.TemperatureProtection.SolarLuxSensor, config.TemperatureProtection.SolarLuxAboveThreshold, config.TemperatureProtection.SolarLuxBelowThreshold) : null;
+        var indoorTemperatureSensor = !string.IsNullOrWhiteSpace(config.TemperatureProtection?.IndoorTemperatureSensor) ? NumericSensor.Create(ha, config.TemperatureProtection.IndoorTemperatureSensor) : null;
+        var weather = !string.IsNullOrWhiteSpace(config.TemperatureProtection?.WeatherEntity) ? new Weather(ha, config.TemperatureProtection.WeatherEntity) : null;
+        var hourlyWeather = !string.IsNullOrWhiteSpace(config.StormProtection?.HourlyWeatherEntity) ? new Weather(ha, config.StormProtection.HourlyWeatherEntity) : null;
 
         var sunProtector = config.SunProtection.ToEntities(sun, config.Orientation, logger);
         var stormProtector = config.StormProtection.ToEntities(windSpeedSensor, rainRateSensor, shortTermRainForecastSensor, hourlyWeather, logger);

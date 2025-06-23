@@ -19,7 +19,7 @@ public class TemperatureProtector : IDisposable
     public double? ConditionalMaxOutdoorTemperaturePrediction { get; }
     public int? ConditionalOutdoorTemperaturePredictionDays { get; }
 
-    public (ScreenState? State, Boolean Enforce) DesiredState { get; private set; }
+    public (ScreenState? State, bool Enforce) DesiredState { get; private set; }
 
     private bool TemperatureProtectorActive { get; set; }
 
@@ -53,13 +53,13 @@ public class TemperatureProtector : IDisposable
         }
     }
 
-    private void CheckDesiredState(Object? o, NumericSensorEventArgs sender)
+    private void CheckDesiredState(object? o, NumericSensorEventArgs sender)
     {
         CheckDesiredState();
     }
 
 
-    internal void CheckDesiredState(Boolean emitEvent = true)
+    internal void CheckDesiredState(bool emitEvent = true)
     {
         var desiredState = GetDesiredState();
 
@@ -81,7 +81,7 @@ public class TemperatureProtector : IDisposable
         DesiredStateChanged?.Invoke(this, e);
     }
 
-    public (ScreenState? State, Boolean Enforce) GetDesiredState()
+    public (ScreenState? State, bool Enforce) GetDesiredState()
     {
         double? averagePredictedTemperature = null;
 

@@ -30,7 +30,7 @@ public class Room : IAsyncDisposable
     private readonly DebounceDispatcher? UpdateInHomeAssistantDebounceDispatcher;
 
     public InitialClickAfterMotionBehaviour InitialClickAfterMotionBehaviour { get; }
-    public Int32? IlluminanceThreshold { get; }
+    public int? IlluminanceThreshold { get; }
     public bool AutoSwitchOffAboveIlluminance { get; }
     public TimeSpan IgnorePresenceAfterOffDuration { get; }
     public DateTimeOffset? TurnOffAt { get; private set; }
@@ -72,9 +72,9 @@ public class Room : IAsyncDisposable
         _motionSensors.Add(FlexiSceneMotionSensor.Create(sensor));
     }
 
-    public void AddMotionSensorMixinScene(FlexiSceneMotionSensor flexiSceneMotionSensor, String mixinScene)
+    public void AddMotionSensorMixinScene(FlexiSceneMotionSensor flexiSceneMotionSensor, string mixinScene)
     {
-        String scene = null;
+        string scene = null;
 
         if (FlexiScenes.GetByName(mixinScene) != null)
             scene = mixinScene;
@@ -184,7 +184,7 @@ public class Room : IAsyncDisposable
 
         AutoTransition = config.AutoTransition;
         AutoTransitionTurnOffIfNoValidSceneFound = config.AutoTransitionTurnOffIfNoValidSceneFound;
-        SimulatePresenceSensor = !String.IsNullOrWhiteSpace(config.SimulatePresenceSensor) ? BinarySensor.Create(_haContext, config.SimulatePresenceSensor) : null;
+        SimulatePresenceSensor = !string.IsNullOrWhiteSpace(config.SimulatePresenceSensor) ? BinarySensor.Create(_haContext, config.SimulatePresenceSensor) : null;
 
         if (SimulatePresenceSensor != null)
             SimulatePresenceSensor.TurnedOff += SimulatePresenceSensor_TurnedOff;
@@ -314,7 +314,7 @@ public class Room : IAsyncDisposable
         RetrieveSate().RunSync();
         EnsureSensorsExist().RunSync();
 
-        _logger.LogInformation("{Room}: Initialized with scenes: {Scenes}.", Name, String.Join(", ", FlexiScenes.All.Select(x => x.Name)));
+        _logger.LogInformation("{Room}: Initialized with scenes: {Scenes}.", Name, string.Join(", ", FlexiScenes.All.Select(x => x.Name)));
 
         if (FullyAutomated)
             ExecuteFlexiSceneOnAutoTransition().RunSync();
@@ -341,7 +341,7 @@ public class Room : IAsyncDisposable
         var lastChangeOptions = new EntityOptions { Icon = "mdi:calendar-end", Device = GetDevice() };
         await _mqttEntityManager.CreateAsync($"{baseName}_last_changed_at", new EntityCreationOptions(UniqueId: $"{baseName}_last_changed_at", Name: $"Last changed at", Persist: true), lastChangeOptions);
 
-        var scenes = new List<String> { "Off" };
+        var scenes = new List<string> { "Off" };
         scenes.AddRange(FlexiScenes.All.Select(x => x.Name));
 
         var selectOptions = new SelectOptions { Icon = "fapro:palette", Options = scenes, Device = GetDevice() };
@@ -426,7 +426,7 @@ public class Room : IAsyncDisposable
         InitiatedBy = flexiSceneFileStorage?.InitiatedBy ?? InitiatedBy.NoOne;
         FlexiScenes.Changes = flexiSceneFileStorage?.Changes.ToList() ?? [];
 
-        if (!String.IsNullOrWhiteSpace(flexiSceneFileStorage?.ActiveFlexiScene))
+        if (!string.IsNullOrWhiteSpace(flexiSceneFileStorage?.ActiveFlexiScene))
         {
             var activeScene = FlexiScenes.GetByName(flexiSceneFileStorage.ActiveFlexiScene);
             if (activeScene != null)
@@ -491,7 +491,7 @@ public class Room : IAsyncDisposable
         };
     }
 
-    private async Task<(Boolean offActionsExecuted, List<Action> reverseActions)> ExecuteFlexiScene(FlexiScene flexiScene, InitiatedBy initiatedBy, Boolean overwriteInitialScene = true)
+    private async Task<(bool offActionsExecuted, List<Action> reverseActions)> ExecuteFlexiScene(FlexiScene flexiScene, InitiatedBy initiatedBy, bool overwriteInitialScene = true)
     {
         _logger.LogInformation("{Room}: Will execute flexi scene {flexiScene}. Triggered by {InitiatedBy}.", Name, flexiScene.Name, initiatedBy);
         FlexiScenes.SetCurrentScene(_scheduler.Now, flexiScene, overwriteInitialScene);
@@ -645,7 +645,7 @@ public class Room : IAsyncDisposable
         TurnOffSchedule = null;
     }
 
-    private async Task<(Boolean offActionsExecuted, List<Action> reverseActions)> ExecuteActions(IReadOnlyCollection<Action> actions, bool detectStateChange = false)
+    private async Task<(bool offActionsExecuted, List<Action> reverseActions)> ExecuteActions(IReadOnlyCollection<Action> actions, bool detectStateChange = false)
     {
         var offActionsExecuted = false;
         List<Action> reverseActions = [];
@@ -697,7 +697,7 @@ public class Room : IAsyncDisposable
         await DebounceUpdateInHomeAssistant();
     }
 
-    private async Task ExecuteMixinScene(String sensorId)
+    private async Task ExecuteMixinScene(string sensorId)
     {
         var flexiSceneMotionSensor = _motionSensors.Single(x => x.Sensor.EntityId == sensorId);
 
@@ -713,7 +713,7 @@ public class Room : IAsyncDisposable
 
         if (IlluminanceThreshold != null && IlluminanceSensors.All(x => x.State > IlluminanceThreshold))
         {
-            _logger.LogTrace("{Room}: Mixin should have triggered because motion sensor saw something moving but did not turn on lights because all illuminance sensors [{IlluminanceSensorValues}] are above threshold of {IlluminanceThreshold} lux.", Name, String.Join(", ", IlluminanceSensors.Select(x => $"{x.EntityId} - {x.State} lux")), IlluminanceThreshold);
+            _logger.LogTrace("{Room}: Mixin should have triggered because motion sensor saw something moving but did not turn on lights because all illuminance sensors [{IlluminanceSensorValues}] are above threshold of {IlluminanceThreshold} lux.", Name, string.Join(", ", IlluminanceSensors.Select(x => $"{x.EntityId} - {x.State} lux")), IlluminanceThreshold);
             return;
         }
 
@@ -842,7 +842,7 @@ public class Room : IAsyncDisposable
         if (IlluminanceThreshold != null && IlluminanceSensors.All(x => x.State > IlluminanceThreshold))
         {
             _logger.LogTrace(
-                "{Room}: Motion sensor saw something moving but did not turn on lights because all illuminance sensors [{IlluminanceSensorValues}] are above threshold of {IlluminanceThreshold} lux.", Name, String.Join(", ", IlluminanceSensors.Select(x => $"{x.EntityId} - {x.State} lux")), IlluminanceThreshold);
+                "{Room}: Motion sensor saw something moving but did not turn on lights because all illuminance sensors [{IlluminanceSensorValues}] are above threshold of {IlluminanceThreshold} lux.", Name, string.Join(", ", IlluminanceSensors.Select(x => $"{x.EntityId} - {x.State} lux")), IlluminanceThreshold);
             return;
         }
 
@@ -870,7 +870,7 @@ public class Room : IAsyncDisposable
 
         var flexiSceneMotionSensor = MotionSensors.Single(x => x.Sensor.EntityId == e.Sensor.EntityId);
 
-        if (!String.IsNullOrWhiteSpace(flexiSceneMotionSensor.MixinScene))
+        if (!string.IsNullOrWhiteSpace(flexiSceneMotionSensor.MixinScene))
         {
             flexiSceneMotionSensor.TurnOffAt = _scheduler.Now.Add(FlexiScenes.GetByName(flexiSceneMotionSensor.MixinScene).TurnOffAfterIfTriggeredByMotionSensor);
             await ScheduleTurnOffMixinAt(flexiSceneMotionSensor);
@@ -1029,7 +1029,7 @@ public class Room : IAsyncDisposable
         if (IlluminanceThreshold != null && IlluminanceSensors.All(x => x.State > IlluminanceThreshold))
         {
             _logger.LogTrace(
-                "{Room}: Motion sensor saw something moving but did not turn on lights because all illuminance sensors [{IlluminanceSensorValues}] are above threshold of {IlluminanceThreshold} lux.", Name, String.Join(", ", IlluminanceSensors.Select(x => $"{x.EntityId} - {x.State} lux")), IlluminanceThreshold);
+                "{Room}: Motion sensor saw something moving but did not turn on lights because all illuminance sensors [{IlluminanceSensorValues}] are above threshold of {IlluminanceThreshold} lux.", Name, string.Join(", ", IlluminanceSensors.Select(x => $"{x.EntityId} - {x.State} lux")), IlluminanceThreshold);
             return;
         }
 
@@ -1138,5 +1138,5 @@ public class Room : IAsyncDisposable
 internal class FlexiSceneChange
 {
     public DateTimeOffset ChangedAt { get; set; }
-    public String? Scene { get; set; }
+    public string? Scene { get; set; }
 }

@@ -50,6 +50,12 @@ public class HaContextMockBase : IHaContext
         TriggerStateChange(entity.EntityId, newState);
     }
 
+    public void TriggerStateChange(string entityId, string newStateValue)
+    {
+        var newState = new EntityState { EntityId = entityId, State = newStateValue, AttributesJson = null };
+        TriggerStateChange(entityId, newState);
+    }
+
     public void TriggerStateChange(string entityId, EntityState newState)
     {
         var oldState = _entityStates.TryGetValue(entityId, out var current) ? current : null;

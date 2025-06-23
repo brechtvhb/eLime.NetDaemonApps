@@ -2,7 +2,7 @@
 
 public interface ISwitch : IDisposable
 {
-    public String EntityId { get; }
+    public string EntityId { get; }
     event EventHandler<SwitchEventArgs>? Clicked;
     event EventHandler<SwitchEventArgs>? DoubleClicked;
     event EventHandler<SwitchEventArgs>? TripleClicked;

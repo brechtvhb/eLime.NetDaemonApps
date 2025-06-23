@@ -6,9 +6,9 @@ namespace eLime.NetDaemonApps.Domain.EnergyManager;
 public record EnergyManagerAttributes : EnabledSwitchAttributes
 {
     [JsonPropertyName("need_energy_consumers")]
-    public List<String>? NeedEnergyConsumers { get; init; }
+    public List<string>? NeedEnergyConsumers { get; init; }
     [JsonPropertyName("critical_need_energy_consumers")]
-    public List<String>? CriticalNeedEnergyConsumers { get; init; }
+    public List<string>? CriticalNeedEnergyConsumers { get; init; }
     [JsonPropertyName("running_consumers")]
-    public List<String>? RunningConsumers { get; init; }
+    public List<string>? RunningConsumers { get; init; }
 }

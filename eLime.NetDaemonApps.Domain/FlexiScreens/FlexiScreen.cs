@@ -14,7 +14,7 @@ namespace eLime.NetDaemonApps.Domain.FlexiScreens;
 public class FlexiScreen : IDisposable
 {
     public string? Name { get; }
-    private Boolean IsEnabled { get; set; }
+    private bool IsEnabled { get; set; }
     public Cover Screen { get; }
     private string NetDaemonUserId { get; }
 
@@ -51,7 +51,7 @@ public class FlexiScreen : IDisposable
     private readonly DebounceDispatcher? GuardScreenDebounceDispatcher;
 
 
-    public FlexiScreen(IHaContext haContext, ILogger logger, IScheduler scheduler, IMqttEntityManager mqttEntityManager, IFileStorage fileStorage, Boolean enabled, String name, Cover screen, String ndUserId,
+    public FlexiScreen(IHaContext haContext, ILogger logger, IScheduler scheduler, IMqttEntityManager mqttEntityManager, IFileStorage fileStorage, bool enabled, string name, Cover screen, string ndUserId,
         SunProtector sunProtector, StormProtector? stormProtector, TemperatureProtector? temperatureProtector, ManIsAngryProtector? manIsAngryProtector, WomanIsAngryProtector? womanIsAngryProtector, FrostProtector frostProtector, ChildrenAreAngryProtector? childrenAreAngryProtector,
         TimeSpan debounceDuration)
     {

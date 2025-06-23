@@ -13,7 +13,7 @@ namespace eLime.NetDaemonApps.Domain.SmartVentilation;
 
 public class SmartVentilation
 {
-    private Boolean IsEnabled { get; set; }
+    private bool IsEnabled { get; set; }
     public Climate Climate { get; }
     private string NetDaemonUserId { get; }
 
@@ -43,7 +43,7 @@ public class SmartVentilation
 
     private readonly DebounceDispatcher? GuardScreenDebounceDispatcher;
 
-    public SmartVentilation(IHaContext haContext, ILogger logger, IScheduler scheduler, IMqttEntityManager mqttEntityManager, IFileStorage fileStorage, Boolean enabled, Climate climate, String ndUserId,
+    public SmartVentilation(IHaContext haContext, ILogger logger, IScheduler scheduler, IMqttEntityManager mqttEntityManager, IFileStorage fileStorage, bool enabled, Climate climate, string ndUserId,
         StatePingPongGuard statePingPongGuard, IndoorAirQualityGuard indoorAirQualityGuard, BathroomAirQualityGuard bathroomAirQualityGuard, IndoorTemperatureGuard indoorTemperatureGuard, MoldGuard moldGuard, DryAirGuard dryAirGuard, ElectricityBillGuard electricityBillGuard,
         TimeSpan debounceDuration)
     {

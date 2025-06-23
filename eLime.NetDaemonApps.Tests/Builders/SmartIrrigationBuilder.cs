@@ -19,15 +19,15 @@ public class SmartIrrigationBuilder
     private readonly IScheduler _scheduler;
 
     private BinarySwitch _pumpSocket;
-    private Int32 _pumpFlowRate;
+    private int _pumpFlowRate;
 
     private NumericSensor _availableRainWaterSensor;
-    private Int32 _minimumRainWater;
+    private int _minimumRainWater;
 
     private Weather? _weather;
-    private Int32? _predictionDays;
-    private Double? _predictedLiters;
-    private String? _phoneToNotify;
+    private int? _predictionDays;
+    private double? _predictedLiters;
+    private string? _phoneToNotify;
 
     private List<IrrigationZone> _zones;
 
@@ -50,7 +50,7 @@ public class SmartIrrigationBuilder
         _zones = new List<IrrigationZone> { };
     }
 
-    public SmartIrrigationBuilder With(BinarySwitch pumpSocket, Int32 pumpFlowRate)
+    public SmartIrrigationBuilder With(BinarySwitch pumpSocket, int pumpFlowRate)
     {
         _pumpSocket = pumpSocket;
         _pumpFlowRate = pumpFlowRate;
@@ -58,7 +58,7 @@ public class SmartIrrigationBuilder
         return this;
     }
 
-    public SmartIrrigationBuilder With(NumericSensor availableRainWaterSensor, Int32 minimumRainWater)
+    public SmartIrrigationBuilder With(NumericSensor availableRainWaterSensor, int minimumRainWater)
     {
         _availableRainWaterSensor = availableRainWaterSensor;
         _minimumRainWater = minimumRainWater;
@@ -66,7 +66,7 @@ public class SmartIrrigationBuilder
         return this;
     }
 
-    public SmartIrrigationBuilder With(Weather weather, Int32 predictionDays, Double predictedLiters)
+    public SmartIrrigationBuilder With(Weather weather, int predictionDays, double predictedLiters)
     {
         _weather = weather;
         _predictionDays = predictionDays;

@@ -17,7 +17,7 @@ namespace eLime.NetDaemonApps.Tests.Builders
 
         private RoomConfig _config;
 
-        public RoomBuilder(AppTestContext testCtx, ILogger logger, IMqttEntityManager mqttEntityManager, IFileStorage fileStorage, String? name = null)
+        public RoomBuilder(AppTestContext testCtx, ILogger logger, IMqttEntityManager mqttEntityManager, IFileStorage fileStorage, string? name = null)
         {
             _testCtx = testCtx;
             _logger = logger;

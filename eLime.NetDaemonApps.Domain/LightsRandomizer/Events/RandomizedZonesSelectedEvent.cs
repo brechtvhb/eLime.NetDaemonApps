@@ -2,7 +2,7 @@
 
 namespace eLime.NetDaemonApps.Domain.LightsRandomizer.Events;
 
-public class RandomizedZonesSelectedEvent(List<(String zone, String scene)> selectedZones) : INotification
+public class RandomizedZonesSelectedEvent(List<(string zone, string scene)> selectedZones) : INotification
 {
-    public List<(String zone, String scene)> SelectedZones => selectedZones;
+    public List<(string zone, string scene)> SelectedZones => selectedZones;
 }

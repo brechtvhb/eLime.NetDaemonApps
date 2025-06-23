@@ -12,7 +12,7 @@ public class FrostProtector
         Weather = weather;
     }
 
-    public (ScreenState? State, Boolean Enforce) GetDesiredState()
+    public (ScreenState? State, bool Enforce) GetDesiredState()
     {
         if (Weather?.Attributes?.Temperature < 1)
             return (null, true);

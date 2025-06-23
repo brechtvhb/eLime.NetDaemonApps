@@ -79,6 +79,11 @@ public class AppTestContext
         HaContextMock.TriggerStateChange(entity.EntityId, newState);
     }
 
+    public void TriggerStateChange(string entityId, string newState)
+    {
+        HaContextMock.TriggerStateChange(entityId, newState);
+    }
+
     public void TriggerStateChange(string entityId, EntityState oldState, EntityState newState)
     {
         HaContextMock.TriggerStateChange(entityId, oldState, newState);

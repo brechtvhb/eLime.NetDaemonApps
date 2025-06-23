@@ -12,7 +12,7 @@ public static class Enum<T> where T : Enum
         return (T)Enum.Parse(typeof(T), value.ToString(), true);
     }
 
-    public static T Cast(String value, T defaultValue)
+    public static T Cast(string value, T defaultValue)
     {
         try
         {
@@ -74,7 +74,7 @@ public static class Enum<T> where T : Enum
         return GetInt32(flag);
     }
 
-    public static bool IsInflag(T flag, T itemToCheck, Boolean addDefaultValue = true)
+    public static bool IsInflag(T flag, T itemToCheck, bool addDefaultValue = true)
     {
         var state = (((IConvertible)flag).ToInt32(null) & ((IConvertible)itemToCheck).ToInt32(null)) == ((IConvertible)itemToCheck).ToInt32(null);
 
@@ -91,7 +91,7 @@ public static class Enum<T> where T : Enum
             .Cast<T>()
             .ToList();
     }
-    public static List<String> AllValuesAsStringList()
+    public static List<string> AllValuesAsStringList()
     {
         //all values
         return Enum.GetValues(typeof(T))
@@ -100,7 +100,7 @@ public static class Enum<T> where T : Enum
             .ToList();
     }
 
-    public static List<T> FlagToList(T flag, Boolean addDefaultValue = true)
+    public static List<T> FlagToList(T flag, bool addDefaultValue = true)
     {
         return AllValues()
             .Where(val => IsInflag(flag, val, addDefaultValue))
@@ -124,7 +124,7 @@ public static class Enum<T> where T : Enum
         return StringListToFlag(splittedArray);
     }
 
-    public static List<T> StringToList(String value)
+    public static List<T> StringToList(string value)
     {
         var splittedArray = (value ?? "").Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries).ToList();
 
@@ -140,7 +140,7 @@ public static class Enum<T> where T : Enum
             .ToList();
     }
 
-    public static List<T> StringListToList(IEnumerable<String> value)
+    public static List<T> StringListToList(IEnumerable<string> value)
     {
         return value
             .Select(Cast)
@@ -148,13 +148,13 @@ public static class Enum<T> where T : Enum
     }
 
 
-    public static String ListToString(IEnumerable<T> list)
+    public static string ListToString(IEnumerable<T> list)
     {
-        var str = String.Join(", ", list);
+        var str = string.Join(", ", list);
         return str;
     }
 
-    public static List<String> ListToStringList(IEnumerable<T> list)
+    public static List<string> ListToStringList(IEnumerable<T> list)
     {
         return list.Select(x => x.ToString()).ToList();
     }

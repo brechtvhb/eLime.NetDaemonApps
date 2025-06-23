@@ -13,9 +13,9 @@ public class BathroomAirQualityGuard : IDisposable
     private readonly ILogger _logger;
     private readonly IScheduler _scheduler;
 
-    public (VentilationState? State, Boolean Enforce) DesiredState { get; private set; }
+    public (VentilationState? State, bool Enforce) DesiredState { get; private set; }
 
-    public BathroomAirQualityGuard(ILogger logger, IScheduler scheduler, List<NumericSensor> humiditySensors, Int32 humidityMediumThreshold, Int32 humidityHighThreshold)
+    public BathroomAirQualityGuard(ILogger logger, IScheduler scheduler, List<NumericSensor> humiditySensors, int humidityMediumThreshold, int humidityHighThreshold)
     {
         HumiditySensors = humiditySensors;
         HumidityMediumThreshold = humidityMediumThreshold;
@@ -25,7 +25,7 @@ public class BathroomAirQualityGuard : IDisposable
         _scheduler = scheduler;
     }
 
-    public (VentilationState? State, Boolean Enforce) GetDesiredState()
+    public (VentilationState? State, bool Enforce) GetDesiredState()
     {
         if (HumiditySensors.Any(x => x.State > HumidityHighThreshold))
             return (VentilationState.High, true);

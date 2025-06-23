@@ -5,9 +5,9 @@ namespace eLime.NetDaemonApps.Domain.Scenes;
 
 public class Scene : ServiceTarget
 {
-    public String SceneId { get; init; }
+    public string SceneId { get; init; }
     private readonly IHaContext _haContext;
-    public Scene(IHaContext haContext, String sceneId)
+    public Scene(IHaContext haContext, string sceneId)
     {
         _haContext = haContext;
         SceneId = sceneId;
