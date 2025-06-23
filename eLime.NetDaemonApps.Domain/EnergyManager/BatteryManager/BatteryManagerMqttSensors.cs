@@ -24,11 +24,11 @@ public class BatteryManagerMqttSensors : IDisposable
 
     internal virtual async Task CreateOrUpdateEntities()
     {
-        var currentCapacityCreationOptions = new EntityCreationOptions(UniqueId: SENSOR_BATTERY_MANAGER_REMAINING_AVAILABLE_CAPACITY, Name: "Battery manager - remaining available capacity", Persist: true);
+        var currentCapacityCreationOptions = new EntityCreationOptions(UniqueId: SENSOR_BATTERY_MANAGER_REMAINING_AVAILABLE_CAPACITY, Name: "Battery manager Remaining available capacity", Persist: true);
         var currentCapacityOptions = new NumericSensorOptions { Icon = "phu:solar-battery-10", Device = Device, UnitOfMeasurement = "kWh" };
         await Context.MqttEntityManager.CreateAsync(SENSOR_BATTERY_MANAGER_REMAINING_AVAILABLE_CAPACITY, currentCapacityCreationOptions, currentCapacityOptions);
 
-        var socCreationOptions = new EntityCreationOptions(UniqueId: SENSOR_BATTERY_MANAGER_STATE_OF_CHARGE, Name: "Battery manager - aggregate SoC", DeviceClass: "battery", Persist: true);
+        var socCreationOptions = new EntityCreationOptions(UniqueId: SENSOR_BATTERY_MANAGER_STATE_OF_CHARGE, Name: "Battery manager Aggregate SoC", DeviceClass: "battery", Persist: true);
         var socOptions = new NumericSensorOptions { Icon = "fapro:percent", Device = Device, StateClass = "measurement", UnitOfMeasurement = "%" };
         await Context.MqttEntityManager.CreateAsync(SENSOR_BATTERY_MANAGER_STATE_OF_CHARGE, socCreationOptions, socOptions);
     }
