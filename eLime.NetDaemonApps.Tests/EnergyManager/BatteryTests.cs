@@ -1,5 +1,5 @@
 ﻿using eLime.NetDaemonApps.Config.EnergyManager;
-using eLime.NetDaemonApps.Domain.EnergyManager.BatteryManager;
+using eLime.NetDaemonApps.Domain.EnergyManager.BatteryManager.Batteries;
 using eLime.NetDaemonApps.Domain.EnergyManager.Consumers;
 using eLime.NetDaemonApps.Domain.Helper;
 using eLime.NetDaemonApps.Domain.Storage;
@@ -167,6 +167,45 @@ public class BatteryTests
 
         //Assert
         Assert.AreEqual(81.13, energyManager.BatteryManager.Batteries.First().State.RoundTripEfficiency);
+    }
+
+    [TestMethod]
+    public async Task Manager_CalculatesAggregateValues()
+    {
+        // Arrange
+        var battery1 = new BatteryBuilder()
+            .MarstekVenusE()
+            .WithName("Marstek venus E - 1")
+            .Build();
+        _testCtx.TriggerStateChange(battery1.MaxChargePowerEntity, "800");
+        _testCtx.TriggerStateChange(battery1.MaxDischargePowerEntity, "800");
+        _testCtx.TriggerStateChange(battery1.StateOfChargeSensor, "50");
+
+        var battery2 = new BatteryBuilder()
+            .MarstekVenusE()
+            .WithName("Marstek venus E - 2")
+            .Build();
+        _testCtx.TriggerStateChange(battery2.MaxChargePowerEntity, "800");
+        _testCtx.TriggerStateChange(battery2.MaxDischargePowerEntity, "800");
+
+        var builder = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+            .AddBattery(battery1)
+            .AddBattery(battery2);
+        var energyManager = await builder.Build();
+
+        //Act
+        _testCtx.TriggerStateChange(battery2.StateOfChargeSensor, "100");
+
+        //Assert
+        Assert.AreEqual(72, energyManager.BatteryManager.State.StateOfCharge);
+        Assert.AreEqual(6.56m, energyManager.BatteryManager.State.RemainingAvailableCapacity);
+
+        //Assert
+        var remainingAvailableCapacitySensor = "sensor.battery_manager_remaining_available_capacity";
+        var aggregateSocSensor = "sensor.battery_manager_aggregate_soc";
+
+        A.CallTo(() => _mqttEntityManager.SetStateAsync(remainingAvailableCapacitySensor, "6.56")).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _mqttEntityManager.SetStateAsync(aggregateSocSensor, "72")).MustHaveHappenedOnceExactly();
     }
 
     [TestMethod]

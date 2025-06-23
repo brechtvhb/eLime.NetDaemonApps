@@ -364,10 +364,13 @@ public class EnergyManager : IDisposable
 
     public void Dispose()
     {
-        HomeAssistant.Dispose();
-        GuardTask?.Dispose();
+        BatteryManager.Dispose();
 
         foreach (var consumer in Consumers)
             consumer.Dispose();
+
+        HomeAssistant.Dispose();
+        MqttSensors.Dispose();
+        GuardTask?.Dispose();
     }
 }

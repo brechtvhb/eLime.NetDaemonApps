@@ -1,5 +1,6 @@
 ﻿using eLime.NetDaemonApps.Config.EnergyManager;
 using eLime.NetDaemonApps.Domain.EnergyManager;
+using eLime.NetDaemonApps.Domain.Helper;
 
 #pragma warning disable CS8618, CS9264
 
@@ -10,6 +11,7 @@ public class BatteryBuilder
     private string _name;
 
     private decimal _capacity;
+    private int _minimumStateOfCharge;
     private int _maxChargePower;
     private int _maxDischargePower;
     private string _powerSensor;
@@ -31,24 +33,32 @@ public class BatteryBuilder
     {
         _name = "Marstek Venus E";
         _capacity = 5.12m; // in kWh
+        _minimumStateOfCharge = 11; // in %
         _maxChargePower = 2500; // in W
         _maxDischargePower = 800; // in W
-        _powerSensor = "sensor.marstek_venus_e_power";
-        _stateOfChargeSensor = "sensor.marstek_venus_e_soc";
-        _totalEnergyChargedSensor = "sensor.marstek_venus_e_total_energy_charged";
-        _totalEnergyDischargedSensor = "sensor.marstek_venus_e_total_energy_discharged";
-        _maxChargePowerEntity = "number.marstek_venus_e_max_charge_power";
-        _maxDischargePowerEntity = "number.marstek_venus_e_max_discharge_power";
 
+        return this;
+    }
+    public BatteryBuilder WithName(string name)
+    {
+        _name = name;
         return this;
     }
 
     public BatteryConfig Build()
     {
+        _powerSensor = $"sensor.{_name.MakeHaFriendly()}_power";
+        _stateOfChargeSensor = $"sensor.{_name.MakeHaFriendly()}_soc";
+        _totalEnergyChargedSensor = $"sensor.{_name.MakeHaFriendly()}_total_energy_charged";
+        _totalEnergyDischargedSensor = $"sensor{_name.MakeHaFriendly()}_energy_discharged";
+        _maxChargePowerEntity = $"number.{_name.MakeHaFriendly()}_max_charge_power";
+        _maxDischargePowerEntity = $"number.{_name.MakeHaFriendly()}_max_discharge_power";
+
         var battery = new BatteryConfig
         {
             Name = _name,
             Capacity = _capacity, // in kWh
+            MinimumStateOfCharge = _minimumStateOfCharge, // in %
             MaxChargePower = _maxChargePower, // in W
             MaxDischargePower = _maxDischargePower, // in W
             PowerSensor = _powerSensor,

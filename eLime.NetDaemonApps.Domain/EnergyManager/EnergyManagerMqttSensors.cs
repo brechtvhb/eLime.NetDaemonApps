@@ -6,7 +6,7 @@ using NetDaemon.Extensions.MqttEntityManager;
 namespace eLime.NetDaemonApps.Domain.EnergyManager;
 
 #pragma warning disable CS8618, CS9264, CS8604
-public class EnergyManagerMqttSensors(EnergyManagerContext context)
+public class EnergyManagerMqttSensors(EnergyManagerContext context) : IDisposable
 {
     private static Device GetDevice() => new() { Identifiers = ["energy_manager"], Name = "Energy manager", Manufacturer = "Me" };
     private readonly string SENSOR_STATE = "sensor.energy_manager_state";
@@ -32,4 +32,8 @@ public class EnergyManagerMqttSensors(EnergyManagerContext context)
         await context.MqttEntityManager.SetAttributesAsync(SENSOR_STATE, globalAttributes);
     }
 
+    public void Dispose()
+    {
+
+    }
 }

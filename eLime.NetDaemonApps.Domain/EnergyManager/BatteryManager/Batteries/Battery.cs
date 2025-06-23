@@ -1,10 +1,11 @@
-﻿using eLime.NetDaemonApps.Domain.Helper;
+﻿using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
+using eLime.NetDaemonApps.Domain.Helper;
 using Microsoft.Extensions.Logging;
 using System.Reactive.Concurrency;
 
 #pragma warning disable CS8618, CS9264
 
-namespace eLime.NetDaemonApps.Domain.EnergyManager.BatteryManager;
+namespace eLime.NetDaemonApps.Domain.EnergyManager.BatteryManager.Batteries;
 
 public class Battery : IDisposable
 {
@@ -14,12 +15,16 @@ public class Battery : IDisposable
     internal BatteryMqttSensors MqttSensors { get; }
     internal string Name { get; }
     internal decimal Capacity { get; }
+    internal int MinimumStateOfCharge { get; }
     internal int MaxChargePower { get; }
     internal int MaxDischargePower { get; }
     internal bool CanCharge => HomeAssistant.MaxChargePowerNumber.State is > 0;
     internal bool CanDischarge => HomeAssistant.MaxDischargePowerNumber.State is > 0;
     internal double CurrentLoad => HomeAssistant.PowerSensor.State ?? 0;
-
+    internal decimal MinimumCapacity => Math.Round(Capacity * MinimumStateOfCharge / 100m, 2);
+    internal decimal AvailableCapacity => Capacity - MinimumCapacity;
+    internal decimal RemainingCapacity => Math.Round(Capacity * Convert.ToDecimal(HomeAssistant.StateOfChargeSensor.State) / 100, 2);
+    internal decimal RemainingAvailableCapacity => RemainingCapacity - MinimumCapacity;
     internal DebounceDispatcher? SaveAndPublishStateDebounceDispatcher { get; private set; }
 
     internal Battery(EnergyManagerContext context, BatteryConfiguration config)
@@ -30,15 +35,24 @@ public class Battery : IDisposable
         HomeAssistant.StateOfChargeSensor.Changed += StateOfChargeSensor_Changed;
         Name = config.Name;
         Capacity = config.Capacity;
+        MinimumStateOfCharge = config.MinimumStateOfCharge;
         MaxChargePower = config.MaxChargePower;
         MaxDischargePower = config.MaxDischargePower;
 
     }
 
-    private async void StateOfChargeSensor_Changed(object? sender, Entities.NumericSensors.NumericSensorEventArgs e)
+    public event EventHandler<NumericSensorEventArgs>? StateOfChargeChanged;
+    protected void OnStateOfChargeChanged(NumericSensorEventArgs e)
+    {
+        StateOfChargeChanged?.Invoke(this, e);
+    }
+
+    private async void StateOfChargeSensor_Changed(object? sender, NumericSensorEventArgs e)
     {
         try
         {
+            OnStateOfChargeChanged(e);
+
             if (Convert.ToInt32(e.Sensor.State) != 50)
                 return;
 
@@ -159,6 +173,7 @@ public class Battery : IDisposable
 
     public void Dispose()
     {
+        MqttSensors.Dispose();
         HomeAssistant.StateOfChargeSensor.Changed -= StateOfChargeSensor_Changed;
         HomeAssistant.Dispose();
     }

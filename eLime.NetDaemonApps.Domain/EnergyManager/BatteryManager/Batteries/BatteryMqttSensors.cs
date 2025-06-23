@@ -3,7 +3,7 @@ using eLime.NetDaemonApps.Domain.Mqtt;
 using NetDaemon.Extensions.MqttEntityManager;
 using System.Globalization;
 
-namespace eLime.NetDaemonApps.Domain.EnergyManager.BatteryManager;
+namespace eLime.NetDaemonApps.Domain.EnergyManager.BatteryManager.Batteries;
 
 #pragma warning disable CS8618, CS9264, CS8604
 public class BatteryMqttSensors : IDisposable
@@ -37,6 +37,5 @@ public class BatteryMqttSensors : IDisposable
 
     public virtual void Dispose()
     {
-        // TODO release managed resources here
     }
 }

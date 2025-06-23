@@ -5,7 +5,7 @@ public class BatteryConfig
 {
     public string Name { get; set; }
     public decimal Capacity { get; set; } //in kWh
-    //public int InitialStateOfCharge { get; set; } nope, recalculate RTE everytime battery percentage hits 11%?
+    public int MinimumStateOfCharge { get; set; }
     public int MaxChargePower { get; set; }
     public int MaxDischargePower { get; set; }
     public string PowerSensor { get; set; }

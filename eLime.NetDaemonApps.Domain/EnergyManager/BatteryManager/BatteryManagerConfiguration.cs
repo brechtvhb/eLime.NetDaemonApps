@@ -1,4 +1,5 @@
 ﻿using eLime.NetDaemonApps.Config.EnergyManager;
+using eLime.NetDaemonApps.Domain.EnergyManager.BatteryManager.Batteries;
 using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
 using NetDaemon.HassModel;
 

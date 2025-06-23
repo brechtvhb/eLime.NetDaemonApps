@@ -2,7 +2,7 @@
 using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
 using NetDaemon.HassModel.Entities;
 
-namespace eLime.NetDaemonApps.Domain.EnergyManager.BatteryManager;
+namespace eLime.NetDaemonApps.Domain.EnergyManager.BatteryManager.Batteries;
 
 public class BatteryHomeAssistantEntities(BatteryConfiguration config)
 {

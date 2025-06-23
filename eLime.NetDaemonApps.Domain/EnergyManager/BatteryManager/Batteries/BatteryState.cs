@@ -1,4 +1,4 @@
-﻿namespace eLime.NetDaemonApps.Domain.EnergyManager.BatteryManager;
+﻿namespace eLime.NetDaemonApps.Domain.EnergyManager.BatteryManager.Batteries;
 
 #pragma warning disable CS8618, CS9264
 internal class BatteryState

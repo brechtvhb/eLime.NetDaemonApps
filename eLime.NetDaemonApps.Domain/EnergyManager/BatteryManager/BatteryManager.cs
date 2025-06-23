@@ -1,4 +1,5 @@
-﻿using eLime.NetDaemonApps.Domain.Helper;
+﻿using eLime.NetDaemonApps.Domain.EnergyManager.BatteryManager.Batteries;
+using eLime.NetDaemonApps.Domain.Helper;
 using Microsoft.Extensions.Logging;
 using System.Runtime.CompilerServices;
 
@@ -7,13 +8,13 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("eLime.NetDaemonApps.Tests")]
 namespace eLime.NetDaemonApps.Domain.EnergyManager.BatteryManager;
 
-internal class BatteryManager
+internal class BatteryManager : IDisposable
 {
     protected EnergyManagerContext Context { get; private set; }
 
     internal BatteryManagerState State { get; private set; }
     internal BatteryManagerHomeAssistantEntities HomeAssistant { get; private set; }
-
+    internal BatteryManagerMqttSensors MqttSensors { get; private set; }
     internal List<Battery> Batteries { get; private set; }
 
     internal DebounceDispatcher? SaveAndPublishStateDebounceDispatcher { get; private set; }
@@ -27,9 +28,9 @@ internal class BatteryManager
         var batteryManager = new BatteryManager();
         await batteryManager.Initialize(context, config);
 
-        batteryManager.SaveAndPublishStateDebounceDispatcher = new DebounceDispatcher(TimeSpan.FromSeconds(1));
+        batteryManager.SaveAndPublishStateDebounceDispatcher = new DebounceDispatcher(context.DebounceDuration);
 
-        //await battery.MqttSensors.CreateOrUpdateEntities(config.ConsumerGroups);
+        await batteryManager.MqttSensors.CreateOrUpdateEntities();
         batteryManager.GetAndSanitizeState();
         await batteryManager.SaveAndPublishState();
 
@@ -39,12 +40,28 @@ internal class BatteryManager
     private async Task Initialize(EnergyManagerContext context, BatteryManagerConfiguration config)
     {
         Context = context;
+        MqttSensors = new BatteryManagerMqttSensors(context);
         HomeAssistant = new BatteryManagerHomeAssistantEntities(config);
-        Batteries = new List<Battery>();
+        Batteries = [];
         foreach (var x in config.Batteries)
         {
-            var consumer = await Battery.Create(Context, x);
-            Batteries.Add(consumer);
+            var battery = await Battery.Create(Context, x);
+            battery.StateOfChargeChanged += Battery_StateOfChargeChanged;
+            Batteries.Add(battery);
+        }
+    }
+
+    private async void Battery_StateOfChargeChanged(object? sender, Entities.NumericSensors.NumericSensorEventArgs e)
+    {
+        try
+        {
+            State.RemainingAvailableCapacity = Batteries.Sum(x => x.RemainingAvailableCapacity);
+            State.StateOfCharge = Convert.ToInt32(State.RemainingAvailableCapacity / State.TotalAvailableCapacity * 100);
+            await DebounceSaveAndPublishState();
+        }
+        catch (Exception ex)
+        {
+            Context.Logger.LogError(ex, "Could not update aggregate state of charge for batteries.");
         }
     }
 
@@ -53,14 +70,37 @@ internal class BatteryManager
         var persistedState = Context.FileStorage.Get<BatteryManagerState>("EnergyManager", "_batteries");
         State = persistedState ?? new BatteryManagerState();
 
+        State.TotalAvailableCapacity = Batteries.Sum(b => b.AvailableCapacity);
         Context.Logger.LogDebug("Retrieved state of battery manager");
     }
 
-    private Task SaveAndPublishState()
+    protected async Task DebounceSaveAndPublishState()
     {
-        Context.FileStorage.Save("EnergyManager", "_batteries", State);
-        //await MqttSensors.PublishState(State);
-        return Task.CompletedTask;
+        if (SaveAndPublishStateDebounceDispatcher == null)
+        {
+            await SaveAndPublishState();
+            return;
+        }
+
+        await SaveAndPublishStateDebounceDispatcher.DebounceAsync(SaveAndPublishState);
     }
 
+
+    private async Task SaveAndPublishState()
+    {
+        Context.FileStorage.Save("EnergyManager", "_batteries", State);
+        await MqttSensors.PublishState(State);
+    }
+
+    public void Dispose()
+    {
+        foreach (var battery in Batteries)
+        {
+            battery.StateOfChargeChanged -= Battery_StateOfChargeChanged;
+            battery.Dispose();
+        }
+
+        HomeAssistant.Dispose();
+        MqttSensors.Dispose();
+    }
 }

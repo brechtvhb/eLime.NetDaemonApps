@@ -3,7 +3,7 @@ using eLime.NetDaemonApps.Domain.Entities.Input;
 using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
 using NetDaemon.HassModel;
 
-namespace eLime.NetDaemonApps.Domain.EnergyManager.BatteryManager;
+namespace eLime.NetDaemonApps.Domain.EnergyManager.BatteryManager.Batteries;
 
 public class BatteryConfiguration
 {
@@ -11,6 +11,7 @@ public class BatteryConfiguration
     {
         Name = config.Name;
         Capacity = config.Capacity;
+        MinimumStateOfCharge = config.MinimumStateOfCharge;
         MaxChargePower = config.MaxChargePower;
         MaxDischargePower = config.MaxDischargePower;
         PowerSensor = NumericSensor.Create(haContext, config.PowerSensor);
@@ -23,6 +24,7 @@ public class BatteryConfiguration
 
     public string Name { get; set; }
     public decimal Capacity { get; set; } // in kWh
+    public int MinimumStateOfCharge { get; set; } // in %
     public int MaxChargePower { get; set; } // in W
     public int MaxDischargePower { get; set; } // in W
     public NumericSensor PowerSensor { get; set; }
