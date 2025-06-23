@@ -14,9 +14,9 @@ public class DynamicEnergyConsumerMqttSensors : EnergyConsumerMqttSensors
 
     public DynamicEnergyConsumerMqttSensors(string name, EnergyManagerContext context) : base(name, context)
     {
-        SELECT_CONSUMER_BALANCING_METHOD = $"sensor.energy_consumer_{Name.MakeHaFriendly()}_balancing_method";
-        SELECT_CONSUMER_BALANCE_ON_BEHALF_OF = $"sensor.energy_consumer_{Name.MakeHaFriendly()}_balance_on_behalf_of";
-        SELECT_CONSUMER_ALLOW_BATTERY_POWER = $"sensor.energy_consumer_{Name.MakeHaFriendly()}_allow_battery_power";
+        SELECT_CONSUMER_BALANCING_METHOD = $"select.energy_consumer_{Name.MakeHaFriendly()}_balancing_method";
+        SELECT_CONSUMER_BALANCE_ON_BEHALF_OF = $"select.energy_consumer_{Name.MakeHaFriendly()}_balance_on_behalf_of";
+        SELECT_CONSUMER_ALLOW_BATTERY_POWER = $"select.energy_consumer_{Name.MakeHaFriendly()}_allow_battery_power";
     }
 
     public event EventHandler<BalancingMethodChangedEventArgs>? BalancingMethodChangedEvent;
