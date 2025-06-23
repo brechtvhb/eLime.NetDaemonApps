@@ -444,7 +444,7 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         Context.Logger.LogInformation($"Car '{ConnectedCar?.Name}' charger switch turned off.");
 
         if (State.State == EnergyConsumerState.Running)
-            Stop();
+            Stopped();
     }
 
     private void Car_ChargerTurnedOn(object? sender, BinarySensorEventArgs e)
