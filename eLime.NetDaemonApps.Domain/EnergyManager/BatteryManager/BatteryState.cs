@@ -4,4 +4,7 @@
 internal class BatteryState
 {
     public DateTimeOffset? LastChange { get; set; }
+    public double LastTotalEnergyChargedAt50Percent { get; set; }
+    public double LastTotalEnergyDischargedAt50Percent { get; set; }
+    public double RoundTripEfficiency { get; set; }
 }

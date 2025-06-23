@@ -16,10 +16,10 @@ public abstract class EnergyConsumer : IDisposable
 
     internal ConsumerState State { get; private set; }
     internal abstract EnergyConsumerHomeAssistantEntities HomeAssistant { get; }
+    internal abstract EnergyConsumerMqttSensors MqttSensors { get; }
     internal abstract bool IsRunning { get; }
     internal abstract double PeakLoad { get; }
-    internal abstract EnergyConsumerMqttSensors MqttSensors { get; }
-    public string Name { get; private set; }
+    public string Name { get; }
 
     internal double CurrentLoad => HomeAssistant.PowerConsumptionSensor.State ?? 0;
     internal List<TimeWindow> TimeWindows;

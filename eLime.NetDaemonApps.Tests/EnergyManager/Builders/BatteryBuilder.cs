@@ -1,4 +1,4 @@
-﻿using eLime.NetDaemonApps.Config;
+﻿using eLime.NetDaemonApps.Config.EnergyManager;
 using eLime.NetDaemonApps.Domain.EnergyManager;
 
 #pragma warning disable CS8618, CS9264

@@ -1,12 +1,14 @@
 ﻿using eLime.NetDaemonApps.Config.EnergyManager;
 using eLime.NetDaemonApps.Domain.EnergyManager.BatteryManager;
 using eLime.NetDaemonApps.Domain.EnergyManager.Consumers;
+using eLime.NetDaemonApps.Domain.Helper;
 using eLime.NetDaemonApps.Domain.Storage;
 using eLime.NetDaemonApps.Tests.EnergyManager.Builders;
 using eLime.NetDaemonApps.Tests.Helpers;
 using FakeItEasy;
 using Microsoft.Extensions.Logging;
 using NetDaemon.Extensions.MqttEntityManager;
+using System.Globalization;
 using AllowBatteryPower = eLime.NetDaemonApps.Domain.EnergyManager.Consumers.DynamicConsumers.AllowBatteryPower;
 using BalancingMethod = eLime.NetDaemonApps.Domain.EnergyManager.Consumers.DynamicConsumers.BalancingMethod;
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
@@ -145,6 +147,29 @@ public class BatteryTests
     }
 
     [TestMethod]
+    public async Task CalculatesRoundTripEfficiency()
+    {
+        // Arrange
+        var battery = new BatteryBuilder()
+            .MarstekVenusE()
+            .Build();
+        _testCtx.TriggerStateChange(battery.MaxChargePowerEntity, "800");
+        _testCtx.TriggerStateChange(battery.MaxDischargePowerEntity, "800");
+
+        var builder = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+            .AddBattery(battery);
+        var energyManager = await builder.Build();
+        _testCtx.TriggerStateChange(battery.TotalEnergyChargedSensor, "5.3");
+        _testCtx.TriggerStateChange(battery.TotalEnergyDischargedSensor, "4.3");
+
+        //Act
+        _testCtx.TriggerStateChange(battery.StateOfChargeSensor, "50");
+
+        //Assert
+        Assert.AreEqual(81.13, energyManager.BatteryManager.Batteries.First().State.RoundTripEfficiency);
+    }
+
+    [TestMethod]
     public async Task Saves_State()
     {
         // Arrange
@@ -153,6 +178,10 @@ public class BatteryTests
             BalancingMethod = BalancingMethod.SolarOnly,
             AllowBatteryPower = AllowBatteryPower.Yes
         });
+        A.CallTo(() => _fileStorage.Get<BatteryState>("EnergyManager", "marstek_venus_e")).Returns(new BatteryState
+        {
+            RoundTripEfficiency = 78.5d
+        });
 
         var consumer = CarChargerEnergyConsumerBuilder.Tesla().Build();
         _testCtx.TriggerStateChange(consumer.CarCharger!.Cars.First().MaxBatteryPercentageSensor!, "80");
@@ -160,18 +189,17 @@ public class BatteryTests
         var battery = new BatteryBuilder()
             .MarstekVenusE()
             .Build();
+        _testCtx.TriggerStateChange(battery.MaxDischargePowerEntity, "800");
 
         var builder = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
             .AddConsumer(consumer)
             .AddBattery(battery);
-        _ = await builder.Build();
+        var energyManager = await builder.Build();
 
         InitChargerState(consumer, "Charging", 230, true, 50, "home", 5, 4200);
         _testCtx.TriggerStateChange(consumer.CarCharger!.CurrentEntity, "16");
         _testCtx.TriggerStateChange(consumer.CarCharger!.Cars.First().ChargerSwitch!, "on");
         _testCtx.TriggerStateChange(consumer.CarCharger!.Cars.First().CurrentEntity!, "6");
-        _testCtx.TriggerStateChange(battery.MaxDischargePowerEntity, "800");
-
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(5));
 
         //Act
@@ -181,12 +209,8 @@ public class BatteryTests
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(25));
 
         //Assert
-        //var mqttState = $"sensor.energy_consumer_{consumer.Name.MakeHaFriendly()}_state";
-        //var mqttBalancingMethod = $"sensor.energy_consumer_{consumer.Name.MakeHaFriendly()}_balancing_method";
-        //var mqttAllowBatteryPower = $"sensor.energy_consumer_{consumer.Name.MakeHaFriendly()}_allow_battery_power";
-        //A.CallTo(() => _mqttEntityManager.SetStateAsync(mqttState, EnergyConsumerState.NeedsEnergy.ToString())).MustHaveHappenedOnceExactly();
-        //A.CallTo(() => _mqttEntityManager.SetStateAsync(mqttBalancingMethod, BalancingMethod.SolarOnly.ToString())).MustHaveHappened();
-        //A.CallTo(() => _mqttEntityManager.SetStateAsync(mqttAllowBatteryPower, AllowBatteryPower.Yes.ToString())).MustHaveHappened();
+        var mqttRte = $"sensor.battery_{battery.Name.MakeHaFriendly()}_rte";
+        A.CallTo(() => _mqttEntityManager.SetStateAsync(mqttRte, energyManager.BatteryManager.Batteries.First().State.RoundTripEfficiency.ToString("N", new NumberFormatInfo { NumberDecimalSeparator = "." }))).MustHaveHappenedOnceExactly();
         A.CallTo(() => _fileStorage.Save("EnergyManager", "marstek_venus_e", A<BatteryState>._)).MustHaveHappened();
     }
 }

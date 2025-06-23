@@ -28,7 +28,7 @@ public class EnergyConsumerMqttSensors : IDisposable
 
     internal virtual async Task CreateOrUpdateEntities(List<string> consumerGroups)
     {
-        var stateCreationOptions = new EntityCreationOptions(DeviceClass: "enum", UniqueId: SENSOR_CONSUMER_STATE, Name: $"Consumer {Name} - sate", Persist: true);
+        var stateCreationOptions = new EntityCreationOptions(DeviceClass: "enum", UniqueId: SENSOR_CONSUMER_STATE, Name: $"Consumer {Name} - state", Persist: true);
         var stateOptions = new EnumSensorOptions { Icon = "fapro:square-bolt", Device = Device, Options = Enum<EnergyConsumerState>.AllValuesAsStringList() };
         await Context.MqttEntityManager.CreateAsync(SENSOR_CONSUMER_STATE, stateCreationOptions, stateOptions);
 
