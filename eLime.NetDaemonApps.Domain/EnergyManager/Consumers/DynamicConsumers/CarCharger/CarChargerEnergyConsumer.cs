@@ -46,9 +46,9 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         HomeAssistant = new CarChargerEnergyConsumerHomeAssistantEntities(config);
         HomeAssistant.CurrentNumber.Changed += CurrentNumber_Changed;
         MqttSensors = new DynamicEnergyConsumerMqttSensors(config.Name, context);
-        MqttSensors.BalancingMethodChangedEvent += BalancingMethodChangedEvent;
-        MqttSensors.BalanceOnBehalfOfChangedEvent += BalanceOnBehalfOfChangedEvent;
-        MqttSensors.AllowBatteryPowerChangedEvent += AllowBatteryPowerChangedEvent;
+        MqttSensors.BalancingMethodChanged += BalancingMethodChanged;
+        MqttSensors.BalanceOnBehalfOfChanged += BalanceOnBehalfOfChanged;
+        MqttSensors.AllowBatteryPowerChanged += AllowBatteryPowerChanged;
 
         MinimumCurrent = config.CarCharger.MinimumCurrent;
         MaximumCurrent = config.CarCharger.MaximumCurrent;
@@ -64,43 +64,46 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         }
 
     }
-    private async void BalancingMethodChangedEvent(object? sender, BalancingMethodChangedEventArgs e)
+    private async void BalancingMethodChanged(object? sender, BalancingMethodChangedEventArgs e)
     {
         try
         {
             State.BalancingMethod = e.BalancingMethod;
             _balancingMethodLastChangedAt = Context.Scheduler.Now;
+            Context.Logger.LogInformation("{Name}: Set balancing method to {BalancingMethod}.", Name, e.BalancingMethod);
             await DebounceSaveAndPublishState();
         }
         catch (Exception ex)
         {
-            Context.Logger.LogError(ex, "Could not handle Smart grid ready mode state change.");
+            Context.Logger.LogError(ex, "Could not handle BalancingMethodChanged event.");
         }
     }
 
-    private async void BalanceOnBehalfOfChangedEvent(object? sender, BalanceOnBehalfOfChangedEventArgs e)
+    private async void BalanceOnBehalfOfChanged(object? sender, BalanceOnBehalfOfChangedEventArgs e)
     {
         try
         {
             State.BalanceOnBehalfOf = e.BalanceOnBehalfOf;
+            Context.Logger.LogInformation("{Name}: Set balance on behalf of to {BalanceOnBehalfOf}.", Name, e.BalanceOnBehalfOf);
             await DebounceSaveAndPublishState();
         }
         catch (Exception ex)
         {
-            Context.Logger.LogError(ex, "Could not handle Balance on behalf of state change.");
+            Context.Logger.LogError(ex, "Could not handle BalanceOnBehalfOfChanged event.");
         }
     }
 
-    private async void AllowBatteryPowerChangedEvent(object? sender, AllowBatteryPowerChangedEventArgs e)
+    private async void AllowBatteryPowerChanged(object? sender, AllowBatteryPowerChangedEventArgs e)
     {
         try
         {
             State.AllowBatteryPower = e.AllowBatteryPower;
+            Context.Logger.LogInformation("{Name}: Set allow battery power to {AllowBatteryPower}.", Name, e.AllowBatteryPower);
             await DebounceSaveAndPublishState();
         }
         catch (Exception ex)
         {
-            Context.Logger.LogError(ex, "Could not handle Allow battery power state change.");
+            Context.Logger.LogError(ex, "Could not handle AllowBatteryPowerChanged event.");
         }
     }
 
@@ -469,9 +472,9 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         HomeAssistant.CurrentNumber.Changed -= CurrentNumber_Changed;
         HomeAssistant.Dispose();
 
-        MqttSensors.BalancingMethodChangedEvent -= BalancingMethodChangedEvent;
-        MqttSensors.BalanceOnBehalfOfChangedEvent -= BalanceOnBehalfOfChangedEvent;
-        MqttSensors.AllowBatteryPowerChangedEvent -= AllowBatteryPowerChangedEvent;
+        MqttSensors.BalancingMethodChanged -= BalancingMethodChangedEvent;
+        MqttSensors.BalanceOnBehalfOfChanged -= BalanceOnBehalfOfChangedEvent;
+        MqttSensors.AllowBatteryPowerChanged -= AllowBatteryPowerChangedEvent;
         MqttSensors.Dispose();
 
         foreach (var car in Cars)

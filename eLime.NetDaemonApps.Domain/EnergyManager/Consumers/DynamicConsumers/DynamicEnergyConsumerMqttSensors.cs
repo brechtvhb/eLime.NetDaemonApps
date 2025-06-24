@@ -19,12 +19,12 @@ public class DynamicEnergyConsumerMqttSensors : EnergyConsumerMqttSensors
         SELECT_CONSUMER_ALLOW_BATTERY_POWER = $"select.energy_consumer_{Name.MakeHaFriendly()}_allow_battery_power";
     }
 
-    public event EventHandler<BalancingMethodChangedEventArgs>? BalancingMethodChangedEvent;
+    public event EventHandler<BalancingMethodChangedEventArgs>? BalancingMethodChanged;
     private IDisposable? BalancingMethodObservable { get; set; }
 
     private void OnBalancingMethodChanged(BalancingMethodChangedEventArgs e)
     {
-        BalancingMethodChangedEvent?.Invoke(this, e);
+        BalancingMethodChanged?.Invoke(this, e);
     }
     private Func<string, Task> BalancingMethodChangedChangedEventHandler()
     {
@@ -35,11 +35,11 @@ public class DynamicEnergyConsumerMqttSensors : EnergyConsumerMqttSensors
         };
     }
 
-    public event EventHandler<BalanceOnBehalfOfChangedEventArgs>? BalanceOnBehalfOfChangedEvent;
+    public event EventHandler<BalanceOnBehalfOfChangedEventArgs>? BalanceOnBehalfOfChanged;
     private IDisposable? BalanceOnBehalfOfObservable { get; set; }
     private void OnBalanceOnBehalfOfChanged(BalanceOnBehalfOfChangedEventArgs e)
     {
-        BalanceOnBehalfOfChangedEvent?.Invoke(this, e);
+        BalanceOnBehalfOfChanged?.Invoke(this, e);
     }
     private Func<string, Task> BalanceOnBehalfOfChangedChangedEventHandler()
     {
@@ -50,11 +50,11 @@ public class DynamicEnergyConsumerMqttSensors : EnergyConsumerMqttSensors
         };
     }
 
-    public event EventHandler<AllowBatteryPowerChangedEventArgs>? AllowBatteryPowerChangedEvent;
+    public event EventHandler<AllowBatteryPowerChangedEventArgs>? AllowBatteryPowerChanged;
     private IDisposable? AllowBatteryPowerObservable { get; set; }
     private void OnAllowBatteryPowerChanged(AllowBatteryPowerChangedEventArgs e)
     {
-        AllowBatteryPowerChangedEvent?.Invoke(this, e);
+        AllowBatteryPowerChanged?.Invoke(this, e);
     }
     private Func<string, Task> AllowBatteryPowerChangedChangedEventHandler()
     {
