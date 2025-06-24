@@ -472,9 +472,9 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         HomeAssistant.CurrentNumber.Changed -= CurrentNumber_Changed;
         HomeAssistant.Dispose();
 
-        MqttSensors.BalancingMethodChanged -= BalancingMethodChangedEvent;
-        MqttSensors.BalanceOnBehalfOfChanged -= BalanceOnBehalfOfChangedEvent;
-        MqttSensors.AllowBatteryPowerChanged -= AllowBatteryPowerChangedEvent;
+        MqttSensors.BalancingMethodChanged -= BalancingMethodChanged;
+        MqttSensors.BalanceOnBehalfOfChanged -= BalanceOnBehalfOfChanged;
+        MqttSensors.AllowBatteryPowerChanged -= AllowBatteryPowerChanged;
         MqttSensors.Dispose();
 
         foreach (var car in Cars)
