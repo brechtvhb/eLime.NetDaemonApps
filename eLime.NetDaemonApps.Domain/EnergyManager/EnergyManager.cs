@@ -325,18 +325,7 @@ public class EnergyManager : IDisposable
     private async Task ManageBatteriesIfNeeded()
     {
         var runningDynamicLoadConsumers = Consumers.Where(x => x.IsRunning).OfType<IDynamicLoadConsumer>().ToList();
-
-        var canDischarge = runningDynamicLoadConsumers.Count == 0 || runningDynamicLoadConsumers.Any(x => x.AllowBatteryPower == AllowBatteryPower.Yes);
-        if (canDischarge)
-        {
-            foreach (var battery in BatteryManager.Batteries.Where(battery => !battery.CanDischarge))
-                await battery.EnableDischarging();
-        }
-        else
-        {
-            foreach (var battery in BatteryManager.Batteries.Where(battery => battery.CanDischarge))
-                await battery.DisableDischarging();
-        }
+        await BatteryManager.ManageBatteryPowerSettings(runningDynamicLoadConsumers.Any(), runningDynamicLoadConsumers.Any(x => x.AllowBatteryPower == AllowBatteryPower.Yes));
     }
 
     private double GetDynamicLoadThatCanBeScaledDownOnBehalfOf(EnergyConsumer? consumer, double dynamicLoadNetChange)

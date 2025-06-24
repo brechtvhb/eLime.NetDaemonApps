@@ -50,7 +50,31 @@ internal class BatteryManager : IDisposable
             Batteries.Add(battery);
         }
     }
+    private List<Battery> BatteryPickOrderList
+    {
+        get
+        {
+            var offset = (Context.Scheduler.Now.DayOfYear - 1) % Batteries.Count;
+            return Batteries.Skip(offset).Concat(Batteries.Take(offset)).ToList();
+        }
+    }
 
+
+    internal async Task ManageBatteryPowerSettings(bool dynamicConsumersRunning, bool allowBatteryPowerConsumersRunning)
+    {
+        //TODO: Add OptimalChargeThreshold & OptimalDischargeThreshold setting, use BatteryPickOrderList of amount of power available is limited so we can maximize round trip efficiency.
+        var canDischarge = !dynamicConsumersRunning || allowBatteryPowerConsumersRunning;
+        if (canDischarge)
+        {
+            foreach (var battery in Batteries.Where(battery => !battery.CanDischarge))
+                await battery.EnableDischarging();
+        }
+        else
+        {
+            foreach (var battery in Batteries.Where(battery => battery.CanDischarge))
+                await battery.DisableDischarging();
+        }
+    }
     private async void Battery_StateOfChargeChanged(object? sender, Entities.NumericSensors.NumericSensorEventArgs e)
     {
         try
@@ -84,7 +108,6 @@ internal class BatteryManager : IDisposable
 
         await SaveAndPublishStateDebounceDispatcher.DebounceAsync(SaveAndPublishState);
     }
-
 
     private async Task SaveAndPublishState()
     {
