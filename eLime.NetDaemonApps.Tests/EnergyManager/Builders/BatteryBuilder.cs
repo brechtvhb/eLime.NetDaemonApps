@@ -12,8 +12,13 @@ public class BatteryBuilder
 
     private decimal _capacity;
     private int _minimumStateOfCharge;
+    private int _rteStateOfChargeReferencePoint;
     private int _maxChargePower;
+    private int _optimalChargePowerMinThreshold;
+    private int _optimalChargePowerMaxThreshold;
     private int _maxDischargePower;
+    private int _optimalDischargePowerMinThreshold;
+    private int _optimalDischargePowerMaxThreshold;
     private string _powerSensor;
     private string _stateOfChargeSensor;
     private string _totalEnergyChargedSensor;
@@ -34,7 +39,12 @@ public class BatteryBuilder
         _name = "Marstek Venus E";
         _capacity = 5.12m; // in kWh
         _minimumStateOfCharge = 11; // in %
+        _rteStateOfChargeReferencePoint = 50;
         _maxChargePower = 2500; // in W
+        _optimalChargePowerMinThreshold = 200;
+        _optimalChargePowerMaxThreshold = 800;
+        _optimalDischargePowerMinThreshold = 200;
+        _optimalDischargePowerMaxThreshold = 800;
         _maxDischargePower = 800; // in W
 
         return this;
@@ -42,6 +52,12 @@ public class BatteryBuilder
     public BatteryBuilder WithName(string name)
     {
         _name = name;
+        return this;
+    }
+
+    public BatteryBuilder WithMaxDischargePower(int power)
+    {
+        _maxDischargePower = power;
         return this;
     }
 
@@ -59,8 +75,13 @@ public class BatteryBuilder
             Name = _name,
             Capacity = _capacity, // in kWh
             MinimumStateOfCharge = _minimumStateOfCharge, // in %
+            RteStateOfChargeReferencePoint = _rteStateOfChargeReferencePoint, // in %
             MaxChargePower = _maxChargePower, // in W
+            OptimalChargePowerMinThreshold = _optimalChargePowerMinThreshold, // in W
+            OptimalChargePowerMaxThreshold = _optimalChargePowerMaxThreshold, // in W
             MaxDischargePower = _maxDischargePower, // in W
+            OptimalDischargePowerMinThreshold = _optimalDischargePowerMinThreshold, // in W
+            OptimalDischargePowerMaxThreshold = _optimalDischargePowerMaxThreshold, // in W
             PowerSensor = _powerSensor,
             StateOfChargeSensor = _stateOfChargeSensor,
             TotalEnergyChargedSensor = _totalEnergyChargedSensor,

@@ -69,21 +69,21 @@ public class DynamicEnergyConsumerMqttSensors : EnergyConsumerMqttSensors
     {
         await base.CreateOrUpdateEntities(consumerGroups);
 
-        var balancingMethodCreationOptions = new EntityCreationOptions(UniqueId: SELECT_CONSUMER_BALANCING_METHOD, Name: $"Dynamic load balancing method - {Name}", DeviceClass: "select", Persist: true);
+        var balancingMethodCreationOptions = new EntityCreationOptions(UniqueId: SELECT_CONSUMER_BALANCING_METHOD, Name: $"Dynamic load balancing method - {Name}", Persist: true);
         var balancingMethodDropdownOptions = new SelectOptions { Icon = "mdi:car-turbocharger", Options = Enum<BalancingMethod>.AllValuesAsStringList(), Device = Device };
         await Context.MqttEntityManager.CreateAsync(SELECT_CONSUMER_BALANCING_METHOD, balancingMethodCreationOptions, balancingMethodDropdownOptions);
 
         var balancingMethodObservable = await Context.MqttEntityManager.PrepareCommandSubscriptionAsync(SELECT_CONSUMER_BALANCING_METHOD);
         BalancingMethodObservable = balancingMethodObservable.SubscribeAsync(BalancingMethodChangedChangedEventHandler());
 
-        var balanceOnBehalfOfCreationOptions = new EntityCreationOptions(UniqueId: SELECT_CONSUMER_BALANCE_ON_BEHALF_OF, Name: $"Dynamic load balance on behalf of - {Name}", DeviceClass: "select", Persist: true);
+        var balanceOnBehalfOfCreationOptions = new EntityCreationOptions(UniqueId: SELECT_CONSUMER_BALANCE_ON_BEHALF_OF, Name: $"Dynamic load balance on behalf of - {Name}", Persist: true);
         var balanceOnBehalfOfDropdownOptions = new SelectOptions { Icon = "mdi:car-turbocharger", Options = consumerGroups, Device = Device };
         await Context.MqttEntityManager.CreateAsync(SELECT_CONSUMER_BALANCE_ON_BEHALF_OF, balanceOnBehalfOfCreationOptions, balanceOnBehalfOfDropdownOptions);
 
         var balanceOnBehalfOfObservable = await Context.MqttEntityManager.PrepareCommandSubscriptionAsync(SELECT_CONSUMER_BALANCE_ON_BEHALF_OF);
         BalanceOnBehalfOfObservable = balanceOnBehalfOfObservable.SubscribeAsync(BalanceOnBehalfOfChangedChangedEventHandler());
 
-        var allowBatteryPowerCreationOptions = new EntityCreationOptions(UniqueId: SELECT_CONSUMER_ALLOW_BATTERY_POWER, Name: $"Dynamic load allow battery power - {Name}", DeviceClass: "select", Persist: true);
+        var allowBatteryPowerCreationOptions = new EntityCreationOptions(UniqueId: SELECT_CONSUMER_ALLOW_BATTERY_POWER, Name: $"Dynamic load allow battery power - {Name}", Persist: true);
         var allowBatteryPowerDropdownOptions = new SelectOptions { Icon = "fapro:battery-bolt", Options = Enum<AllowBatteryPower>.AllValuesAsStringList(), Device = Device };
         await Context.MqttEntityManager.CreateAsync(SELECT_CONSUMER_ALLOW_BATTERY_POWER, allowBatteryPowerCreationOptions, allowBatteryPowerDropdownOptions);
 

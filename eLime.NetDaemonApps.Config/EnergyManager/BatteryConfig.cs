@@ -6,8 +6,13 @@ public class BatteryConfig
     public string Name { get; set; }
     public decimal Capacity { get; set; } //in kWh
     public int MinimumStateOfCharge { get; set; }
+    public int RteStateOfChargeReferencePoint { get; set; }
     public int MaxChargePower { get; set; }
+    public int OptimalChargePowerMinThreshold { get; set; }
+    public int OptimalChargePowerMaxThreshold { get; set; }
     public int MaxDischargePower { get; set; }
+    public int OptimalDischargePowerMinThreshold { get; set; }
+    public int OptimalDischargePowerMaxThreshold { get; set; }
     public string PowerSensor { get; set; }
     public string StateOfChargeSensor { get; set; }
     public string TotalEnergyChargedSensor { get; set; }

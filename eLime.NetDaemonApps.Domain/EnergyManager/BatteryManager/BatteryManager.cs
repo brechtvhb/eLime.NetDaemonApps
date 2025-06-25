@@ -50,7 +50,7 @@ internal class BatteryManager : IDisposable
             Batteries.Add(battery);
         }
     }
-    private List<Battery> BatteryPickOrderList
+    internal List<Battery> BatteryPickOrderList
     {
         get
         {
@@ -60,21 +60,65 @@ internal class BatteryManager : IDisposable
     }
 
 
-    internal async Task ManageBatteryPowerSettings(bool dynamicConsumersRunning, bool allowBatteryPowerConsumersRunning)
+    internal async Task ManageBatteryPowerSettings(bool dynamicConsumersRunning, bool allowBatteryPowerConsumersRunning, double averageDischargePower)
     {
-        //TODO: Add OptimalChargeThreshold & OptimalDischargeThreshold setting, use BatteryPickOrderList of amount of power available is limited so we can maximize round trip efficiency.
+        if (Batteries.Count == 0)
+            return;
+
         var canDischarge = !dynamicConsumersRunning || allowBatteryPowerConsumersRunning;
         if (canDischarge)
         {
-            foreach (var battery in Batteries.Where(battery => !battery.CanDischarge))
-                await battery.EnableDischarging();
+            if (Batteries.All(x => !x.CanDischarge))
+                await ScaleUpDischarging(averageDischargePower);
+            else if (BatteryPickOrderList.Any(x => x.AboveOptimalDischargePowerMaxThreshold))
+                await ScaleUpDischarging(averageDischargePower);
+            else if (Batteries.Count(x => x.CanDischarge) > 1 && BatteryPickOrderList.Any(x => x.BelowOptimalDischargePowerMinThreshold))
+                await ScaleDownDischarging(averageDischargePower);
         }
         else
         {
-            foreach (var battery in Batteries.Where(battery => battery.CanDischarge))
+            foreach (var battery in Batteries.Where(battery => battery.CanDischarge && battery.CanControl))
                 await battery.DisableDischarging();
         }
     }
+
+    private async Task ScaleUpDischarging(double averageDischargePower)
+    {
+        var optimalChargePowerMaxThreshold = 0;
+        var index = 0;
+        while (optimalChargePowerMaxThreshold <= averageDischargePower)
+        {
+            var battery = BatteryPickOrderList.Skip(index).First();
+            if (!battery.CanDischarge && battery.CanControl)
+                await battery.EnableDischarging();
+
+            optimalChargePowerMaxThreshold += battery.OptimalChargePowerMaxThreshold;
+            index++;
+        }
+    }
+
+    private async Task ScaleDownDischarging(double averageDischargePower)
+    {
+        var optimalChargePowerMinThreshold = Batteries.Where(x => x.CanDischarge).Sum(x => x.OptimalDischargePowerMinThreshold);
+        var batteriesThatCanDischarge = Batteries.Count(x => x.CanDischarge);
+        var index = Batteries.Count - 1;
+        while (optimalChargePowerMinThreshold >= averageDischargePower)
+        {
+            var battery = BatteryPickOrderList.Skip(index).First();
+            if (battery.CanDischarge && battery.CanControl)
+            {
+                await battery.DisableDischarging();
+                optimalChargePowerMinThreshold -= battery.OptimalDischargePowerMinThreshold;
+            }
+
+            index--;
+            batteriesThatCanDischarge--;
+
+            if (batteriesThatCanDischarge == 1)
+                break;
+        }
+    }
+
     private async void Battery_StateOfChargeChanged(object? sender, Entities.NumericSensors.NumericSensorEventArgs e)
     {
         try

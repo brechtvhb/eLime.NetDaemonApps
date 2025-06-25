@@ -1,7 +1,6 @@
 ﻿using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
 using eLime.NetDaemonApps.Domain.Helper;
 using Microsoft.Extensions.Logging;
-using System.Reactive.Concurrency;
 
 #pragma warning disable CS8618, CS9264
 
@@ -16,8 +15,13 @@ public class Battery : IDisposable
     internal string Name { get; }
     internal decimal Capacity { get; }
     internal int MinimumStateOfCharge { get; }
+    internal int RteStateOfChargeReferencePoint { get; }
     internal int MaxChargePower { get; }
+    internal int OptimalChargePowerMinThreshold { get; }
+    internal int OptimalChargePowerMaxThreshold { get; }
     internal int MaxDischargePower { get; }
+    internal int OptimalDischargePowerMinThreshold { get; }
+    internal int OptimalDischargePowerMaxThreshold { get; }
     internal bool CanCharge => HomeAssistant.MaxChargePowerNumber.State is > 0;
     internal bool CanDischarge => HomeAssistant.MaxDischargePowerNumber.State is > 0;
     internal double CurrentLoad => HomeAssistant.PowerSensor.State ?? 0;
@@ -25,6 +29,13 @@ public class Battery : IDisposable
     internal decimal AvailableCapacity => Capacity - MinimumCapacity;
     internal decimal RemainingCapacity => Math.Round(Capacity * Convert.ToDecimal(HomeAssistant.StateOfChargeSensor.State) / 100, 2);
     internal decimal RemainingAvailableCapacity => RemainingCapacity - MinimumCapacity;
+
+    internal bool CanControl => State.LastChange == null || State.LastChange.Value.AddSeconds(30) < Context.Scheduler.Now;
+    //Might need to average in time here
+    internal bool AboveOptimalDischargePowerMaxThreshold => CanDischarge && -CurrentLoad > OptimalDischargePowerMaxThreshold;
+    //Might need to average in time here
+    internal bool BelowOptimalDischargePowerMinThreshold => CanDischarge && -CurrentLoad < OptimalDischargePowerMinThreshold;
+
     internal DebounceDispatcher? SaveAndPublishStateDebounceDispatcher { get; private set; }
 
     internal Battery(EnergyManagerContext context, BatteryConfiguration config)
@@ -36,9 +47,13 @@ public class Battery : IDisposable
         Name = config.Name;
         Capacity = config.Capacity;
         MinimumStateOfCharge = config.MinimumStateOfCharge;
+        RteStateOfChargeReferencePoint = config.RteStateOfChargeReferencePoint;
         MaxChargePower = config.MaxChargePower;
+        OptimalChargePowerMinThreshold = config.OptimalChargePowerMinThreshold;
+        OptimalChargePowerMaxThreshold = config.OptimalChargePowerMaxThreshold;
         MaxDischargePower = config.MaxDischargePower;
-
+        OptimalDischargePowerMinThreshold = config.OptimalDischargePowerMinThreshold;
+        OptimalDischargePowerMaxThreshold = config.OptimalDischargePowerMaxThreshold;
     }
 
     public event EventHandler<NumericSensorEventArgs>? StateOfChargeChanged;
@@ -53,10 +68,10 @@ public class Battery : IDisposable
         {
             OnStateOfChargeChanged(e);
 
-            if (Convert.ToInt32(e.Sensor.State) != 50)
+            if (Convert.ToInt32(e.Sensor.State) != RteStateOfChargeReferencePoint)
                 return;
 
-            Context.Logger.LogTrace("{Name}: State of charge is 50%. Calculating Round trip efficiency.", Name);
+            Context.Logger.LogTrace("{Name}: State of charge is {RteStateOfChargeReferencePoint}%. Calculating Round trip efficiency.", Name, RteStateOfChargeReferencePoint);
             var totalEnergyCharged = HomeAssistant.TotalEnergyChargedSensor.State;
             var totalEnergyDischarged = HomeAssistant.TotalEnergyDischargedSensor.State;
 
@@ -66,20 +81,26 @@ public class Battery : IDisposable
                 return;
             }
 
-            var energyChargedSinceLastRteCalculation = totalEnergyCharged.Value - State.LastTotalEnergyChargedAt50Percent;
-            var energyDischargedSinceLastRteCalculation = totalEnergyDischarged.Value - State.LastTotalEnergyDischargedAt50Percent;
+            var energyChargedSinceLastRteCalculation = totalEnergyCharged.Value - State.LastTotalEnergyChargedAtRteReferencePoint;
+            var energyDischargedSinceLastRteCalculation = totalEnergyDischarged.Value - State.LastTotalEnergyDischargedAtRteReferencePoint;
 
             if (energyChargedSinceLastRteCalculation <= 1 || energyDischargedSinceLastRteCalculation <= 1)
             {
                 Context.Logger.LogTrace("{Name}: Not enough energy charged or discharged since last RTE calculation.", Name);
                 return;
             }
-            var rte = Math.Round(energyDischargedSinceLastRteCalculation / energyChargedSinceLastRteCalculation * 100, 2);
-            State.RoundTripEfficiency = rte;
+
+            if (RteStateOfChargeReferencePoint == State.LastRteStateOfChargeReferencePoint)
+            {
+                var rte = Math.Round(energyDischargedSinceLastRteCalculation / energyChargedSinceLastRteCalculation * 100, 2);
+                State.RoundTripEfficiency = rte;
+                Context.Logger.LogInformation("{Name}: Round trip efficiency calculated: {Rte}%.", Name, rte);
+            }
+
+            State.LastTotalEnergyChargedAtRteReferencePoint = totalEnergyCharged.Value;
+            State.LastTotalEnergyDischargedAtRteReferencePoint = totalEnergyDischarged.Value;
+            State.LastRteStateOfChargeReferencePoint = RteStateOfChargeReferencePoint;
             State.LastChange = Context.Scheduler.Now;
-            State.LastTotalEnergyChargedAt50Percent = totalEnergyCharged.Value;
-            State.LastTotalEnergyDischargedAt50Percent = totalEnergyDischarged.Value;
-            Context.Logger.LogInformation("{Name}: Round trip efficiency calculated: {Rte}%.", Name, rte);
             await DebounceSaveAndPublishState();
         }
         catch (Exception ex)
@@ -133,7 +154,7 @@ public class Battery : IDisposable
             return;
 
         HomeAssistant.MaxChargePowerNumber.Change(0);
-        State.LastChange = Scheduler.Now;
+        State.LastChange = Context.Scheduler.Now;
         Context.Logger.LogInformation("{Battery}: Battery will no longer charge.", Name);
         await DebounceSaveAndPublishState();
     }
@@ -144,7 +165,7 @@ public class Battery : IDisposable
             return;
 
         HomeAssistant.MaxChargePowerNumber.Change(MaxChargePower);
-        State.LastChange = Scheduler.Now;
+        State.LastChange = Context.Scheduler.Now;
         Context.Logger.LogInformation("{Battery}: Battery is allowed to charge at max {maxChargePower}W.", Name, MaxChargePower);
         await DebounceSaveAndPublishState();
     }
@@ -155,7 +176,7 @@ public class Battery : IDisposable
             return;
 
         HomeAssistant.MaxDischargePowerNumber.Change(0);
-        State.LastChange = Scheduler.Now;
+        State.LastChange = Context.Scheduler.Now;
         Context.Logger.LogInformation("{Battery}: Battery will no longer discharge.", Name);
         await DebounceSaveAndPublishState();
     }
@@ -166,7 +187,7 @@ public class Battery : IDisposable
             return;
 
         HomeAssistant.MaxDischargePowerNumber.Change(MaxDischargePower);
-        State.LastChange = Scheduler.Now;
+        State.LastChange = Context.Scheduler.Now;
         Context.Logger.LogInformation("{Battery}: Battery is allowed to discharge at max {maxDisChargePower}W.", Name, MaxDischargePower);
         await DebounceSaveAndPublishState();
     }

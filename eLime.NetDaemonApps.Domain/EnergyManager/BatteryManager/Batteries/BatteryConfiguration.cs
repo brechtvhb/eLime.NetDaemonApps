@@ -5,34 +5,24 @@ using NetDaemon.HassModel;
 
 namespace eLime.NetDaemonApps.Domain.EnergyManager.BatteryManager.Batteries;
 
-public class BatteryConfiguration
+public class BatteryConfiguration(IHaContext haContext, BatteryConfig config)
 {
-    public BatteryConfiguration(IHaContext haContext, BatteryConfig config)
-    {
-        Name = config.Name;
-        Capacity = config.Capacity;
-        MinimumStateOfCharge = config.MinimumStateOfCharge;
-        MaxChargePower = config.MaxChargePower;
-        MaxDischargePower = config.MaxDischargePower;
-        PowerSensor = NumericSensor.Create(haContext, config.PowerSensor);
-        StateOfChargeSensor = NumericSensor.Create(haContext, config.StateOfChargeSensor);
-        TotalEnergyChargedSensor = NumericSensor.Create(haContext, config.TotalEnergyChargedSensor);
-        TotalEnergyDischargedSensor = NumericSensor.Create(haContext, config.TotalEnergyDischargedSensor);
-        MaxChargePowerNumber = InputNumberEntity.Create(haContext, config.MaxChargePowerEntity);
-        MaxDischargePowerNumber = InputNumberEntity.Create(haContext, config.MaxDischargePowerEntity);
-    }
-
-    public string Name { get; set; }
-    public decimal Capacity { get; set; } // in kWh
-    public int MinimumStateOfCharge { get; set; } // in %
-    public int MaxChargePower { get; set; } // in W
-    public int MaxDischargePower { get; set; } // in W
-    public NumericSensor PowerSensor { get; set; }
-    public NumericSensor StateOfChargeSensor { get; set; }
-    public NumericSensor TotalEnergyChargedSensor { get; set; } // in kWh
-    public NumericSensor TotalEnergyDischargedSensor { get; set; } // in kWh
-    public InputNumberEntity MaxChargePowerNumber { get; set; }
-    public InputNumberEntity MaxDischargePowerNumber { get; set; }
+    public string Name { get; set; } = config.Name;
+    public decimal Capacity { get; set; } = config.Capacity; // in kWh
+    public int MinimumStateOfCharge { get; set; } = config.MinimumStateOfCharge; // in %
+    public int RteStateOfChargeReferencePoint { get; set; } = config.RteStateOfChargeReferencePoint; // in %
+    public int MaxChargePower { get; set; } = config.MaxChargePower; // in W
+    public int OptimalChargePowerMinThreshold { get; set; } = config.OptimalChargePowerMinThreshold; // in W
+    public int OptimalChargePowerMaxThreshold { get; set; } = config.OptimalChargePowerMaxThreshold; // in W
+    public int MaxDischargePower { get; set; } = config.MaxDischargePower; // in W
+    public int OptimalDischargePowerMinThreshold { get; set; } = config.OptimalDischargePowerMinThreshold; // in W
+    public int OptimalDischargePowerMaxThreshold { get; set; } = config.OptimalDischargePowerMaxThreshold; // in W
+    public NumericSensor PowerSensor { get; set; } = NumericSensor.Create(haContext, config.PowerSensor);
+    public NumericSensor StateOfChargeSensor { get; set; } = NumericSensor.Create(haContext, config.StateOfChargeSensor);
+    public NumericSensor TotalEnergyChargedSensor { get; set; } = NumericSensor.Create(haContext, config.TotalEnergyChargedSensor); // in kWh
+    public NumericSensor TotalEnergyDischargedSensor { get; set; } = NumericSensor.Create(haContext, config.TotalEnergyDischargedSensor); // in kWh
+    public InputNumberEntity MaxChargePowerNumber { get; set; } = InputNumberEntity.Create(haContext, config.MaxChargePowerEntity);
+    public InputNumberEntity MaxDischargePowerNumber { get; set; } = InputNumberEntity.Create(haContext, config.MaxDischargePowerEntity);
 
     //To generate: OperatingMode (Automatic, Manual), ReservedPeakShavingStateOfCharge, RoundTripEfficiency
 }
