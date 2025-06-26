@@ -5,7 +5,10 @@ using eLime.NetDaemonApps.Domain.EnergyManager.Consumers.Simple;
 using eLime.NetDaemonApps.Domain.EnergyManager.Consumers.Triggered;
 using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
+using eLime.NetDaemonApps.Domain.Helper;
 using NetDaemon.HassModel;
+using BalancingMethod = eLime.NetDaemonApps.Domain.EnergyManager.Consumers.DynamicConsumers.BalancingMethod;
+using DynamicEnergyConsumerBalancingMethodBasedLoads = eLime.NetDaemonApps.Domain.EnergyManager.Consumers.DynamicConsumers.CarCharger.DynamicEnergyConsumerBalancingMethodBasedLoads;
 
 namespace eLime.NetDaemonApps.Domain.EnergyManager.Consumers;
 
@@ -18,6 +21,7 @@ public class EnergyConsumerConfiguration
         PowerConsumptionSensor = NumericSensor.Create(haContext, config.PowerUsageEntity);
         SwitchOnLoad = config.SwitchOnLoad;
         SwitchOffLoad = config.SwitchOffLoad;
+        DynamicBalancingMethodBasedLoads = config.DynamicBalancingMethodBasedLoads.Select(x => new DynamicEnergyConsumerBalancingMethodBasedLoads { BalancingMethods = Enum<BalancingMethod>.CastEnumList(x.BalancingMethods), SwitchOnLoad = x.SwitchOnLoad, SwitchOffLoad = x.SwitchOffLoad }).ToList();
         MinimumRuntime = config.MinimumRuntime;
         MaximumRuntime = config.MaximumRuntime;
         MinimumTimeout = config.MinimumTimeout;
@@ -34,6 +38,7 @@ public class EnergyConsumerConfiguration
     public NumericSensor PowerConsumptionSensor { get; set; }
     public double SwitchOnLoad { get; set; }
     public double SwitchOffLoad { get; set; }
+    public List<DynamicEnergyConsumerBalancingMethodBasedLoads> DynamicBalancingMethodBasedLoads { get; set; }
     public TimeSpan? MinimumRuntime { get; set; }
     public TimeSpan? MaximumRuntime { get; set; }
     public TimeSpan? MinimumTimeout { get; set; }

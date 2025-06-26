@@ -6,10 +6,11 @@ public class EnergyConsumerConfig
     public string Name { get; set; }
     public List<string> ConsumerGroups { get; set; } = [];
 
-    //Rename dunglish to PowerConsumptionSensor
+    //TODO: Rename dunglish to PowerConsumptionSensor
     public string PowerUsageEntity { get; set; }
     public double SwitchOnLoad { get; set; }
     public double SwitchOffLoad { get; set; }
+    public List<DynamicEnergyConsumerBalancingMethodBasedLoads> DynamicBalancingMethodBasedLoads { get; set; } = [];
 
     public TimeSpan? MinimumRuntime { get; set; }
     public TimeSpan? MaximumRuntime { get; set; }
@@ -25,6 +26,22 @@ public class EnergyConsumerConfig
     public CoolingEnergyConsumerConfig? Cooling { get; set; }
     public TriggeredEnergyConsumerConfig? Triggered { get; set; }
     public CarChargerEnergyConsumerConfig? CarCharger { get; set; }
+}
 
+public class DynamicEnergyConsumerBalancingMethodBasedLoads
+{
+    public List<BalancingMethod> BalancingMethods { get; set; } = [];
+    public double SwitchOnLoad { get; set; }
+    public double SwitchOffLoad { get; set; }
+}
 
+public enum BalancingMethod
+{
+    SolarSurplus,
+    SolarOnly,
+    MidPoint,
+    SolarPreferred,
+    MidPeak,
+    NearPeak,
+    MaximizeQuarterPeak
 }

@@ -22,14 +22,18 @@ public abstract class EnergyConsumer : IDisposable
     public string Name { get; }
 
     internal double CurrentLoad => HomeAssistant.PowerConsumptionSensor.State ?? 0;
-    internal List<TimeWindow> TimeWindows;
-    internal TimeSpan? MinimumRuntime;
-    internal TimeSpan? MaximumRuntime;
-    internal TimeSpan? MinimumTimeout;
-    internal TimeSpan? MaximumTimeout;
-    internal double SwitchOnLoad;
-    internal double SwitchOffLoad;
-    internal List<string> ConsumerGroups;
+    internal List<TimeWindow> TimeWindows { get; init; }
+    internal TimeSpan? MinimumRuntime { get; init; }
+    internal TimeSpan? MaximumRuntime { get; init; }
+    internal TimeSpan? MinimumTimeout { get; init; }
+    internal TimeSpan? MaximumTimeout { get; init; }
+
+    protected readonly double _switchOnLoad;
+    internal virtual double SwitchOnLoad => _switchOnLoad;
+
+    protected readonly double _switchOffLoad;
+    internal virtual double SwitchOffLoad => _switchOffLoad;
+    internal List<string> ConsumerGroups { get; init; }
 
     internal DebounceDispatcher? SaveAndPublishStateDebounceDispatcher { get; private set; }
     public IDisposable? StopTimer { get; set; }
@@ -45,8 +49,8 @@ public abstract class EnergyConsumer : IDisposable
         MinimumTimeout = config.MinimumTimeout;
         MaximumTimeout = config.MaximumTimeout;
         ConsumerGroups = config.ConsumerGroups;
-        SwitchOnLoad = config.SwitchOnLoad;
-        SwitchOffLoad = config.SwitchOffLoad;
+        _switchOnLoad = config.SwitchOnLoad;
+        _switchOffLoad = config.SwitchOffLoad;
     }
     public static async Task<EnergyConsumer> Create(EnergyManagerContext context, List<String> allConsumerGroups, EnergyConsumerConfiguration config)
     {

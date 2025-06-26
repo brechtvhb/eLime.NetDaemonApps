@@ -179,8 +179,6 @@ public class EnergyManager : IDisposable
         return dynamicNetChange;
     }
 
-
-    //TODO: Use linear programming model and estimates of production and consumption to be able to schedule deferred loads in the future.
     private double StartConsumersIfNeeded(double dynamicLoadNetChange)
     {
         var preStartEstimatedLoad = GridMonitor.CurrentLoadMinusBatteries + dynamicLoadNetChange;

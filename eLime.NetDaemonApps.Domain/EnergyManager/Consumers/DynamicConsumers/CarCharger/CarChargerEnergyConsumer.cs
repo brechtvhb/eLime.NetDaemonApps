@@ -12,9 +12,19 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
     internal override bool IsRunning => (ConnectedCar?.IsRunning ?? false) && HomeAssistant.StateSensor.State == CarChargerStates.Charging.ToString(); //&& (CurrentEntity.State ?? 0) > OffCurrent;
     internal override double PeakLoad => MinimumCurrentForConnectedCar * TotalVoltage;
 
-    public int MinimumCurrent { get; set; }
-    public int MaximumCurrent { get; set; }
-    public int OffCurrent { get; set; }
+    public List<DynamicEnergyConsumerBalancingMethodBasedLoads> DynamicBalancingMethodBasedLoads { get; }
+
+    internal override double SwitchOnLoad => State.BalancingMethod.HasValue
+        ? DynamicBalancingMethodBasedLoads.FirstOrDefault(x => x.BalancingMethods.Contains(State.BalancingMethod.Value))?.SwitchOnLoad ?? _switchOnLoad
+        : _switchOnLoad;
+
+    internal override double SwitchOffLoad => State.BalancingMethod.HasValue
+        ? DynamicBalancingMethodBasedLoads.FirstOrDefault(x => x.BalancingMethods.Contains(State.BalancingMethod.Value))?.SwitchOffLoad ?? _switchOffLoad
+        : _switchOffLoad;
+
+    public int MinimumCurrent { get; }
+    public int MaximumCurrent { get; }
+    public int OffCurrent { get; }
 
     public double ReleasablePowerWhenBalancingOnBehalfOf => CurrentLoad - MinimumCurrentForConnectedCar * TotalVoltage;
     public TimeSpan MinimumRebalancingInterval => TimeSpan.FromSeconds(30); //TODO: config setting
@@ -50,6 +60,7 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         MqttSensors.BalanceOnBehalfOfChanged += BalanceOnBehalfOfChanged;
         MqttSensors.AllowBatteryPowerChanged += AllowBatteryPowerChanged;
 
+        DynamicBalancingMethodBasedLoads = config.DynamicBalancingMethodBasedLoads;
         MinimumCurrent = config.CarCharger.MinimumCurrent;
         MaximumCurrent = config.CarCharger.MaximumCurrent;
         OffCurrent = config.CarCharger.OffCurrent;
@@ -485,4 +496,11 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
             car.Dispose();
         }
     }
+}
+
+public class DynamicEnergyConsumerBalancingMethodBasedLoads
+{
+    public List<BalancingMethod> BalancingMethods { get; set; } = [];
+    public double SwitchOnLoad { get; set; }
+    public double SwitchOffLoad { get; set; }
 }

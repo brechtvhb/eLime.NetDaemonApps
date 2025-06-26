@@ -14,7 +14,7 @@ public class CarChargerEnergyConsumerBuilder
     private string? _criticallyNeeded;
     private double _switchOnLoad;
     private double _switchOffLoad;
-
+    private List<DynamicEnergyConsumerBalancingMethodBasedLoads> _dynamicBalancingMethodBasedLoads = [];
     private TimeSpan? _minimumRuntime;
     private TimeSpan? _maximumRuntime;
     private TimeSpan? _minimumTimeout;
@@ -71,6 +71,12 @@ public class CarChargerEnergyConsumerBuilder
     {
         _criticallyNeeded = sensorName;
 
+        return this;
+    }
+
+    public CarChargerEnergyConsumerBuilder Add(List<BalancingMethod> balancingMethods, double switchOnLoad, double switchOffLoad)
+    {
+        _dynamicBalancingMethodBasedLoads.Add(new DynamicEnergyConsumerBalancingMethodBasedLoads { BalancingMethods = balancingMethods, SwitchOnLoad = switchOnLoad, SwitchOffLoad = switchOffLoad });
         return this;
     }
 
@@ -163,6 +169,7 @@ public class CarChargerEnergyConsumerBuilder
             CriticallyNeededEntity = _criticallyNeeded,
             SwitchOnLoad = _switchOnLoad,
             SwitchOffLoad = _switchOffLoad,
+            DynamicBalancingMethodBasedLoads = _dynamicBalancingMethodBasedLoads,
             MinimumRuntime = _minimumRuntime,
             MaximumRuntime = _maximumRuntime,
             MinimumTimeout = _minimumTimeout,
