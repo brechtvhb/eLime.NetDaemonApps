@@ -185,6 +185,7 @@ public class BatteryTests
             .WithName("Marstek venus E - 1")
             .WithMaxDischargePower(1500)
             .Build();
+        _testCtx.TriggerStateChange(battery1.StateOfChargeSensor, "50");
         _testCtx.TriggerStateChange(battery1.MaxDischargePowerEntity, "1500");
 
         var battery2 = new BatteryBuilder()
@@ -192,6 +193,7 @@ public class BatteryTests
             .WithName("Marstek venus E - 2")
             .WithMaxDischargePower(1500)
             .Build();
+        _testCtx.TriggerStateChange(battery2.StateOfChargeSensor, "100");
         _testCtx.TriggerStateChange(battery2.MaxDischargePowerEntity, "0");
 
         var builder = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
@@ -202,6 +204,40 @@ public class BatteryTests
         //Act
         _testCtx.TriggerStateChange(battery1.PowerSensor, "-1500");
         _testCtx.TriggerStateChange(builder._batteryManager.TotalDischargePowerSensor, "1500");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(5));
+
+        //Assert
+        _testCtx.NumberChanged(battery2.MaxDischargePowerEntity, 1500, Moq.Times.Once);
+    }
+
+    [TestMethod]
+    public async Task Activates_Second_Battery_If_First_Is_Empty()
+    {
+        // Arrange
+        var battery1 = new BatteryBuilder()
+            .MarstekVenusE()
+            .WithName("Marstek venus E - 1")
+            .WithMaxDischargePower(1500)
+            .Build();
+        _testCtx.TriggerStateChange(battery1.StateOfChargeSensor, "11");
+        _testCtx.TriggerStateChange(battery1.MaxDischargePowerEntity, "1500");
+
+        var battery2 = new BatteryBuilder()
+            .MarstekVenusE()
+            .WithName("Marstek venus E - 2")
+            .WithMaxDischargePower(1500)
+            .Build();
+        _testCtx.TriggerStateChange(battery2.StateOfChargeSensor, "100");
+        _testCtx.TriggerStateChange(battery2.MaxDischargePowerEntity, "0");
+
+        var builder = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+            .AddBattery(battery1)
+            .AddBattery(battery2);
+        _ = await builder.Build();
+
+        //Act
+        _testCtx.TriggerStateChange(battery1.PowerSensor, "0");
+        _testCtx.TriggerStateChange(builder._batteryManager.TotalDischargePowerSensor, "500");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(5));
 
         //Assert

@@ -23,6 +23,8 @@ public class Battery : IDisposable
     internal int OptimalDischargePowerMinThreshold { get; }
     internal int OptimalDischargePowerMaxThreshold { get; }
     internal bool CanCharge => HomeAssistant.MaxChargePowerNumber.State is > 0;
+    internal bool IsEmpty => HomeAssistant.StateOfChargeSensor.State <= MinimumStateOfCharge;
+    internal bool IsFull => HomeAssistant.StateOfChargeSensor.State >= 100;
     internal bool CanDischarge => HomeAssistant.MaxDischargePowerNumber.State is > 0;
     internal double CurrentLoad => HomeAssistant.PowerSensor.State ?? 0;
     internal decimal MinimumCapacity => Math.Round(Capacity * MinimumStateOfCharge / 100m, 2);
