@@ -71,7 +71,12 @@ public class Battery : IDisposable
             OnStateOfChargeChanged(e);
 
             if (Convert.ToInt32(e.Sensor.State) != RteStateOfChargeReferencePoint)
+            {
+                State.LastRteStateOfChargeReferencePoint = RteStateOfChargeReferencePoint;
+                State.LastChange = Context.Scheduler.Now;
+                await DebounceSaveAndPublishState();
                 return;
+            }
 
             Context.Logger.LogTrace("{Name}: State of charge is {RteStateOfChargeReferencePoint}%. Calculating Round trip efficiency.", Name, RteStateOfChargeReferencePoint);
             var totalEnergyCharged = HomeAssistant.TotalEnergyChargedSensor.State;
@@ -101,9 +106,6 @@ public class Battery : IDisposable
 
             State.LastTotalEnergyChargedAtRteReferencePoint = totalEnergyCharged.Value;
             State.LastTotalEnergyDischargedAtRteReferencePoint = totalEnergyDischarged.Value;
-            State.LastRteStateOfChargeReferencePoint = RteStateOfChargeReferencePoint;
-            State.LastChange = Context.Scheduler.Now;
-            await DebounceSaveAndPublishState();
         }
         catch (Exception ex)
         {

@@ -237,7 +237,7 @@ public class BatteryTests
 
         //Act
         _testCtx.TriggerStateChange(battery1.PowerSensor, "0");
-        _testCtx.TriggerStateChange(builder._batteryManager.TotalDischargePowerSensor, "500");
+        _testCtx.TriggerStateChange(builder._batteryManager.TotalDischargePowerSensor, "0");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(5));
 
         //Assert
