@@ -34,9 +34,9 @@ public class Battery : IDisposable
 
     internal bool CanControl => State.LastChange == null || State.LastChange.Value.AddSeconds(30) < Context.Scheduler.Now;
     //Might need to average in time here
-    internal bool AboveOptimalDischargePowerMaxThreshold => CanDischarge && -CurrentLoad > OptimalDischargePowerMaxThreshold;
+    internal bool AboveOptimalDischargePowerMaxThreshold => CanDischarge && CurrentLoad > OptimalDischargePowerMaxThreshold;
     //Might need to average in time here
-    internal bool BelowOptimalDischargePowerMinThreshold => CanDischarge && !IsEmpty && -CurrentLoad < OptimalDischargePowerMinThreshold;
+    internal bool BelowOptimalDischargePowerMinThreshold => CanDischarge && !IsEmpty && CurrentLoad < OptimalDischargePowerMinThreshold;
 
     internal DebounceDispatcher? SaveAndPublishStateDebounceDispatcher { get; private set; }
 

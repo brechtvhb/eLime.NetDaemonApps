@@ -154,14 +154,14 @@ public class BatteryTests
             .WithName("Marstek venus E - 1")
             .WithMaxDischargePower(1500)
             .Build();
-        _testCtx.TriggerStateChange(battery1.MaxDischargePowerEntity, "0");
+        _testCtx.TriggerStateChange(battery1.MaxDischargePowerEntity, "1");
 
         var battery2 = new BatteryBuilder()
             .MarstekVenusE()
             .WithName("Marstek venus E - 2")
             .WithMaxDischargePower(1500)
             .Build();
-        _testCtx.TriggerStateChange(battery2.MaxDischargePowerEntity, "0");
+        _testCtx.TriggerStateChange(battery2.MaxDischargePowerEntity, "1");
 
         var builder = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
             .AddBattery(battery1)
@@ -194,7 +194,7 @@ public class BatteryTests
             .WithMaxDischargePower(1500)
             .Build();
         _testCtx.TriggerStateChange(battery2.StateOfChargeSensor, "100");
-        _testCtx.TriggerStateChange(battery2.MaxDischargePowerEntity, "0");
+        _testCtx.TriggerStateChange(battery2.MaxDischargePowerEntity, "1");
 
         var builder = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
             .AddBattery(battery1)
@@ -202,7 +202,7 @@ public class BatteryTests
         _ = await builder.Build();
 
         //Act
-        _testCtx.TriggerStateChange(battery1.PowerSensor, "-1500");
+        _testCtx.TriggerStateChange(battery1.PowerSensor, "1500");
         _testCtx.TriggerStateChange(builder._batteryManager.TotalDischargePowerSensor, "1500");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(5));
 
