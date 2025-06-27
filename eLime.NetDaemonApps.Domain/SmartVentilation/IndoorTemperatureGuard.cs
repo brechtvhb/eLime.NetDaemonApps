@@ -35,8 +35,6 @@ public class IndoorTemperatureGuard : IDisposable
         var isHotInside = climate.Attributes.CurrentTemperature - 1 >= climate.Attributes.Temperature;
         var isVeryHotInside = climate.Attributes.CurrentTemperature - 2 >= climate.Attributes.Temperature;
 
-        _logger.LogInformation("Indoor temperature guard: PostHeatExchangerTemperatureSensor: {PostHeatExchangerTemperatureSensor}. CurrentTemperature: {CurrentTemperature}", PostHeatExchangerTemperatureSensor.State, climate.Attributes.CurrentTemperature);
-
         if (isVeryHotInside && (isColdEnoughOutside || isColdPastHeatExchanger))
             return (VentilationState.Medium, true);
 
