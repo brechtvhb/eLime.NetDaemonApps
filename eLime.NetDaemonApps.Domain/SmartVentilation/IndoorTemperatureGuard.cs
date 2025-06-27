@@ -35,7 +35,7 @@ public class IndoorTemperatureGuard : IDisposable
         var isHotInside = climate.Attributes.CurrentTemperature - 1 >= climate.Attributes.Temperature;
         var isVeryHotInside = climate.Attributes.CurrentTemperature - 2 >= climate.Attributes.Temperature;
 
-        _logger.LogInformation("Indoor temperature guard: isCouldEnoughOutside: {isColdEnoughOutside}. isColdPastHeatExchanger: {isColdPastHeatExchanger}.  isHotInside: {isHotInside}. isVeryHotInside: {isVeryHotInside}", isCouldEnoughOutside, isColdPastHeatExchanger, isHotInside, isVeryHotInside);
+        _logger.LogInformation("Indoor temperature guard: isCouldEnoughOutside: {isColdEnoughOutside}. isColdPastHeatExchanger: {isColdPastHeatExchanger}.  isHotInside: {isHotInside}. isVeryHotInside: {isVeryHotInside}", isColdEnoughOutside, isColdPastHeatExchanger, isHotInside, isVeryHotInside);
 
         if (isVeryHotInside && (isColdEnoughOutside || isColdPastHeatExchanger))
             return (VentilationState.Medium, true);
