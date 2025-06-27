@@ -42,13 +42,13 @@ public class SmartVentilationTests
         A.CallTo(() => _fileStorage.Get<VentilationFileStorage>("SmartVentilation", "SmartVentilation")).Returns(new VentilationFileStorage() { Enabled = true });
 
         _climate = new Climate(_testCtx.HaContext, "climate.comfod");
-        _co2Sensor = new(_testCtx.HaContext, "sensor.co2");
-        _humiditySensor = new(_testCtx.HaContext, "sensor.co2");
-        _awaySensor = new(_testCtx.HaContext, "boolean_sensor.away");
-        _sleepSensor = new(_testCtx.HaContext, "boolean_sensor.kids_sleeping");
-        _summerModeSensor = new(_testCtx.HaContext, "boolean_sensor.summer");
-        _outdoorTemperatureSensor = new(_testCtx.HaContext, "sensor.outdoor_temperature");
-        _outdoorTemperatureSensor = new(_testCtx.HaContext, "sensor.ewt_temperature");
+        _co2Sensor = new NumericSensor(_testCtx.HaContext, "sensor.co2");
+        _humiditySensor = new NumericSensor(_testCtx.HaContext, "sensor.co2");
+        _awaySensor = new BinarySensor(_testCtx.HaContext, "boolean_sensor.away");
+        _sleepSensor = new BinarySensor(_testCtx.HaContext, "boolean_sensor.kids_sleeping");
+        _summerModeSensor = new BinarySensor(_testCtx.HaContext, "boolean_sensor.summer");
+        _outdoorTemperatureSensor = new NumericSensor(_testCtx.HaContext, "sensor.outdoor_temperature");
+        _postEwtTemperatureSensor = new NumericSensor(_testCtx.HaContext, "sensor.ewt_temperature");
     }
 
     [TestMethod]
@@ -257,6 +257,7 @@ public class SmartVentilationTests
 
         //Act
         _testCtx.TriggerStateChange(_outdoorTemperatureSensor, new EntityState { State = "18" });
+        _testCtx.TriggerStateChange(_postEwtTemperatureSensor, new EntityState { State = "19" });
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(61));
 
         //Assert

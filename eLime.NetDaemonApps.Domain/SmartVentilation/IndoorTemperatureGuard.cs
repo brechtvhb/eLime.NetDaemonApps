@@ -30,8 +30,8 @@ public class IndoorTemperatureGuard : IDisposable
         if (!SummerModeSensor.IsOn() || climate.Attributes == null)
             return (null, false);
 
-        var isCouldEnoughOutside = OutdoorTemperatureSensor.State + 3 < climate.Attributes.Temperature;
-        var isColdPastHeatExchanger = PostHeatExchangerTemperatureSensor?.State + 2 < climate.Attributes.Temperature;
+        var isCouldEnoughOutside = OutdoorTemperatureSensor.State + 3 < climate.Attributes.CurrentTemperature;
+        var isColdPastHeatExchanger = PostHeatExchangerTemperatureSensor.State + 2 < climate.Attributes.CurrentTemperature;
         var isHotInside = climate.Attributes.CurrentTemperature - 1 >= climate.Attributes.Temperature;
         var isVeryHotInside = climate.Attributes.CurrentTemperature - 2 >= climate.Attributes.Temperature;
 
