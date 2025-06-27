@@ -72,7 +72,7 @@ internal class BatteryManager : IDisposable
                 await ScaleUpDischarging(averageDischargePower);
             else if (BatteryPickOrderList.Any(x => x.AboveOptimalDischargePowerMaxThreshold))
                 await ScaleUpDischarging(averageDischargePower);
-            else if (Batteries.Count(x => x.CanDischarge) > 1 && BatteryPickOrderList.Any(x => x.BelowOptimalDischargePowerMinThreshold))
+            else if (Batteries.Count(x => x is { CanDischarge: true, IsEmpty: false }) > 1 && BatteryPickOrderList.Any(x => x.BelowOptimalDischargePowerMinThreshold))
                 await ScaleDownDischarging(averageDischargePower);
         }
         else
@@ -104,7 +104,11 @@ internal class BatteryManager : IDisposable
         var optimalChargePowerMinThreshold = Batteries.Where(x => x is { CanDischarge: true, IsEmpty: false }).Sum(x => x.OptimalDischargePowerMinThreshold);
         var batteriesThatCanDischarge = Batteries.Count(x => x is { CanDischarge: true, IsEmpty: false });
         var index = batteriesThatCanDischarge - 1;
-        while (optimalChargePowerMinThreshold >= averageDischargePower && index >= 0)
+
+        if (batteriesThatCanDischarge == 1)
+            return;
+
+        while (optimalChargePowerMinThreshold >= averageDischargePower && index > 0) //index >= 0 would disable discharging on all batteries
         {
             var battery = BatteryPickOrderList.Skip(index).First();
             if (battery is { CanDischarge: true, CanControl: true })
@@ -114,10 +118,6 @@ internal class BatteryManager : IDisposable
             }
 
             index--;
-            batteriesThatCanDischarge--;
-
-            if (batteriesThatCanDischarge == 1)
-                break;
         }
     }
 

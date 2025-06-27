@@ -25,7 +25,7 @@ public class Battery : IDisposable
     internal bool CanCharge => HomeAssistant.MaxChargePowerNumber.State is > 0;
     internal bool IsEmpty => HomeAssistant.StateOfChargeSensor.State <= MinimumStateOfCharge;
     internal bool IsFull => HomeAssistant.StateOfChargeSensor.State >= 100;
-    internal bool CanDischarge => HomeAssistant.MaxDischargePowerNumber.State is > 0;
+    internal bool CanDischarge => HomeAssistant.MaxDischargePowerNumber.State is > 1; //Hopefully a temporary thing, Marstek controller takes power from grid when you set max discharge power to 0, it doesn't when you set it to 1
     internal double CurrentLoad => HomeAssistant.PowerSensor.State ?? 0;
     internal decimal MinimumCapacity => Math.Round(Capacity * MinimumStateOfCharge / 100m, 2);
     internal decimal AvailableCapacity => Capacity - MinimumCapacity;
@@ -36,7 +36,7 @@ public class Battery : IDisposable
     //Might need to average in time here
     internal bool AboveOptimalDischargePowerMaxThreshold => CanDischarge && -CurrentLoad > OptimalDischargePowerMaxThreshold;
     //Might need to average in time here
-    internal bool BelowOptimalDischargePowerMinThreshold => CanDischarge && -CurrentLoad < OptimalDischargePowerMinThreshold;
+    internal bool BelowOptimalDischargePowerMinThreshold => CanDischarge && !IsEmpty && -CurrentLoad < OptimalDischargePowerMinThreshold;
 
     internal DebounceDispatcher? SaveAndPublishStateDebounceDispatcher { get; private set; }
 
@@ -179,7 +179,7 @@ public class Battery : IDisposable
         if (!CanDischarge)
             return;
 
-        HomeAssistant.MaxDischargePowerNumber.Change(0);
+        HomeAssistant.MaxDischargePowerNumber.Change(1);
         State.LastChange = Context.Scheduler.Now;
         Context.Logger.LogInformation("{Battery}: Battery will no longer discharge.", Name);
         await DebounceSaveAndPublishState();

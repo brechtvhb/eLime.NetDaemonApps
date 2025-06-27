@@ -102,7 +102,7 @@ public class BatteryTests
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(35));
 
         //Assert
-        _testCtx.NumberChanged(battery.MaxDischargePowerEntity, 0, Moq.Times.Once);
+        _testCtx.NumberChanged(battery.MaxDischargePowerEntity, 1, Moq.Times.Once);
     }
 
     [TestMethod]
@@ -253,6 +253,7 @@ public class BatteryTests
             .WithName("Marstek venus E - 1")
             .WithMaxDischargePower(1500)
             .Build();
+        _testCtx.TriggerStateChange(battery1.StateOfChargeSensor, "50");
         _testCtx.TriggerStateChange(battery1.MaxDischargePowerEntity, "1500");
 
         var battery2 = new BatteryBuilder()
@@ -260,6 +261,7 @@ public class BatteryTests
             .WithName("Marstek venus E - 2")
             .WithMaxDischargePower(1500)
             .Build();
+        _testCtx.TriggerStateChange(battery1.StateOfChargeSensor, "50");
         _testCtx.TriggerStateChange(battery2.MaxDischargePowerEntity, "1500");
 
         var builder = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
@@ -274,8 +276,8 @@ public class BatteryTests
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(5));
 
         //Assert
-        _testCtx.NumberChanged(battery1.MaxDischargePowerEntity, 0, Moq.Times.Never);
-        _testCtx.NumberChanged(battery2.MaxDischargePowerEntity, 0, Moq.Times.Once);
+        _testCtx.NumberChanged(battery1.MaxDischargePowerEntity, 1, Moq.Times.Never);
+        _testCtx.NumberChanged(battery2.MaxDischargePowerEntity, 1, Moq.Times.Once);
     }
 
     [TestMethod]
