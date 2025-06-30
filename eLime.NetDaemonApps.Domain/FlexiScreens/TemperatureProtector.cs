@@ -1,4 +1,5 @@
-﻿using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
+﻿using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
+using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
 using eLime.NetDaemonApps.Domain.Entities.Weather;
 using Microsoft.Extensions.Logging;
 
@@ -13,6 +14,7 @@ public class TemperatureProtector : IDisposable
 
     private NumericSensor? IndoorTemperatureSensor { get; }
     private Weather? Weather { get; }
+    private BinarySensor? IsCoolingSensor { get; }
 
     public double? MaxIndoorTemperature { get; }
     public double? ConditionalMaxIndoorTemperature { get; }
@@ -25,7 +27,7 @@ public class TemperatureProtector : IDisposable
 
     public TemperatureProtector(ILogger logger, NumericThresholdSensor? solarLuxSensor, double? solarLuxAboveThreshold, double? solarLuxBelowThreshold,
         NumericSensor? indoorTemperatureSensor, double? maxIndoorTemperature, double? maxConditionalIndoorTemperature,
-        Weather? weather, double? conditionalMaxOutdoorTemperaturePrediction, int? conditionalOutdoorTemperaturePredictionDays)
+        Weather? weather, BinarySensor? isCoolingSensor, double? conditionalMaxOutdoorTemperaturePrediction, int? conditionalOutdoorTemperaturePredictionDays)
     {
         Logger = logger;
         SolarLuxSensor = solarLuxSensor;
@@ -51,7 +53,20 @@ public class TemperatureProtector : IDisposable
             ConditionalMaxOutdoorTemperaturePrediction = conditionalMaxOutdoorTemperaturePrediction;
             ConditionalOutdoorTemperaturePredictionDays = conditionalOutdoorTemperaturePredictionDays ?? 3;
         }
+
+        if (isCoolingSensor != null)
+        {
+            IsCoolingSensor = isCoolingSensor;
+            IsCoolingSensor.TurnedOn += CheckDesiredState;
+            IsCoolingSensor.TurnedOff += CheckDesiredState;
+        }
     }
+
+    private void CheckDesiredState(object? o, BinarySensorEventArgs sender)
+    {
+        CheckDesiredState();
+    }
+
 
     private void CheckDesiredState(object? o, NumericSensorEventArgs sender)
     {
@@ -91,6 +106,7 @@ public class TemperatureProtector : IDisposable
         var solarLuxIndicatingSunIsShining = SolarLuxSensor != null && SolarLuxAboveThreshold != null && SolarLuxSensor.State > SolarLuxAboveThreshold;
         var solarLuxIndicatingSunIsNotShining = SolarLuxSensor != null && SolarLuxBelowThreshold != null && SolarLuxSensor.State <= SolarLuxBelowThreshold;
 
+        var isCooling = IsCoolingSensor != null && IsCoolingSensor.IsOn();
         var tooHotInside = IndoorTemperatureSensor != null && MaxIndoorTemperature != null && IndoorTemperatureSensor.State > MaxIndoorTemperature;
         var okInside = IndoorTemperatureSensor != null && MaxIndoorTemperature != null && IndoorTemperatureSensor.State <= MaxIndoorTemperature - 0.5;
 
@@ -99,7 +115,7 @@ public class TemperatureProtector : IDisposable
         var noHotDaysAhead = IndoorTemperatureSensor != null && ConditionalMaxIndoorTemperature != null && averagePredictedTemperature != null && ConditionalMaxOutdoorTemperaturePrediction != null
                            && IndoorTemperatureSensor.State <= ConditionalMaxIndoorTemperature - 0.3 || averagePredictedTemperature <= ConditionalMaxOutdoorTemperaturePrediction;
 
-        if (solarLuxIndicatingSunIsShining && (tooHotInside || hotDaysAhead))
+        if (solarLuxIndicatingSunIsShining && (tooHotInside || hotDaysAhead || isCooling))
         {
             TemperatureProtectorActive = true;
             return (ScreenState.Down, false);
@@ -130,6 +146,13 @@ public class TemperatureProtector : IDisposable
         {
             IndoorTemperatureSensor.Changed -= CheckDesiredState;
             IndoorTemperatureSensor.Dispose();
+        }
+
+        if (IsCoolingSensor != null)
+        {
+            IsCoolingSensor.TurnedOn -= CheckDesiredState;
+            IsCoolingSensor.TurnedOff -= CheckDesiredState;
+            IsCoolingSensor.Dispose();
         }
     }
 }

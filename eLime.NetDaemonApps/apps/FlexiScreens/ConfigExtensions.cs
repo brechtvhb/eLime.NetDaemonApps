@@ -23,12 +23,13 @@ public static class ConfigExtensions
         var shortTermRainForecastSensor = !string.IsNullOrWhiteSpace(config.StormProtection?.ShortTermRainForecastEntity) ? NumericThresholdSensor.Create(ha, config.StormProtection.ShortTermRainForecastEntity, config.StormProtection.ShortTermRainStormStartThreshold, config.StormProtection.ShortTermRainStormEndThreshold) : null;
         var solarLuxSensor = !string.IsNullOrWhiteSpace(config.TemperatureProtection?.SolarLuxSensor) ? NumericThresholdSensor.Create(ha, config.TemperatureProtection.SolarLuxSensor, config.TemperatureProtection.SolarLuxAboveThreshold, config.TemperatureProtection.SolarLuxBelowThreshold) : null;
         var indoorTemperatureSensor = !string.IsNullOrWhiteSpace(config.TemperatureProtection?.IndoorTemperatureSensor) ? NumericSensor.Create(ha, config.TemperatureProtection.IndoorTemperatureSensor) : null;
+        var isCoolingSensor = !string.IsNullOrWhiteSpace(config.TemperatureProtection?.IsCoolingEntity) ? BinarySensor.Create(ha, config.TemperatureProtection.IsCoolingEntity) : null;
         var weather = !string.IsNullOrWhiteSpace(config.TemperatureProtection?.WeatherEntity) ? new Weather(ha, config.TemperatureProtection.WeatherEntity) : null;
         var hourlyWeather = !string.IsNullOrWhiteSpace(config.StormProtection?.HourlyWeatherEntity) ? new Weather(ha, config.StormProtection.HourlyWeatherEntity) : null;
 
         var sunProtector = config.SunProtection.ToEntities(sun, config.Orientation, logger);
         var stormProtector = config.StormProtection.ToEntities(windSpeedSensor, rainRateSensor, shortTermRainForecastSensor, hourlyWeather, logger);
-        var temperatureProtector = config.TemperatureProtection.ToEntities(solarLuxSensor, indoorTemperatureSensor, weather, logger);
+        var temperatureProtector = config.TemperatureProtection.ToEntities(solarLuxSensor, indoorTemperatureSensor, weather, isCoolingSensor, logger);
 
         var manIsAngryProtector = config.MinimumIntervalSinceLastAutomatedAction != null
             ? new ManIsAngryProtector(logger, config.MinimumIntervalSinceLastAutomatedAction)
@@ -72,13 +73,13 @@ public static class ConfigExtensions
         return stormProtector;
     }
 
-    public static TemperatureProtector? ToEntities(this TemperatureProtectionConfig? config, NumericThresholdSensor? solarLuxSensor, NumericSensor? indoorTemperatureSensor, Weather? weather, ILogger logger)
+    public static TemperatureProtector? ToEntities(this TemperatureProtectionConfig? config, NumericThresholdSensor? solarLuxSensor, NumericSensor? indoorTemperatureSensor, Weather? weather, BinarySensor? isCoolingSensor, ILogger logger)
     {
         if (config == null)
             return null;
 
         var temperatureProtector = new TemperatureProtector(logger, solarLuxSensor, config.SolarLuxAboveThreshold, config.SolarLuxBelowThreshold, indoorTemperatureSensor, config.MaxIndoorTemperature,
-            config.ConditionalMaxIndoorTemperature, weather, config.ConditionalOutdoorTemperaturePrediction, config.ConditionalOutdoorTemperaturePredictionDays);
+            config.ConditionalMaxIndoorTemperature, weather, isCoolingSensor, config.ConditionalOutdoorTemperaturePrediction, config.ConditionalOutdoorTemperaturePredictionDays);
 
         return temperatureProtector;
     }

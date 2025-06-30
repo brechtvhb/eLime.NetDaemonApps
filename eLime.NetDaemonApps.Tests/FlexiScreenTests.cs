@@ -43,6 +43,7 @@ public class FlexiScreenTests
     private WeatherAttributes _windyForecast;
 
     private BinarySensor _sleepSensor;
+    private BinarySensor _isCoolingSensor;
 
     [TestInitialize]
     public void Init()
@@ -127,6 +128,8 @@ public class FlexiScreenTests
         _sleepSensor = BinarySensor.Create(_testCtx.HaContext, "binary_sensor.kids_sleeping");
         _testCtx.TriggerStateChange(_sleepSensor, new EntityState { State = "off" });
 
+        _isCoolingSensor = BinarySensor.Create(_testCtx.HaContext, "binary_sensor.is_cooling");
+        _testCtx.TriggerStateChange(_isCoolingSensor, new EntityState { State = "off" });
     }
 
     [TestMethod]
@@ -445,6 +448,31 @@ public class FlexiScreenTests
         //Assert
         _testCtx.VerifyScreenGoesDown(_cover, Moq.Times.Once);
     }
+
+    [TestMethod]
+    public void SunInPosition_WithRadiation_And_Cooling_Closes_Screen()
+    {
+        // Arrange
+        _testCtx.TriggerStateChange(_cover, "open");
+        _testCtx.TriggerStateChangeWithAttributes(_sun, "above_Horizon", new SunAttributes { Azimuth = 240, Elevation = 20 });
+        _testCtx.TriggerStateChange(_solarLuxSensor, "20000");
+        _testCtx.TriggerStateChange(_indoorTemperatureSensor, "20");
+
+        var screen = new ScreenBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage)
+            .WithCover(_cover)
+            .WithSun(_sun)
+            .WithSolarLuxSensor(_solarLuxSensor)
+            .WithIndoorTemperatureSensor(_indoorTemperatureSensor, 23.5d)
+            .WithIsCoolingSensor(_isCoolingSensor)
+            .Build();
+
+        //Act
+        _testCtx.TriggerStateChange(_isCoolingSensor, "on");
+
+        //Assert
+        _testCtx.VerifyScreenGoesDown(_cover, Moq.Times.Once);
+    }
+
 
     [TestMethod]
     public void SunOutOfPosition_WithRadiation_And_High_Indoor_Temperature_Opens_Screen()

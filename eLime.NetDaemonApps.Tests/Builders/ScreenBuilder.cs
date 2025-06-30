@@ -33,6 +33,7 @@ public class ScreenBuilder
     private Weather? _weather;
     private Weather? _hourluWeather;
     private BinarySensor? _sleepSensor;
+    private BinarySensor? _isCoolingSensor;
 
     public ScreenBuilder(AppTestContext testCtx, ILogger logger, IMqttEntityManager mqttEntityManager, IFileStorage fileStorage)
     {
@@ -110,6 +111,15 @@ public class ScreenBuilder
         return this;
     }
 
+    public ScreenBuilder WithIsCoolingSensor(BinarySensor isCoolingSensor)
+    {
+        _isCoolingSensor = isCoolingSensor;
+        _config.TemperatureProtection ??= new TemperatureProtectionConfig();
+        _config.TemperatureProtection.IsCoolingEntity = isCoolingSensor.EntityId;
+        return this;
+    }
+
+
     public ScreenBuilder WithWeatherForecast(Weather weather, double? conditionalMaxIndoorTemperature, double? conditionalMaxOutdoorTemperature, int? conditionalPredictionDays)
     {
         _weather = weather;
@@ -169,10 +179,11 @@ public class ScreenBuilder
         var hourlyWeather = _hourluWeather ?? (_config.StormProtection?.HourlyWeatherEntity != null ? new Weather(_testCtx.HaContext, _config.StormProtection.HourlyWeatherEntity) : null);
 
         var sleepSensor = _sleepSensor ?? (_config.SleepSensor != null ? BinarySensor.Create(_testCtx.HaContext, _config.SleepSensor) : null);
+        var isCoolingSensor = _isCoolingSensor ?? (_config.TemperatureProtection?.IsCoolingEntity != null ? BinarySensor.Create(_testCtx.HaContext, _config.TemperatureProtection.IsCoolingEntity) : null);
 
         var sunProtector = _config.SunProtection.ToEntities(sun, _config.Orientation, _logger);
         var stormProtector = _config.StormProtection.ToEntities(windSpeedSensor, rainRateSensor, forecastRainSensor, hourlyWeather, _logger);
-        var temperatureProtector = _config.TemperatureProtection.ToEntities(solarLuxSensor, indoorTemperatureSensor, weather, _logger);
+        var temperatureProtector = _config.TemperatureProtection.ToEntities(solarLuxSensor, indoorTemperatureSensor, weather, isCoolingSensor, _logger);
         var manIsAngryProtector = _config.MinimumIntervalSinceLastAutomatedAction != null ? new ManIsAngryProtector(_logger, _config.MinimumIntervalSinceLastAutomatedAction) : new ManIsAngryProtector(_logger, TimeSpan.FromMinutes(15));
         var womanIsAngryProtector = _config.MinimumIntervalSinceLastManualAction != null ? new WomanIsAngryProtector(_logger, _config.MinimumIntervalSinceLastManualAction) : new WomanIsAngryProtector(_logger, TimeSpan.FromHours(1));
         var frostProtector = new FrostProtector(weather);
