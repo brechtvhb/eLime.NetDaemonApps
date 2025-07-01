@@ -67,10 +67,11 @@ public class GridMonitor : IDisposable, IGridMonitor
 
     public double CurrentAverageDemand => HomeAssistant.CurrentAverageDemandSensor.State * 1000 ?? 0;
 
-    private readonly FixedSizeConcurrentQueue<(DateTimeOffset Moment, double Value)> _lastImportValues = new(200);
-    private readonly FixedSizeConcurrentQueue<(DateTimeOffset Moment, double Value)> _lastExportValues = new(200);
-    private readonly FixedSizeConcurrentQueue<(DateTimeOffset Moment, double Value)> _lastBatteryChargePowerValues = new(200);
-    private readonly FixedSizeConcurrentQueue<(DateTimeOffset Moment, double Value)> _lastBatteryDischargePowerValues = new(200);
+    //600 = at least 10 minutes of data (as we receive max one update per second).
+    private readonly FixedSizeConcurrentQueue<(DateTimeOffset Moment, double Value)> _lastImportValues = new(600);
+    private readonly FixedSizeConcurrentQueue<(DateTimeOffset Moment, double Value)> _lastExportValues = new(600);
+    private readonly FixedSizeConcurrentQueue<(DateTimeOffset Moment, double Value)> _lastBatteryChargePowerValues = new(600);
+    private readonly FixedSizeConcurrentQueue<(DateTimeOffset Moment, double Value)> _lastBatteryDischargePowerValues = new(600);
 
     public static GridMonitor Create(EnergyManagerConfiguration configuration)
     {
@@ -121,33 +122,34 @@ public class GridMonitor : IDisposable, IGridMonitor
         _lastBatteryDischargePowerValues.Enqueue((Context.Scheduler.Now, e.Sensor.State.Value));
     }
 
-    public double AverageImportSince(TimeSpan timeSpan)
+    public double AverageImport(TimeSpan timeSpan)
     {
         var values = _lastImportValues.Where(x => x.Moment.Add(timeSpan) > Context.Scheduler.Now).Select(x => x.Value).ToList();
         return values.Count == 0 ? CurrentPowerImport : Math.Round(values.Average());
     }
 
-    public double AverageExportSince(TimeSpan timeSpan)
+    public double AverageExport(TimeSpan timeSpan)
     {
         var values = _lastExportValues.Where(x => x.Moment.Add(timeSpan) > Context.Scheduler.Now).Select(x => x.Value).ToList();
         return values.Count == 0 ? CurrentPowerExport : Math.Round(values.Average());
     }
 
-    public double AverageBatteryChargePowerSince(TimeSpan timeSpan)
+    public double AverageBatteriesChargingPower(TimeSpan timeSpan)
     {
         var values = _lastBatteryChargePowerValues.Where(x => x.Moment.Add(timeSpan) > Context.Scheduler.Now).Select(x => x.Value).ToList();
         return values.Count == 0 ? CurrentBatteryChargePower : Math.Round(values.Average());
     }
 
-    public double AverageBatteryDischargePowerSince(TimeSpan timeSpan)
+    public double AverageBatteriesDischargingPower(TimeSpan timeSpan)
     {
         var values = _lastBatteryDischargePowerValues.Where(x => x.Moment.Add(timeSpan) > Context.Scheduler.Now).Select(x => x.Value).ToList();
         return values.Count == 0 ? CurrentBatteryDischargePower : Math.Round(values.Average());
     }
 
 
-    public double AverageLoadSince(TimeSpan timeSpan) => AverageImportSince(timeSpan) - AverageExportSince(timeSpan);
-    public double AverageLoadMinusBatteriesSince(TimeSpan timeSpan) => AverageLoadSince(timeSpan) - AverageBatteryChargePowerSince(timeSpan) + AverageBatteryDischargePowerSince(timeSpan);
+    public double AverageLoad(TimeSpan timeSpan) => AverageImport(timeSpan) - AverageExport(timeSpan);
+    public double AverageBatteriesLoad(TimeSpan timeSpan) => AverageBatteriesChargingPower(timeSpan) - AverageBatteriesDischargingPower(timeSpan);
+    public double AverageLoadMinusBatteries(TimeSpan timeSpan) => AverageLoad(timeSpan) - AverageBatteriesLoad(timeSpan);
 
     public void Dispose()
     {

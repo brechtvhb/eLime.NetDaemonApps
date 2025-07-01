@@ -78,7 +78,7 @@ internal class BatteryManager : IDisposable
         else
         {
             foreach (var battery in Batteries.Where(battery => battery is { CanDischarge: true, CanControl: true }))
-                await battery.DisableDischarging();
+                await battery.DisableDischarging(reason: "Not allowed to discharge due to other consumers running");
         }
     }
 
@@ -91,7 +91,7 @@ internal class BatteryManager : IDisposable
         {
             var battery = BatteryPickOrderList.Where(x => !x.IsEmpty).Skip(index).First();
             if (battery is { CanDischarge: false, CanControl: true })
-                await battery.EnableDischarging();
+                await battery.EnableDischarging(reason: "Average discharge power too high");
 
             if (!battery.IsEmpty)
                 optimalChargePowerMaxThreshold += battery.OptimalChargePowerMaxThreshold;
@@ -113,7 +113,7 @@ internal class BatteryManager : IDisposable
             var battery = BatteryPickOrderList.Skip(index).First();
             if (battery is { CanDischarge: true, CanControl: true })
             {
-                await battery.DisableDischarging();
+                await battery.DisableDischarging(reason: "Average discharge power too low");
                 optimalChargePowerMinThreshold -= battery.OptimalDischargePowerMinThreshold;
             }
 

@@ -7,8 +7,8 @@ public interface IGridMonitor : IDisposable
     double CurrentAverageDemand { get; }
     double PeakLoad { get; }
 
-    double AverageImportSince(TimeSpan timeSpan);
-    double AverageExportSince(TimeSpan timeSpan);
-    double AverageLoadSince(TimeSpan timeSpan);
-    double AverageLoadMinusBatteriesSince(TimeSpan timeSpan);
+    double AverageImport(TimeSpan timeSpan);
+    double AverageExport(TimeSpan timeSpan);
+    double AverageLoad(TimeSpan timeSpan);
+    double AverageLoadMinusBatteries(TimeSpan timeSpan);
 }

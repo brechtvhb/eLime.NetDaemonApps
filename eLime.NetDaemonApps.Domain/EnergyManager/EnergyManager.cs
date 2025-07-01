@@ -182,7 +182,7 @@ public class EnergyManager : IDisposable
     private double StartConsumersIfNeeded(double dynamicLoadNetChange)
     {
         var preStartEstimatedLoad = GridMonitor.CurrentLoadMinusBatteries + dynamicLoadNetChange;
-        var preStartEstimatedAveragedLoad = GridMonitor.AverageLoadMinusBatteriesSince(_minimumChangeInterval) + dynamicLoadNetChange;
+        var preStartEstimatedAveragedLoad = GridMonitor.AverageLoadMinusBatteries(_minimumChangeInterval) + dynamicLoadNetChange;
         var startNetChange = 0d;
 
         var runningConsumers = Consumers.Where(x => x.State.State == EnergyConsumerState.Running).ToList();
@@ -252,7 +252,7 @@ public class EnergyManager : IDisposable
     private double StopConsumersIfNeeded(double dynamicLoadNetChange, double startLoadNetChange)
     {
         var estimatedLoad = GridMonitor.CurrentLoadMinusBatteries + dynamicLoadNetChange + startLoadNetChange;
-        var estimatedAverageLoad = GridMonitor.AverageLoadMinusBatteriesSince(TimeSpan.FromMinutes(3)) + dynamicLoadNetChange + startLoadNetChange;
+        var estimatedAverageLoad = GridMonitor.AverageLoadMinusBatteries(TimeSpan.FromMinutes(3)) + dynamicLoadNetChange + startLoadNetChange;
         var stopNetChange = 0d;
 
         var consumersThatNoLongerNeedEnergy = Consumers.Where(x => x is { State.State: EnergyConsumerState.Off, IsRunning: true });
@@ -323,7 +323,7 @@ public class EnergyManager : IDisposable
     private async Task ManageBatteriesIfNeeded()
     {
         var runningDynamicLoadConsumers = Consumers.Where(x => x.IsRunning).OfType<IDynamicLoadConsumer>().ToList();
-        var averageDischargePower = GridMonitor.AverageBatteryDischargePowerSince(TimeSpan.FromMinutes(2));
+        var averageDischargePower = GridMonitor.AverageBatteriesDischargingPower(TimeSpan.FromMinutes(2));
         await BatteryManager.ManageBatteryPowerSettings(runningDynamicLoadConsumers.Any(), runningDynamicLoadConsumers.Any(x => x.AllowBatteryPower == AllowBatteryPower.Yes), averageDischargePower);
     }
 

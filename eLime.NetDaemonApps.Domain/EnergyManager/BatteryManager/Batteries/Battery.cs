@@ -174,25 +174,25 @@ public class Battery : IDisposable
         await DebounceSaveAndPublishState();
     }
 
-    public async Task DisableDischarging()
+    public async Task DisableDischarging(string reason)
     {
         if (!CanDischarge)
             return;
 
         HomeAssistant.MaxDischargePowerNumber.Change(1);
         State.LastChange = Context.Scheduler.Now;
-        Context.Logger.LogInformation("{Battery}: Battery will no longer discharge.", Name);
+        Context.Logger.LogInformation("{Battery}: Battery will no longer discharge. Reason: {reason}.", Name, reason);
         await DebounceSaveAndPublishState();
     }
 
-    public async Task EnableDischarging()
+    public async Task EnableDischarging(string reason)
     {
         if (CanDischarge)
             return;
 
         HomeAssistant.MaxDischargePowerNumber.Change(MaxDischargePower);
         State.LastChange = Context.Scheduler.Now;
-        Context.Logger.LogInformation("{Battery}: Battery is allowed to discharge at max {maxDisChargePower}W.", Name, MaxDischargePower);
+        Context.Logger.LogInformation("{Battery}: Battery is allowed to discharge at max {maxDisChargePower}W. Reason: {reason}.", Name, MaxDischargePower, reason);
         await DebounceSaveAndPublishState();
     }
 

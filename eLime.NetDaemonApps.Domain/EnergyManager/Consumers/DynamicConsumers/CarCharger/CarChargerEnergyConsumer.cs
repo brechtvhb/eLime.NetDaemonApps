@@ -127,8 +127,8 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 
         var currentLoad = AllowBatteryPower == AllowBatteryPower.Yes ? gridMonitor.CurrentLoad : gridMonitor.CurrentLoadMinusBatteries;
         var averagedLoad = AllowBatteryPower == AllowBatteryPower.Yes
-            ? gridMonitor.AverageLoadSince(MinimumRebalancingInterval.Subtract(TimeSpan.FromSeconds(10)))
-            : gridMonitor.AverageLoadMinusBatteriesSince(MinimumRebalancingInterval.Subtract(TimeSpan.FromSeconds(10)));
+            ? gridMonitor.AverageLoad(MinimumRebalancingInterval.Subtract(TimeSpan.FromSeconds(10)))
+            : gridMonitor.AverageLoadMinusBatteries(MinimumRebalancingInterval.Subtract(TimeSpan.FromSeconds(10)));
 
         var currentAdjustment = GetBalancingAdjustedGridCurrent(currentLoad + totalNetChange, averagedLoad + totalNetChange, gridMonitor.PeakLoad, gridMonitor.CurrentAverageDemand);
 
