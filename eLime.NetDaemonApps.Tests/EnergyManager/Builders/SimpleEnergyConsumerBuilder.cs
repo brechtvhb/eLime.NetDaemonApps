@@ -12,6 +12,8 @@ public class SimpleEnergyConsumerBuilder
     private string _criticallyNeeded = "boolean_sensor.weather_is_freezing";
     private double _switchOnLoad = -40;
     private double _switchOffLoad = 100;
+    private List<LoadTimeFrames> _loadTimeFramesToCheckOnStart = [];
+    private List<LoadTimeFrames> _loadTimeFramesToCheckOnStop = [];
 
     private TimeSpan? _minimumRuntime;
     private TimeSpan? _maximumRuntime;
@@ -60,15 +62,16 @@ public class SimpleEnergyConsumerBuilder
         return this;
     }
 
-    public SimpleEnergyConsumerBuilder WithLoad(double switchOnLoad, double switchOffLoad, double peakLoad)
+    public SimpleEnergyConsumerBuilder WithLoad(double switchOn, List<LoadTimeFrames> loadTimeFramesToCheckOnStart, double switchOff, List<LoadTimeFrames> loadTimeFramesToCheckOnStop, double peakLoad)
     {
-        _switchOnLoad = switchOnLoad;
-        _switchOffLoad = switchOffLoad;
+        _switchOnLoad = switchOn;
+        _loadTimeFramesToCheckOnStart = loadTimeFramesToCheckOnStart;
+        _switchOffLoad = switchOff;
+        _loadTimeFramesToCheckOnStop = loadTimeFramesToCheckOnStop;
         _peakLoad = peakLoad;
 
         return this;
     }
-
 
     public SimpleEnergyConsumerBuilder AddTimeWindow(string? isActive, TimeSpan start, TimeSpan end)
     {
@@ -81,6 +84,11 @@ public class SimpleEnergyConsumerBuilder
         return this;
     }
 
+    public static SimpleEnergyConsumerBuilder PondPump()
+    {
+        return new SimpleEnergyConsumerBuilder()
+            .WithLoad(-40, [LoadTimeFrames.Now, LoadTimeFrames.Last30Seconds], 100, [LoadTimeFrames.Now, LoadTimeFrames.Last30Seconds], 42);
+    }
     public EnergyConsumerConfig Build()
     {
         var x = new EnergyConsumerConfig()
@@ -91,6 +99,8 @@ public class SimpleEnergyConsumerBuilder
             CriticallyNeededEntity = _criticallyNeeded,
             SwitchOnLoad = _switchOnLoad,
             SwitchOffLoad = _switchOffLoad,
+            LoadTimeFramesToCheckOnStart = _loadTimeFramesToCheckOnStart,
+            LoadTimeFramesToCheckOnStop = _loadTimeFramesToCheckOnStop,
             MinimumRuntime = _minimumRuntime,
             MaximumRuntime = _maximumRuntime,
             MinimumTimeout = _minimumTimeout,

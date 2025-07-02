@@ -8,13 +8,16 @@ namespace eLime.NetDaemonApps.Tests.EnergyManager.Builders;
 public class CarChargerEnergyConsumerBuilder
 {
     private string _name;
-    private List<string> _consumerGroups = [];
+    private readonly List<string> _consumerGroups = [];
 
     private string _powerEntity;
     private string? _criticallyNeeded;
     private double _switchOnLoad;
     private double _switchOffLoad;
-    private List<DynamicEnergyConsumerBalancingMethodBasedLoads> _dynamicBalancingMethodBasedLoads = [];
+    private List<LoadTimeFrames> _loadTimeFramesToCheckOnStart = [];
+    private List<LoadTimeFrames> _loadTimeFramesToCheckOnStop = [];
+
+    private readonly List<DynamicEnergyConsumerBalancingMethodBasedLoads> _dynamicBalancingMethodBasedLoads = [];
     private TimeSpan? _minimumRuntime;
     private TimeSpan? _maximumRuntime;
     private TimeSpan? _minimumTimeout;
@@ -35,7 +38,7 @@ public class CarChargerEnergyConsumerBuilder
         return new CarChargerEnergyConsumerBuilder()
             .WithName("Veton")
             .WithStateSensor("sensor.veton_state")
-            .WithLoads(-800, 1000)
+            .WithLoads(-800, [LoadTimeFrames.Now, LoadTimeFrames.Last5Minutes], 1000, [LoadTimeFrames.Now, LoadTimeFrames.Last30Seconds])
             .WithCurrents("input_number.veton_current", 6, 16, 5)
             .WithVoltage("sensor.veton_voltage")
             .WithPowerSensor("sensor.veton_power")
@@ -47,7 +50,7 @@ public class CarChargerEnergyConsumerBuilder
         return new CarChargerEnergyConsumerBuilder()
             .WithName("Veton")
             .WithStateSensor("sensor.veton_state")
-            .WithLoads(-800, 1000)
+            .WithLoads(-800, [LoadTimeFrames.Now, LoadTimeFrames.Last5Minutes], 1000, [LoadTimeFrames.Now, LoadTimeFrames.Last5Minutes])
             .WithCurrents("input_number.veton_current", 6, 16, 5)
             .WithVoltage("sensor.veton_voltage")
             .WithPowerSensor("sensor.veton_power")
@@ -107,10 +110,12 @@ public class CarChargerEnergyConsumerBuilder
         return this;
     }
 
-    public CarChargerEnergyConsumerBuilder WithLoads(double switchOn, double switchOff)
+    public CarChargerEnergyConsumerBuilder WithLoads(double switchOn, List<LoadTimeFrames> loadTimeFramesToCheckOnStart, double switchOff, List<LoadTimeFrames> loadTimeFramesToCheckOnStop)
     {
         _switchOnLoad = switchOn;
         _switchOffLoad = switchOff;
+        _loadTimeFramesToCheckOnStart = loadTimeFramesToCheckOnStart;
+        _loadTimeFramesToCheckOnStop = loadTimeFramesToCheckOnStop;
         return this;
     }
 
@@ -169,6 +174,8 @@ public class CarChargerEnergyConsumerBuilder
             CriticallyNeededEntity = _criticallyNeeded,
             SwitchOnLoad = _switchOnLoad,
             SwitchOffLoad = _switchOffLoad,
+            LoadTimeFramesToCheckOnStart = _loadTimeFramesToCheckOnStart,
+            LoadTimeFramesToCheckOnStop = _loadTimeFramesToCheckOnStop,
             DynamicBalancingMethodBasedLoads = _dynamicBalancingMethodBasedLoads,
             MinimumRuntime = _minimumRuntime,
             MaximumRuntime = _maximumRuntime,

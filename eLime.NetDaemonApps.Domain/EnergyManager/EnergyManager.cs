@@ -27,7 +27,7 @@ public class EnergyManager : IDisposable
 
     internal GridMonitor GridMonitor { get; set; }
     internal List<EnergyConsumer> Consumers { get; } = [];
-    internal Domain.EnergyManager.BatteryManager.BatteryManager BatteryManager { get; set; }
+    internal BatteryManager.BatteryManager BatteryManager { get; set; }
     private readonly TimeSpan _minimumChangeInterval = TimeSpan.FromSeconds(20);
 
     private DateTimeOffset _lastChange = DateTimeOffset.MinValue;
@@ -132,8 +132,9 @@ public class EnergyManager : IDisposable
 
         try
         {
+            var consumerLoadCorrections = CalculateConsumerLoadCorrections();
             var dynamicNetChange = AdjustDynamicLoadsIfNeeded();
-            var startNetChange = StartConsumersIfNeeded(dynamicNetChange);
+            var startNetChange = StartConsumersIfNeeded(consumerLoadCorrections, dynamicNetChange);
             var stopNetChange = StopConsumersIfNeeded(dynamicNetChange, startNetChange);
             await ManageBatteriesIfNeeded();
 
@@ -157,7 +158,20 @@ public class EnergyManager : IDisposable
         {
             _semaphore.Release();
         }
+    }
 
+    private Dictionary<LoadTimeFrames, double> CalculateConsumerLoadCorrections()
+    {
+        var correctedLoads = new Dictionary<LoadTimeFrames, double>
+        {
+            { LoadTimeFrames.Now, 0.0 },
+            { LoadTimeFrames.Last30Seconds, Consumers.Select(x => x.AverageLoadCorrection(TimeSpan.FromSeconds(30))).Sum() },
+            { LoadTimeFrames.LastMinute, Consumers.Select(x => x.AverageLoadCorrection(TimeSpan.FromMinutes(1))).Sum() },
+            { LoadTimeFrames.Last2Minutes, Consumers.Select(x => x.AverageLoadCorrection(TimeSpan.FromMinutes(2))).Sum() },
+            { LoadTimeFrames.Last5Minutes, Consumers.Select(x => x.AverageLoadCorrection(TimeSpan.FromMinutes(5))).Sum()}
+        };
+
+        return correctedLoads;
     }
 
     private double AdjustDynamicLoadsIfNeeded()
@@ -179,70 +193,25 @@ public class EnergyManager : IDisposable
         return dynamicNetChange;
     }
 
-    private double StartConsumersIfNeeded(double dynamicLoadNetChange)
+    private double StartConsumersIfNeeded(Dictionary<LoadTimeFrames, double> consumerLoadCorrections, double dynamicLoadNetChange)
     {
-        var preStartEstimatedLoad = GridMonitor.CurrentLoadMinusBatteries + dynamicLoadNetChange;
-        var preStartEstimatedAveragedLoad = GridMonitor.AverageLoadMinusBatteries(_minimumChangeInterval) + dynamicLoadNetChange;
         var startNetChange = 0d;
 
-        var runningConsumers = Consumers.Where(x => x.State.State == EnergyConsumerState.Running).ToList();
         //Keep remaining peak load for running consumers in mind (eg: to avoid turning on devices when washer is prewashing but still has to heat).
-        var expectedLoad = Math.Round(runningConsumers.Where(x => x.PeakLoad > x.CurrentLoad).Sum(x => (x.PeakLoad - x.CurrentLoad)), 0);
-        var estimatedLoad = preStartEstimatedLoad + expectedLoad;
-        var estimatedAverageLoad = preStartEstimatedAveragedLoad + expectedLoad;
+        var expectedLoad = Math.Round(Consumers.Where(x => x.State.State == EnergyConsumerState.Running && x.PeakLoad > x.CurrentLoad).Sum(x => x.PeakLoad - x.CurrentLoad), 0);
 
-        var consumersThatCriticallyNeedEnergy = Consumers.Where(x => x is { State.State: EnergyConsumerState.CriticallyNeedsEnergy });
+        var consumers = Consumers.Where(x => x.State.State is EnergyConsumerState.NeedsEnergy or EnergyConsumerState.CriticallyNeedsEnergy).OrderByDescending(x => x.State.State);
 
-        foreach (var criticalConsumer in consumersThatCriticallyNeedEnergy)
+        foreach (var consumer in consumers)
         {
-            if (!criticalConsumer.CanStart())
-                continue;
-
-            var dynamicLoadThatCanBeScaledDownOnBehalfOf = GetDynamicLoadThatCanBeScaledDownOnBehalfOf(criticalConsumer, dynamicLoadNetChange);
-
-            //Will not turn on a load that would exceed current grid import peak
-            if (estimatedAverageLoad - dynamicLoadThatCanBeScaledDownOnBehalfOf + criticalConsumer.PeakLoad > GridMonitor.PeakLoad)
-                continue;
-            if (estimatedLoad - dynamicLoadThatCanBeScaledDownOnBehalfOf + criticalConsumer.PeakLoad > GridMonitor.PeakLoad)
-                continue;
-
-            criticalConsumer.TurnOn();
-
-            Context.Logger.LogDebug("{Consumer}: Started consumer, consumer is in critical need of energy. Current load/estimated load (dynamicLoadThatCanBeScaledDownOnBehalfOf) was: {CurrentLoad}/{EstimatedLoad} ({DynamicLoadThatCanBeScaledDownOnBehalfOf}). Switch-on/peak load of consumer is: {SwitchOnLoad}/{PeakLoad}.", criticalConsumer.Name, GridMonitor.CurrentLoad, estimatedAverageLoad, dynamicLoadThatCanBeScaledDownOnBehalfOf, criticalConsumer.SwitchOnLoad, criticalConsumer.PeakLoad);
-            estimatedLoad += criticalConsumer.PeakLoad;
-            estimatedAverageLoad += criticalConsumer.PeakLoad;
-            startNetChange += criticalConsumer.PeakLoad;
-        }
-
-        var consumersThatNeedEnergy = Consumers.Where(x => x is { State.State: EnergyConsumerState.NeedsEnergy });
-        foreach (var consumer in consumersThatNeedEnergy)
-        {
-            if (!consumer.CanStart())
-                continue;
-
             var dynamicLoadThatCanBeScaledDownOnBehalfOf = GetDynamicLoadThatCanBeScaledDownOnBehalfOf(consumer, dynamicLoadNetChange);
 
-            if (consumer is IDynamicLoadConsumer)
-            {
-                if (preStartEstimatedLoad - dynamicLoadThatCanBeScaledDownOnBehalfOf >= consumer.SwitchOnLoad)
-                    continue;
-                if (preStartEstimatedAveragedLoad - dynamicLoadThatCanBeScaledDownOnBehalfOf >= consumer.SwitchOnLoad)
-                    continue;
-            }
-            else
-            {
-                //Will not turn on a consumer when it is below the allowed switch on load
-                if (estimatedLoad - dynamicLoadThatCanBeScaledDownOnBehalfOf >= consumer.SwitchOnLoad)
-                    continue;
-                if (estimatedAverageLoad - dynamicLoadThatCanBeScaledDownOnBehalfOf >= consumer.SwitchOnLoad)
-                    continue;
-            }
+            if (!consumer.CanStart(GridMonitor, consumerLoadCorrections, expectedLoad, dynamicLoadNetChange, dynamicLoadThatCanBeScaledDownOnBehalfOf, startNetChange))
+                continue;
 
             consumer.TurnOn();
 
-            Context.Logger.LogDebug("{Consumer}: Will start consumer. Current load/estimated (expectedLoad/dynamicLoadThatCanBeScaledDownOnBehalfOf) load was: {CurrentLoad}/{EstimatedLoad} ({ExpectedLoad}/{DynamicLoadThatCanBeScaledDownOnBehalfOf}). Switch-on/peak load of consumer is: {SwitchOnLoad}/{PeakLoad}. Last change was at: {LastChange}", consumer.Name, GridMonitor.CurrentLoad, estimatedLoad, expectedLoad, dynamicLoadThatCanBeScaledDownOnBehalfOf, consumer.SwitchOnLoad, consumer.PeakLoad, _lastChange.ToString("O"));
-            estimatedLoad += consumer.PeakLoad;
-            estimatedAverageLoad += consumer.PeakLoad;
+            Context.Logger.LogDebug("{Consumer}: Started consumer, state is {EnergyConsumerState}. Current load/estimated load (dynamicLoadThatCanBeScaledDownOnBehalfOf) was: {CurrentLoad} ({DynamicLoadThatCanBeScaledDownOnBehalfOf}). Switch-on/peak load of consumer is: {SwitchOnLoad}/{PeakLoad}.", consumer.Name, consumer.State.State, GridMonitor.CurrentLoad, dynamicLoadThatCanBeScaledDownOnBehalfOf, consumer.SwitchOnLoad, consumer.PeakLoad);
             startNetChange += consumer.PeakLoad;
         }
 
@@ -252,7 +221,8 @@ public class EnergyManager : IDisposable
     private double StopConsumersIfNeeded(double dynamicLoadNetChange, double startLoadNetChange)
     {
         var estimatedLoad = GridMonitor.CurrentLoadMinusBatteries + dynamicLoadNetChange + startLoadNetChange;
-        var estimatedAverageLoad = GridMonitor.AverageLoadMinusBatteries(TimeSpan.FromMinutes(3)) + dynamicLoadNetChange + startLoadNetChange;
+        var loadCorrectionForConsumers = Consumers.Sum(x => x.AverageLoadCorrection(TimeSpan.FromMinutes(3)));
+        var estimatedAverageLoad = GridMonitor.AverageLoadMinusBatteries(TimeSpan.FromMinutes(3)) + loadCorrectionForConsumers + dynamicLoadNetChange + startLoadNetChange;
         var stopNetChange = 0d;
 
         var consumersThatNoLongerNeedEnergy = Consumers.Where(x => x is { State.State: EnergyConsumerState.Off, IsRunning: true });

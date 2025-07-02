@@ -1,9 +1,12 @@
 ﻿using eLime.NetDaemonApps.Domain.EnergyManager.Consumers.Cooling;
+using eLime.NetDaemonApps.Domain.EnergyManager.Consumers.DynamicConsumers;
 using eLime.NetDaemonApps.Domain.EnergyManager.Consumers.DynamicConsumers.CarCharger;
 using eLime.NetDaemonApps.Domain.EnergyManager.Consumers.Simple;
 using eLime.NetDaemonApps.Domain.EnergyManager.Consumers.Triggered;
+using eLime.NetDaemonApps.Domain.EnergyManager.Grid;
 using eLime.NetDaemonApps.Domain.Helper;
 using Microsoft.Extensions.Logging;
+using NetDaemon.Extensions.Scheduler;
 using System.Reactive.Concurrency;
 
 #pragma warning disable CS8618, CS9264
@@ -21,7 +24,6 @@ public abstract class EnergyConsumer : IDisposable
     internal abstract double PeakLoad { get; }
     public string Name { get; }
 
-    internal double CurrentLoad => HomeAssistant.PowerConsumptionSensor.State ?? 0;
     internal List<TimeWindow> TimeWindows { get; init; }
     internal TimeSpan? MinimumRuntime { get; init; }
     internal TimeSpan? MaximumRuntime { get; init; }
@@ -33,10 +35,40 @@ public abstract class EnergyConsumer : IDisposable
 
     protected readonly double _switchOffLoad;
     internal virtual double SwitchOffLoad => _switchOffLoad;
+    internal List<LoadTimeFrames> LoadTimeFramesToCheckOnStart { get; init; }
+    internal List<LoadTimeFrames> LoadTimeFramesToCheckOnStop { get; init; }
+
     internal List<string> ConsumerGroups { get; init; }
 
     internal DebounceDispatcher? SaveAndPublishStateDebounceDispatcher { get; private set; }
     public IDisposable? StopTimer { get; set; }
+
+    protected IDisposable? ConsumptionMonitorTask { get; set; }
+    private double _lastKnownValidPowerConsumptionValue;
+    internal double CurrentLoad
+    {
+        get
+        {
+            if (HomeAssistant.PowerConsumptionSensor.State != null)
+                _lastKnownValidPowerConsumptionValue = HomeAssistant.PowerConsumptionSensor.State.Value;
+
+            return _lastKnownValidPowerConsumptionValue;
+        }
+    }
+
+    //Might need to do something on start so we have zero values?
+    private readonly FixedSizeConcurrentQueue<(DateTimeOffset Moment, double Value)> _recentPowerConsumptionValues = new(200); // With updates every 5 seconds we have at least 15 minutes of data
+    internal double AverageLoad(TimeSpan timeSpan)
+    {
+        var values = _recentPowerConsumptionValues.Where(x => x.Moment.Add(timeSpan) > Context.Scheduler.Now).Select(x => x.Value).ToList();
+        return values.Count == 0 ? CurrentLoad : Math.Round(values.Average());
+    }
+
+    internal double AverageLoadCorrection(TimeSpan timeSpan)
+    {
+        var averageLoad = AverageLoad(timeSpan);
+        return CurrentLoad - averageLoad;
+    }
 
     protected EnergyConsumer(EnergyManagerContext context, EnergyConsumerConfiguration config)
     {
@@ -51,6 +83,15 @@ public abstract class EnergyConsumer : IDisposable
         ConsumerGroups = config.ConsumerGroups;
         _switchOnLoad = config.SwitchOnLoad;
         _switchOffLoad = config.SwitchOffLoad;
+        LoadTimeFramesToCheckOnStart = config.LoadTimeFramesToCheckOnStart;
+        LoadTimeFramesToCheckOnStop = config.LoadTimeFramesToCheckOnStop;
+
+        ConsumptionMonitorTask = Context.Scheduler.RunEvery(TimeSpan.FromSeconds(5), Context.Scheduler.Now, () =>
+        {
+            //Update every 5 seconds instead of listening to HomeAssistant.PowerConsumptionSensor.Changed, it would be more difficult to calculate real averages over a certain timeframe
+            if (HomeAssistant.PowerConsumptionSensor.State != null)
+                _recentPowerConsumptionValues.Enqueue((Context.Scheduler.Now, HomeAssistant.PowerConsumptionSensor.State.Value));
+        });
     }
     public static async Task<EnergyConsumer> Create(EnergyManagerContext context, List<String> allConsumerGroups, EnergyConsumerConfiguration config)
     {
@@ -211,9 +252,46 @@ public abstract class EnergyConsumer : IDisposable
         var remainingDuration = suggestedRunTime - currentRuntime;
         return remainingDuration < suggestedRunTime ? remainingDuration : suggestedRunTime;
     }
-
     protected abstract EnergyConsumerState GetState();
-    public abstract bool CanStart();
+    protected abstract bool CanStart();
+
+    public virtual bool CanStart(IGridMonitor gridMonitor, Dictionary<LoadTimeFrames, double> consumerAverageLoadCorrections, double expectedLoadCorrections, double dynamicLoadAdjustments, double dynamicLoadThatCanBeScaledDownOnBehalfOf, double startLoadAdjustments)
+    {
+        var canStart = CanStart();
+
+        if (!canStart)
+            return false;
+
+        canStart = true;
+
+        foreach (var timeFrameToValidate in LoadTimeFramesToCheckOnStart)
+        {
+            var uncorrectedLoad = timeFrameToValidate switch
+            {
+                LoadTimeFrames.Now => gridMonitor.CurrentLoadMinusBatteries,
+                LoadTimeFrames.Last30Seconds => gridMonitor.AverageLoadMinusBatteries(TimeSpan.FromSeconds(30)),
+                LoadTimeFrames.LastMinute => gridMonitor.AverageLoadMinusBatteries(TimeSpan.FromMinutes(1)),
+                LoadTimeFrames.Last2Minutes => gridMonitor.AverageLoadMinusBatteries(TimeSpan.FromMinutes(2)),
+                LoadTimeFrames.Last5Minutes => gridMonitor.AverageLoadMinusBatteries(TimeSpan.FromMinutes(5)),
+                _ => throw new ArgumentOutOfRangeException()
+            };
+
+            var consumerAverageLoadCorrection = consumerAverageLoadCorrections[timeFrameToValidate];
+
+            var estimatedLoad = uncorrectedLoad + consumerAverageLoadCorrection + dynamicLoadAdjustments + startLoadAdjustments - dynamicLoadThatCanBeScaledDownOnBehalfOf;
+            if (this is not IDynamicLoadConsumer) //Ignore expectedLoadCorrections for dynamic consumers
+                estimatedLoad += expectedLoadCorrections;
+
+            var allowed = State.State == EnergyConsumerState.CriticallyNeedsEnergy
+                ? estimatedLoad + PeakLoad < gridMonitor.PeakLoad //Will not turn on a load that would exceed current grid import peak
+                : estimatedLoad < SwitchOnLoad;
+
+            canStart &= allowed;
+        }
+
+        return canStart;
+    }
+
     public abstract bool CanForceStop();
     public abstract bool CanForceStopOnPeakLoad();
     public abstract void TurnOn();

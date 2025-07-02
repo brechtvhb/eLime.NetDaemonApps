@@ -55,6 +55,7 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 
         HomeAssistant = new CarChargerEnergyConsumerHomeAssistantEntities(config);
         HomeAssistant.CurrentNumber.Changed += CurrentNumber_Changed;
+
         MqttSensors = new DynamicEnergyConsumerMqttSensors(config.Name, context);
         MqttSensors.BalancingMethodChanged += BalancingMethodChanged;
         MqttSensors.BalanceOnBehalfOfChanged += BalanceOnBehalfOfChanged;
@@ -327,7 +328,7 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         };
     }
 
-    public override bool CanStart()
+    protected override bool CanStart()
     {
         if (State.State is EnergyConsumerState.Running or EnergyConsumerState.Off)
             return false;
@@ -340,7 +341,6 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 
         return !(State.LastRun?.Add(MinimumTimeout.Value) > Context.Scheduler.Now);
     }
-
 
     public override bool CanForceStop()
     {
@@ -495,6 +495,8 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
             car.Connected -= Car_Connected;
             car.Dispose();
         }
+
+        ConsumptionMonitorTask?.Dispose();
     }
 }
 

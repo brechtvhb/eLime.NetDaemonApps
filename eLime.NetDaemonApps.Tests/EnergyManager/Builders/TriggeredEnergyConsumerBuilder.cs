@@ -13,6 +13,8 @@ public class TriggeredEnergyConsumerBuilder
     private string? _criticallyNeeded;
     private double _switchOnLoad;
     private double _switchOffLoad;
+    private List<LoadTimeFrames> _loadTimeFramesToCheckOnStart = [];
+    private List<LoadTimeFrames> _loadTimeFramesToCheckOnStop = [];
 
     private TimeSpan? _minimumRuntime;
     private TimeSpan? _maximumRuntime;
@@ -40,7 +42,7 @@ public class TriggeredEnergyConsumerBuilder
         new TriggeredEnergyConsumerBuilder()
             .WithName("Irrigation")
             .WithSocket("switch.irrigation_energy_available")
-            .WithLoads(-700, 200)
+            .WithLoad(-700, [LoadTimeFrames.Now, LoadTimeFrames.Last30Seconds], 200, [LoadTimeFrames.Now, LoadTimeFrames.Last30Seconds])
             .AddConsumerGroup("Deferrable")
             .WithStateSensor("sensor.irrigation_state", "Yes", null, "No", "Critical")
             .AddStatePeakLoad("No", 1, false)
@@ -53,7 +55,7 @@ public class TriggeredEnergyConsumerBuilder
             .WithName("Washer")
             .WithSocket("switch.washer_socket")
             .WithShutdownOnComplete()
-            .WithLoads(-700, 5000)
+            .WithLoad(-700, [LoadTimeFrames.Now, LoadTimeFrames.Last30Seconds], 5000, [LoadTimeFrames.Now, LoadTimeFrames.Last30Seconds])
             .AddConsumerGroup("Deferrable")
             .WithStateSensor("sensor.smartwasher_smartwasher_state", "DelayedStart", null, "Ready", "Critical")
             .AddStatePeakLoad("Idle", 0, false)
@@ -67,7 +69,7 @@ public class TriggeredEnergyConsumerBuilder
     public static TriggeredEnergyConsumerBuilder Dryer =>
         new TriggeredEnergyConsumerBuilder()
             .WithName("Dryer")
-            .WithLoads(-500, 3500)
+            .WithLoad(-500, [LoadTimeFrames.Now, LoadTimeFrames.Last30Seconds], 3500, [LoadTimeFrames.Now, LoadTimeFrames.Last30Seconds])
             .AddConsumerGroup("Deferrable")
             .WithStateSensor("sensor.dryer", "waiting_to_start", null, "program_ended", null)
             .WithStartButton("button.dryer_start")
@@ -84,7 +86,7 @@ public class TriggeredEnergyConsumerBuilder
         new TriggeredEnergyConsumerBuilder()
             .WithName("Dishwasher")
             .WithSocket("switch.dishwasher_socket")
-            .WithLoads(-700, 3000)
+            .WithLoad(-700, [LoadTimeFrames.Now, LoadTimeFrames.Last30Seconds], 3000, [LoadTimeFrames.Now, LoadTimeFrames.Last30Seconds])
             .AddConsumerGroup("Deferrable")
             .WithStateSensor("sensor.dishwasher_operation_state_enhanced", "DelayedStart", "Paused", "Ready", "Critical")
             .WithPauseSwitch("switch.dishwasher_pause")
@@ -152,10 +154,13 @@ public class TriggeredEnergyConsumerBuilder
         return this;
     }
 
-    public TriggeredEnergyConsumerBuilder WithLoads(double switchOn, double switchOff)
+    public TriggeredEnergyConsumerBuilder WithLoad(double switchOn, List<LoadTimeFrames> loadTimeFramesToCheckOnStart, double switchOff, List<LoadTimeFrames> loadTimeFramesToCheckOnStop)
     {
         _switchOnLoad = switchOn;
+        _loadTimeFramesToCheckOnStart = loadTimeFramesToCheckOnStart;
         _switchOffLoad = switchOff;
+        _loadTimeFramesToCheckOnStop = loadTimeFramesToCheckOnStop;
+
         return this;
     }
 
@@ -203,6 +208,8 @@ public class TriggeredEnergyConsumerBuilder
             ConsumerGroups = _consumerGroups,
             SwitchOnLoad = _switchOnLoad,
             SwitchOffLoad = _switchOffLoad,
+            LoadTimeFramesToCheckOnStart = _loadTimeFramesToCheckOnStart,
+            LoadTimeFramesToCheckOnStop = _loadTimeFramesToCheckOnStop,
             MinimumRuntime = _minimumRuntime,
             MaximumRuntime = _maximumRuntime,
             MinimumTimeout = _minimumTimeout,

@@ -12,6 +12,8 @@ public class CoolingEnergyConsumerBuilder
     private string? _criticallyNeeded;
     private double _switchOnLoad = -50;
     private double _switchOffLoad = 200;
+    private List<LoadTimeFrames> _loadTimeFramesToCheckOnStart = [];
+    private List<LoadTimeFrames> _loadTimeFramesToCheckOnStop = [];
 
     private TimeSpan? _minimumRuntime;
     private TimeSpan? _maximumRuntime;
@@ -69,9 +71,12 @@ public class CoolingEnergyConsumerBuilder
         return this;
     }
 
-    public CoolingEnergyConsumerBuilder WithLoad(double switchOnLoad, double switchOffLoad, double peakLoad)
+    public CoolingEnergyConsumerBuilder WithLoad(double switchOn, List<LoadTimeFrames> loadTimeFramesToCheckOnStart, double switchOff, List<LoadTimeFrames> loadTimeFramesToCheckOnStop, double peakLoad)
     {
-        _switchOnLoad = switchOnLoad;
+        _switchOnLoad = switchOn;
+        _loadTimeFramesToCheckOnStart = loadTimeFramesToCheckOnStart;
+        _switchOffLoad = switchOff;
+        _loadTimeFramesToCheckOnStop = loadTimeFramesToCheckOnStop;
         _peakLoad = peakLoad;
 
         return this;
@@ -107,6 +112,8 @@ public class CoolingEnergyConsumerBuilder
             PowerUsageEntity = _powerUsage,
             SwitchOnLoad = _switchOnLoad,
             SwitchOffLoad = _switchOffLoad,
+            LoadTimeFramesToCheckOnStart = _loadTimeFramesToCheckOnStart,
+            LoadTimeFramesToCheckOnStop = _loadTimeFramesToCheckOnStop,
             MinimumRuntime = _minimumRuntime,
             MaximumRuntime = _maximumRuntime,
             MinimumTimeout = _minimumTimeout,

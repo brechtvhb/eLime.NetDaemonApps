@@ -10,6 +10,8 @@ public class EnergyConsumerConfig
     public string PowerUsageEntity { get; set; }
     public double SwitchOnLoad { get; set; }
     public double SwitchOffLoad { get; set; }
+    public List<LoadTimeFrames> LoadTimeFramesToCheckOnStart { get; set; } = [];
+    public List<LoadTimeFrames> LoadTimeFramesToCheckOnStop { get; set; } = [];
     public List<DynamicEnergyConsumerBalancingMethodBasedLoads> DynamicBalancingMethodBasedLoads { get; set; } = [];
 
     public TimeSpan? MinimumRuntime { get; set; }
@@ -44,4 +46,13 @@ public enum BalancingMethod
     MidPeak,
     NearPeak,
     MaximizeQuarterPeak
+}
+
+public enum LoadTimeFrames
+{
+    Now,
+    Last30Seconds,
+    LastMinute,
+    Last2Minutes,
+    Last5Minutes
 }

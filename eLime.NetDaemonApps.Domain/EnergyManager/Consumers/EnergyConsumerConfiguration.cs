@@ -21,6 +21,8 @@ public class EnergyConsumerConfiguration
         PowerConsumptionSensor = NumericSensor.Create(haContext, config.PowerUsageEntity);
         SwitchOnLoad = config.SwitchOnLoad;
         SwitchOffLoad = config.SwitchOffLoad;
+        LoadTimeFramesToCheckOnStart = Enum<LoadTimeFrames>.CastEnumList(config.LoadTimeFramesToCheckOnStart);
+        LoadTimeFramesToCheckOnStop = Enum<LoadTimeFrames>.CastEnumList(config.LoadTimeFramesToCheckOnStop);
         DynamicBalancingMethodBasedLoads = config.DynamicBalancingMethodBasedLoads.Select(x => new DynamicEnergyConsumerBalancingMethodBasedLoads { BalancingMethods = Enum<BalancingMethod>.CastEnumList(x.BalancingMethods), SwitchOnLoad = x.SwitchOnLoad, SwitchOffLoad = x.SwitchOffLoad }).ToList();
         MinimumRuntime = config.MinimumRuntime;
         MaximumRuntime = config.MaximumRuntime;
@@ -38,6 +40,8 @@ public class EnergyConsumerConfiguration
     public NumericSensor PowerConsumptionSensor { get; set; }
     public double SwitchOnLoad { get; set; }
     public double SwitchOffLoad { get; set; }
+    public List<LoadTimeFrames> LoadTimeFramesToCheckOnStart { get; set; }
+    public List<LoadTimeFrames> LoadTimeFramesToCheckOnStop { get; set; }
     public List<DynamicEnergyConsumerBalancingMethodBasedLoads> DynamicBalancingMethodBasedLoads { get; set; }
     public TimeSpan? MinimumRuntime { get; set; }
     public TimeSpan? MaximumRuntime { get; set; }

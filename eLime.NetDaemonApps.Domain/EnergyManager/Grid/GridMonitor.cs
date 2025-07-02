@@ -67,19 +67,18 @@ public class GridMonitor : IDisposable, IGridMonitor
 
     public double CurrentAverageDemand => HomeAssistant.CurrentAverageDemandSensor.State * 1000 ?? 0;
 
-    //600 = at least 10 minutes of data (as we receive max one update per second).
-    private readonly FixedSizeConcurrentQueue<(DateTimeOffset Moment, double Value)> _lastImportValues = new(600);
-    private readonly FixedSizeConcurrentQueue<(DateTimeOffset Moment, double Value)> _lastExportValues = new(600);
-    private readonly FixedSizeConcurrentQueue<(DateTimeOffset Moment, double Value)> _lastBatteryChargePowerValues = new(600);
-    private readonly FixedSizeConcurrentQueue<(DateTimeOffset Moment, double Value)> _lastBatteryDischargePowerValues = new(600);
+    //500 = +- 10 minutes of data (as we receive max one update per second).
+    private readonly FixedSizeConcurrentQueue<(DateTimeOffset Moment, double Value)> _lastImportValues = new(500);
+    private readonly FixedSizeConcurrentQueue<(DateTimeOffset Moment, double Value)> _lastExportValues = new(500);
+    private readonly FixedSizeConcurrentQueue<(DateTimeOffset Moment, double Value)> _lastBatteryChargePowerValues = new(500);
+    private readonly FixedSizeConcurrentQueue<(DateTimeOffset Moment, double Value)> _lastBatteryDischargePowerValues = new(500);
 
     public static GridMonitor Create(EnergyManagerConfiguration configuration)
     {
-        var gridMonitor2 = new GridMonitor();
-        gridMonitor2.Initialize(configuration);
-        return gridMonitor2;
+        var gridMonitor = new GridMonitor();
+        gridMonitor.Initialize(configuration);
+        return gridMonitor;
     }
-
 
     private void Initialize(EnergyManagerConfiguration configuration)
     {
@@ -90,7 +89,6 @@ public class GridMonitor : IDisposable, IGridMonitor
         HomeAssistant.TotalBatteryChargePowerSensor.Changed += TotalBatteryChargePowerSensor_Changed;
         HomeAssistant.TotalBatteryDischargePowerSensor.Changed += TotalBatteryDischargePowerSensor_Changed;
     }
-
 
     private void GridPowerImportSensor_Changed(object? sender, NumericSensorEventArgs e)
     {

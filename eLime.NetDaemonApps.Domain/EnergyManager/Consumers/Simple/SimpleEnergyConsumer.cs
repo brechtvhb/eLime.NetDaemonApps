@@ -41,7 +41,7 @@ public class SimpleEnergyConsumer : EnergyConsumer
         };
     }
 
-    public override bool CanStart()
+    protected override bool CanStart()
     {
         State.State = GetState();
 
@@ -116,8 +116,11 @@ public class SimpleEnergyConsumer : EnergyConsumer
     public override void Dispose()
     {
         HomeAssistant.SocketSwitch.TurnedOn -= Socket_TurnedOn;
-        HomeAssistant.SocketSwitch.TurnedOn -= Socket_TurnedOff;
+        HomeAssistant.SocketSwitch.TurnedOff -= Socket_TurnedOff;
         HomeAssistant.Dispose();
+
         MqttSensors.Dispose();
+
+        ConsumptionMonitorTask?.Dispose();
     }
 }

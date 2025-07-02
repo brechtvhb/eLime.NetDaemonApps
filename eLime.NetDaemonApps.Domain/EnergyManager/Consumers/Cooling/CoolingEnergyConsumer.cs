@@ -21,8 +21,8 @@ public class CoolingEnergyConsumer : EnergyConsumer
         HomeAssistant = new CoolingEnergyConsumerHomeAssistantEntities(config);
         HomeAssistant.SocketSwitch.TurnedOn += Socket_TurnedOn;
         HomeAssistant.SocketSwitch.TurnedOff += Socket_TurnedOff;
-
         HomeAssistant.TemperatureSensor.Changed += TemperatureSensor_Changed;
+
         MqttSensors = new EnergyConsumerMqttSensors(config.Name, context);
         PeakLoad = config.Cooling.PeakLoad;
         TargetTemperature = config.Cooling.TargetTemperature;
@@ -31,6 +31,10 @@ public class CoolingEnergyConsumer : EnergyConsumer
 
     private void TemperatureSensor_Changed(object? sender, Entities.NumericSensors.NumericSensorEventArgs e)
     {
+        //Ignore invalid states
+        if (e.Sensor.State == null)
+            return;
+
         if (e.Sensor.State <= TargetTemperature)
         {
             Stop();
@@ -59,7 +63,7 @@ public class CoolingEnergyConsumer : EnergyConsumer
             false => EnergyConsumerState.Off
         };
     }
-    public override bool CanStart()
+    protected override bool CanStart()
     {
         if (State.State is EnergyConsumerState.Running or EnergyConsumerState.Off)
             return false;
@@ -136,8 +140,11 @@ public class CoolingEnergyConsumer : EnergyConsumer
     public override void Dispose()
     {
         HomeAssistant.SocketSwitch.TurnedOn -= Socket_TurnedOn;
-        HomeAssistant.SocketSwitch.TurnedOn -= Socket_TurnedOff;
+        HomeAssistant.SocketSwitch.TurnedOff -= Socket_TurnedOff;
         HomeAssistant.Dispose();
+
         MqttSensors.Dispose();
+
+        ConsumptionMonitorTask?.Dispose();
     }
 }

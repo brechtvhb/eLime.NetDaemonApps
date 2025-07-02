@@ -156,9 +156,11 @@ public class SmartHeatPump : IDisposable
         try
         {
             //Bug in ISG (turns SG ready inputs on while SG ready state remains in correct state), this code makes sure everything is in sync
-            Logger.LogDebug("Smart heat pump: ISG was not available for a while but came back online, we can assume it rebooted.");
             if (e.Old?.State == Constants.UNAVAILABLE && e.New?.State != Constants.UNAVAILABLE)
+            {
+                Logger.LogDebug("Smart heat pump: ISG was not available for a while but came back online, we can assume it rebooted.");
                 await SetSmartGridReadyInputs();
+            }
         }
         catch (Exception ex)
         {

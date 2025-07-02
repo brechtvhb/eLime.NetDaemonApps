@@ -1,4 +1,5 @@
-﻿using eLime.NetDaemonApps.Domain.Storage;
+﻿using eLime.NetDaemonApps.Config.EnergyManager;
+using eLime.NetDaemonApps.Domain.Storage;
 using eLime.NetDaemonApps.Tests.EnergyManager.Builders;
 using eLime.NetDaemonApps.Tests.Helpers;
 using FakeItEasy;
@@ -32,6 +33,7 @@ public class CoolingEnergyConsumerTests
     {
         // Arrange
         var consumer = new CoolingEnergyConsumerBuilder()
+            .WithLoad(-60, [LoadTimeFrames.Now, LoadTimeFrames.Last30Seconds], 200, [LoadTimeFrames.Now, LoadTimeFrames.Last30Seconds], 100)
             .Build();
 
         var energyManager = await new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
@@ -49,6 +51,7 @@ public class CoolingEnergyConsumerTests
     {
         // Arrange
         var consumer = new CoolingEnergyConsumerBuilder()
+            .WithLoad(-60, [LoadTimeFrames.Now, LoadTimeFrames.Last30Seconds], 200, [LoadTimeFrames.Now, LoadTimeFrames.Last30Seconds], 100)
             .Build();
         _testCtx.TriggerStateChange(consumer.Cooling!.TemperatureSensor, "4");
 
@@ -70,7 +73,9 @@ public class CoolingEnergyConsumerTests
     {
         // Arrange
         var consumer = new CoolingEnergyConsumerBuilder()
+            .WithLoad(-60, [LoadTimeFrames.Now, LoadTimeFrames.Last30Seconds], 200, [LoadTimeFrames.Now, LoadTimeFrames.Last30Seconds], 100)
             .Build();
+
         _testCtx.TriggerStateChange(consumer.Cooling!.SocketEntity, "on");
         _testCtx.TriggerStateChange(consumer.Cooling!.TemperatureSensor, "4");
 
@@ -93,8 +98,10 @@ public class CoolingEnergyConsumerTests
     {
         // Arrange
         var consumer1 = new CoolingEnergyConsumerBuilder()
+            .WithLoad(-60, [LoadTimeFrames.Now, LoadTimeFrames.Last30Seconds], 200, [LoadTimeFrames.Now, LoadTimeFrames.Last30Seconds], 100)
             .Build();
         var consumer2 = new CoolingEnergyConsumerBuilder()
+            .WithLoad(-60, [LoadTimeFrames.Now, LoadTimeFrames.Last30Seconds], 200, [LoadTimeFrames.Now, LoadTimeFrames.Last30Seconds], 100)
             .WithName("VeryHotFridge")
             .WithTemperatureSensor("sensor.very_hot_fridge_temperature", 1, 8)
             .Build();

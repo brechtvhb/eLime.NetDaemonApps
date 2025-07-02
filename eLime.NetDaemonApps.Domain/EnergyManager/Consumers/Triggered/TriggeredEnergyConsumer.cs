@@ -110,12 +110,15 @@ public class TriggeredEnergyConsumer : EnergyConsumer
         return desiredState;
     }
 
-    public override bool CanStart()
+    protected override bool CanStart()
     {
         if (HomeAssistant.StateSensor.State == PausedState)
             return true;
 
         if (State.State is EnergyConsumerState.Running or EnergyConsumerState.Off)
+            return false;
+
+        if (HomeAssistant.SocketSwitch != null && HomeAssistant.SocketSwitch.IsOn() && HomeAssistant.StartButton == null)
             return false;
 
         if (!IsWithinTimeWindow() && HasTimeWindow())
@@ -218,10 +221,12 @@ public class TriggeredEnergyConsumer : EnergyConsumer
         if (HomeAssistant.SocketSwitch != null)
         {
             HomeAssistant.SocketSwitch.TurnedOn -= Socket_TurnedOn;
-            HomeAssistant.SocketSwitch.TurnedOn -= Socket_TurnedOff;
+            HomeAssistant.SocketSwitch.TurnedOff -= Socket_TurnedOff;
         }
 
         HomeAssistant.Dispose();
         MqttSensors.Dispose();
+
+        ConsumptionMonitorTask?.Dispose();
     }
 }
