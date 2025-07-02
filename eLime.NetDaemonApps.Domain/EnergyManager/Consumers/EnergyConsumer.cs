@@ -85,14 +85,19 @@ public abstract class EnergyConsumer : IDisposable
         _switchOffLoad = config.SwitchOffLoad;
         LoadTimeFramesToCheckOnStart = config.LoadTimeFramesToCheckOnStart;
         LoadTimeFramesToCheckOnStop = config.LoadTimeFramesToCheckOnStop;
-
-        ConsumptionMonitorTask = Context.Scheduler.RunEvery(TimeSpan.FromSeconds(5), Context.Scheduler.Now, () =>
-        {
-            //Update every 5 seconds instead of listening to HomeAssistant.PowerConsumptionSensor.Changed, it would be more difficult to calculate real averages over a certain timeframe
-            if (HomeAssistant.PowerConsumptionSensor.State != null)
-                _recentPowerConsumptionValues.Enqueue((Context.Scheduler.Now, HomeAssistant.PowerConsumptionSensor.State.Value));
-        });
     }
+
+    internal void ConfigurePowerConsumptionTask()
+    {
+        ConsumptionMonitorTask = Context.Scheduler.RunEvery(TimeSpan.FromSeconds(5), Context.Scheduler.Now, GetPowerConsumption);
+    }
+    private void GetPowerConsumption()
+    {
+        //Update every 5 seconds instead of listening to HomeAssistant.PowerConsumptionSensor.Changed, it would be more difficult to calculate real averages over a certain timeframe
+        if (HomeAssistant.PowerConsumptionSensor.State != null)
+            _recentPowerConsumptionValues.Enqueue((Context.Scheduler.Now, HomeAssistant.PowerConsumptionSensor.State.Value));
+    }
+
     public static async Task<EnergyConsumer> Create(EnergyManagerContext context, List<String> allConsumerGroups, EnergyConsumerConfiguration config)
     {
         EnergyConsumer consumer;
@@ -115,6 +120,7 @@ public abstract class EnergyConsumer : IDisposable
         consumer.GetAndSanitizeState();
         consumer.StopIfPastRuntime();
         consumer.StopOnBootIfEnergyIsNoLongerNeeded();
+        consumer.ConfigurePowerConsumptionTask();
         await consumer.SaveAndPublishState();
 
         return consumer;
