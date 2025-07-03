@@ -112,7 +112,7 @@ public class BatteryTests
         A.CallTo(() => _fileStorage.Get<ConsumerState>("EnergyManager", "veton")).Returns(new ConsumerState
         {
             BalancingMethod = BalancingMethod.SolarOnly,
-            AllowBatteryPower = AllowBatteryPower.Yes
+            AllowBatteryPower = AllowBatteryPower.FlattenGridLoad
         });
 
         var consumer = CarChargerEnergyConsumerBuilder.Tesla().Build();
@@ -354,7 +354,7 @@ public class BatteryTests
         A.CallTo(() => _fileStorage.Get<ConsumerState>("EnergyManager", "veton")).Returns(new ConsumerState
         {
             BalancingMethod = BalancingMethod.SolarOnly,
-            AllowBatteryPower = AllowBatteryPower.Yes
+            AllowBatteryPower = AllowBatteryPower.FlattenGridLoad
         });
         A.CallTo(() => _fileStorage.Get<BatteryState>("EnergyManager", "marstek_venus_e")).Returns(new BatteryState
         {

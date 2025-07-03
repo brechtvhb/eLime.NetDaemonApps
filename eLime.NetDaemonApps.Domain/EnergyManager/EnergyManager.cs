@@ -294,7 +294,7 @@ public class EnergyManager : IDisposable
     {
         var runningDynamicLoadConsumers = Consumers.Where(x => x.IsRunning).OfType<IDynamicLoadConsumer>().ToList();
         var averageDischargePower = GridMonitor.AverageBatteriesDischargingPower(TimeSpan.FromMinutes(2));
-        await BatteryManager.ManageBatteryPowerSettings(runningDynamicLoadConsumers.Any(), runningDynamicLoadConsumers.Any(x => x.AllowBatteryPower == AllowBatteryPower.Yes), averageDischargePower);
+        await BatteryManager.ManageBatteryPowerSettings(runningDynamicLoadConsumers.Any(), runningDynamicLoadConsumers.Any(x => x.AllowBatteryPower is AllowBatteryPower.MaxPower or AllowBatteryPower.FlattenGridLoad), averageDischargePower);
     }
 
     private double GetDynamicLoadThatCanBeScaledDownOnBehalfOf(EnergyConsumer? consumer, double dynamicLoadNetChange)

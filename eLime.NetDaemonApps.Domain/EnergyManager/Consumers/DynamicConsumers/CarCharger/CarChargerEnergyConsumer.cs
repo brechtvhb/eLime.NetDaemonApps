@@ -145,16 +145,16 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 
         var uncorrectedLoad = LoadTimeFrameToCheckOnRebalance switch
         {
-            LoadTimeFrames.Now when AllowBatteryPower == AllowBatteryPower.No => gridMonitor.CurrentLoadMinusBatteries,
-            LoadTimeFrames.Now when AllowBatteryPower == AllowBatteryPower.Yes => gridMonitor.CurrentLoad,
-            LoadTimeFrames.Last30Seconds when AllowBatteryPower == AllowBatteryPower.No => gridMonitor.AverageLoadMinusBatteries(TimeSpan.FromSeconds(30)),
-            LoadTimeFrames.Last30Seconds when AllowBatteryPower == AllowBatteryPower.Yes => gridMonitor.AverageLoad(TimeSpan.FromSeconds(30)),
-            LoadTimeFrames.LastMinute when AllowBatteryPower == AllowBatteryPower.No => gridMonitor.AverageLoadMinusBatteries(TimeSpan.FromMinutes(1)),
-            LoadTimeFrames.LastMinute when AllowBatteryPower == AllowBatteryPower.Yes => gridMonitor.AverageLoad(TimeSpan.FromMinutes(1)),
-            LoadTimeFrames.Last2Minutes when AllowBatteryPower == AllowBatteryPower.No => gridMonitor.AverageLoadMinusBatteries(TimeSpan.FromMinutes(2)),
-            LoadTimeFrames.Last2Minutes when AllowBatteryPower == AllowBatteryPower.Yes => gridMonitor.AverageLoad(TimeSpan.FromMinutes(2)),
-            LoadTimeFrames.Last5Minutes when AllowBatteryPower == AllowBatteryPower.No => gridMonitor.AverageLoadMinusBatteries(TimeSpan.FromMinutes(5)),
-            LoadTimeFrames.Last5Minutes when AllowBatteryPower == AllowBatteryPower.Yes => gridMonitor.AverageLoad(TimeSpan.FromMinutes(5)),
+            LoadTimeFrames.Now when AllowBatteryPower is AllowBatteryPower.No or AllowBatteryPower.FlattenGridLoad => gridMonitor.CurrentLoadMinusBatteries,
+            LoadTimeFrames.Now when AllowBatteryPower is AllowBatteryPower.MaxPower => gridMonitor.CurrentLoad,
+            LoadTimeFrames.Last30Seconds when AllowBatteryPower is AllowBatteryPower.No or AllowBatteryPower.FlattenGridLoad => gridMonitor.AverageLoadMinusBatteries(TimeSpan.FromSeconds(30)),
+            LoadTimeFrames.Last30Seconds when AllowBatteryPower is AllowBatteryPower.MaxPower => gridMonitor.AverageLoad(TimeSpan.FromSeconds(30)),
+            LoadTimeFrames.LastMinute when AllowBatteryPower is AllowBatteryPower.No or AllowBatteryPower.FlattenGridLoad => gridMonitor.AverageLoadMinusBatteries(TimeSpan.FromMinutes(1)),
+            LoadTimeFrames.LastMinute when AllowBatteryPower is AllowBatteryPower.MaxPower => gridMonitor.AverageLoad(TimeSpan.FromMinutes(1)),
+            LoadTimeFrames.Last2Minutes when AllowBatteryPower is AllowBatteryPower.No or AllowBatteryPower.FlattenGridLoad => gridMonitor.AverageLoadMinusBatteries(TimeSpan.FromMinutes(2)),
+            LoadTimeFrames.Last2Minutes when AllowBatteryPower is AllowBatteryPower.MaxPower => gridMonitor.AverageLoad(TimeSpan.FromMinutes(2)),
+            LoadTimeFrames.Last5Minutes when AllowBatteryPower is AllowBatteryPower.No or AllowBatteryPower.FlattenGridLoad => gridMonitor.AverageLoadMinusBatteries(TimeSpan.FromMinutes(5)),
+            LoadTimeFrames.Last5Minutes when AllowBatteryPower is AllowBatteryPower.MaxPower => gridMonitor.AverageLoad(TimeSpan.FromMinutes(5)),
             _ => throw new ArgumentOutOfRangeException()
         };
         var consumerAverageLoadCorrection = consumerAverageLoadCorrections[LoadTimeFrameToCheckOnRebalance];

@@ -804,7 +804,7 @@ public class CarChargerEnergyConsumerTests
         A.CallTo(() => _fileStorage.Get<ConsumerState>("EnergyManager", "veton")).Returns(new ConsumerState
         {
             BalancingMethod = BalancingMethod.SolarOnly,
-            AllowBatteryPower = AllowBatteryPower.Yes
+            AllowBatteryPower = AllowBatteryPower.MaxPower
         });
 
         var consumer = CarChargerEnergyConsumerBuilder.Tesla()
@@ -868,7 +868,7 @@ public class CarChargerEnergyConsumerTests
         A.CallTo(() => _fileStorage.Get<ConsumerState>("EnergyManager", "veton")).Returns(new ConsumerState
         {
             BalancingMethod = BalancingMethod.SolarOnly,
-            AllowBatteryPower = AllowBatteryPower.Yes
+            AllowBatteryPower = AllowBatteryPower.MaxPower
         });
 
         var consumer = CarChargerEnergyConsumerBuilder.Tesla()
@@ -932,7 +932,7 @@ public class CarChargerEnergyConsumerTests
         A.CallTo(() => _fileStorage.Get<ConsumerState>("EnergyManager", "veton")).Returns(new ConsumerState
         {
             BalancingMethod = BalancingMethod.SolarOnly,
-            AllowBatteryPower = AllowBatteryPower.Yes
+            AllowBatteryPower = AllowBatteryPower.FlattenGridLoad
         });
 
         var consumer = CarChargerEnergyConsumerBuilder.Tesla()
@@ -954,7 +954,7 @@ public class CarChargerEnergyConsumerTests
         var mqttAllowBatteryPower = $"select.energy_consumer_{consumer.Name.MakeHaFriendly()}_allow_battery_power";
         A.CallTo(() => _mqttEntityManager.SetStateAsync(mqttState, EnergyConsumerState.NeedsEnergy.ToString())).MustHaveHappenedOnceExactly();
         A.CallTo(() => _mqttEntityManager.SetStateAsync(mqttBalancingMethod, BalancingMethod.SolarOnly.ToString())).MustHaveHappened();
-        A.CallTo(() => _mqttEntityManager.SetStateAsync(mqttAllowBatteryPower, AllowBatteryPower.Yes.ToString())).MustHaveHappened();
+        A.CallTo(() => _mqttEntityManager.SetStateAsync(mqttAllowBatteryPower, AllowBatteryPower.FlattenGridLoad.ToString())).MustHaveHappened();
         A.CallTo(() => _fileStorage.Save("EnergyManager", "veton", A<ConsumerState>._)).MustHaveHappened();
     }
 
@@ -965,7 +965,7 @@ public class CarChargerEnergyConsumerTests
         A.CallTo(() => _fileStorage.Get<ConsumerState>("EnergyManager", "veton")).Returns(new ConsumerState
         {
             BalancingMethod = BalancingMethod.SolarOnly,
-            AllowBatteryPower = AllowBatteryPower.Yes
+            AllowBatteryPower = AllowBatteryPower.FlattenGridLoad
         });
         var mqttSubject = new Subject<string>();
 

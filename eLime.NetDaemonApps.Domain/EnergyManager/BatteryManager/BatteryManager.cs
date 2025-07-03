@@ -91,7 +91,7 @@ internal class BatteryManager : IDisposable
         {
             var battery = BatteryPickOrderList.Where(x => !x.IsEmpty).Skip(index).First();
             if (battery is { CanDischarge: false, CanControl: true })
-                await battery.EnableDischarging(reason: "Average discharge power too high");
+                await battery.EnableDischarging(reason: "Average discharge power too high or no other load running that disables battery power");
 
             if (!battery.IsEmpty)
                 optimalChargePowerMaxThreshold += battery.OptimalChargePowerMaxThreshold;
