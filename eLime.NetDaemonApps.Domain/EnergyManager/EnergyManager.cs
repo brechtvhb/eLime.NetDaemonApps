@@ -181,7 +181,7 @@ public class EnergyManager : IDisposable
 
         foreach (var dynamicLoadConsumer in dynamicLoadConsumers)
         {
-            var (current, netChange) = dynamicLoadConsumer.Rebalance(GridMonitor, consumerLoadCorrections, dynamicNetChange);
+            var (current, netChange) = dynamicLoadConsumer.Rebalance(GridMonitor, consumerLoadCorrections, dynamicNetChange, BatteryManager.MaximumDischargePower);
 
             if (netChange == 0)
                 continue;

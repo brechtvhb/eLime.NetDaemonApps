@@ -83,14 +83,6 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         }
 
     }
-    private void StateSensor_StateChanged(object? sender, Entities.TextSensors.TextSensorEventArgs e)
-    {
-        if (e.Sensor.State == CarChargerStates.Charging.ToString())
-        {
-            if (State.State != EnergyConsumerState.Running)
-                Started();
-        }
-    }
 
     private async void BalancingMethodChanged(object? sender, BalancingMethodChangedEventArgs e)
     {
@@ -135,7 +127,7 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         }
     }
 
-    public (double current, double netPowerChange) Rebalance(IGridMonitor gridMonitor, Dictionary<LoadTimeFrames, double> consumerAverageLoadCorrections, double dynamicLoadAdjustments)
+    public (double current, double netPowerChange) Rebalance(IGridMonitor gridMonitor, Dictionary<LoadTimeFrames, double> consumerAverageLoadCorrections, double dynamicLoadAdjustments, double maximumDischargePower)
     {
         if (_lastCurrentChange?.Add(MinimumRebalancingInterval) > Context.Scheduler.Now)
             return (0, 0);
@@ -145,20 +137,18 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 
         var uncorrectedLoad = LoadTimeFrameToCheckOnRebalance switch
         {
-            LoadTimeFrames.Now when AllowBatteryPower is AllowBatteryPower.No or AllowBatteryPower.FlattenGridLoad => gridMonitor.CurrentLoadMinusBatteries,
-            LoadTimeFrames.Now when AllowBatteryPower is AllowBatteryPower.MaxPower => gridMonitor.CurrentLoad,
-            LoadTimeFrames.Last30Seconds when AllowBatteryPower is AllowBatteryPower.No or AllowBatteryPower.FlattenGridLoad => gridMonitor.AverageLoadMinusBatteries(TimeSpan.FromSeconds(30)),
-            LoadTimeFrames.Last30Seconds when AllowBatteryPower is AllowBatteryPower.MaxPower => gridMonitor.AverageLoad(TimeSpan.FromSeconds(30)),
-            LoadTimeFrames.LastMinute when AllowBatteryPower is AllowBatteryPower.No or AllowBatteryPower.FlattenGridLoad => gridMonitor.AverageLoadMinusBatteries(TimeSpan.FromMinutes(1)),
-            LoadTimeFrames.LastMinute when AllowBatteryPower is AllowBatteryPower.MaxPower => gridMonitor.AverageLoad(TimeSpan.FromMinutes(1)),
-            LoadTimeFrames.Last2Minutes when AllowBatteryPower is AllowBatteryPower.No or AllowBatteryPower.FlattenGridLoad => gridMonitor.AverageLoadMinusBatteries(TimeSpan.FromMinutes(2)),
-            LoadTimeFrames.Last2Minutes when AllowBatteryPower is AllowBatteryPower.MaxPower => gridMonitor.AverageLoad(TimeSpan.FromMinutes(2)),
-            LoadTimeFrames.Last5Minutes when AllowBatteryPower is AllowBatteryPower.No or AllowBatteryPower.FlattenGridLoad => gridMonitor.AverageLoadMinusBatteries(TimeSpan.FromMinutes(5)),
-            LoadTimeFrames.Last5Minutes when AllowBatteryPower is AllowBatteryPower.MaxPower => gridMonitor.AverageLoad(TimeSpan.FromMinutes(5)),
+            LoadTimeFrames.Now => gridMonitor.CurrentLoadMinusBatteries,
+            LoadTimeFrames.Last30Seconds => gridMonitor.AverageLoadMinusBatteries(TimeSpan.FromSeconds(30)),
+            LoadTimeFrames.LastMinute => gridMonitor.AverageLoadMinusBatteries(TimeSpan.FromMinutes(1)),
+            LoadTimeFrames.Last2Minutes => gridMonitor.AverageLoadMinusBatteries(TimeSpan.FromMinutes(2)),
+            LoadTimeFrames.Last5Minutes => gridMonitor.AverageLoadMinusBatteries(TimeSpan.FromMinutes(5)),
             _ => throw new ArgumentOutOfRangeException()
         };
         var consumerAverageLoadCorrection = consumerAverageLoadCorrections[LoadTimeFrameToCheckOnRebalance];
         var estimatedLoad = uncorrectedLoad + consumerAverageLoadCorrection + dynamicLoadAdjustments;
+
+        if (AllowBatteryPower == AllowBatteryPower.MaxPower)
+            estimatedLoad -= maximumDischargePower;
 
         var currentAdjustment = BalancingMethod switch
         {
@@ -453,10 +443,17 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
             Context.Logger.LogError(ex, "Error while turning off car charger.");
         }
     }
-
+    private void StateSensor_StateChanged(object? sender, Entities.TextSensors.TextSensorEventArgs e)
+    {
+        if (e.Sensor.State == CarChargerStates.Charging.ToString())
+        {
+            if (State.State != EnergyConsumerState.Running)
+                Started();
+        }
+    }
     private void CurrentNumber_Changed(object? sender, Entities.Input.InputNumberSensorEventArgs e)
     {
-        if (e.New.State < MinimumCurrent)
+        if (e.Sensor.State < MinimumCurrent)
         {
             if (State.State == EnergyConsumerState.Running)
                 Stopped();
