@@ -12,7 +12,8 @@ public class EnergyConsumerConfig
     public double SwitchOffLoad { get; set; }
     public List<LoadTimeFrames> LoadTimeFramesToCheckOnStart { get; set; } = [];
     public List<LoadTimeFrames> LoadTimeFramesToCheckOnStop { get; set; } = [];
-    public List<DynamicEnergyConsumerBalancingMethodBasedLoads> DynamicBalancingMethodBasedLoads { get; set; } = [];
+    public LoadTimeFrames? LoadTimeFrameToCheckOnRebalance { get; set; }
+    public List<DynamicEnergyConsumerBalancingMethodBasedLoadsConfig> DynamicBalancingMethodBasedLoads { get; set; } = [];
 
     public TimeSpan? MinimumRuntime { get; set; }
     public TimeSpan? MaximumRuntime { get; set; }
@@ -30,11 +31,12 @@ public class EnergyConsumerConfig
     public CarChargerEnergyConsumerConfig? CarCharger { get; set; }
 }
 
-public class DynamicEnergyConsumerBalancingMethodBasedLoads
+public class DynamicEnergyConsumerBalancingMethodBasedLoadsConfig
 {
     public List<BalancingMethod> BalancingMethods { get; set; } = [];
     public double SwitchOnLoad { get; set; }
     public double SwitchOffLoad { get; set; }
+    public LoadTimeFrames? LoadTimeFrameToCheckOnRebalance { get; set; }
 }
 
 public enum BalancingMethod

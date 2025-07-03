@@ -23,7 +23,8 @@ public class EnergyConsumerConfiguration
         SwitchOffLoad = config.SwitchOffLoad;
         LoadTimeFramesToCheckOnStart = Enum<LoadTimeFrames>.CastEnumList(config.LoadTimeFramesToCheckOnStart);
         LoadTimeFramesToCheckOnStop = Enum<LoadTimeFrames>.CastEnumList(config.LoadTimeFramesToCheckOnStop);
-        DynamicBalancingMethodBasedLoads = config.DynamicBalancingMethodBasedLoads.Select(x => new DynamicEnergyConsumerBalancingMethodBasedLoads { BalancingMethods = Enum<BalancingMethod>.CastEnumList(x.BalancingMethods), SwitchOnLoad = x.SwitchOnLoad, SwitchOffLoad = x.SwitchOffLoad }).ToList();
+        LoadTimeFrameToCheckOnRebalance = config.LoadTimeFrameToCheckOnRebalance == null ? LoadTimeFrames.Now : Enum<LoadTimeFrames>.Cast(config.LoadTimeFrameToCheckOnRebalance.Value);
+        DynamicBalancingMethodBasedLoads = config.DynamicBalancingMethodBasedLoads.Select(x => new DynamicEnergyConsumerBalancingMethodBasedLoads { BalancingMethods = Enum<BalancingMethod>.CastEnumList(x.BalancingMethods), SwitchOnLoad = x.SwitchOnLoad, SwitchOffLoad = x.SwitchOffLoad, LoadTimeFrameToCheckOnRebalance = x.LoadTimeFrameToCheckOnRebalance == null ? null : Enum<LoadTimeFrames>.Cast(x.LoadTimeFrameToCheckOnRebalance.Value) }).ToList();
         MinimumRuntime = config.MinimumRuntime;
         MaximumRuntime = config.MaximumRuntime;
         MinimumTimeout = config.MinimumTimeout;
@@ -42,6 +43,7 @@ public class EnergyConsumerConfiguration
     public double SwitchOffLoad { get; set; }
     public List<LoadTimeFrames> LoadTimeFramesToCheckOnStart { get; set; }
     public List<LoadTimeFrames> LoadTimeFramesToCheckOnStop { get; set; }
+    public LoadTimeFrames LoadTimeFrameToCheckOnRebalance { get; set; }
     public List<DynamicEnergyConsumerBalancingMethodBasedLoads> DynamicBalancingMethodBasedLoads { get; set; }
     public TimeSpan? MinimumRuntime { get; set; }
     public TimeSpan? MaximumRuntime { get; set; }

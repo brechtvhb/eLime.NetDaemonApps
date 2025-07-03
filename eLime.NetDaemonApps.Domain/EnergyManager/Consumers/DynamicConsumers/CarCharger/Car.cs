@@ -1,5 +1,4 @@
 ﻿using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
-using System.Reactive.Concurrency;
 
 namespace eLime.NetDaemonApps.Domain.EnergyManager.Consumers.DynamicConsumers.CarCharger;
 
@@ -102,11 +101,11 @@ internal class Car : IDisposable
         if (HomeAssistant.CurrentNumber == null)
             return;
 
-        if (LastCurrentChange?.Add(TimeSpan.FromSeconds(5)) > Scheduler.Now)
+        if (LastCurrentChange?.Add(TimeSpan.FromSeconds(5)) > Context.Scheduler.Now)
             return;
 
         HomeAssistant.CurrentNumber.Change(toBeCurrent);
-        LastCurrentChange = Scheduler.Now;
+        LastCurrentChange = Context.Scheduler.Now;
     }
 
     public void Dispose()

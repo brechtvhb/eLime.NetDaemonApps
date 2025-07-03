@@ -22,6 +22,12 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         ? DynamicBalancingMethodBasedLoads.FirstOrDefault(x => x.BalancingMethods.Contains(State.BalancingMethod.Value))?.SwitchOffLoad ?? _switchOffLoad
         : _switchOffLoad;
 
+    private LoadTimeFrames _loadTimeFrameToCheckOnRebalance { get; init; }
+
+    internal LoadTimeFrames LoadTimeFrameToCheckOnRebalance => State.BalancingMethod.HasValue
+        ? DynamicBalancingMethodBasedLoads.FirstOrDefault(x => x.BalancingMethods.Contains(State.BalancingMethod.Value))?.LoadTimeFrameToCheckOnRebalance ?? _loadTimeFrameToCheckOnRebalance
+        : _loadTimeFrameToCheckOnRebalance;
+
     public int MinimumCurrent { get; }
     public int MaximumCurrent { get; }
     public int OffCurrent { get; }
@@ -55,13 +61,14 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 
         HomeAssistant = new CarChargerEnergyConsumerHomeAssistantEntities(config);
         HomeAssistant.CurrentNumber.Changed += CurrentNumber_Changed;
-
+        HomeAssistant.StateSensor.StateChanged += StateSensor_StateChanged;
         MqttSensors = new DynamicEnergyConsumerMqttSensors(config.Name, context);
         MqttSensors.BalancingMethodChanged += BalancingMethodChanged;
         MqttSensors.BalanceOnBehalfOfChanged += BalanceOnBehalfOfChanged;
         MqttSensors.AllowBatteryPowerChanged += AllowBatteryPowerChanged;
 
         DynamicBalancingMethodBasedLoads = config.DynamicBalancingMethodBasedLoads;
+        _loadTimeFrameToCheckOnRebalance = config.LoadTimeFrameToCheckOnRebalance;
         MinimumCurrent = config.CarCharger.MinimumCurrent;
         MaximumCurrent = config.CarCharger.MaximumCurrent;
         OffCurrent = config.CarCharger.OffCurrent;
@@ -76,6 +83,15 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         }
 
     }
+    private void StateSensor_StateChanged(object? sender, Entities.TextSensors.TextSensorEventArgs e)
+    {
+        if (e.Sensor.State == CarChargerStates.Charging.ToString())
+        {
+            if (State.State != EnergyConsumerState.Running)
+                Started();
+        }
+    }
+
     private async void BalancingMethodChanged(object? sender, BalancingMethodChangedEventArgs e)
     {
         try
@@ -119,20 +135,44 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         }
     }
 
-    public (double current, double netPowerChange) Rebalance(IGridMonitor gridMonitor, double totalNetChange)
+    public (double current, double netPowerChange) Rebalance(IGridMonitor gridMonitor, Dictionary<LoadTimeFrames, double> consumerAverageLoadCorrections, double dynamicLoadAdjustments)
     {
         if (_lastCurrentChange?.Add(MinimumRebalancingInterval) > Context.Scheduler.Now)
             return (0, 0);
 
+        if (HomeAssistant.CurrentNumber.State == null)
+            return (0, 0);
+
+        var uncorrectedLoad = LoadTimeFrameToCheckOnRebalance switch
+        {
+            LoadTimeFrames.Now when AllowBatteryPower == AllowBatteryPower.No => gridMonitor.CurrentLoadMinusBatteries,
+            LoadTimeFrames.Now when AllowBatteryPower == AllowBatteryPower.Yes => gridMonitor.CurrentLoad,
+            LoadTimeFrames.Last30Seconds when AllowBatteryPower == AllowBatteryPower.No => gridMonitor.AverageLoadMinusBatteries(TimeSpan.FromSeconds(30)),
+            LoadTimeFrames.Last30Seconds when AllowBatteryPower == AllowBatteryPower.Yes => gridMonitor.AverageLoad(TimeSpan.FromSeconds(30)),
+            LoadTimeFrames.LastMinute when AllowBatteryPower == AllowBatteryPower.No => gridMonitor.AverageLoadMinusBatteries(TimeSpan.FromMinutes(1)),
+            LoadTimeFrames.LastMinute when AllowBatteryPower == AllowBatteryPower.Yes => gridMonitor.AverageLoad(TimeSpan.FromMinutes(1)),
+            LoadTimeFrames.Last2Minutes when AllowBatteryPower == AllowBatteryPower.No => gridMonitor.AverageLoadMinusBatteries(TimeSpan.FromMinutes(2)),
+            LoadTimeFrames.Last2Minutes when AllowBatteryPower == AllowBatteryPower.Yes => gridMonitor.AverageLoad(TimeSpan.FromMinutes(2)),
+            LoadTimeFrames.Last5Minutes when AllowBatteryPower == AllowBatteryPower.No => gridMonitor.AverageLoadMinusBatteries(TimeSpan.FromMinutes(5)),
+            LoadTimeFrames.Last5Minutes when AllowBatteryPower == AllowBatteryPower.Yes => gridMonitor.AverageLoad(TimeSpan.FromMinutes(5)),
+            _ => throw new ArgumentOutOfRangeException()
+        };
+        var consumerAverageLoadCorrection = consumerAverageLoadCorrections[LoadTimeFrameToCheckOnRebalance];
+        var estimatedLoad = uncorrectedLoad + consumerAverageLoadCorrection + dynamicLoadAdjustments;
+
+        var currentAdjustment = BalancingMethod switch
+        {
+            _ when HomeAssistant.CriticallyNeededSensor?.IsOn() == true => GetNearPeakAdjustedGridCurrent(estimatedLoad, gridMonitor.PeakLoad),
+            BalancingMethod.MaximizeQuarterPeak => GetMaximizeQuarterPeakAdjustedGridCurrent(estimatedLoad, gridMonitor.PeakLoad, gridMonitor.CurrentAverageDemand),
+            BalancingMethod.NearPeak => GetNearPeakAdjustedGridCurrent(estimatedLoad, gridMonitor.PeakLoad),
+            BalancingMethod.MidPeak => GetMidPeakAdjustedGridCurrent(estimatedLoad, gridMonitor.PeakLoad),
+            BalancingMethod.SolarPreferred => GetSolarPreferredAdjustedGridCurrent(estimatedLoad),
+            BalancingMethod.MidPoint => GetMidpointAdjustedGridCurrent(estimatedLoad),
+            BalancingMethod.SolarSurplus => GetSolarSurplusAdjustedGridCurrent(estimatedLoad),
+            _ => GetSolarOnlyAdjustedGridCurrent(estimatedLoad),
+        };
+
         var currentChargerCurrent = HomeAssistant.CurrentNumber.State ?? 0;
-
-        var currentLoad = AllowBatteryPower == AllowBatteryPower.Yes ? gridMonitor.CurrentLoad : gridMonitor.CurrentLoadMinusBatteries;
-        var averagedLoad = AllowBatteryPower == AllowBatteryPower.Yes
-            ? gridMonitor.AverageLoad(MinimumRebalancingInterval.Subtract(TimeSpan.FromSeconds(10)))
-            : gridMonitor.AverageLoadMinusBatteries(MinimumRebalancingInterval.Subtract(TimeSpan.FromSeconds(10)));
-
-        var currentAdjustment = GetBalancingAdjustedGridCurrent(currentLoad + totalNetChange, averagedLoad + totalNetChange, gridMonitor.PeakLoad, gridMonitor.CurrentAverageDemand);
-
         double toBeChargerCurrent;
         double toBeCarCurrent = 0;
 
@@ -159,23 +199,6 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
             : chargerCurrent - currentChargerCurrent;
 
         return (ConnectedCar?.CanSetCurrent ?? false ? carCurrent : chargerCurrent, netCurrentChange * TotalVoltage);
-    }
-
-    private double GetBalancingAdjustedGridCurrent(double netGridUsage, double trailingNetGridUsage, double peakUsage, double currentAverageDemand)
-    {
-        var currentAdjustment = BalancingMethod switch
-        {
-            _ when HomeAssistant.CriticallyNeededSensor?.IsOn() == true => GetNearPeakAdjustedGridCurrent(netGridUsage, peakUsage),
-            BalancingMethod.MaximizeQuarterPeak => GetMaximizeQuarterPeakAdjustedGridCurrent(netGridUsage, peakUsage, currentAverageDemand),
-            BalancingMethod.NearPeak => GetNearPeakAdjustedGridCurrent(netGridUsage, peakUsage),
-            BalancingMethod.MidPeak => GetMidPeakAdjustedGridCurrent(trailingNetGridUsage, peakUsage),
-            BalancingMethod.SolarPreferred => GetSolarPreferredAdjustedGridCurrent(trailingNetGridUsage),
-            BalancingMethod.MidPoint => GetMidpointAdjustedGridCurrent(trailingNetGridUsage),
-            BalancingMethod.SolarSurplus => GetSolarSurplusAdjustedGridCurrent(trailingNetGridUsage),
-            _ => GetSolarOnlyAdjustedGridCurrent(trailingNetGridUsage),
-        };
-
-        return currentAdjustment;
     }
 
     public double GetMaximizeQuarterPeakAdjustedGridCurrent(double netGridUsage, double peakUsageThisMonth, double currentAverageDemand)
@@ -444,13 +467,13 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         if (ConnectedCar?.HomeAssistant.ChargerSwitch == null)
         {
             if (State.State != EnergyConsumerState.Running)
-                TurnOn();
+                TurnOn(); //This does not seem to make sense, should call Started() instead?
 
             return;
         }
 
         if (State.State != EnergyConsumerState.Running && ConnectedCar.HomeAssistant.ChargerSwitch.IsOn())
-            TurnOn();
+            TurnOn();//This does not seem to make sense, should call Started() instead?
     }
 
     private void Car_ChargerTurnedOff(object? sender, BinarySensorEventArgs e)
@@ -498,11 +521,4 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 
         ConsumptionMonitorTask?.Dispose();
     }
-}
-
-public class DynamicEnergyConsumerBalancingMethodBasedLoads
-{
-    public List<BalancingMethod> BalancingMethods { get; set; } = [];
-    public double SwitchOnLoad { get; set; }
-    public double SwitchOffLoad { get; set; }
 }

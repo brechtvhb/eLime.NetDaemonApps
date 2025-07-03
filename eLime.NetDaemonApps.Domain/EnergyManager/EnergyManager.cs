@@ -30,7 +30,6 @@ public class EnergyManager : IDisposable
     internal BatteryManager.BatteryManager BatteryManager { get; set; }
     private readonly TimeSpan _minimumChangeInterval = TimeSpan.FromSeconds(20);
 
-    private DateTimeOffset _lastChange = DateTimeOffset.MinValue;
     private IDisposable? GuardTask { get; set; }
 
     private EnergyManager()
@@ -77,7 +76,7 @@ public class EnergyManager : IDisposable
         {
             try
             {
-                if (_lastChange.Add(_minimumChangeInterval) > Context.Scheduler.Now)
+                if (State.LastChange.Add(_minimumChangeInterval) > Context.Scheduler.Now)
                     return;
 
                 foreach (var consumer in Consumers)
@@ -91,15 +90,6 @@ public class EnergyManager : IDisposable
             }
         });
     }
-
-    public EnergyConsumerState CheckState() => Consumers.Any(x => x.State.State == EnergyConsumerState.CriticallyNeedsEnergy)
-        ? EnergyConsumerState.CriticallyNeedsEnergy
-        : Consumers.Any(x => x.State.State == EnergyConsumerState.NeedsEnergy)
-            ? EnergyConsumerState.NeedsEnergy
-            : Consumers.Any(x => x.State.State == EnergyConsumerState.Running)
-                ? EnergyConsumerState.Running
-                : EnergyConsumerState.Off;
-
 
     private async Task DebounceSaveAndPublishState()
     {
@@ -133,22 +123,11 @@ public class EnergyManager : IDisposable
         try
         {
             var consumerLoadCorrections = CalculateConsumerLoadCorrections();
-            var dynamicNetChange = AdjustDynamicLoadsIfNeeded();
+            var dynamicNetChange = AdjustDynamicLoadsIfNeeded(consumerLoadCorrections);
             var startNetChange = StartConsumersIfNeeded(consumerLoadCorrections, dynamicNetChange);
             var stopNetChange = StopConsumersIfNeeded(dynamicNetChange, startNetChange);
             await ManageBatteriesIfNeeded();
-
-            if (dynamicNetChange != 0 || startNetChange != 0 || stopNetChange != 0)
-            {
-                _lastChange = Context.Scheduler.Now;
-                State.State = CheckState();
-                State.LastChange = _lastChange;
-                State.RunningConsumers = Consumers.Where(x => x.State.State == EnergyConsumerState.Running).Select(x => x.Name).ToList();
-                State.NeedEnergyConsumers = Consumers.Where(x => x.State.State == EnergyConsumerState.NeedsEnergy).Select(x => x.Name).ToList();
-                State.CriticalNeedEnergyConsumers = Consumers.Where(x => x.State.State == EnergyConsumerState.CriticallyNeedsEnergy).Select(x => x.Name).ToList();
-
-                await DebounceSaveAndPublishState();
-            }
+            await UpdateStateIfSomethingChanged(dynamicNetChange, startNetChange, stopNetChange);
         }
         catch (Exception ex)
         {
@@ -160,6 +139,27 @@ public class EnergyManager : IDisposable
         }
     }
 
+    private async Task UpdateStateIfSomethingChanged(double dynamicNetChange, double startNetChange, double stopNetChange)
+    {
+        if (dynamicNetChange != 0 || startNetChange != 0 || stopNetChange != 0)
+        {
+            State.State = Consumers.Any(x => x.State.State == EnergyConsumerState.CriticallyNeedsEnergy)
+                ? EnergyConsumerState.CriticallyNeedsEnergy
+                : Consumers.Any(x => x.State.State == EnergyConsumerState.NeedsEnergy)
+                    ? EnergyConsumerState.NeedsEnergy
+                    : Consumers.Any(x => x.State.State == EnergyConsumerState.Running)
+                        ? EnergyConsumerState.Running
+                        : EnergyConsumerState.Off;
+            ;
+            State.LastChange = Context.Scheduler.Now;
+            State.RunningConsumers = Consumers.Where(x => x.State.State == EnergyConsumerState.Running).Select(x => x.Name).ToList();
+            State.NeedEnergyConsumers = Consumers.Where(x => x.State.State == EnergyConsumerState.NeedsEnergy).Select(x => x.Name).ToList();
+            State.CriticalNeedEnergyConsumers = Consumers.Where(x => x.State.State == EnergyConsumerState.CriticallyNeedsEnergy).Select(x => x.Name).ToList();
+
+            await DebounceSaveAndPublishState();
+        }
+    }
+
     private Dictionary<LoadTimeFrames, double> CalculateConsumerLoadCorrections()
     {
         var correctedLoads = new Dictionary<LoadTimeFrames, double>
@@ -168,20 +168,20 @@ public class EnergyManager : IDisposable
             { LoadTimeFrames.Last30Seconds, Consumers.Select(x => x.AverageLoadCorrection(TimeSpan.FromSeconds(30))).Sum() },
             { LoadTimeFrames.LastMinute, Consumers.Select(x => x.AverageLoadCorrection(TimeSpan.FromMinutes(1))).Sum() },
             { LoadTimeFrames.Last2Minutes, Consumers.Select(x => x.AverageLoadCorrection(TimeSpan.FromMinutes(2))).Sum() },
-            { LoadTimeFrames.Last5Minutes, Consumers.Select(x => x.AverageLoadCorrection(TimeSpan.FromMinutes(5))).Sum()}
+            { LoadTimeFrames.Last5Minutes, Consumers.Select(x => x.AverageLoadCorrection(TimeSpan.FromMinutes(5))).Sum() }
         };
 
         return correctedLoads;
     }
 
-    private double AdjustDynamicLoadsIfNeeded()
+    private double AdjustDynamicLoadsIfNeeded(Dictionary<LoadTimeFrames, double> consumerLoadCorrections)
     {
         var dynamicLoadConsumers = Consumers.Where(x => x.State.State == EnergyConsumerState.Running).OfType<IDynamicLoadConsumer>().ToList();
         var dynamicNetChange = 0d;
 
         foreach (var dynamicLoadConsumer in dynamicLoadConsumers)
         {
-            var (current, netChange) = dynamicLoadConsumer.Rebalance(GridMonitor, dynamicNetChange);
+            var (current, netChange) = dynamicLoadConsumer.Rebalance(GridMonitor, consumerLoadCorrections, dynamicNetChange);
 
             if (netChange == 0)
                 continue;
@@ -197,7 +197,7 @@ public class EnergyManager : IDisposable
     {
         var startNetChange = 0d;
 
-        //Keep remaining peak load for running consumers in mind (eg: to avoid turning on devices when washer is prewashing but still has to heat).
+        //Keep remaining peak load for running consumers in mind (eg: to avoid turning on devices when washer is pre-washing but still has to heat).
         var expectedLoad = Math.Round(Consumers.Where(x => x.State.State == EnergyConsumerState.Running && x.PeakLoad > x.CurrentLoad).Sum(x => x.PeakLoad - x.CurrentLoad), 0);
 
         var consumers = Consumers.Where(x => x.State.State is EnergyConsumerState.NeedsEnergy or EnergyConsumerState.CriticallyNeedsEnergy).OrderByDescending(x => x.State.State);
@@ -211,7 +211,7 @@ public class EnergyManager : IDisposable
 
             consumer.TurnOn();
 
-            Context.Logger.LogDebug("{Consumer}: Started consumer, state is {EnergyConsumerState}. Current load/estimated load (dynamicLoadThatCanBeScaledDownOnBehalfOf) was: {CurrentLoad} ({DynamicLoadThatCanBeScaledDownOnBehalfOf}). Switch-on/peak load of consumer is: {SwitchOnLoad}/{PeakLoad}.", consumer.Name, consumer.State.State, GridMonitor.CurrentLoad, dynamicLoadThatCanBeScaledDownOnBehalfOf, consumer.SwitchOnLoad, consumer.PeakLoad);
+            Context.Logger.LogDebug("{Consumer}: Started consumer, state is {EnergyConsumerState}. Loads - Current: {CurrentLoad}. CanScaleDownOnBehalfOf: {DynamicLoadThatCanBeScaledDownOnBehalfOf}. ConsumerSwitchOn: {SwitchOnLoad}. ConsumerPeakLoad: {PeakLoad}.", consumer.Name, consumer.State.State, GridMonitor.CurrentLoad, dynamicLoadThatCanBeScaledDownOnBehalfOf, consumer.SwitchOnLoad, consumer.PeakLoad);
             startNetChange += consumer.PeakLoad;
         }
 

@@ -16,8 +16,9 @@ public class CarChargerEnergyConsumerBuilder
     private double _switchOffLoad;
     private List<LoadTimeFrames> _loadTimeFramesToCheckOnStart = [];
     private List<LoadTimeFrames> _loadTimeFramesToCheckOnStop = [];
+    private LoadTimeFrames _loadTimeFrameToCheckOnRebalance;
 
-    private readonly List<DynamicEnergyConsumerBalancingMethodBasedLoads> _dynamicBalancingMethodBasedLoads = [];
+    private readonly List<DynamicEnergyConsumerBalancingMethodBasedLoadsConfig> _dynamicBalancingMethodBasedLoads = [];
     private TimeSpan? _minimumRuntime;
     private TimeSpan? _maximumRuntime;
     private TimeSpan? _minimumTimeout;
@@ -38,7 +39,7 @@ public class CarChargerEnergyConsumerBuilder
         return new CarChargerEnergyConsumerBuilder()
             .WithName("Veton")
             .WithStateSensor("sensor.veton_state")
-            .WithLoads(-800, [LoadTimeFrames.Now, LoadTimeFrames.Last5Minutes], 1000, [LoadTimeFrames.Now, LoadTimeFrames.Last30Seconds])
+            .WithLoads(-800, [LoadTimeFrames.Now, LoadTimeFrames.Last5Minutes], 1000, [LoadTimeFrames.Now, LoadTimeFrames.Last30Seconds], LoadTimeFrames.Last30Seconds)
             .WithCurrents("input_number.veton_current", 6, 16, 5)
             .WithVoltage("sensor.veton_voltage")
             .WithPowerSensor("sensor.veton_power")
@@ -50,7 +51,7 @@ public class CarChargerEnergyConsumerBuilder
         return new CarChargerEnergyConsumerBuilder()
             .WithName("Veton")
             .WithStateSensor("sensor.veton_state")
-            .WithLoads(-800, [LoadTimeFrames.Now, LoadTimeFrames.Last5Minutes], 1000, [LoadTimeFrames.Now, LoadTimeFrames.Last5Minutes])
+            .WithLoads(-800, [LoadTimeFrames.Now, LoadTimeFrames.Last5Minutes], 1000, [LoadTimeFrames.Now, LoadTimeFrames.Last5Minutes], LoadTimeFrames.Last30Seconds)
             .WithCurrents("input_number.veton_current", 6, 16, 5)
             .WithVoltage("sensor.veton_voltage")
             .WithPowerSensor("sensor.veton_power")
@@ -77,9 +78,9 @@ public class CarChargerEnergyConsumerBuilder
         return this;
     }
 
-    public CarChargerEnergyConsumerBuilder Add(List<BalancingMethod> balancingMethods, double switchOnLoad, double switchOffLoad)
+    public CarChargerEnergyConsumerBuilder Add(List<BalancingMethod> balancingMethods, double switchOnLoad, double switchOffLoad, LoadTimeFrames? loadTimeFrameToCheckOnRebalance)
     {
-        _dynamicBalancingMethodBasedLoads.Add(new DynamicEnergyConsumerBalancingMethodBasedLoads { BalancingMethods = balancingMethods, SwitchOnLoad = switchOnLoad, SwitchOffLoad = switchOffLoad });
+        _dynamicBalancingMethodBasedLoads.Add(new DynamicEnergyConsumerBalancingMethodBasedLoadsConfig { BalancingMethods = balancingMethods, SwitchOnLoad = switchOnLoad, SwitchOffLoad = switchOffLoad, LoadTimeFrameToCheckOnRebalance = loadTimeFrameToCheckOnRebalance });
         return this;
     }
 
@@ -110,12 +111,13 @@ public class CarChargerEnergyConsumerBuilder
         return this;
     }
 
-    public CarChargerEnergyConsumerBuilder WithLoads(double switchOn, List<LoadTimeFrames> loadTimeFramesToCheckOnStart, double switchOff, List<LoadTimeFrames> loadTimeFramesToCheckOnStop)
+    public CarChargerEnergyConsumerBuilder WithLoads(double switchOn, List<LoadTimeFrames> loadTimeFramesToCheckOnStart, double switchOff, List<LoadTimeFrames> loadTimeFramesToCheckOnStop, LoadTimeFrames loadTimeFrameToCheckOnRebalance)
     {
         _switchOnLoad = switchOn;
         _switchOffLoad = switchOff;
         _loadTimeFramesToCheckOnStart = loadTimeFramesToCheckOnStart;
         _loadTimeFramesToCheckOnStop = loadTimeFramesToCheckOnStop;
+        _loadTimeFrameToCheckOnRebalance = loadTimeFrameToCheckOnRebalance;
         return this;
     }
 
