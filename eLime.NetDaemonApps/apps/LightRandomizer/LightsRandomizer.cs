@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 namespace eLime.NetDaemonApps.apps.LightRandomizer;
 
 
-[NetDaemonApp(Id = "lightsrandomizer")]
+[NetDaemonApp(Id = "lightsrandomizer"), Focus]
 public class LightsRandomizer : IAsyncInitializable, IAsyncDisposable
 {
     private readonly IHaContext _ha;
