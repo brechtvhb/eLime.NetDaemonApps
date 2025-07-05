@@ -300,6 +300,46 @@ public abstract class EnergyConsumer : IDisposable
 
     public abstract bool CanForceStop();
     public abstract bool CanForceStopOnPeakLoad();
+
+    //At the moment we do nothing with expectedLoadCorrections when stopping
+    public virtual bool CanStop(IGridMonitor gridMonitor, Dictionary<LoadTimeFrames, double> consumerAverageLoadCorrections, double expectedLoadCorrections, double dynamicLoadAdjustments, double dynamicLoadThatCanBeScaledDownOnBehalfOf, double startLoadAdjustments, double stopLoadAdjustments)
+    {
+        var canForceStop = CanForceStop();
+        var canForceStopOnPeakLoad = CanForceStopOnPeakLoad();
+
+        if (!canForceStop && canForceStopOnPeakLoad)
+            return false;
+
+        if (canForceStopOnPeakLoad && this is IDynamicLoadConsumer && dynamicLoadAdjustments != 0)
+            return false;
+
+        var canStop = true;
+        foreach (var timeFrameToValidate in LoadTimeFramesToCheckOnStop)
+        {
+            var uncorrectedLoad = timeFrameToValidate switch
+            {
+                LoadTimeFrames.Now => gridMonitor.CurrentLoadMinusBatteries,
+                LoadTimeFrames.Last30Seconds => gridMonitor.AverageLoadMinusBatteries(TimeSpan.FromSeconds(30)),
+                LoadTimeFrames.LastMinute => gridMonitor.AverageLoadMinusBatteries(TimeSpan.FromMinutes(1)),
+                LoadTimeFrames.Last2Minutes => gridMonitor.AverageLoadMinusBatteries(TimeSpan.FromMinutes(2)),
+                LoadTimeFrames.Last5Minutes => gridMonitor.AverageLoadMinusBatteries(TimeSpan.FromMinutes(5)),
+                _ => throw new ArgumentOutOfRangeException()
+            };
+            var consumerAverageLoadCorrection = consumerAverageLoadCorrections[timeFrameToValidate];
+            var estimatedLoad = uncorrectedLoad + consumerAverageLoadCorrection + dynamicLoadAdjustments + startLoadAdjustments + stopLoadAdjustments - dynamicLoadThatCanBeScaledDownOnBehalfOf;
+
+            var allowed = false;
+
+            if (canForceStop)
+                allowed = estimatedLoad > SwitchOffLoad;
+            if (!allowed && canForceStopOnPeakLoad)
+                allowed = estimatedLoad >= gridMonitor.PeakLoad;
+
+            canStop &= allowed;
+        }
+
+        return canStop;
+    }
     public abstract void TurnOn();
     public abstract void TurnOff();
     public abstract void Dispose();

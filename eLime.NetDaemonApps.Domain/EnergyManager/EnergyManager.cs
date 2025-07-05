@@ -125,7 +125,7 @@ public class EnergyManager : IDisposable
             var consumerLoadCorrections = CalculateConsumerLoadCorrections();
             var dynamicNetChange = AdjustDynamicLoadsIfNeeded(consumerLoadCorrections);
             var startNetChange = StartConsumersIfNeeded(consumerLoadCorrections, dynamicNetChange);
-            var stopNetChange = StopConsumersIfNeeded(dynamicNetChange, startNetChange);
+            var stopNetChange = StopConsumersIfNeeded(consumerLoadCorrections, dynamicNetChange, startNetChange);
             await ManageBatteriesIfNeeded();
             await UpdateStateIfSomethingChanged(dynamicNetChange, startNetChange, stopNetChange);
         }
@@ -136,27 +136,6 @@ public class EnergyManager : IDisposable
         finally
         {
             _semaphore.Release();
-        }
-    }
-
-    private async Task UpdateStateIfSomethingChanged(double dynamicNetChange, double startNetChange, double stopNetChange)
-    {
-        if (dynamicNetChange != 0 || startNetChange != 0 || stopNetChange != 0)
-        {
-            State.State = Consumers.Any(x => x.State.State == EnergyConsumerState.CriticallyNeedsEnergy)
-                ? EnergyConsumerState.CriticallyNeedsEnergy
-                : Consumers.Any(x => x.State.State == EnergyConsumerState.NeedsEnergy)
-                    ? EnergyConsumerState.NeedsEnergy
-                    : Consumers.Any(x => x.State.State == EnergyConsumerState.Running)
-                        ? EnergyConsumerState.Running
-                        : EnergyConsumerState.Off;
-            ;
-            State.LastChange = Context.Scheduler.Now;
-            State.RunningConsumers = Consumers.Where(x => x.State.State == EnergyConsumerState.Running).Select(x => x.Name).ToList();
-            State.NeedEnergyConsumers = Consumers.Where(x => x.State.State == EnergyConsumerState.NeedsEnergy).Select(x => x.Name).ToList();
-            State.CriticalNeedEnergyConsumers = Consumers.Where(x => x.State.State == EnergyConsumerState.CriticallyNeedsEnergy).Select(x => x.Name).ToList();
-
-            await DebounceSaveAndPublishState();
         }
     }
 
@@ -205,7 +184,6 @@ public class EnergyManager : IDisposable
         foreach (var consumer in consumers)
         {
             var dynamicLoadThatCanBeScaledDownOnBehalfOf = GetDynamicLoadThatCanBeScaledDownOnBehalfOf(consumer, dynamicLoadNetChange);
-
             if (!consumer.CanStart(GridMonitor, consumerLoadCorrections, expectedLoad, dynamicLoadNetChange, dynamicLoadThatCanBeScaledDownOnBehalfOf, startNetChange))
                 continue;
 
@@ -218,74 +196,38 @@ public class EnergyManager : IDisposable
         return startNetChange;
     }
 
-    private double StopConsumersIfNeeded(double dynamicLoadNetChange, double startLoadNetChange)
+    private double StopConsumersIfNeeded(Dictionary<LoadTimeFrames, double> consumerLoadCorrections, double dynamicLoadNetChange, double startLoadNetChange)
     {
-        var estimatedLoad = GridMonitor.CurrentLoadMinusBatteries + dynamicLoadNetChange + startLoadNetChange;
-        var loadCorrectionForConsumers = Consumers.Sum(x => x.AverageLoadCorrection(TimeSpan.FromMinutes(3)));
-        var estimatedAverageLoad = GridMonitor.AverageLoadMinusBatteries(TimeSpan.FromMinutes(3)) + loadCorrectionForConsumers + dynamicLoadNetChange + startLoadNetChange;
+        var expectedLoad = Math.Round(Consumers.Where(x => x.State.State == EnergyConsumerState.Running && x.PeakLoad > x.CurrentLoad).Sum(x => x.PeakLoad - x.CurrentLoad), 0);
+
         var stopNetChange = 0d;
 
+        //TODO: I want to remove this
         var consumersThatNoLongerNeedEnergy = Consumers.Where(x => x is { State.State: EnergyConsumerState.Off, IsRunning: true });
         foreach (var consumer in consumersThatNoLongerNeedEnergy)
         {
-            Context.Logger.LogDebug("{Consumer}: Will stop consumer because it no longer needs energy.", consumer.Name);
+            Context.Logger.LogWarning("{Consumer}: Will stop consumer because it no longer needs energy. This should not happen! Means there is a bug in code", consumer.Name);
             consumer.Stop();
-            estimatedLoad -= consumer.CurrentLoad;
-            estimatedAverageLoad -= consumer.CurrentLoad;
             stopNetChange -= consumer.CurrentLoad;
         }
 
-        var consumersThatPreferSolar = Consumers.OrderByDescending(x => x.SwitchOffLoad).Where(x => x.IsRunning).Where(x => x.CanForceStop()).ToList();
-        foreach (var consumer in consumersThatPreferSolar)
-        {
-            var dynamicLoadThatCanBeScaledDownOnBehalfOf = GetDynamicLoadThatCanBeScaledDownOnBehalfOf(consumer, dynamicLoadNetChange);
-
-            if (consumer.SwitchOffLoad > estimatedAverageLoad - dynamicLoadThatCanBeScaledDownOnBehalfOf)
-                continue;
-
-            if (consumer.SwitchOffLoad > estimatedLoad - dynamicLoadThatCanBeScaledDownOnBehalfOf)
-                continue;
-
-            Context.Logger.LogDebug("{Consumer}: Will stop consumer because current load is above switch off load. Current load/estimated (dynamicLoadThatCanBeScaledDownOnBehalfOf) load was: {CurrentLoad}/{EstimatedLoad} ({DynamicLoadThatCanBeScaledDownOnBehalfOf}). Switch-off/peak load of consumer is: {SwitchOffLoad}/{PeakLoad}", consumer.Name, GridMonitor.CurrentLoad, estimatedAverageLoad, dynamicLoadThatCanBeScaledDownOnBehalfOf, consumer.SwitchOffLoad, consumer.PeakLoad);
-            consumer.Stop();
-            estimatedLoad -= consumer.CurrentLoad;
-            estimatedAverageLoad -= consumer.CurrentLoad;
-            stopNetChange -= consumer.CurrentLoad;
-        }
-
-        if (estimatedAverageLoad < GridMonitor.PeakLoad)
-            return stopNetChange;
-
-        if (estimatedLoad < GridMonitor.PeakLoad)
-            return stopNetChange;
-
-        //Should we be able to differentiate between force stops and regular stops when managing dynamic loads?
+        //We have a dynamic load that can be scaled down on behalf of all consumers, so we're not forcing any shut down of consumers.
         var dynamicLoadThatCanBeScaledDownOnBehalfOfForAllConsumers = GetDynamicLoadThatCanBeScaledDownOnBehalfOf(null, dynamicLoadNetChange);
         if (dynamicLoadThatCanBeScaledDownOnBehalfOfForAllConsumers > 0)
             return stopNetChange;
 
-        var consumersThatShouldForceStopped = Consumers.Where(x => x.CanForceStopOnPeakLoad() && x.IsRunning);
-        foreach (var consumer in consumersThatShouldForceStopped)
+        var consumersThatCanStop = Consumers.Where(x => x.IsRunning && (x.CanForceStop() || x.CanForceStopOnPeakLoad())).OrderByDescending(x => x.CanForceStop()).ThenByDescending(x => x.SwitchOffLoad).ToList();
+        foreach (var consumer in consumersThatCanStop)
         {
-            if (consumer is IDynamicLoadConsumer && dynamicLoadNetChange != 0)
-            {
-                Context.Logger.LogDebug("{Consumer}: Should force stop, but won't do it because dynamic load was adjusted. Current load/estimated load was: {CurrentLoad}/{EstimatedLoad}. Switch-off/peak load of consumer is: {SwitchOffLoad}/{PeakLoad}", consumer.Name, GridMonitor.CurrentLoad, estimatedAverageLoad, consumer.SwitchOffLoad, consumer.PeakLoad);
+            var dynamicLoadThatCanBeScaledDownOnBehalfOf = GetDynamicLoadThatCanBeScaledDownOnBehalfOf(consumer, dynamicLoadNetChange);
+            if (!consumer.CanStop(GridMonitor, consumerLoadCorrections, expectedLoad, dynamicLoadNetChange, dynamicLoadThatCanBeScaledDownOnBehalfOf, startLoadNetChange, stopNetChange))
                 continue;
-            }
 
-            Context.Logger.LogDebug("{Consumer}: Will stop consumer right now because peak load was exceeded. Current load/estimated load was: {CurrentLoad}/{EstimatedLoad}. Switch-off/peak load of consumer is: {SwitchOffLoad}/{PeakLoad}", consumer.Name, GridMonitor.CurrentLoad, estimatedAverageLoad, consumer.SwitchOffLoad, consumer.PeakLoad);
+            var reason = consumer.CanForceStop() ? "it is consuming too much grid power" : "peak load is exceeded";
+            Context.Logger.LogDebug("{Consumer}: Will stop because {reason}. Loads [Current: {CurrentLoad}, CanBeScaledDownOnBehalfOf: {DynamicLoadThatCanBeScaledDownOnBehalfOf}, ConsumerSwitchOff: {SwitchOffLoad}, ConsumerPeakLoad: {PeakLoad}]", consumer.Name, reason, GridMonitor.CurrentLoad, dynamicLoadThatCanBeScaledDownOnBehalfOf, consumer.SwitchOffLoad, consumer.PeakLoad);
             consumer.Stop();
-            estimatedLoad -= consumer.CurrentLoad;
-            estimatedAverageLoad -= consumer.CurrentLoad;
             stopNetChange -= consumer.CurrentLoad;
-
-            if (estimatedAverageLoad <= GridMonitor.PeakLoad)
-                break;
-
-            if (estimatedLoad <= GridMonitor.PeakLoad)
-                break;
         }
-
 
         return stopNetChange;
     }
@@ -295,6 +237,27 @@ public class EnergyManager : IDisposable
         var runningDynamicLoadConsumers = Consumers.Where(x => x.IsRunning).OfType<IDynamicLoadConsumer>().ToList();
         var averageDischargePower = GridMonitor.AverageBatteriesDischargingPower(TimeSpan.FromMinutes(2));
         await BatteryManager.ManageBatteryPowerSettings(runningDynamicLoadConsumers.Any(), runningDynamicLoadConsumers.Any(x => x.AllowBatteryPower is AllowBatteryPower.MaxPower or AllowBatteryPower.FlattenGridLoad), averageDischargePower);
+    }
+
+    private async Task UpdateStateIfSomethingChanged(double dynamicNetChange, double startNetChange, double stopNetChange)
+    {
+        if (dynamicNetChange != 0 || startNetChange != 0 || stopNetChange != 0)
+        {
+            State.State = Consumers.Any(x => x.State.State == EnergyConsumerState.CriticallyNeedsEnergy)
+                ? EnergyConsumerState.CriticallyNeedsEnergy
+                : Consumers.Any(x => x.State.State == EnergyConsumerState.NeedsEnergy)
+                    ? EnergyConsumerState.NeedsEnergy
+                    : Consumers.Any(x => x.State.State == EnergyConsumerState.Running)
+                        ? EnergyConsumerState.Running
+                        : EnergyConsumerState.Off;
+
+            State.LastChange = Context.Scheduler.Now;
+            State.RunningConsumers = Consumers.Where(x => x.State.State == EnergyConsumerState.Running).Select(x => x.Name).ToList();
+            State.NeedEnergyConsumers = Consumers.Where(x => x.State.State == EnergyConsumerState.NeedsEnergy).Select(x => x.Name).ToList();
+            State.CriticalNeedEnergyConsumers = Consumers.Where(x => x.State.State == EnergyConsumerState.CriticallyNeedsEnergy).Select(x => x.Name).ToList();
+
+            await DebounceSaveAndPublishState();
+        }
     }
 
     private double GetDynamicLoadThatCanBeScaledDownOnBehalfOf(EnergyConsumer? consumer, double dynamicLoadNetChange)

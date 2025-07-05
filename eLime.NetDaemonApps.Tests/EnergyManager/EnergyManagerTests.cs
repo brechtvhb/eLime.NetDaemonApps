@@ -155,7 +155,7 @@ public class EnergyManagerTests
 
         //Act
         _testCtx.TriggerStateChange(builder._grid.ImportEntity, "5000");
-        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(6));
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(30));
 
         //Assert
         _testCtx.VerifySwitchTurnOff(consumer.Simple!.SocketEntity, Moq.Times.Once);
