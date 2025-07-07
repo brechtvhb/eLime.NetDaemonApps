@@ -67,26 +67,39 @@ public class TriggeredEnergyConsumer : EnergyConsumer
         MqttSensors = new EnergyConsumerMqttSensors(config.Name, context);
     }
 
-    private void StateSensor_StateChanged(object? sender, Entities.TextSensors.TextSensorEventArgs e)
+    private async void StateSensor_StateChanged(object? sender, Entities.TextSensors.TextSensorEventArgs e)
     {
-        if (HomeAssistant.SocketSwitch != null && HomeAssistant.SocketSwitch.IsOff())
-            return;
+        try
+        {
+            if (HomeAssistant.SocketSwitch != null && HomeAssistant.SocketSwitch.IsOff())
+                return;
 
-        if (e.Sensor.State == StartState || e.Sensor.State == PausedState)
-        {
-            State.State = EnergyConsumerState.NeedsEnergy;
+            if (e.Sensor.State == StartState || e.Sensor.State == PausedState)
+            {
+                State.State = EnergyConsumerState.NeedsEnergy;
+            }
+            else if (e.Sensor.State == CriticalState)
+            {
+                State.State = EnergyConsumerState.CriticallyNeedsEnergy;
+            }
+            else if (e.Sensor.State == CompletedState && ShutDownOnComplete)
+            {
+                Stop();
+            }
+            else if (e.Sensor.State == CompletedState && !ShutDownOnComplete)
+            {
+                Stopped();
+                await DebounceSaveAndPublishState();
+            }
+            else if (States.Where(x => x.IsRunning).Select(x => x.Name).Contains(e.Sensor.State) && State.State != EnergyConsumerState.Running)
+            {
+                Started();
+                await DebounceSaveAndPublishState();
+            }
         }
-        else if (e.Sensor.State == CriticalState)
+        catch (Exception ex)
         {
-            State.State = EnergyConsumerState.CriticallyNeedsEnergy;
-        }
-        else if (e.Sensor.State == CompletedState)
-        {
-            Stop();
-        }
-        else if (States.Where(x => x.IsRunning).Select(x => x.Name).Contains(e.Sensor.State) && State.State != EnergyConsumerState.Running)
-        {
-            State.State = EnergyConsumerState.Running;
+            Context.Logger.LogError(ex, "An error occurred while handling change of state sensor.");
         }
     }
 
