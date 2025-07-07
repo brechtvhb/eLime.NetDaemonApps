@@ -32,7 +32,15 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
     public int MaximumCurrent { get; }
     public int OffCurrent { get; }
 
-    public double ReleasablePowerWhenBalancingOnBehalfOf => CurrentLoad - MinimumCurrentForConnectedCar * TotalVoltage;
+    public double ReleasablePowerWhenBalancingOnBehalfOf
+    {
+        get
+        {
+            var x = CurrentLoad - MinimumCurrentForConnectedCar * TotalVoltage;
+            return x < 20 ? 0 : x;
+        }
+    }
+
     public TimeSpan MinimumRebalancingInterval => TimeSpan.FromSeconds(30); //TODO: config setting
     private DateTimeOffset? _balancingMethodLastChangedAt;
 

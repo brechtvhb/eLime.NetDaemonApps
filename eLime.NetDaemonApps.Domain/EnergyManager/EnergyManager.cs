@@ -213,7 +213,7 @@ public class EnergyManager : IDisposable
 
         //We have a dynamic load that can be scaled down on behalf of all consumers, so we're not forcing any shut down of consumers.
         var dynamicLoadThatCanBeScaledDownOnBehalfOfForAllConsumers = GetDynamicLoadThatCanBeScaledDownOnBehalfOf(null, dynamicLoadNetChange);
-        if (dynamicLoadThatCanBeScaledDownOnBehalfOfForAllConsumers > 0)
+        if (dynamicLoadThatCanBeScaledDownOnBehalfOfForAllConsumers > 50)
             return stopNetChange;
 
         var consumersThatCanStop = Consumers.Where(x => x.IsRunning && (x.CanForceStop() || x.CanForceStopOnPeakLoad())).OrderByDescending(x => x.CanForceStop()).ThenByDescending(x => x.SwitchOffLoad).ToList();
@@ -273,7 +273,7 @@ public class EnergyManager : IDisposable
             .Where(x => consumerGroups.Contains(x.BalanceOnBehalfOf))
             .Sum(x => x.ReleasablePowerWhenBalancingOnBehalfOf) + dynamicLoadNetChange;
 
-        return Math.Round(dynamicLoadThatCanBeScaledDownOnBehalfOf < 0 ? 0 : dynamicLoadThatCanBeScaledDownOnBehalfOf);
+        return Math.Round(dynamicLoadThatCanBeScaledDownOnBehalfOf);
     }
 
     private void GetAndSanitizeState()
