@@ -36,8 +36,10 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
     {
         get
         {
-            var x = CurrentLoad - MinimumCurrentForConnectedCar * TotalVoltage;
-            return x < 20 ? 0 : x;
+            if (Math.Round(CurrentLoad / TotalVoltage) <= MinimumCurrentForConnectedCar)
+                return 0;
+
+            return CurrentLoad - MinimumCurrentForConnectedCar * TotalVoltage;
         }
     }
 
