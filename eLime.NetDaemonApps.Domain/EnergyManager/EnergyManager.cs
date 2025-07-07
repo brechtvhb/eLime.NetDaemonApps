@@ -216,7 +216,7 @@ public class EnergyManager : IDisposable
         if (dynamicLoadThatCanBeScaledDownOnBehalfOfForAllConsumers > 50)
             return stopNetChange;
 
-        var consumersThatCanStop = Consumers.Where(x => x.IsRunning && (x.CanForceStop() || x.CanForceStopOnPeakLoad())).OrderByDescending(x => x.CanForceStop()).ThenByDescending(x => x.SwitchOffLoad).ToList();
+        var consumersThatCanStop = Consumers.Where(x => x.IsRunning && (x.CanForceStop() || x.CanForceStopOnPeakLoad())).OrderByDescending(x => x.CanForceStop()).ThenBy(x => x.SwitchOffLoad).ToList();
         foreach (var consumer in consumersThatCanStop)
         {
             var dynamicLoadThatCanBeScaledDownOnBehalfOf = GetDynamicLoadThatCanBeScaledDownOnBehalfOf(consumer, dynamicLoadNetChange);
