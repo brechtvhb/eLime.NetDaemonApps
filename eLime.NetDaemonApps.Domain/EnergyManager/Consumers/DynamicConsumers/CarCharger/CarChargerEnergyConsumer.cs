@@ -193,7 +193,7 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
             return (0, 0);
 
         _lastCurrentChange = Context.Scheduler.Now;
-        Context.Logger.LogInformation("{Consumer}: Will rebalance. Input params [Uncorrected load: {uncorrectedLoad}. Consumer corrections: {consumerAverageLoadCorrection}.  Dynamic load adjustments: {dynamicLoadAdjustments}. Maximum discharge power: {maximumDischargePower}. Estimated Load: {estimatedLoad}. ", Name, uncorrectedLoad, consumerAverageLoadCorrections, dynamicLoadAdjustments, maximumDischargePower, estimatedLoad);
+        //Context.Logger.LogInformation("{Consumer}: Will rebalance. Input params [Uncorrected load: {uncorrectedLoad}. Consumer corrections: {consumerAverageLoadCorrection}.  Dynamic load adjustments: {dynamicLoadAdjustments}. Maximum discharge power: {maximumDischargePower}. Estimated Load: {estimatedLoad}. ", Name, uncorrectedLoad, consumerAverageLoadCorrections, dynamicLoadAdjustments, maximumDischargePower, estimatedLoad);
         var netCurrentChange = ConnectedCar?.CanSetCurrent ?? false
             ? carCurrent - CurrentCurrentForConnectedCar
             : chargerCurrent - currentChargerCurrent;

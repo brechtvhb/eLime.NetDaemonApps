@@ -19,7 +19,7 @@ internal class BatteryManager : IDisposable
 
     internal DebounceDispatcher? SaveAndPublishStateDebounceDispatcher { get; private set; }
 
-    internal double MaximumDischargePower => Batteries.Where(x => x is { CanControl: true, IsEmpty: false }).Sum(x => x.MaxDischargePower);
+    internal double MaximumDischargePower => Batteries.Where(x => x is { IsEmpty: false }).Sum(x => x.MaxDischargePower);
     private BatteryManager()
     {
     }
