@@ -110,6 +110,12 @@ internal class Car : IDisposable
 
     public void Dispose()
     {
+        if (HomeAssistant.ChargerSwitch != null)
+        {
+            HomeAssistant.ChargerSwitch.TurnedOn -= ChargerSwitch_TurnedOn;
+            HomeAssistant.ChargerSwitch.TurnedOff -= ChargerSwitch_TurnedOff;
+        }
+        HomeAssistant.CableConnectedSensor.TurnedOn -= CableConnectedSensor_TurnedOn;
         HomeAssistant.Dispose();
     }
 }

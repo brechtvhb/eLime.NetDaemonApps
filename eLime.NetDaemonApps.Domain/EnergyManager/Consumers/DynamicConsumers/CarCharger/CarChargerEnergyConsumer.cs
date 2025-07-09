@@ -453,59 +453,101 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
             Context.Logger.LogError(ex, "Error while turning off car charger.");
         }
     }
-    private void StateSensor_StateChanged(object? sender, Entities.TextSensors.TextSensorEventArgs e)
+    private async void StateSensor_StateChanged(object? sender, Entities.TextSensors.TextSensorEventArgs e)
     {
-        if (e.Sensor.State == CarChargerStates.Charging.ToString())
+        try
         {
-            if (State.State != EnergyConsumerState.Running)
-                Started();
+            if (e.Sensor.State == CarChargerStates.Charging.ToString())
+            {
+                if (State.State != EnergyConsumerState.Running)
+                    Started();
+            }
+            if (e.Sensor.State == CarChargerStates.Occupied.ToString())
+            {
+                if (State.State == EnergyConsumerState.Running)
+                    Stopped();
+            }
+
+            await DebounceSaveAndPublishState();
+        }
+        catch (Exception ex)
+        {
+            Context.Logger.LogError(ex, "Could not handle StateSensor_StateChanged event");
         }
     }
-    private void CurrentNumber_Changed(object? sender, Entities.Input.InputNumberSensorEventArgs e)
+    private async void CurrentNumber_Changed(object? sender, Entities.Input.InputNumberSensorEventArgs e)
     {
-        if (e.Sensor.State < MinimumCurrent)
+        try
         {
+            if (e.Sensor.State < MinimumCurrent)
+            {
+                if (State.State == EnergyConsumerState.Running)
+                    Stopped();
+            }
+            else if (ConnectedCar?.HomeAssistant.ChargerSwitch == null)
+            {
+                if (State.State != EnergyConsumerState.Running)
+                    TurnOn(); //This does not seem to make sense, should call Started() instead?
+            }
+            else if (State.State != EnergyConsumerState.Running && ConnectedCar.HomeAssistant.ChargerSwitch.IsOn())
+                TurnOn();//This does not seem to make sense, should call Started() instead?
+
+            await DebounceSaveAndPublishState();
+        }
+        catch (Exception ex)
+        {
+            Context.Logger.LogError(ex, "Could not handle StateSensor_StateChanged event");
+        }
+    }
+
+    private async void Car_ChargerTurnedOff(object? sender, BinarySensorEventArgs e)
+    {
+        try
+        {
+            Context.Logger.LogInformation($"Car '{ConnectedCar?.Name}' charger switch turned off.");
+
             if (State.State == EnergyConsumerState.Running)
                 Stopped();
 
-            return;
+            await DebounceSaveAndPublishState();
         }
-
-        if (ConnectedCar?.HomeAssistant.ChargerSwitch == null)
+        catch (Exception ex)
         {
-            if (State.State != EnergyConsumerState.Running)
-                TurnOn(); //This does not seem to make sense, should call Started() instead?
-
-            return;
+            Context.Logger.LogError(ex, "Could not handle StateSensor_StateChanged event");
         }
-
-        if (State.State != EnergyConsumerState.Running && ConnectedCar.HomeAssistant.ChargerSwitch.IsOn())
-            TurnOn();//This does not seem to make sense, should call Started() instead?
     }
 
-    private void Car_ChargerTurnedOff(object? sender, BinarySensorEventArgs e)
+    private async void Car_ChargerTurnedOn(object? sender, BinarySensorEventArgs e)
     {
-        Context.Logger.LogInformation($"Car '{ConnectedCar?.Name}' charger switch turned off.");
+        try
+        {
+            Context.Logger.LogInformation($"Car '{ConnectedCar?.Name}' charger switch turned on.");
 
-        if (State.State == EnergyConsumerState.Running)
-            Stopped();
+            if (ConnectedCar?.AutoPowerOnWhenConnecting ?? false)
+                TurnOn();
+
+            await DebounceSaveAndPublishState();
+        }
+        catch (Exception ex)
+        {
+            Context.Logger.LogError(ex, "Could not handle StateSensor_StateChanged event");
+        }
     }
-
-    private void Car_ChargerTurnedOn(object? sender, BinarySensorEventArgs e)
+    private async void Car_Connected(object? sender, BinarySensorEventArgs e)
     {
-        Context.Logger.LogInformation($"Car '{ConnectedCar?.Name}' charger switch turned on.");
+        try
+        {
+            Context.Logger.LogInformation($"Car '{ConnectedCar?.Name}' connected.");
 
-        //Debounce with Car_Connected
-        if (ConnectedCar?.AutoPowerOnWhenConnecting ?? false)
-            TurnOn();
-    }
-    private void Car_Connected(object? sender, BinarySensorEventArgs e)
-    {
-        Context.Logger.LogInformation($"Car '{ConnectedCar?.Name}' connected.");
+            if (ConnectedCar?.AutoPowerOnWhenConnecting ?? false)
+                TurnOn();
 
-        //Debounce with Car_ChargerTurnedOn
-        if (ConnectedCar?.AutoPowerOnWhenConnecting ?? false)
-            TurnOn();
+            await DebounceSaveAndPublishState();
+        }
+        catch (Exception ex)
+        {
+            Context.Logger.LogError(ex, "Could not handle StateSensor_StateChanged event");
+        }
     }
 
     public override void Dispose()
