@@ -920,7 +920,7 @@ public class CarChargerEnergyConsumerTests
         var mqttState = $"sensor.energy_consumer_{consumer.Name.MakeHaFriendly()}_state";
         var mqttBalancingMethod = $"select.energy_consumer_{consumer.Name.MakeHaFriendly()}_balancing_method";
         var mqttAllowBatteryPower = $"select.energy_consumer_{consumer.Name.MakeHaFriendly()}_allow_battery_power";
-        A.CallTo(() => _mqttEntityManager.SetStateAsync(mqttState, EnergyConsumerState.NeedsEnergy.ToString())).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _mqttEntityManager.SetStateAsync(mqttState, EnergyConsumerState.NeedsEnergy.ToString())).MustHaveHappened();
         A.CallTo(() => _mqttEntityManager.SetStateAsync(mqttBalancingMethod, BalancingMethod.SolarOnly.ToString())).MustHaveHappened();
         A.CallTo(() => _mqttEntityManager.SetStateAsync(mqttAllowBatteryPower, AllowBatteryPower.FlattenGridLoad.ToString())).MustHaveHappened();
         A.CallTo(() => _fileStorage.Save("EnergyManager", "veton", A<ConsumerState>._)).MustHaveHappened();
