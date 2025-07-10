@@ -15,7 +15,7 @@ public class Battery : IDisposable
     internal string Name { get; }
     internal decimal Capacity { get; }
     internal int MinimumStateOfCharge { get; }
-    internal int RteStateOfChargeReferencePoint { get; }
+    internal List<int> RteStateOfChargeReferencePoints { get; }
     internal int MaxChargePower { get; }
     internal int OptimalChargePowerMinThreshold { get; }
     internal int OptimalChargePowerMaxThreshold { get; }
@@ -49,7 +49,7 @@ public class Battery : IDisposable
         Name = config.Name;
         Capacity = config.Capacity;
         MinimumStateOfCharge = config.MinimumStateOfCharge;
-        RteStateOfChargeReferencePoint = config.RteStateOfChargeReferencePoint;
+        RteStateOfChargeReferencePoints = config.RteStateOfChargeReferencePoints;
         MaxChargePower = config.MaxChargePower;
         OptimalChargePowerMinThreshold = config.OptimalChargePowerMinThreshold;
         OptimalChargePowerMaxThreshold = config.OptimalChargePowerMaxThreshold;
@@ -70,15 +70,11 @@ public class Battery : IDisposable
         {
             OnStateOfChargeChanged(e);
 
-            if (Convert.ToInt32(e.Sensor.State) != RteStateOfChargeReferencePoint)
-            {
-                State.LastRteStateOfChargeReferencePoint = RteStateOfChargeReferencePoint;
-                State.LastChange = Context.Scheduler.Now;
-                await DebounceSaveAndPublishState();
+            int? rteReferencePoint = RteStateOfChargeReferencePoints.FirstOrDefault(x => x == Convert.ToInt32(e.Sensor.State));
+            if (rteReferencePoint == null)
                 return;
-            }
 
-            Context.Logger.LogTrace("{Name}: State of charge is {RteStateOfChargeReferencePoint}%. Calculating Round trip efficiency.", Name, RteStateOfChargeReferencePoint);
+            Context.Logger.LogTrace("{Name}: State of charge is {RteStateOfChargeReferencePoint}%. Calculating Round trip efficiency.", Name, rteReferencePoint.Value);
             var totalEnergyCharged = HomeAssistant.TotalEnergyChargedSensor.State;
             var totalEnergyDischarged = HomeAssistant.TotalEnergyDischargedSensor.State;
 
@@ -88,8 +84,18 @@ public class Battery : IDisposable
                 return;
             }
 
-            var energyChargedSinceLastRteCalculation = totalEnergyCharged.Value - State.LastTotalEnergyChargedAtRteReferencePoint;
-            var energyDischargedSinceLastRteCalculation = totalEnergyDischarged.Value - State.LastTotalEnergyDischargedAtRteReferencePoint;
+            var rteState = State.RoundTripEfficiencyReferencePoints.FirstOrDefault(x => x.ReferencePoint == rteReferencePoint.Value);
+            if (rteState == null)
+            {
+                var rteStateOfChargeReferencePoint = RoundTripEfficiencyReferencePoint.Create(rteReferencePoint.Value, totalEnergyCharged.Value, totalEnergyDischarged.Value);
+                State.RoundTripEfficiencyReferencePoints.Add(rteStateOfChargeReferencePoint);
+                State.LastChange = Context.Scheduler.Now;
+                await DebounceSaveAndPublishState();
+                return;
+            }
+
+            var energyChargedSinceLastRteCalculation = totalEnergyCharged.Value - rteState.LastTotalEnergyCharged;
+            var energyDischargedSinceLastRteCalculation = totalEnergyDischarged.Value - rteState.LastTotalEnergyDischarged;
 
             if (energyChargedSinceLastRteCalculation <= 1 || energyDischargedSinceLastRteCalculation <= 1)
             {
@@ -97,15 +103,10 @@ public class Battery : IDisposable
                 return;
             }
 
-            if (RteStateOfChargeReferencePoint == State.LastRteStateOfChargeReferencePoint)
-            {
-                var rte = Math.Round(energyDischargedSinceLastRteCalculation / energyChargedSinceLastRteCalculation * 100, 2);
-                State.RoundTripEfficiency = rte;
-                Context.Logger.LogInformation("{Name}: Round trip efficiency calculated: {Rte}%.", Name, rte);
-            }
-
-            State.LastTotalEnergyChargedAtRteReferencePoint = totalEnergyCharged.Value;
-            State.LastTotalEnergyDischargedAtRteReferencePoint = totalEnergyDischarged.Value;
+            var rte = Math.Round(energyDischargedSinceLastRteCalculation / energyChargedSinceLastRteCalculation * 100, 2);
+            State.RoundTripEfficiency = rte;
+            rteState.Update(totalEnergyCharged.Value, totalEnergyDischarged.Value);
+            Context.Logger.LogInformation("{Name}: Round trip efficiency calculated: {Rte}%.", Name, rte);
         }
         catch (Exception ex)
         {

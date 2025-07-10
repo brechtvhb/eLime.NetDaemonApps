@@ -286,7 +286,7 @@ public class BatteryTests
         // Arrange
         A.CallTo(() => _fileStorage.Get<BatteryState>("EnergyManager", "marstek_venus_e")).Returns(new BatteryState
         {
-            LastRteStateOfChargeReferencePoint = 50
+            RoundTripEfficiencyReferencePoints = [RoundTripEfficiencyReferencePoint.Create(50, 0, 0)]
         });
 
         var battery = new BatteryBuilder()

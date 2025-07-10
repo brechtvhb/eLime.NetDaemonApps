@@ -10,7 +10,7 @@ public class BatteryConfiguration(IHaContext haContext, BatteryConfig config)
     public string Name { get; set; } = config.Name;
     public decimal Capacity { get; set; } = config.Capacity; // in kWh
     public int MinimumStateOfCharge { get; set; } = config.MinimumStateOfCharge; // in %
-    public int RteStateOfChargeReferencePoint { get; set; } = config.RteStateOfChargeReferencePoint; // in %
+    public List<int> RteStateOfChargeReferencePoints { get; set; } = config.RteStateOfChargeReferencePoints; // in %
     public int MaxChargePower { get; set; } = config.MaxChargePower; // in W
     public int OptimalChargePowerMinThreshold { get; set; } = config.OptimalChargePowerMinThreshold; // in W
     public int OptimalChargePowerMaxThreshold { get; set; } = config.OptimalChargePowerMaxThreshold; // in W

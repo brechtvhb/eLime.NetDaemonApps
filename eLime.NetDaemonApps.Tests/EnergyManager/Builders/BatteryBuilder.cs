@@ -12,7 +12,7 @@ public class BatteryBuilder
 
     private decimal _capacity;
     private int _minimumStateOfCharge;
-    private int _rteStateOfChargeReferencePoint;
+    private List<int> _rteStateOfChargeReferencePoints;
     private int _maxChargePower;
     private int _optimalChargePowerMinThreshold;
     private int _optimalChargePowerMaxThreshold;
@@ -39,7 +39,7 @@ public class BatteryBuilder
         _name = "Marstek Venus E";
         _capacity = 5.12m; // in kWh
         _minimumStateOfCharge = 11; // in %
-        _rteStateOfChargeReferencePoint = 50;
+        _rteStateOfChargeReferencePoints = [50];
         _maxChargePower = 2500; // in W
         _optimalChargePowerMinThreshold = 200;
         _optimalChargePowerMaxThreshold = 800;
@@ -75,7 +75,7 @@ public class BatteryBuilder
             Name = _name,
             Capacity = _capacity, // in kWh
             MinimumStateOfCharge = _minimumStateOfCharge, // in %
-            RteStateOfChargeReferencePoint = _rteStateOfChargeReferencePoint, // in %
+            RteStateOfChargeReferencePoints = _rteStateOfChargeReferencePoints, // in %
             MaxChargePower = _maxChargePower, // in W
             OptimalChargePowerMinThreshold = _optimalChargePowerMinThreshold, // in W
             OptimalChargePowerMaxThreshold = _optimalChargePowerMaxThreshold, // in W
