@@ -71,7 +71,7 @@ public class Battery : IDisposable
             OnStateOfChargeChanged(e);
 
             int? rteReferencePoint = RteStateOfChargeReferencePoints.FirstOrDefault(x => x == Convert.ToInt32(e.Sensor.State));
-            if (rteReferencePoint == null)
+            if (rteReferencePoint is null or 0)
                 return;
 
             Context.Logger.LogTrace("{Name}: State of charge is {RteStateOfChargeReferencePoint}%. Calculating Round trip efficiency.", Name, rteReferencePoint.Value);
