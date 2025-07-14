@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using eLime.NetDaemonApps.Domain.Helper;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 using Serilog.Core;
@@ -21,7 +22,7 @@ public static class CustomLoggingProvider
             .Build();
 
         var logger = new LoggerConfiguration()
-            .Enrich.With(new ClassNameEnricher())
+            .Enrich.With(new ClassNameEnricher(), new LocalDateTimeEnricher())
             .ReadFrom.Configuration(configuration)
             .CreateLogger();
 
@@ -31,18 +32,22 @@ public static class CustomLoggingProvider
 
 public class ClassNameEnricher : ILogEventEnricher
 {
-
-    public ClassNameEnricher()
-    {
-
-    }
-
     public void Enrich(LogEvent logEvent, ILogEventPropertyFactory propertyFactory)
     {
         logEvent.Properties.TryGetValue("SourceContext", out var sourceContext);
         var sourceContextAsString = sourceContext?.ToString();
 
         var property = propertyFactory.CreateProperty("ClassName", sourceContextAsString?[(sourceContextAsString.LastIndexOf('.') + 1)..]?.Replace("\"", "") ?? sourceContextAsString);
+        logEvent.AddPropertyIfAbsent(property);
+    }
+}
+
+public class LocalDateTimeEnricher : ILogEventEnricher
+{
+    public void Enrich(LogEvent logEvent, ILogEventPropertyFactory propertyFactory)
+    {
+        var localDateTime = logEvent.Timestamp.UtcDateTime.GetLocalDateTimeFromUtcDateTime("Europe/Brussels");
+        var property = propertyFactory.CreateProperty("LocalDateTime", localDateTime);
         logEvent.AddPropertyIfAbsent(property);
     }
 }
