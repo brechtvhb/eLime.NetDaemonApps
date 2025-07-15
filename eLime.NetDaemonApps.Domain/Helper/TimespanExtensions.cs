@@ -25,4 +25,9 @@ public static class TimespanExtensions
         var modifiedLocalDateTime = localDateTime.Add(-localDateTime.TimeOfDay).Add(timeOnly.ToTimeSpan());
         return TimeZoneInfo.ConvertTimeToUtc(modifiedLocalDateTime, timeZoneInfo);
     }
+    public static DateTime GetLocalDateTimeFromUtcDateTime(this DateTime utcDate, string timezone /*= "Europe/Brussels"*/)
+    {
+        var timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById(timezone);
+        return TimeZoneInfo.ConvertTimeFromUtc(utcDate, timeZoneInfo);
+    }
 }
