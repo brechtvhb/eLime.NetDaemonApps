@@ -85,17 +85,17 @@ public class TriggeredEnergyConsumer : EnergyConsumer
             else if (e.Sensor.State == CompletedState && ShutDownOnComplete)
             {
                 Stop();
+                return;
             }
             else if (e.Sensor.State == CompletedState && !ShutDownOnComplete)
             {
                 Stopped();
-                await DebounceSaveAndPublishState();
             }
             else if (States.Where(x => x.IsRunning).Select(x => x.Name).Contains(e.Sensor.State) && State.State != EnergyConsumerState.Running)
             {
                 Started();
-                await DebounceSaveAndPublishState();
             }
+            await DebounceSaveAndPublishState();
         }
         catch (Exception ex)
         {

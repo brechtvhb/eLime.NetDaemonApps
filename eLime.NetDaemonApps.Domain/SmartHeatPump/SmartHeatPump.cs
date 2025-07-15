@@ -239,7 +239,7 @@ public class SmartHeatPump : IDisposable
 
         if (!updateSourceTemperature)
         {
-            Logger.LogInformation($"Did not update source temperature. Current source temperature was '{State.SourceTemperature} °C', new temperature was '{temperature} °C'. (Δ={difference} °C). Last update was: {State.SourceTemperatureUpdatedAt:O}.");
+            Logger.LogTrace($"Did not update source temperature. Current source temperature was '{State.SourceTemperature} °C', new temperature was '{temperature} °C'. (Δ={Math.Round(difference, 1)} °C). Last update was: {State.SourceTemperatureUpdatedAt:O}.");
             return;
         }
 
