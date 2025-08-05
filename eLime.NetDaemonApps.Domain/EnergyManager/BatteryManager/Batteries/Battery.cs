@@ -107,6 +107,7 @@ public class Battery : IDisposable
             State.RoundTripEfficiency = rte;
             rteState.Update(totalEnergyCharged.Value, totalEnergyDischarged.Value);
             Context.Logger.LogInformation("{Name}: Round trip efficiency calculated: {Rte}%.", Name, rte);
+            await DebounceSaveAndPublishState();
         }
         catch (Exception ex)
         {
