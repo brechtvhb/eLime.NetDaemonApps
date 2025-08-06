@@ -235,7 +235,7 @@ public class EnergyManager : IDisposable
     private async Task ManageBatteriesIfNeeded()
     {
         var runningDynamicLoadConsumers = Consumers.Where(x => x.IsRunning).OfType<IDynamicLoadConsumer>().ToList();
-        var averageDischargePower = GridMonitor.AverageBatteriesDischargingPower(TimeSpan.FromMinutes(2));
+        var averageDischargePower = GridMonitor.AverageBatteriesDischargingPower(TimeSpan.FromMinutes(3));
         await BatteryManager.ManageBatteryPowerSettings(runningDynamicLoadConsumers.Any(), runningDynamicLoadConsumers.Any(x => x.AllowBatteryPower is AllowBatteryPower.MaxPower or AllowBatteryPower.FlattenGridLoad), averageDischargePower);
     }
 

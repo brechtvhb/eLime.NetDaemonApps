@@ -67,7 +67,7 @@ internal class BatteryManager : IDisposable
             if (Batteries.Any(x => x.HomeAssistant.StateOfChargeSensor.State == null))
                 return BatteryPickOrderList;
 
-            List<double> thresholds = [75, 50, 25];
+            List<double> thresholds = [90, 50, 25, 15];
 
             foreach (var threshold in thresholds.Where(threshold => Batteries.Any(x => x.HomeAssistant.StateOfChargeSensor.State!.Value > threshold) && !Batteries.All(x => x.HomeAssistant.StateOfChargeSensor.State!.Value > threshold)))
             {
