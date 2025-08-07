@@ -20,6 +20,7 @@ internal class BatteryManager : IDisposable
     internal DebounceDispatcher? SaveAndPublishStateDebounceDispatcher { get; private set; }
 
     internal double MaximumDischargePower => Batteries.Where(x => x is { IsEmpty: false }).Sum(x => x.MaxDischargePower);
+    private List<double> _dischargeThresholds => [95, 85, 55, 25, 15];
     private BatteryManager()
     {
     }
@@ -67,9 +68,9 @@ internal class BatteryManager : IDisposable
             if (Batteries.Any(x => x.HomeAssistant.StateOfChargeSensor.State == null))
                 return BatteryPickOrderList;
 
-            List<double> thresholds = [90, 50, 25, 15];
 
-            foreach (var threshold in thresholds.Where(threshold => Batteries.Any(x => x.HomeAssistant.StateOfChargeSensor.State!.Value > threshold) && !Batteries.All(x => x.HomeAssistant.StateOfChargeSensor.State!.Value > threshold)))
+
+            foreach (var threshold in _dischargeThresholds.Where(threshold => Batteries.Any(x => x.HomeAssistant.StateOfChargeSensor.State!.Value > threshold) && !Batteries.All(x => x.HomeAssistant.StateOfChargeSensor.State!.Value > threshold)))
             {
                 return BatteryPickOrderList
                     .Where(x => x.HomeAssistant.StateOfChargeSensor.State!.Value > threshold)
@@ -162,8 +163,7 @@ internal class BatteryManager : IDisposable
             State.RemainingAvailableCapacity = Batteries.Sum(x => x.RemainingAvailableCapacity);
             State.StateOfCharge = Convert.ToInt32(State.RemainingAvailableCapacity / State.TotalAvailableCapacity * 100);
 
-            List<double> thresholds = [75, 50, 25];
-            if (e.Sensor.State is not null && thresholds.Any(x => x == e.Sensor.State.Value))
+            if (e.Sensor.State is not null && _dischargeThresholds.Any(x => x == e.Sensor.State.Value))
                 await RotateBatteries();
 
             await DebounceSaveAndPublishState();
