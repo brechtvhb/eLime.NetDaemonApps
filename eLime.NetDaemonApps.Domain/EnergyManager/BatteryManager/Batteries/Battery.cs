@@ -39,9 +39,9 @@ public class Battery : IDisposable
     internal bool BelowOptimalDischargePowerMinThreshold => CanDischarge && !IsEmpty && CurrentLoad < OptimalDischargePowerMinThreshold;
 
     //Might need to average in time here
-    internal bool AboveOptimalChargePowerMaxThreshold => CanDischarge && CurrentLoad > OptimalChargePowerMaxThreshold;
+    internal bool AboveOptimalChargePowerMaxThreshold => CanCharge && -CurrentLoad > OptimalChargePowerMaxThreshold;
     //Might need to average in time here
-    internal bool BelowOptimalChargePowerMinThreshold => CanDischarge && !IsEmpty && CurrentLoad < OptimalChargePowerMinThreshold;
+    internal bool BelowOptimalChargePowerMinThreshold => CanCharge && !IsFull && -CurrentLoad < OptimalChargePowerMinThreshold;
 
     internal DebounceDispatcher? SaveAndPublishStateDebounceDispatcher { get; private set; }
 
