@@ -16,18 +16,14 @@ try
     Environment.CurrentDirectory = AppDomain.CurrentDomain.BaseDirectory;
 
     await Host.CreateDefaultBuilder(args)
-            .RegisterAppSettingsJsonToHost()
-            .ConfigureHostConfiguration(config =>
-            {
-                config.AddJsonFile($"appsettings.development.json", optional: true, reloadOnChange: false)
-                    .AddEnvironmentVariables();
-            })
-            .RegisterYamlSettings()
-            .ConfigureServices((context, services)
-                => services.ConfigureNetDaemonServices(context.Configuration)
-            )
+        .RegisterAppSettingsJsonToHost()
+        .ConfigureHostConfiguration(config =>
+        {
+            config.AddJsonFile($"appsettings.development.json", optional: true, reloadOnChange: false)
+                .AddEnvironmentVariables();
+        })
+        .RegisterYamlSettings()
         .AddFileStorage()
-        //.UseNetDaemonDefaultLogging()
         .UseCustomLogging()
         .UseNetDaemonRuntime()
         .UseNetDaemonTextToSpeech()

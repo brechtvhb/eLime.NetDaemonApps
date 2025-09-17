@@ -8,10 +8,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MediatR" Version="12.4.1" />
-    <PackageReference Include="NetDaemon.Extensions.Scheduling" Version="24.52.0" />
-    <PackageReference Include="NetDaemon.Extensions.Mqtt" Version="24.52.0" />
-    <PackageReference Include="NetDaemon.HassModel" Version="24.52.0" />
+    <PackageReference Include="MediatR" Version="13.0.0" />
+    <PackageReference Include="NetDaemon.Extensions.Scheduling" Version="25.36.0" />
+    <PackageReference Include="NetDaemon.Extensions.Mqtt" Version="25.36.0" />
+    <PackageReference Include="NetDaemon.HassModel" Version="25.36.0" />
   </ItemGroup>
 
   <ItemGroup>
