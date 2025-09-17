@@ -219,6 +219,12 @@ internal class BatteryManager : IDisposable
 
     private async Task RotateBatteries()
     {
+        await RotateDischarging();
+        await RotateCharging();
+    }
+
+    private async Task RotateDischarging()
+    {
         var batteriesCurrentlyDischarging = Batteries.Where(x => x.CanDischarge).ToList();
         var batteriesThatShouldBeDischarging = BatteryDischargePickOrderList.Take(batteriesCurrentlyDischarging.Count).ToList();
 
@@ -227,6 +233,18 @@ internal class BatteryManager : IDisposable
 
         foreach (var battery in batteriesThatShouldBeDischarging.Where(battery => !batteriesCurrentlyDischarging.Select(x => x.Name).Contains(battery.Name)))
             await battery.EnableDischarging(reason: "Battery pick order changed");
+    }
+
+    public async Task RotateCharging()
+    {
+        var batteriesCurrentlyCharging = Batteries.Where(x => x.CanCharge).ToList();
+        var batteriesThatShouldBeCharging = BatteryChargePickOrderList.Take(batteriesCurrentlyCharging.Count).ToList();
+
+        foreach (var battery in batteriesCurrentlyCharging.Where(battery => !batteriesThatShouldBeCharging.Select(x => x.Name).Contains(battery.Name)))
+            await battery.DisableCharging(reason: "Battery pick order changed");
+
+        foreach (var battery in batteriesThatShouldBeCharging.Where(battery => !batteriesCurrentlyCharging.Select(x => x.Name).Contains(battery.Name)))
+            await battery.EnableCharging(reason: "Battery pick order changed");
     }
 
     private async void Battery_StateOfChargeChanged(object? sender, Entities.NumericSensors.NumericSensorEventArgs e)
