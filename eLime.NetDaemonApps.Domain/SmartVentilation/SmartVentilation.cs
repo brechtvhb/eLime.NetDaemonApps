@@ -197,10 +197,10 @@ public class SmartVentilation
         const string switchName = $"switch.smart_ventilation";
 
         _logger.LogDebug("Upserting entities in home assistant.");
-        var enabledSwitchOptions = new EnabledSwitchAttributes { Icon = "fapro:fan", Device = GetDevice() };
+        var enabledSwitchOptions = new EnabledSwitchAttributes { Icon = "fapro-duotone:fan", Device = GetDevice() };
         _mqttEntityManager.CreateAsync(switchName, new EntityCreationOptions(Name: $"Smart ventilation", DeviceClass: "switch", Persist: true), enabledSwitchOptions).RunSync();
 
-        var lastStateChange = new EntityOptions { Icon = "fapro:calendar-day", Device = GetDevice() };
+        var lastStateChange = new EntityOptions { Icon = "fapro-duotone:calendar-day", Device = GetDevice() };
         await _mqttEntityManager.CreateAsync($"{baseName}_last_state_change", new EntityCreationOptions(UniqueId: $"{baseName}_last_state_change", Name: $"Smart ventilation - Last state change", DeviceClass: "timestamp", Persist: true), lastStateChange);
 
         var lastStateChangeTriggeredBy = new EnumSensorOptions { Icon = "mdi:state-machine", Device = GetDevice(), Options = Enum<VentilationGuards>.AllValuesAsStringList() };

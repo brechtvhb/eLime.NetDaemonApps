@@ -14,7 +14,7 @@ public class EnergyManagerMqttSensors(EnergyManagerContext context) : IDisposabl
     internal async Task CreateOrUpdateEntities()
     {
         var sensorStateCreationOptions = new EntityCreationOptions(DeviceClass: "enum", UniqueId: SENSOR_STATE, Name: "Energy manager state", Persist: true);
-        var sensorStateOptions = new EnumSensorOptions { Icon = "fapro:square-bolt", Device = GetDevice(), Options = Enum<EnergyConsumerState>.AllValuesAsStringList() };
+        var sensorStateOptions = new EnumSensorOptions { Icon = "fapro-duotone:square-bolt", Device = GetDevice(), Options = Enum<EnergyConsumerState>.AllValuesAsStringList() };
         await context.MqttEntityManager.CreateAsync(SENSOR_STATE, sensorStateCreationOptions, sensorStateOptions);
     }
 

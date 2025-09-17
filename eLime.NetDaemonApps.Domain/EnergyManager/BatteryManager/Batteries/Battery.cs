@@ -38,6 +38,11 @@ public class Battery : IDisposable
     //Might need to average in time here
     internal bool BelowOptimalDischargePowerMinThreshold => CanDischarge && !IsEmpty && CurrentLoad < OptimalDischargePowerMinThreshold;
 
+    //Might need to average in time here
+    internal bool AboveOptimalChargePowerMaxThreshold => CanDischarge && CurrentLoad > OptimalChargePowerMaxThreshold;
+    //Might need to average in time here
+    internal bool BelowOptimalChargePowerMinThreshold => CanDischarge && !IsEmpty && CurrentLoad < OptimalChargePowerMinThreshold;
+
     internal DebounceDispatcher? SaveAndPublishStateDebounceDispatcher { get; private set; }
 
     internal Battery(EnergyManagerContext context, BatteryConfiguration config)
@@ -154,25 +159,25 @@ public class Battery : IDisposable
         await MqttSensors.PublishState(State);
     }
 
-    public async Task DisableCharging()
+    public async Task DisableCharging(string reason)
     {
         if (!CanCharge)
             return;
 
         HomeAssistant.MaxChargePowerNumber.Change(0);
         State.LastChange = Context.Scheduler.Now;
-        Context.Logger.LogInformation("{Battery}: Battery will no longer charge.", Name);
+        Context.Logger.LogInformation("{Battery}: Battery will no longer charge. Reason: {reason}.", Name, reason);
         await DebounceSaveAndPublishState();
     }
 
-    public async Task EnableCharging()
+    public async Task EnableCharging(string reason)
     {
         if (CanCharge)
             return;
 
         HomeAssistant.MaxChargePowerNumber.Change(MaxChargePower);
         State.LastChange = Context.Scheduler.Now;
-        Context.Logger.LogInformation("{Battery}: Battery is allowed to charge at max {maxChargePower}W.", Name, MaxChargePower);
+        Context.Logger.LogInformation("{Battery}: Battery is allowed to charge at max {maxChargePower}W. Reason: {reason}", Name, MaxChargePower, reason);
         await DebounceSaveAndPublishState();
     }
 

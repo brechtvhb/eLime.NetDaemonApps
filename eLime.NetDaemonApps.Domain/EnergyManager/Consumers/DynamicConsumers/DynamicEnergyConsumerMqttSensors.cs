@@ -84,7 +84,7 @@ public class DynamicEnergyConsumerMqttSensors : EnergyConsumerMqttSensors
         BalanceOnBehalfOfObservable = balanceOnBehalfOfObservable.SubscribeAsync(BalanceOnBehalfOfChangedChangedEventHandler());
 
         var allowBatteryPowerCreationOptions = new EntityCreationOptions(UniqueId: SELECT_CONSUMER_ALLOW_BATTERY_POWER, Name: $"Dynamic load allow battery power - {Name}", Persist: true);
-        var allowBatteryPowerDropdownOptions = new SelectOptions { Icon = "fapro:battery-bolt", Options = Enum<AllowBatteryPower>.AllValuesAsStringList(), Device = Device };
+        var allowBatteryPowerDropdownOptions = new SelectOptions { Icon = "fapro-duotone:battery-bolt", Options = Enum<AllowBatteryPower>.AllValuesAsStringList(), Device = Device };
         await Context.MqttEntityManager.CreateAsync(SELECT_CONSUMER_ALLOW_BATTERY_POWER, allowBatteryPowerCreationOptions, allowBatteryPowerDropdownOptions);
 
         var allowBatteryPowerObservable = await Context.MqttEntityManager.PrepareCommandSubscriptionAsync(SELECT_CONSUMER_ALLOW_BATTERY_POWER);

@@ -39,7 +39,7 @@ public class SmartHeatPumpMqttEntities(IMqttEntityManager mqttEntityManager) : I
         {
             StateClass = "measurement",
             UnitOfMeasurement = "°C",
-            Icon = "fapro:oil-temperature",
+            Icon = "fapro-duotone:oil-temperature",
             Device = GetDevice()
         };
         await mqttEntityManager.CreateAsync(sourceTemperatureSensorName, new EntityCreationOptions(UniqueId: sourceTemperatureSensorName, Name: "Source temperature", DeviceClass: "temperature", Persist: true), sourceTemperatureSensorOptions);
@@ -48,7 +48,7 @@ public class SmartHeatPumpMqttEntities(IMqttEntityManager mqttEntityManager) : I
         {
             StateClass = "measurement",
             UnitOfMeasurement = "",
-            Icon = "fapro:chart-line",
+            Icon = "fapro-duotone:chart-line",
             Device = GetDevice()
         };
         await mqttEntityManager.CreateAsync(heatCoefficientOfPerformanceSensorName, new EntityCreationOptions(UniqueId: heatCoefficientOfPerformanceSensorName, Name: "Heat coefficient of performance", Persist: true), coefficientOfPerformanceSensorOptions);

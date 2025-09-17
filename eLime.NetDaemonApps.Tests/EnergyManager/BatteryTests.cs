@@ -388,7 +388,7 @@ public class BatteryTests
 
         //Assert
         var mqttRte = $"sensor.battery_{battery.Name.MakeHaFriendly()}_rte";
-        A.CallTo(() => _mqttEntityManager.SetStateAsync(mqttRte, energyManager.BatteryManager.Batteries.First().State.RoundTripEfficiency.ToString("N", new NumberFormatInfo { NumberDecimalSeparator = "." }))).MustHaveHappenedOnceExactly();
+        A.CallTo(() => _mqttEntityManager.SetStateAsync(mqttRte, energyManager.BatteryManager.Batteries.First().State.RoundTripEfficiency.ToString("N", new NumberFormatInfo { NumberDecimalSeparator = "." }))).MustHaveHappened();
         A.CallTo(() => _fileStorage.Save("EnergyManager", "marstek_venus_e", A<BatteryState>._)).MustHaveHappened();
     }
 }

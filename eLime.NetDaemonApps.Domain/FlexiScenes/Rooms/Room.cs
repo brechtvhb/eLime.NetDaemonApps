@@ -332,7 +332,7 @@ public class Room : IAsyncDisposable
         var mixinActiveName = $"binary_sensor.flexilights_{Name.MakeHaFriendly()}_mixin_active";
 
         _logger.LogDebug("Creating Entities for room '{room}' in home assistant.", Name);
-        var enabledSwitchOptions = new EnabledSwitchAttributes { Icon = "fapro:palette", Device = GetDevice() };
+        var enabledSwitchOptions = new EnabledSwitchAttributes { Icon = "fapro-duotone:palette", Device = GetDevice() };
         await _mqttEntityManager.CreateAsync(switchName, new EntityCreationOptions(Name: $"Flexi lights - {Name}", DeviceClass: "switch", Persist: true), enabledSwitchOptions);
 
         var initiatedByOptions = new EnumSensorOptions { Icon = "hue:motion-sensor-movement", Device = GetDevice(), Options = Enum<InitiatedBy>.AllValuesAsStringList() };
@@ -344,7 +344,7 @@ public class Room : IAsyncDisposable
         var scenes = new List<string> { "Off" };
         scenes.AddRange(FlexiScenes.All.Select(x => x.Name));
 
-        var selectOptions = new SelectOptions { Icon = "fapro:palette", Options = scenes, Device = GetDevice() };
+        var selectOptions = new SelectOptions { Icon = "fapro-duotone:palette", Options = scenes, Device = GetDevice() };
         await _mqttEntityManager.CreateAsync(selectName, new EntityCreationOptions(UniqueId: selectName, Name: "Scene", DeviceClass: "select", Persist: true), selectOptions);
 
         var mixinActiveOptions = new EnabledSwitchAttributes { Icon = "phu:scene-dynamic", Device = GetDevice() };

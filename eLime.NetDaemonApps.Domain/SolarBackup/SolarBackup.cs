@@ -118,9 +118,9 @@ namespace eLime.NetDaemonApps.Domain.SolarBackup
             var stateOptions = new EntityOptions { Icon = "mdi:progress-helper", Device = GetDevice() };
             await _mqttEntityManager.CreateAsync($"sensor.solar_backup_state", new EntityCreationOptions(Name: $"Solar backup state", UniqueId: $"sensor.solar_backup_state", Persist: true), stateOptions);
 
-            var startedAtOptions = new EntityOptions { Icon = "fapro:calendar-day", Device = GetDevice() };
+            var startedAtOptions = new EntityOptions { Icon = "fapro-duotone:calendar-day", Device = GetDevice() };
             await _mqttEntityManager.CreateAsync($"sensor.solar_backup_started_at", new EntityCreationOptions(Name: $"Solar backup Started at", UniqueId: $"sensor.solar_backup_started_at", DeviceClass: "timestamp", Persist: true), startedAtOptions);
-            var lastBackupCompletedAtOptions = new EntityOptions { Icon = "fapro:calendar-day", Device = GetDevice() };
+            var lastBackupCompletedAtOptions = new EntityOptions { Icon = "fapro-duotone:calendar-day", Device = GetDevice() };
             await _mqttEntityManager.CreateAsync($"sensor.solar_last_backup_completed_at", new EntityCreationOptions(Name: $"Solar backup last backup completed at", UniqueId: $"sensor.solar_backup_last_backup_completed_at", DeviceClass: "timestamp", Persist: true), lastBackupCompletedAtOptions);
 
             var delayedStartButtonTriggerObserver = await _mqttEntityManager.PrepareCommandSubscriptionAsync("button.solar_backup_start");

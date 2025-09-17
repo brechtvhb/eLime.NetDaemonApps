@@ -102,7 +102,7 @@ public class CapacityCalculator
         var sensorName = $"sensor.average_capacity_past_year";
 
         _logger.LogTrace("Creating entities in home assistant.");
-        var sensor = new NumericSensorOptions { Icon = "fapro:bolt", Device = GetDevice(), UnitOfMeasurement = "kW" };
+        var sensor = new NumericSensorOptions { Icon = "fapro-duotone:bolt", Device = GetDevice(), UnitOfMeasurement = "kW" };
         await _mqttEntityManager.CreateAsync(sensorName, new EntityCreationOptions(UniqueId: sensorName, Name: $"Average capacity past 12 months", DeviceClass: "power", Persist: true), sensor);
     }
 

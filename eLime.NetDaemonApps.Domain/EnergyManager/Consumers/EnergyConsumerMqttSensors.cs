@@ -29,7 +29,7 @@ public class EnergyConsumerMqttSensors : IDisposable
     internal virtual async Task CreateOrUpdateEntities(List<string> consumerGroups)
     {
         var stateCreationOptions = new EntityCreationOptions(DeviceClass: "enum", UniqueId: SENSOR_CONSUMER_STATE, Name: $"Consumer {Name} - state", Persist: true);
-        var stateOptions = new EnumSensorOptions { Icon = "fapro:square-bolt", Device = Device, Options = Enum<EnergyConsumerState>.AllValuesAsStringList() };
+        var stateOptions = new EnumSensorOptions { Icon = "fapro-duotone:square-bolt", Device = Device, Options = Enum<EnergyConsumerState>.AllValuesAsStringList() };
         await Context.MqttEntityManager.CreateAsync(SENSOR_CONSUMER_STATE, stateCreationOptions, stateOptions);
 
         var startedAtCreationOptions = new EntityCreationOptions(UniqueId: SENSOR_CONSUMER_STARTED_AT, Name: $"Consumer {Name} - Started at", DeviceClass: "timestamp", Persist: true);
@@ -37,7 +37,7 @@ public class EnergyConsumerMqttSensors : IDisposable
         await Context.MqttEntityManager.CreateAsync(SENSOR_CONSUMER_STARTED_AT, startedAtCreationOptions, startedAtOptions);
 
         var lastRunCreationOptions = new EntityCreationOptions(UniqueId: SENSOR_CONSUMER_LAST_RUN, Name: $"Consumer {Name} - Last run", DeviceClass: "timestamp", Persist: true);
-        var lastRunOptions = new EntityOptions { Icon = "fapro:calendar-day", Device = Device };
+        var lastRunOptions = new EntityOptions { Icon = "fapro-duotone:calendar-day", Device = Device };
         await Context.MqttEntityManager.CreateAsync(SENSOR_CONSUMER_LAST_RUN, lastRunCreationOptions, lastRunOptions);
     }
 

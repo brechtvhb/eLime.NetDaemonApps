@@ -261,16 +261,16 @@ public class FlexiScreen : IDisposable
         var enabledSwitchOptions = new EnabledSwitchAttributes { Icon = "mdi:blinds", Device = GetDevice() };
         _mqttEntityManager.CreateAsync(switchName, new EntityCreationOptions(Name: $"Flexi screen - {Name}", DeviceClass: "switch", Persist: true), enabledSwitchOptions).RunSync();
 
-        var lastAutomatedStateChangeOptions = new EntityOptions { Icon = "fapro:calendar-day", Device = GetDevice() };
+        var lastAutomatedStateChangeOptions = new EntityOptions { Icon = "fapro-duotone:calendar-day", Device = GetDevice() };
         await _mqttEntityManager.CreateAsync($"{baseName}_last_automated_state_change", new EntityCreationOptions(UniqueId: $"{baseName}_last_automated_state_change", Name: $"Flexi screen {Name} - Last automated state change", DeviceClass: "timestamp", Persist: true), lastAutomatedStateChangeOptions);
 
-        var lastManualStateChangeOptions = new EntityOptions { Icon = "fapro:calendar-day", Device = GetDevice() };
+        var lastManualStateChangeOptions = new EntityOptions { Icon = "fapro-duotone:calendar-day", Device = GetDevice() };
         await _mqttEntityManager.CreateAsync($"{baseName}_last_manual_state_change", new EntityCreationOptions(UniqueId: $"{baseName}_last_manual_state_change", Name: $"Flexi screen {Name} - Last manual state change", DeviceClass: "timestamp", Persist: true), lastManualStateChangeOptions);
 
         var lastStateChangeTriggeredBy = new EnumSensorOptions { Icon = "mdi:state-machine", Device = GetDevice(), Options = Enum<Protectors>.AllValuesAsStringList() };
         await _mqttEntityManager.CreateAsync($"{baseName}_last_state_change_triggered_by", new EntityCreationOptions(UniqueId: $"{baseName}_last_state_change_triggered_by", Name: $"Flexi screen {Name} - Last state change triggered by", DeviceClass: "enum", Persist: true), lastStateChangeTriggeredBy);
 
-        var stormyNight = new EntityOptions { Icon = "fapro:poo-storm", Device = GetDevice() };
+        var stormyNight = new EntityOptions { Icon = "fapro-duotone:poo-storm", Device = GetDevice() };
         await _mqttEntityManager.CreateAsync($"binary_{baseName}_stormy_night", new EntityCreationOptions(UniqueId: $"boolean_{baseName}_stormy_night", Name: $"Flexi screen {Name} - Is stormy night", Persist: true), stormyNight);
 
         if (_haContext.Entity(switchName).State == null)

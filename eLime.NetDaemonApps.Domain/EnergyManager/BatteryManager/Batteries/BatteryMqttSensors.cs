@@ -26,7 +26,7 @@ public class BatteryMqttSensors : IDisposable
     internal virtual async Task CreateOrUpdateEntities()
     {
         var stateCreationOptions = new EntityCreationOptions(UniqueId: SENSOR_BATTERY_RTE, Name: $"Battery {Name} - RTE", Persist: true);
-        var stateOptions = new NumericSensorOptions { Icon = "fapro:percent", Device = Device, StateClass = "measurement", UnitOfMeasurement = "" };
+        var stateOptions = new NumericSensorOptions { Icon = "fapro-duotone:percent", Device = Device, StateClass = "measurement", UnitOfMeasurement = "" };
         await Context.MqttEntityManager.CreateAsync(SENSOR_BATTERY_RTE, stateCreationOptions, stateOptions);
     }
 

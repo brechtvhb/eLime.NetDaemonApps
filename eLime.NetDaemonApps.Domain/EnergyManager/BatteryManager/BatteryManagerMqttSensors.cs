@@ -5,22 +5,13 @@ using System.Globalization;
 namespace eLime.NetDaemonApps.Domain.EnergyManager.BatteryManager;
 
 #pragma warning disable CS8618, CS9264, CS8604
-public class BatteryManagerMqttSensors : IDisposable
+public class BatteryManagerMqttSensors(EnergyManagerContext context) : IDisposable
 {
-    private readonly string SENSOR_BATTERY_MANAGER_REMAINING_AVAILABLE_CAPACITY;
-    private readonly string SENSOR_BATTERY_MANAGER_STATE_OF_CHARGE;
+    private readonly string SENSOR_BATTERY_MANAGER_REMAINING_AVAILABLE_CAPACITY = "sensor.battery_manager_remaining_available_capacity";
+    private readonly string SENSOR_BATTERY_MANAGER_STATE_OF_CHARGE = "sensor.battery_manager_aggregate_soc";
 
-    protected Device Device;
-    protected readonly EnergyManagerContext Context;
-
-    public BatteryManagerMqttSensors(EnergyManagerContext context)
-    {
-        Context = context;
-
-        Device = new Device { Identifiers = ["battery_manager"], Name = "Battery manager", Manufacturer = "Me" };
-        SENSOR_BATTERY_MANAGER_REMAINING_AVAILABLE_CAPACITY = "sensor.battery_manager_remaining_available_capacity";
-        SENSOR_BATTERY_MANAGER_STATE_OF_CHARGE = "sensor.battery_manager_aggregate_soc";
-    }
+    protected Device Device = new() { Identifiers = ["battery_manager"], Name = "Battery manager", Manufacturer = "Me" };
+    protected readonly EnergyManagerContext Context = context;
 
     internal virtual async Task CreateOrUpdateEntities()
     {
@@ -29,7 +20,7 @@ public class BatteryManagerMqttSensors : IDisposable
         await Context.MqttEntityManager.CreateAsync(SENSOR_BATTERY_MANAGER_REMAINING_AVAILABLE_CAPACITY, currentCapacityCreationOptions, currentCapacityOptions);
 
         var socCreationOptions = new EntityCreationOptions(UniqueId: SENSOR_BATTERY_MANAGER_STATE_OF_CHARGE, Name: "Aggregate SoC", DeviceClass: "battery", Persist: true);
-        var socOptions = new NumericSensorOptions { Icon = "fapro:percent", Device = Device, StateClass = "measurement", UnitOfMeasurement = "%" };
+        var socOptions = new NumericSensorOptions { Icon = "fapro-duotone:percent", Device = Device, StateClass = "measurement", UnitOfMeasurement = "%" };
         await Context.MqttEntityManager.CreateAsync(SENSOR_BATTERY_MANAGER_STATE_OF_CHARGE, socCreationOptions, socOptions);
     }
 
