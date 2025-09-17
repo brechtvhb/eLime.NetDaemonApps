@@ -30,6 +30,7 @@ try
         .UseNetDaemonMqttEntityManagement()
         .ConfigureServices((_, services) =>
             services
+                .ConfigureNetDaemonServices()
                 .AddAppsFromAssembly(Assembly.GetExecutingAssembly())
                 .RegisterRequestHandlers()
                 .AddNetDaemonStateManager()
