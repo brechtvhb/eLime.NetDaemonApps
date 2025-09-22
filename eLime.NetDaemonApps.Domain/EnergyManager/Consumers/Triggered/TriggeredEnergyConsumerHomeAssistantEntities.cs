@@ -9,6 +9,6 @@ public class TriggeredEnergyConsumerHomeAssistantEntities(EnergyConsumerConfigur
 {
     internal BinarySwitch? SocketSwitch = config.Triggered!.SocketSwitch;
     internal Button? StartButton = config.Triggered.StartButton;
-    internal BinarySwitch? PauseSwitch = config.Triggered.PauseSwitch;
+    internal Button? PauseButton = config.Triggered.PauseButton;
     internal TextSensor StateSensor = config.Triggered.StateSensor;
 }

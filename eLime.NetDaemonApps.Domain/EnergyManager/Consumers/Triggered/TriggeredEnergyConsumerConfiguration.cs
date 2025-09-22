@@ -14,7 +14,7 @@ public class TriggeredEnergyConsumerConfiguration
     {
         SocketSwitch = !string.IsNullOrWhiteSpace(config.SocketEntity) ? BinarySwitch.Create(haContext, config.SocketEntity) : null;
         StartButton = !string.IsNullOrWhiteSpace(config.StartButton) ? new Button(haContext, config.StartButton) : null;
-        PauseSwitch = !string.IsNullOrWhiteSpace(config.PauseSwitch) ? BinarySwitch.Create(haContext, config.PauseSwitch) : null;
+        PauseButton = !string.IsNullOrWhiteSpace(config.PauseButton) ? new Button(haContext, config.PauseButton) : null;
         StateSensor = TextSensor.Create(haContext, config.StateSensor);
         StartState = config.StartState;
         PausedState = config.PausedState;
@@ -26,7 +26,7 @@ public class TriggeredEnergyConsumerConfiguration
     }
     public BinarySwitch? SocketSwitch { get; set; }
     public Button? StartButton { get; set; }
-    public BinarySwitch? PauseSwitch { get; set; } //Button once washer is Mielefied
+    public Button? PauseButton { get; set; }
     public TextSensor StateSensor { get; set; }
     public string StartState { get; set; }
     public string PausedState { get; set; }

@@ -24,7 +24,7 @@ public class TriggeredEnergyConsumerBuilder
 
     private string _socket;
     private string? _startButton;
-    private string? _pauseSwitch;
+    private string? _pauseButton;
 
     private string _stateSensor;
     private string _startState;
@@ -89,7 +89,8 @@ public class TriggeredEnergyConsumerBuilder
             .WithLoad(-700, [LoadTimeFrames.Now, LoadTimeFrames.Last30Seconds], 3000, [LoadTimeFrames.Now, LoadTimeFrames.Last30Seconds])
             .AddConsumerGroup("Deferrable")
             .WithStateSensor("sensor.dishwasher_operation_state_enhanced", "DelayedStart", "Paused", "Ready", "Critical")
-            .WithPauseSwitch("switch.dishwasher_pause")
+            .WithStartButton("button.dishwasher_start")
+            .WithPauseButton("button.dishwasher_pause")
             .AddStatePeakLoad("Inactive", 1, false)
             .AddStatePeakLoad("Aborting", 1, false)
             .AddStatePeakLoad("Paused", 1, false)
@@ -174,9 +175,9 @@ public class TriggeredEnergyConsumerBuilder
         return this;
     }
 
-    public TriggeredEnergyConsumerBuilder WithPauseSwitch(string pauseSwitch)
+    public TriggeredEnergyConsumerBuilder WithPauseButton(string pauseButton)
     {
-        _pauseSwitch = pauseSwitch;
+        _pauseButton = pauseButton;
         return this;
     }
 
@@ -221,13 +222,13 @@ public class TriggeredEnergyConsumerBuilder
             {
                 SocketEntity = _socket,
                 StartButton = _startButton,
-                PauseSwitch = _pauseSwitch,
+                PauseButton = _pauseButton,
                 StateSensor = _stateSensor,
                 StartState = _startState,
                 PausedState = _pausedState,
                 CompletedState = _completedState,
                 CriticalState = _criticalState,
-                CanPause = _pauseSwitch != null,
+                CanPause = _pauseButton != null,
                 ShutDownOnComplete = _shutDownOnComplete,
                 States = _states
             }

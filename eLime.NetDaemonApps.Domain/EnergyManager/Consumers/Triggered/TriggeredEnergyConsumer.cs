@@ -1,4 +1,5 @@
-﻿using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
+﻿using eLime.NetDaemonApps.Domain.Entities;
+using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 using Microsoft.Extensions.Logging;
 
 namespace eLime.NetDaemonApps.Domain.EnergyManager.Consumers.Triggered;
@@ -171,27 +172,23 @@ public class TriggeredEnergyConsumer : EnergyConsumer
 
     public override void TurnOn()
     {
-        if (HomeAssistant.StateSensor.State == PausedState && CanPause && HomeAssistant.PauseSwitch != null)
-        {
-            HomeAssistant.PauseSwitch.TurnOn();
-            return;
-        }
+
         if (HomeAssistant.StateSensor.State == StartState && HomeAssistant.SocketSwitch != null && HomeAssistant.SocketSwitch.IsOff())
         {
             HomeAssistant.SocketSwitch.TurnOn();
             return;
         }
 
-        if (HomeAssistant.StateSensor.State == StartState && HomeAssistant.StartButton != null)
+        if ((HomeAssistant.StateSensor.State == StartState || HomeAssistant.StateSensor.State == PausedState) && HomeAssistant.StartButton != null)
             HomeAssistant.StartButton.Press();
     }
 
     public override void TurnOff()
     {
-        if (HomeAssistant.StateSensor.State != CompletedState && CanPause && HomeAssistant.PauseSwitch != null)
+        if (HomeAssistant.StateSensor.State != CompletedState && CanPause && HomeAssistant.PauseButton != null && HomeAssistant.PauseButton.State != Constants.UNAVAILABLE)
         {
             Context.Logger.LogInformation($"{Name}: Pause was triggered.");
-            HomeAssistant.PauseSwitch.TurnOff();
+            HomeAssistant.PauseButton.Press();
             return;
         }
 

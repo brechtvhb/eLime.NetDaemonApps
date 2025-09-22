@@ -245,7 +245,7 @@ public class TriggeredEnergyConsumerTests
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(5));
 
         //Assert
-        _testCtx.VerifySwitchTurnOff(consumer.Triggered!.PauseSwitch!, Moq.Times.Once);
+        _testCtx.VerifyButtonPressed(consumer.Triggered!.PauseButton!, Moq.Times.Once);
     }
 
     [TestMethod]
@@ -274,6 +274,6 @@ public class TriggeredEnergyConsumerTests
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(20));
 
         //Assert
-        _testCtx.VerifySwitchTurnOn(consumer.Triggered!.PauseSwitch!, Moq.Times.Once);
+        _testCtx.VerifyButtonPressed(consumer.Triggered!.StartButton!, Moq.Times.Once);
     }
 }
