@@ -41,7 +41,7 @@ public class FileStorage : IFileStorage
         {
             // We ignore errors, we will be adding logging later see issue #403
         }
-        return default;
+        return null;
     }
 
     public void Save<T>(string app, string id, T data) where T : class

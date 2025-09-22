@@ -30,7 +30,9 @@ public class Battery : IDisposable
     internal decimal MinimumCapacity => Math.Round(Capacity * MinimumStateOfCharge / 100m, 2);
     internal decimal AvailableCapacity => Capacity - MinimumCapacity;
     internal decimal RemainingCapacity => Math.Round(Capacity * Convert.ToDecimal(HomeAssistant.StateOfChargeSensor.State) / 100, 2);
-    internal decimal RemainingAvailableCapacity => RemainingCapacity - MinimumCapacity;
+    internal decimal RemainingAvailableCapacity => RemainingCapacity <= MinimumCapacity
+        ? 0
+        : RemainingCapacity - MinimumCapacity;
 
     internal bool CanControl => State.LastChange == null || State.LastChange.Value.AddSeconds(30) < Context.Scheduler.Now;
     //Might need to average in time here
