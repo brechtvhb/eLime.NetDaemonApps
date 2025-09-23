@@ -149,7 +149,7 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         {
             LoadTimeFrames.Now => gridMonitor.CurrentLoadMinusBatteries,
             LoadTimeFrames.SolarForecastNowCorrected => gridMonitor.CurrentLoadMinusBatteriesSolarCorrected,
-            LoadTimeFrames.SolarForeCastNow50PercentCorrected => gridMonitor.CurrentLoadMinusBatteriesSolarCorrected50Percent,
+            LoadTimeFrames.SolarForecastNow50PercentCorrected => gridMonitor.CurrentLoadMinusBatteriesSolarCorrected50Percent,
             LoadTimeFrames.SolarForecast30MinutesCorrected => gridMonitor.CurrentLoadMinusBatteriesSolarForecast30MinutesCorrected,
             LoadTimeFrames.SolarForecast1HourCorrected => gridMonitor.CurrentLoadMinusBatteriesSolarForecast1HourCorrected,
             LoadTimeFrames.Last30Seconds => gridMonitor.AverageLoadMinusBatteries(TimeSpan.FromSeconds(30)),
