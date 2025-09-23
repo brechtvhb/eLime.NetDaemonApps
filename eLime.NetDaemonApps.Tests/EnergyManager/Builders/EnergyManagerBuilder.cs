@@ -44,6 +44,10 @@ public class EnergyManagerBuilder
             PeakImportEntity = "sensor.grid_peak_import",
             CurrentAverageDemandEntity = "sensor.grid_current_average_demand",
             VoltageEntity = "sensor.grid_voltage",
+            CurrentSolarPowerEntity = "sensor.solar_current_power",
+            SolarForecastPowerNowEntity = "sensor.solar_forecast_power_now",
+            SolarForecastPower30MinutesEntity = "sensor.solar_forecast_power_30_minutes",
+            SolarForecastPower1HourEntity = "sensor.solar_forecast_power_1_hour"
         };
 
         _batteryManager = new BatteryManagerConfig

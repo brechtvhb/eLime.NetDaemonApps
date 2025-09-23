@@ -57,9 +57,71 @@ public class GridMonitor : IDisposable, IGridMonitor
         }
     }
 
-
     public double CurrentLoad => CurrentPowerImport - CurrentPowerExport;
     public double CurrentLoadMinusBatteries => CurrentLoad - CurrentBatteryChargePower + CurrentBatteryDischargePower;
+
+    public double CurrentLoadMinusBatteriesSolarCorrected
+    {
+        get
+        {
+            var currentSolarPower = HomeAssistant.CurrentSolarPowerSensor.State;
+            var expectedSolarPower = HomeAssistant.SolarForecastPowerNowSensor.State;
+
+            if (currentSolarPower == null || expectedSolarPower == null)
+                return CurrentLoadMinusBatteries;
+
+            var correction = currentSolarPower.Value - expectedSolarPower.Value;
+            return CurrentLoadMinusBatteries + correction;
+        }
+    }
+
+    public double CurrentLoadMinusBatteriesSolarCorrected50Percent
+    {
+        get
+        {
+            var currentSolarPower = HomeAssistant.CurrentSolarPowerSensor.State;
+            var expectedSolarPower = HomeAssistant.SolarForecastPowerNowSensor.State;
+
+
+            if (currentSolarPower == null || expectedSolarPower == null)
+                return CurrentLoadMinusBatteries;
+
+            var correction = (currentSolarPower.Value - expectedSolarPower.Value) / 2;
+            return CurrentLoadMinusBatteries + correction;
+        }
+    }
+
+    public double CurrentLoadMinusBatteriesSolarForecast30MinutesCorrected
+    {
+        get
+        {
+            var currentSolarPower = HomeAssistant.CurrentSolarPowerSensor.State;
+            var expectedSolarPower = HomeAssistant.SolarForecastPower30MinutesSensor.State;
+
+
+            if (currentSolarPower == null || expectedSolarPower == null)
+                return CurrentLoadMinusBatteries;
+
+            var correction = currentSolarPower.Value - expectedSolarPower.Value;
+            return CurrentLoadMinusBatteries + correction;
+        }
+    }
+
+    public double CurrentLoadMinusBatteriesSolarForecast1HourCorrected
+    {
+        get
+        {
+            var currentSolarPower = HomeAssistant.CurrentSolarPowerSensor.State;
+            var expectedSolarPower = HomeAssistant.SolarForecastPower1HourSensor.State;
+
+
+            if (currentSolarPower == null || expectedSolarPower == null)
+                return CurrentLoadMinusBatteries;
+
+            var correction = currentSolarPower.Value - expectedSolarPower.Value;
+            return CurrentLoadMinusBatteries + correction;
+        }
+    }
 
     public double PeakLoad => (HomeAssistant.PeakImportSensor.State * 1000 ?? 0) > 2500
         ? HomeAssistant.PeakImportSensor.State * 1000 ?? 0

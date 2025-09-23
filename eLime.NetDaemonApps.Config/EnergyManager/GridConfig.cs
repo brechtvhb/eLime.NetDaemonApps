@@ -8,4 +8,9 @@ public class GridConfig
     public string ExportEntity { get; set; }
     public string PeakImportEntity { get; set; }
     public string CurrentAverageDemandEntity { get; set; }
+
+    public string CurrentSolarPowerEntity { get; set; }
+    public string SolarForecastPowerNowEntity { get; set; }
+    public string SolarForecastPower30MinutesEntity { get; set; }
+    public string SolarForecastPower1HourEntity { get; set; }
 }
