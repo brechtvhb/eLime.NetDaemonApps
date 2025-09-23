@@ -145,7 +145,7 @@ public class EnergyManager : IDisposable
         {
             { LoadTimeFrames.Now, 0.0 },
             { LoadTimeFrames.SolarForecastNowCorrected, 0.0 },
-            { LoadTimeFrames.SolarForeCastNow50PercentCorrected, 0.0 },
+            { LoadTimeFrames.SolarForecastNow50PercentCorrected, 0.0 },
             { LoadTimeFrames.SolarForecast30MinutesCorrected, 0.0 },
             { LoadTimeFrames.SolarForecast1HourCorrected, 0.0 },
             { LoadTimeFrames.Last30Seconds, Consumers.Select(x => x.AverageLoadCorrection(TimeSpan.FromSeconds(30))).Sum() },
