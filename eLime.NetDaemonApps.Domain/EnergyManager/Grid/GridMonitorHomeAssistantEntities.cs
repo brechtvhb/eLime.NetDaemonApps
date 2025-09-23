@@ -12,6 +12,11 @@ public class GridMonitorHomeAssistantEntities(GridConfiguration config, BatteryM
     internal NumericSensor CurrentAverageDemandSensor = config.CurrentAverageDemandSensor;
     internal NumericSensor TotalBatteryChargePowerSensor = batteryConfig.TotalChargePowerSensor;
     internal NumericSensor TotalBatteryDischargePowerSensor = batteryConfig.TotalDischargePowerSensor;
+
+    internal NumericSensor CurrentSolarPowerSensor = config.CurrentSolarPowerSensor;
+    internal NumericSensor SolarForecastPowerNowSensor = config.SolarForecastPowerNowSensor;
+    internal NumericSensor SolarForecastPower30MinutesSensor = config.SolarForecastPower30MinutesSensor;
+    internal NumericSensor SolarForecastPower1HourSensor = config.SolarForecastPower1HourSensor;
     public void Dispose()
     {
         VoltageSensor.Dispose();

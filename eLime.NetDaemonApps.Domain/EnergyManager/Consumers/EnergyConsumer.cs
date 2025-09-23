@@ -275,6 +275,10 @@ public abstract class EnergyConsumer : IDisposable
             var uncorrectedLoad = timeFrameToValidate switch
             {
                 LoadTimeFrames.Now => gridMonitor.CurrentLoadMinusBatteries,
+                LoadTimeFrames.SolarForecastNowCorrected => gridMonitor.CurrentLoadMinusBatteriesSolarCorrected,
+                LoadTimeFrames.SolarForeCastNow50PercentCorrected => gridMonitor.CurrentLoadMinusBatteriesSolarCorrected50Percent,
+                LoadTimeFrames.SolarForecast30MinutesCorrected => gridMonitor.CurrentLoadMinusBatteriesSolarForecast30MinutesCorrected,
+                LoadTimeFrames.SolarForecast1HourCorrected => gridMonitor.CurrentLoadMinusBatteriesSolarForecast1HourCorrected,
                 LoadTimeFrames.Last30Seconds => gridMonitor.AverageLoadMinusBatteries(TimeSpan.FromSeconds(30)),
                 LoadTimeFrames.LastMinute => gridMonitor.AverageLoadMinusBatteries(TimeSpan.FromMinutes(1)),
                 LoadTimeFrames.Last2Minutes => gridMonitor.AverageLoadMinusBatteries(TimeSpan.FromMinutes(2)),
@@ -319,6 +323,10 @@ public abstract class EnergyConsumer : IDisposable
             var uncorrectedLoad = timeFrameToValidate switch
             {
                 LoadTimeFrames.Now => gridMonitor.CurrentLoadMinusBatteries,
+                LoadTimeFrames.SolarForecastNowCorrected => gridMonitor.CurrentLoadMinusBatteriesSolarCorrected,
+                LoadTimeFrames.SolarForeCastNow50PercentCorrected => gridMonitor.CurrentLoadMinusBatteriesSolarCorrected50Percent,
+                LoadTimeFrames.SolarForecast30MinutesCorrected => gridMonitor.CurrentLoadMinusBatteriesSolarForecast30MinutesCorrected,
+                LoadTimeFrames.SolarForecast1HourCorrected => gridMonitor.CurrentLoadMinusBatteriesSolarForecast1HourCorrected,
                 LoadTimeFrames.Last30Seconds => gridMonitor.AverageLoadMinusBatteries(TimeSpan.FromSeconds(30)),
                 LoadTimeFrames.LastMinute => gridMonitor.AverageLoadMinusBatteries(TimeSpan.FromMinutes(1)),
                 LoadTimeFrames.Last2Minutes => gridMonitor.AverageLoadMinusBatteries(TimeSpan.FromMinutes(2)),

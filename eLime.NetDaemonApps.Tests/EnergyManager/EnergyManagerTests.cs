@@ -141,6 +141,28 @@ public class EnergyManagerTests
     }
 
     [TestMethod]
+    public async Task Exporting_Energy_DoesNotSwitchOnLoad_BecauseNoSunIsExpected()
+    {
+        // Arrange
+        var consumer = SimpleEnergyConsumerBuilder.PondPump()
+            .WithLoad(-40, [LoadTimeFrames.SolarForecastNowCorrected], 100, [LoadTimeFrames.Now, LoadTimeFrames.Last30Seconds], 42)
+            .Build();
+
+        var builder = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)
+            .AddConsumer(consumer);
+        _ = await builder.Build();
+
+        //Act
+        _testCtx.TriggerStateChange(builder._grid.ExportEntity, "2000");
+        _testCtx.TriggerStateChange(builder._grid.CurrentSolarPowerEntity, "2000");
+        _testCtx.TriggerStateChange(builder._grid.SolarForecastPowerNowEntity, "0");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(5));
+
+        //Assert
+        _testCtx.VerifySwitchTurnOn(consumer.Simple!.SocketEntity, Moq.Times.Never);
+    }
+
+    [TestMethod]
     public async Task Above_Peak_Energy_SwitchesOffLoad()
     {
         // Arrange
