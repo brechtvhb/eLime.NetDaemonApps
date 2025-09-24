@@ -9,4 +9,7 @@ internal class SmartHeatPumpState
 
     public double? HeatCoefficientOfPerformance { get; set; }
     public double? HotWaterCoefficientOfPerformance { get; set; }
+
+    public DateTimeOffset? ShowerRequestedAt { get; set; }
+    public DateTimeOffset? BathRequestedAt { get; set; }
 }

@@ -4,6 +4,7 @@ using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
 using eLime.NetDaemonApps.Domain.Entities.TextSensors;
 using eLime.NetDaemonApps.Domain.Helper;
 using Microsoft.Extensions.Logging;
+using NetDaemon.Extensions.Scheduler;
 using System.Reactive.Concurrency;
 using System.Runtime.CompilerServices;
 
@@ -20,6 +21,8 @@ public class SmartHeatPump : IDisposable
     internal SmartHeatPumpState State { get; private set; }
     internal SmartHeatPumpHomeAssistantEntities HomeAssistant { get; private set; }
     internal SmartHeatPumpMqttSensors MqttSensors { get; private set; }
+
+    protected IDisposable? MonitoringTask { get; private set; }
 
     internal DebounceDispatcher? SaveAndPublishStateDebounceDispatcher { get; private set; }
     internal DebounceDispatcher CalculateHeatCopDebounceDispatcher { get; private set; }
@@ -57,7 +60,10 @@ public class SmartHeatPump : IDisposable
         HomeAssistant.HotWaterProducedTodayDecimalsSensor.Changed += HotWaterSensor_changed;
 
         MqttSensors = new SmartHeatPumpMqttSensors(Context);
-        MqttSensors.SmartGridReadyModeChangedEvent += SmartGridReadyModeChangedEvent;
+        MqttSensors.SmartGridReadyModeChanged += SmartGridReadyModeChangedEvent;
+        MqttSensors.ShowerRequested += OnShowerRequested;
+        MqttSensors.BathRequested += OnBathRequested;
+
         if (Context.DebounceDuration != TimeSpan.Zero)
             SaveAndPublishStateDebounceDispatcher = new DebounceDispatcher(Context.DebounceDuration);
 
@@ -66,9 +72,42 @@ public class SmartHeatPump : IDisposable
 
         await MqttSensors.CreateOrUpdateEntities();
         GetAndSanitizeState();
+        MonitoringTask = Context.Scheduler.RunEvery(TimeSpan.FromSeconds(30), Context.Scheduler.Now, MonitorHeatPumpControls);
         await SaveAndPublishState();
     }
+    private void OnShowerRequested(object? sender, EventArgs e)
+    {
+        State.ShowerRequestedAt = Context.Scheduler.Now;
+    }
 
+    private void OnBathRequested(object? sender, EventArgs e)
+    {
+        State.BathRequestedAt = Context.Scheduler.Now;
+    }
+
+    private void MonitorHeatPumpControls()
+    {
+        DiscardBathAndShowerRequested();
+    }
+
+    private void DiscardBathAndShowerRequested(bool force = false)
+    {
+        if (force)
+        {
+            State.BathRequestedAt = null;
+            State.ShowerRequestedAt = null;
+            return;
+        }
+
+        if (State.ShowerRequestedAt != null && State.ShowerRequestedAt.Value.AddHours(3) < Context.Scheduler.Now)
+        {
+            State.ShowerRequestedAt = null;
+        }
+        if (State.BathRequestedAt != null && State.BathRequestedAt.Value.AddHours(3) < Context.Scheduler.Now)
+        {
+            State.BathRequestedAt = null;
+        }
+    }
 
     private async void SmartGridReadyModeChangedEvent(object? sender, SmartGridReadyModeChangedEventArgs e)
     {
@@ -300,7 +339,7 @@ public class SmartHeatPump : IDisposable
 
     public void Dispose()
     {
-        MqttSensors.SmartGridReadyModeChangedEvent -= SmartGridReadyModeChangedEvent;
+        MqttSensors.SmartGridReadyModeChanged -= SmartGridReadyModeChangedEvent;
         MqttSensors.Dispose();
 
         HomeAssistant.SourcePumpRunningSensor.TurnedOn -= SourcePumpRunningSensor_TurnedOn;
