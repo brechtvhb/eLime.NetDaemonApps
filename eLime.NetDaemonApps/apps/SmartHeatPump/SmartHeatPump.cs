@@ -1,7 +1,4 @@
 ﻿using eLime.NetDaemonApps.Config;
-using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
-using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
-using eLime.NetDaemonApps.Domain.Entities.TextSensors;
 using eLime.NetDaemonApps.Domain.SmartHeatPump;
 using eLime.NetDaemonApps.Domain.Storage;
 using NetDaemon.Extensions.MqttEntityManager;
@@ -40,30 +37,7 @@ public class SmartHeatPump : IAsyncInitializable, IAsyncDisposable
     {
         try
         {
-            var config = new SmartHeatPumpConfiguration
-            {
-                HaContext = _ha,
-                Scheduler = _scheduler,
-                MqttEntityManager = _mqttEntityManager,
-                FileStorage = _fileStorage,
-                Logger = _logger,
-                DebounceDuration = TimeSpan.FromSeconds(1),
-                SmartGridReadyInput1 = BinarySwitch.Create(_ha, _config.SmartGridReadyInput1),
-                SmartGridReadyInput2 = BinarySwitch.Create(_ha, _config.SmartGridReadyInput2),
-                SourcePumpRunningSensor = BinarySensor.Create(_ha, _config.SourcePumpRunningSensor),
-                SourceTemperatureSensor = NumericSensor.Create(_ha, _config.SourceTemperatureSensor),
-                IsCoolingSensor = BinarySensor.Create(_ha, _config.IsCoolingSensor),
-                StatusBytesSensor = TextSensor.Create(_ha, _config.StatusBytesSensor),
-                HeatConsumedTodayIntegerSensor = NumericSensor.Create(_ha, _config.HeatConsumedTodayIntegerSensor),
-                HeatConsumedTodayDecimalsSensor = NumericSensor.Create(_ha, _config.HeatConsumedTodayDecimalsSensor),
-                HeatProducedTodayIntegerSensor = NumericSensor.Create(_ha, _config.HeatProducedTodayIntegerSensor),
-                HeatProducedTodayDecimalsSensor = NumericSensor.Create(_ha, _config.HeatProducedTodayDecimalsSensor),
-                HotWaterConsumedTodayIntegerSensor = NumericSensor.Create(_ha, _config.HotWaterConsumedTodayIntegerSensor),
-                HotWaterConsumedTodayDecimalsSensor = NumericSensor.Create(_ha, _config.HotWaterConsumedTodayDecimalsSensor),
-                HotWaterProducedTodayIntegerSensor = NumericSensor.Create(_ha, _config.HotWaterProducedTodayIntegerSensor),
-                HotWaterProducedTodayDecimalsSensor = NumericSensor.Create(_ha, _config.HotWaterProducedTodayDecimalsSensor),
-            };
-
+            var config = new SmartHeatPumpConfiguration(_ha, _logger, _scheduler, _fileStorage, _mqttEntityManager, _config, TimeSpan.FromSeconds(1));
             _smartHeatPump = await Domain.SmartHeatPump.SmartHeatPump.Create(config);
         }
         catch (Exception ex)
@@ -74,11 +48,8 @@ public class SmartHeatPump : IAsyncInitializable, IAsyncDisposable
 
     public ValueTask DisposeAsync()
     {
-        _logger.LogInformation("Disposing smart heat pump");
         _smartHeatPump.Dispose();
-
         _logger.LogInformation("Disposed smart heat pump");
-
         return ValueTask.CompletedTask;
     }
 }

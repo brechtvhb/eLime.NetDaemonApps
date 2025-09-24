@@ -49,11 +49,8 @@ public class EnergyManager : IAsyncInitializable, IAsyncDisposable
 
     public ValueTask DisposeAsync()
     {
-        _logger.LogInformation("Disposing energy manager");
         _energyManager.Dispose();
-
         _logger.LogInformation("Disposed energy manager");
-
         return ValueTask.CompletedTask;
     }
 }

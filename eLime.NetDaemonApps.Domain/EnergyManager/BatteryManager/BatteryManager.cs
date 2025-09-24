@@ -30,7 +30,8 @@ internal class BatteryManager : IDisposable
         var batteryManager = new BatteryManager();
         await batteryManager.Initialize(context, config);
 
-        batteryManager.SaveAndPublishStateDebounceDispatcher = new DebounceDispatcher(context.DebounceDuration);
+        if (context.DebounceDuration != TimeSpan.Zero)
+            batteryManager.SaveAndPublishStateDebounceDispatcher = new DebounceDispatcher(context.DebounceDuration);
 
         await batteryManager.MqttSensors.CreateOrUpdateEntities();
         batteryManager.GetAndSanitizeState();
