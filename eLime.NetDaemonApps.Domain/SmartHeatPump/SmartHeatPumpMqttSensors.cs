@@ -72,13 +72,13 @@ public class SmartHeatPumpMqttSensors : IDisposable
         var smartGridReadyModeObservable = await Context.MqttEntityManager.PrepareCommandSubscriptionAsync(SELECT_SMART_GRID_READY_MODE);
         SmartGridReadyModeObservable = smartGridReadyModeObservable.SubscribeAsync(SmartGridReadyModeChangedEventHandler());
 
-        var requestShowerCreationOptions = new EntityCreationOptions(UniqueId: BUTTON_REQUEST_SHOWER, Name: "Request shower", DeviceClass: "button", Persist: true);
+        var requestShowerCreationOptions = new EntityCreationOptions(UniqueId: BUTTON_REQUEST_SHOWER, Name: "Request shower", Persist: true);
         var requestShowerButtonOptions = new ButtonOptions { Icon = "fapro-duotone:shower", Device = Device, PayloadPress = "REQUEST" };
         await Context.MqttEntityManager.CreateAsync(BUTTON_REQUEST_SHOWER, requestShowerCreationOptions, requestShowerButtonOptions);
         var requestShowerObservable = await Context.MqttEntityManager.PrepareCommandSubscriptionAsync(BUTTON_REQUEST_SHOWER);
         RequestShowerObservable = requestShowerObservable.SubscribeAsync(RequestShowerTriggeredHandler());
 
-        var requestBathCreationOptions = new EntityCreationOptions(UniqueId: BUTTON_REQUEST_BATH, Name: "Request bath", DeviceClass: "button", Persist: true);
+        var requestBathCreationOptions = new EntityCreationOptions(UniqueId: BUTTON_REQUEST_BATH, Name: "Request bath", Persist: true);
         var requestBathButtonOptions = new ButtonOptions { Icon = "fapro-duotone:bath", Device = Device, PayloadPress = "REQUEST" };
         await Context.MqttEntityManager.CreateAsync(BUTTON_REQUEST_BATH, requestBathCreationOptions, requestBathButtonOptions);
         var requestBathObservable = await Context.MqttEntityManager.PrepareCommandSubscriptionAsync(BUTTON_REQUEST_BATH);
