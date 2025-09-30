@@ -13,7 +13,6 @@ public class SmartHeatPumpHomeAssistantEntities(SmartHeatPumpConfiguration confi
     internal NumericSensor SourceTemperatureSensor = config.SourceTemperatureSensor;
     internal TextSensor StatusBytesSensor = config.StatusBytesSensor;
 
-
     internal BinarySensor IsCoolingSensor = config.IsCoolingSensor;
 
     internal NumericSensor HeatConsumedTodayIntegerSensor = config.HeatConsumedTodayIntegerSensor;
@@ -25,6 +24,10 @@ public class SmartHeatPumpHomeAssistantEntities(SmartHeatPumpConfiguration confi
     internal NumericSensor HotWaterConsumedTodayDecimalsSensor = config.HotWaterConsumedTodayDecimalsSensor;
     internal NumericSensor HotWaterProducedTodayIntegerSensor = config.HotWaterProducedTodayIntegerSensor;
     internal NumericSensor HotWaterProducedTodayDecimalsSensor = config.HotWaterProducedTodayDecimalsSensor;
+
+    internal NumericSensor RoomTemperatureSensor = config.TemperatureConfiguration.RoomTemperatureSensor;
+    internal NumericSensor HotWaterTemperatureSensor = config.TemperatureConfiguration.HotWaterTemperatureSensor;
+
     public void Dispose()
     {
         SmartGridReadyInput1.Dispose();
@@ -43,5 +46,8 @@ public class SmartHeatPumpHomeAssistantEntities(SmartHeatPumpConfiguration confi
         HotWaterConsumedTodayDecimalsSensor.Dispose();
         HotWaterProducedTodayIntegerSensor.Dispose();
         HotWaterProducedTodayDecimalsSensor.Dispose();
+
+        RoomTemperatureSensor.Dispose();
+        HotWaterTemperatureSensor.Dispose();
     }
 }

@@ -31,6 +31,7 @@ public class SmartHeatPumpConfiguration
     public NumericSensor HotWaterProducedTodayIntegerSensor { get; private init; }
     public NumericSensor HotWaterProducedTodayDecimalsSensor { get; private init; }
 
+    public SmartHeatPumpTemperatureConfiguration TemperatureConfiguration { get; private init; }
     public SmartHeatPumpConfiguration(IHaContext haContext, ILogger logger, IScheduler scheduler, IFileStorage fileStorage, IMqttEntityManager mqttEntityManager, SmartHeatPumpConfig config, TimeSpan debounceDuration)
     {
         Context = new SmartHeatPumpContext(haContext, logger, scheduler, fileStorage, mqttEntityManager, debounceDuration);
@@ -49,5 +50,36 @@ public class SmartHeatPumpConfiguration
         HotWaterConsumedTodayDecimalsSensor = NumericSensor.Create(Context.HaContext, config.HotWaterConsumedTodayDecimalsSensor);
         HotWaterProducedTodayIntegerSensor = NumericSensor.Create(Context.HaContext, config.HotWaterProducedTodayIntegerSensor);
         HotWaterProducedTodayDecimalsSensor = NumericSensor.Create(Context.HaContext, config.HotWaterProducedTodayDecimalsSensor);
+
+        TemperatureConfiguration = new SmartHeatPumpTemperatureConfiguration(Context, config.Temperatures);
+    }
+}
+
+public class SmartHeatPumpTemperatureConfiguration
+{
+    public NumericSensor RoomTemperatureSensor { get; private init; }
+    public decimal MinimumRoomTemperature { get; private init; }
+    public decimal ComfortRoomTemperature { get; private init; }
+    public decimal MaximumRoomTemperature { get; private init; }
+
+    public NumericSensor HotWaterTemperatureSensor { get; private init; }
+    public decimal MinimumHotWaterTemperature { get; private init; }
+    public decimal ComfortHotWaterTemperature { get; private init; }
+    public decimal MaximumHotWaterTemperature { get; private init; }
+    public decimal TargetShowerTemperature { get; private init; }
+    public decimal TargetBathTemperature { get; private init; }
+    public SmartHeatPumpTemperatureConfiguration(SmartHeatPumpContext context, SmartHeatPumpTemperatureConfig config)
+    {
+        RoomTemperatureSensor = NumericSensor.Create(context.HaContext, config.RoomTemperatureSensor);
+        MinimumRoomTemperature = config.MinimumRoomTemperature;
+        ComfortRoomTemperature = config.ComfortRoomTemperature;
+        MaximumRoomTemperature = config.MaximumRoomTemperature;
+
+        HotWaterTemperatureSensor = NumericSensor.Create(context.HaContext, config.HotWaterTemperatureSensor);
+        MinimumHotWaterTemperature = config.MinimumHotWaterTemperature;
+        ComfortHotWaterTemperature = config.ComfortHotWaterTemperature;
+        MaximumHotWaterTemperature = config.MaximumHotWaterTemperature;
+        TargetShowerTemperature = config.TargetShowerTemperature;
+        TargetBathTemperature = config.TargetBathTemperature;
     }
 }

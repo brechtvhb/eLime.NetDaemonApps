@@ -17,7 +17,7 @@ namespace eLime.NetDaemonApps.Domain.SmartHeatPump;
 public class SmartHeatPump : IDisposable
 {
     internal SmartHeatPumpContext Context { get; private set; }
-
+    internal TemperatureSettings TemperatureSettings { get; private set; }
     internal SmartHeatPumpState State { get; private set; }
     internal SmartHeatPumpHomeAssistantEntities HomeAssistant { get; private set; }
     internal SmartHeatPumpMqttSensors MqttSensors { get; private set; }
@@ -42,6 +42,7 @@ public class SmartHeatPump : IDisposable
     private async Task Initialize(SmartHeatPumpConfiguration configuration)
     {
         Context = configuration.Context;
+        TemperatureSettings = new TemperatureSettings(configuration.TemperatureConfiguration);
 
         HomeAssistant = new SmartHeatPumpHomeAssistantEntities(configuration);
         HomeAssistant.SourcePumpRunningSensor.TurnedOn += SourcePumpRunningSensor_TurnedOn;
@@ -49,11 +50,13 @@ public class SmartHeatPump : IDisposable
         HomeAssistant.SourceTemperatureSensor.Changed += SourceTemperatureSensor_Changed;
         HomeAssistant.StatusBytesSensor.StateChanged += StatusBytes_Changed;
 
+        HomeAssistant.RoomTemperatureSensor.Changed += RoomTemperatureSensor_Changed;
         HomeAssistant.HeatConsumedTodayIntegerSensor.Changed += HeatSensor_changed;
         HomeAssistant.HeatConsumedTodayDecimalsSensor.Changed += HeatSensor_changed;
         HomeAssistant.HeatProducedTodayIntegerSensor.Changed += HeatSensor_changed;
         HomeAssistant.HeatProducedTodayDecimalsSensor.Changed += HeatSensor_changed;
 
+        HomeAssistant.HotWaterTemperatureSensor.Changed += HotWaterTemperatureSensor_Changed;
         HomeAssistant.HotWaterConsumedTodayIntegerSensor.Changed += HotWaterSensor_changed;
         HomeAssistant.HotWaterConsumedTodayDecimalsSensor.Changed += HotWaterSensor_changed;
         HomeAssistant.HotWaterProducedTodayIntegerSensor.Changed += HotWaterSensor_changed;
@@ -75,6 +78,62 @@ public class SmartHeatPump : IDisposable
         MonitoringTask = Context.Scheduler.RunEvery(TimeSpan.FromSeconds(30), Context.Scheduler.Now, MonitorHeatPumpControls);
         await SaveAndPublishState();
     }
+
+    private void RoomTemperatureSensor_Changed(object? sender, NumericSensorEventArgs e)
+    {
+        if (e.New?.State == null)
+            return;
+
+        var roomTemperature = Convert.ToDecimal(e.New.State);
+
+        if (roomTemperature < TemperatureSettings.MinimumRoomTemperature)
+            State.RoomEnergyDemand = HeatPumpEnergyDemand.CriticalDemand;
+        else if (roomTemperature < TemperatureSettings.ComfortRoomTemperature)
+            State.RoomEnergyDemand = HeatPumpEnergyDemand.Demanded;
+        else if (roomTemperature > TemperatureSettings.MaximumRoomTemperature)
+            State.RoomEnergyDemand = HeatPumpEnergyDemand.NoDemand;
+
+        SetEnergyDemand();
+    }
+
+
+    private void HotWaterTemperatureSensor_Changed(object? sender, NumericSensorEventArgs e)
+    {
+        if (e.New?.State == null)
+            return;
+
+        var hotWaterTemperature = Convert.ToDecimal(e.New.State);
+
+        if (State.ShowerRequestedAt != null && hotWaterTemperature < TemperatureSettings.TargetShowerTemperature)
+            State.HotWaterEnergyDemand = HeatPumpEnergyDemand.CriticalDemand;
+        else if (State.BathRequestedAt != null && hotWaterTemperature < TemperatureSettings.TargetBathTemperature)
+            State.HotWaterEnergyDemand = HeatPumpEnergyDemand.CriticalDemand;
+        else if (hotWaterTemperature < TemperatureSettings.MinimumHotWaterTemperature)
+            State.HotWaterEnergyDemand = HeatPumpEnergyDemand.CriticalDemand;
+        else if (hotWaterTemperature < TemperatureSettings.ComfortHotWaterTemperature)
+            State.HotWaterEnergyDemand = HeatPumpEnergyDemand.Demanded;
+        else if (hotWaterTemperature > TemperatureSettings.MaximumHotWaterTemperature)
+            State.HotWaterEnergyDemand = HeatPumpEnergyDemand.NoDemand;
+
+        var discardShowerRequested = State.ShowerRequestedAt != null && hotWaterTemperature >= TemperatureSettings.TargetShowerTemperature;
+        var discardBathRequested = State.BathRequestedAt != null && hotWaterTemperature >= TemperatureSettings.TargetBathTemperature;
+
+        if (discardShowerRequested || discardBathRequested)
+            DiscardBathAndShowerRequested(discardShowerRequested, discardBathRequested);
+
+        SetEnergyDemand();
+    }
+
+    private void SetEnergyDemand()
+    {
+        if (State.RoomEnergyDemand is HeatPumpEnergyDemand.CriticalDemand || State.HotWaterEnergyDemand is HeatPumpEnergyDemand.CriticalDemand)
+            State.EnergyDemand = HeatPumpEnergyDemand.CriticalDemand;
+        else if (State.RoomEnergyDemand is HeatPumpEnergyDemand.Demanded || State.HotWaterEnergyDemand is HeatPumpEnergyDemand.Demanded)
+            State.EnergyDemand = HeatPumpEnergyDemand.Demanded;
+        else
+            State.EnergyDemand = HeatPumpEnergyDemand.NoDemand;
+    }
+
     private void OnShowerRequested(object? sender, EventArgs e)
     {
         State.ShowerRequestedAt = Context.Scheduler.Now;
@@ -90,20 +149,13 @@ public class SmartHeatPump : IDisposable
         DiscardBathAndShowerRequested();
     }
 
-    private void DiscardBathAndShowerRequested(bool force = false)
+    private void DiscardBathAndShowerRequested(bool forceDiscardShowerRequested = false, bool forceDiscardBathRequested = false)
     {
-        if (force)
-        {
-            State.BathRequestedAt = null;
-            State.ShowerRequestedAt = null;
-            return;
-        }
-
-        if (State.ShowerRequestedAt != null && State.ShowerRequestedAt.Value.AddHours(3) < Context.Scheduler.Now)
+        if (forceDiscardShowerRequested || (State.ShowerRequestedAt != null && State.ShowerRequestedAt.Value.AddHours(3) < Context.Scheduler.Now))
         {
             State.ShowerRequestedAt = null;
         }
-        if (State.BathRequestedAt != null && State.BathRequestedAt.Value.AddHours(3) < Context.Scheduler.Now)
+        if (forceDiscardBathRequested || (State.BathRequestedAt != null && State.BathRequestedAt.Value.AddHours(3) < Context.Scheduler.Now))
         {
             State.BathRequestedAt = null;
         }

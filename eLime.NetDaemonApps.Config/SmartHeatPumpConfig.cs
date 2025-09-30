@@ -18,4 +18,22 @@ public class SmartHeatPumpConfig
     public string HotWaterProducedTodayIntegerSensor { get; set; }
     public string HotWaterProducedTodayDecimalsSensor { get; set; }
 
+    public SmartHeatPumpTemperatureConfig Temperatures { get; set; }
+}
+
+public class SmartHeatPumpTemperatureConfig
+{
+    public string RoomTemperatureSensor { get; set; }
+    public decimal MinimumRoomTemperature { get; set; }
+    public decimal ComfortRoomTemperature { get; set; }
+    public decimal MaximumRoomTemperature { get; set; }
+
+    public string HotWaterTemperatureSensor { get; set; }
+    public decimal MinimumHotWaterTemperature { get; set; }
+    public decimal ComfortHotWaterTemperature { get; set; }
+    public decimal MaximumHotWaterTemperature { get; set; }
+
+
+    public decimal TargetShowerTemperature { get; set; }
+    public decimal TargetBathTemperature { get; set; }
 }
