@@ -79,52 +79,80 @@ public class SmartHeatPump : IDisposable
         await SaveAndPublishState();
     }
 
-    private void RoomTemperatureSensor_Changed(object? sender, NumericSensorEventArgs e)
+    private async void RoomTemperatureSensor_Changed(object? sender, NumericSensorEventArgs e)
+    {
+        try
+        {
+            await ResolveRoomEnergyDemand(e);
+        }
+        catch (Exception ex)
+        {
+            Context.Logger.LogError(ex, "Could not handle change of room temperature.");
+        }
+    }
+
+    private async Task ResolveRoomEnergyDemand(NumericSensorEventArgs e)
     {
         if (e.New?.State == null)
             return;
 
         var roomTemperature = Convert.ToDecimal(e.New.State);
 
+        var energyDemand = HeatPumpEnergyDemand.NoDemand;
         if (roomTemperature < TemperatureSettings.MinimumRoomTemperature)
-            State.RoomEnergyDemand = HeatPumpEnergyDemand.CriticalDemand;
+            energyDemand = HeatPumpEnergyDemand.CriticalDemand;
         else if (roomTemperature < TemperatureSettings.ComfortRoomTemperature)
-            State.RoomEnergyDemand = HeatPumpEnergyDemand.Demanded;
+            energyDemand = HeatPumpEnergyDemand.Demanded;
         else if (roomTemperature > TemperatureSettings.MaximumRoomTemperature)
-            State.RoomEnergyDemand = HeatPumpEnergyDemand.NoDemand;
+            energyDemand = HeatPumpEnergyDemand.NoDemand;
 
-        SetEnergyDemand();
+        if (energyDemand != State.RoomEnergyDemand)
+            await SetEnergyDemand();
     }
 
 
-    private void HotWaterTemperatureSensor_Changed(object? sender, NumericSensorEventArgs e)
+    private async void HotWaterTemperatureSensor_Changed(object? sender, NumericSensorEventArgs e)
+    {
+        try
+        {
+            await ResolveHotWaterEnergyDemand(e);
+        }
+        catch (Exception ex)
+        {
+            Context.Logger.LogError(ex, "Could not handle change of water temperature.");
+        }
+    }
+
+    private async Task ResolveHotWaterEnergyDemand(NumericSensorEventArgs e)
     {
         if (e.New?.State == null)
             return;
 
         var hotWaterTemperature = Convert.ToDecimal(e.New.State);
 
+        var energyDemand = HeatPumpEnergyDemand.NoDemand;
         if (State.ShowerRequestedAt != null && hotWaterTemperature < TemperatureSettings.TargetShowerTemperature)
-            State.HotWaterEnergyDemand = HeatPumpEnergyDemand.CriticalDemand;
+            energyDemand = HeatPumpEnergyDemand.CriticalDemand;
         else if (State.BathRequestedAt != null && hotWaterTemperature < TemperatureSettings.TargetBathTemperature)
-            State.HotWaterEnergyDemand = HeatPumpEnergyDemand.CriticalDemand;
+            energyDemand = HeatPumpEnergyDemand.CriticalDemand;
         else if (hotWaterTemperature < TemperatureSettings.MinimumHotWaterTemperature)
-            State.HotWaterEnergyDemand = HeatPumpEnergyDemand.CriticalDemand;
+            energyDemand = HeatPumpEnergyDemand.CriticalDemand;
         else if (hotWaterTemperature < TemperatureSettings.ComfortHotWaterTemperature)
-            State.HotWaterEnergyDemand = HeatPumpEnergyDemand.Demanded;
+            energyDemand = HeatPumpEnergyDemand.Demanded;
         else if (hotWaterTemperature > TemperatureSettings.MaximumHotWaterTemperature)
-            State.HotWaterEnergyDemand = HeatPumpEnergyDemand.NoDemand;
+            energyDemand = HeatPumpEnergyDemand.NoDemand;
 
         var discardShowerRequested = State.ShowerRequestedAt != null && hotWaterTemperature >= TemperatureSettings.TargetShowerTemperature;
         var discardBathRequested = State.BathRequestedAt != null && hotWaterTemperature >= TemperatureSettings.TargetBathTemperature;
 
         if (discardShowerRequested || discardBathRequested)
-            DiscardBathAndShowerRequested(discardShowerRequested, discardBathRequested);
+            await DiscardBathAndShowerRequested(discardShowerRequested, discardBathRequested);
 
-        SetEnergyDemand();
+        if (energyDemand != State.HotWaterEnergyDemand)
+            await SetEnergyDemand();
     }
 
-    private void SetEnergyDemand()
+    private async Task SetEnergyDemand()
     {
         if (State.RoomEnergyDemand is HeatPumpEnergyDemand.CriticalDemand || State.HotWaterEnergyDemand is HeatPumpEnergyDemand.CriticalDemand)
             State.EnergyDemand = HeatPumpEnergyDemand.CriticalDemand;
@@ -132,33 +160,64 @@ public class SmartHeatPump : IDisposable
             State.EnergyDemand = HeatPumpEnergyDemand.Demanded;
         else
             State.EnergyDemand = HeatPumpEnergyDemand.NoDemand;
+
+        await DebounceSaveAndPublishState();
     }
 
-    private void OnShowerRequested(object? sender, EventArgs e)
+    private async void OnShowerRequested(object? sender, EventArgs e)
     {
-        State.ShowerRequestedAt = Context.Scheduler.Now;
+        try
+        {
+            State.ShowerRequestedAt = Context.Scheduler.Now;
+            await DebounceSaveAndPublishState();
+        }
+        catch (Exception ex)
+        {
+            Context.Logger.LogError(ex, "Could not handle hot shower request.");
+        }
     }
 
-    private void OnBathRequested(object? sender, EventArgs e)
+    private async Task OnBathRequested(object? sender, EventArgs e)
     {
-        State.BathRequestedAt = Context.Scheduler.Now;
+        try
+        {
+            State.BathRequestedAt = Context.Scheduler.Now;
+            await DebounceSaveAndPublishState();
+        }
+        catch (Exception ex)
+        {
+            Context.Logger.LogError(ex, "Could not handle hot bath request.");
+        }
     }
 
-    private void MonitorHeatPumpControls()
+    private async void MonitorHeatPumpControls()
     {
-        DiscardBathAndShowerRequested();
+        try
+        {
+            await DiscardBathAndShowerRequested();
+        }
+        catch (Exception ex)
+        {
+            Context.Logger.LogError(ex, "Could monitor heat pump controls");
+        }
     }
 
-    private void DiscardBathAndShowerRequested(bool forceDiscardShowerRequested = false, bool forceDiscardBathRequested = false)
+    private async Task DiscardBathAndShowerRequested(bool forceDiscardShowerRequested = false, bool forceDiscardBathRequested = false)
     {
+        var changed = false;
         if (forceDiscardShowerRequested || (State.ShowerRequestedAt != null && State.ShowerRequestedAt.Value.AddHours(3) < Context.Scheduler.Now))
         {
             State.ShowerRequestedAt = null;
+            changed = true;
         }
         if (forceDiscardBathRequested || (State.BathRequestedAt != null && State.BathRequestedAt.Value.AddHours(3) < Context.Scheduler.Now))
         {
             State.BathRequestedAt = null;
+            changed = true;
         }
+
+        if (changed)
+            await DebounceSaveAndPublishState();
     }
 
     private async void SmartGridReadyModeChangedEvent(object? sender, SmartGridReadyModeChangedEventArgs e)
