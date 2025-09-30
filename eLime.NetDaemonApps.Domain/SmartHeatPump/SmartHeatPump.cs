@@ -83,7 +83,7 @@ public class SmartHeatPump : IDisposable
     {
         try
         {
-            await ResolveRoomEnergyDemand(e);
+            await ResolveRoomEnergyDemand(e.New?.State);
         }
         catch (Exception ex)
         {
@@ -91,12 +91,12 @@ public class SmartHeatPump : IDisposable
         }
     }
 
-    private async Task ResolveRoomEnergyDemand(NumericSensorEventArgs e)
+    private async Task ResolveRoomEnergyDemand(double? temperature)
     {
-        if (e.New?.State == null)
+        if (temperature == null)
             return;
 
-        var roomTemperature = Convert.ToDecimal(e.New.State);
+        var roomTemperature = Convert.ToDecimal(temperature);
 
         var energyDemand = HeatPumpEnergyDemand.NoDemand;
         if (roomTemperature < TemperatureSettings.MinimumRoomTemperature)
@@ -115,7 +115,7 @@ public class SmartHeatPump : IDisposable
     {
         try
         {
-            await ResolveHotWaterEnergyDemand(e);
+            await ResolveHotWaterEnergyDemand(e.New?.State);
         }
         catch (Exception ex)
         {
@@ -123,12 +123,12 @@ public class SmartHeatPump : IDisposable
         }
     }
 
-    private async Task ResolveHotWaterEnergyDemand(NumericSensorEventArgs e)
+    private async Task ResolveHotWaterEnergyDemand(double? temperature)
     {
-        if (e.New?.State == null)
+        if (temperature == null)
             return;
 
-        var hotWaterTemperature = Convert.ToDecimal(e.New.State);
+        var hotWaterTemperature = Convert.ToDecimal(temperature);
 
         var energyDemand = HeatPumpEnergyDemand.NoDemand;
         if (State.ShowerRequestedAt != null && hotWaterTemperature < TemperatureSettings.TargetShowerTemperature)
@@ -169,7 +169,7 @@ public class SmartHeatPump : IDisposable
         try
         {
             State.ShowerRequestedAt = Context.Scheduler.Now;
-            await DebounceSaveAndPublishState();
+            await ResolveHotWaterEnergyDemand(HomeAssistant.HotWaterTemperatureSensor.State);
         }
         catch (Exception ex)
         {
@@ -177,12 +177,12 @@ public class SmartHeatPump : IDisposable
         }
     }
 
-    private async Task OnBathRequested(object? sender, EventArgs e)
+    private async void OnBathRequested(object? sender, EventArgs e)
     {
         try
         {
             State.BathRequestedAt = Context.Scheduler.Now;
-            await DebounceSaveAndPublishState();
+            await ResolveHotWaterEnergyDemand(HomeAssistant.HotWaterTemperatureSensor.State);
         }
         catch (Exception ex)
         {
