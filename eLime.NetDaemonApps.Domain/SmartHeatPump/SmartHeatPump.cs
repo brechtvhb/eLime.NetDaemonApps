@@ -217,7 +217,7 @@ public class SmartHeatPump : IDisposable
         }
 
         if (changed)
-            await DebounceSaveAndPublishState();
+            await ResolveHotWaterEnergyDemand(HomeAssistant.HotWaterTemperatureSensor.State);
     }
 
     private async void SmartGridReadyModeChangedEvent(object? sender, SmartGridReadyModeChangedEventArgs e)
