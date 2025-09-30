@@ -107,7 +107,11 @@ public class SmartHeatPump : IDisposable
             energyDemand = HeatPumpEnergyDemand.NoDemand;
 
         if (energyDemand != State.RoomEnergyDemand)
-            await SetEnergyDemand();
+        {
+            State.RoomEnergyDemand = energyDemand;
+            SetGlobalEnergyDemand();
+            await DebounceSaveAndPublishState();
+        }
     }
 
 
@@ -131,9 +135,9 @@ public class SmartHeatPump : IDisposable
         var hotWaterTemperature = Convert.ToDecimal(temperature);
 
         var energyDemand = HeatPumpEnergyDemand.NoDemand;
-        if (State.ShowerRequestedAt != null && hotWaterTemperature < TemperatureSettings.TargetShowerTemperature)
+        if (State.BathRequestedAt != null && hotWaterTemperature < TemperatureSettings.TargetBathTemperature)
             energyDemand = HeatPumpEnergyDemand.CriticalDemand;
-        else if (State.BathRequestedAt != null && hotWaterTemperature < TemperatureSettings.TargetBathTemperature)
+        else if (State.ShowerRequestedAt != null && hotWaterTemperature < TemperatureSettings.TargetShowerTemperature)
             energyDemand = HeatPumpEnergyDemand.CriticalDemand;
         else if (hotWaterTemperature < TemperatureSettings.MinimumHotWaterTemperature)
             energyDemand = HeatPumpEnergyDemand.CriticalDemand;
@@ -149,10 +153,14 @@ public class SmartHeatPump : IDisposable
             await DiscardBathAndShowerRequested(discardShowerRequested, discardBathRequested);
 
         if (energyDemand != State.HotWaterEnergyDemand)
-            await SetEnergyDemand();
+        {
+            State.HotWaterEnergyDemand = energyDemand;
+            SetGlobalEnergyDemand();
+            await DebounceSaveAndPublishState();
+        }
     }
 
-    private async Task SetEnergyDemand()
+    private void SetGlobalEnergyDemand()
     {
         if (State.RoomEnergyDemand is HeatPumpEnergyDemand.CriticalDemand || State.HotWaterEnergyDemand is HeatPumpEnergyDemand.CriticalDemand)
             State.EnergyDemand = HeatPumpEnergyDemand.CriticalDemand;
@@ -160,8 +168,6 @@ public class SmartHeatPump : IDisposable
             State.EnergyDemand = HeatPumpEnergyDemand.Demanded;
         else
             State.EnergyDemand = HeatPumpEnergyDemand.NoDemand;
-
-        await DebounceSaveAndPublishState();
     }
 
     private async void OnShowerRequested(object? sender, EventArgs e)
