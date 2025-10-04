@@ -2,6 +2,7 @@
 using eLime.NetDaemonApps.Domain.EnergyManager.Consumers.Cooling;
 using eLime.NetDaemonApps.Domain.EnergyManager.Consumers.DynamicConsumers.CarCharger;
 using eLime.NetDaemonApps.Domain.EnergyManager.Consumers.Simple;
+using eLime.NetDaemonApps.Domain.EnergyManager.Consumers.SmartGridReady;
 using eLime.NetDaemonApps.Domain.EnergyManager.Consumers.Triggered;
 using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
@@ -34,6 +35,7 @@ public class EnergyConsumerConfiguration
         Simple = config.Simple != null ? new SimpleEnergyConsumerConfiguration(haContext, config.Simple) : null;
         Cooling = config.Cooling != null ? new CoolingEnergyConsumerConfiguration(haContext, config.Cooling) : null;
         Triggered = config.Triggered != null ? new TriggeredEnergyConsumerConfiguration(haContext, config.Triggered) : null;
+        SmartGridReady = config.SmartGridReady != null ? new SmartGridReadyEnergyConsumerConfiguration(haContext, config.SmartGridReady) : null;
         CarCharger = config.CarCharger != null ? new CarChargerEnergyConsumerConfiguration(haContext, config.CarCharger) : null;
     }
     public string Name { get; set; }
@@ -55,5 +57,6 @@ public class EnergyConsumerConfiguration
     public SimpleEnergyConsumerConfiguration? Simple { get; set; }
     public CoolingEnergyConsumerConfiguration? Cooling { get; set; }
     public TriggeredEnergyConsumerConfiguration? Triggered { get; set; }
+    public SmartGridReadyEnergyConsumerConfiguration? SmartGridReady { get; set; }
     public CarChargerEnergyConsumerConfiguration? CarCharger { get; set; }
 }

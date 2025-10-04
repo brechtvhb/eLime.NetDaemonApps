@@ -621,11 +621,10 @@ public class CarChargerEnergyConsumerTests
         _testCtx.TriggerStateChange(builder._grid.ExportEntity, "900");
         _testCtx.TriggerStateChange(builder._grid.ImportEntity, "0");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(30));
-        _testCtx.TriggerStateChange(consumer.CarCharger!.Cars.First().CurrentEntity!, "8");
         _testCtx.TriggerStateChange(consumer.PowerUsageEntity, "5600");
 
         //Act
-        _testCtx.TriggerStateChange(builder._grid.ExportEntity, "200");
+        _testCtx.TriggerStateChange(builder._grid.ExportEntity, "100");
         _testCtx.TriggerStateChange(builder._grid.ImportEntity, "0");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(30));
 

@@ -2,6 +2,7 @@
 using eLime.NetDaemonApps.Domain.EnergyManager.Consumers.DynamicConsumers;
 using eLime.NetDaemonApps.Domain.EnergyManager.Consumers.DynamicConsumers.CarCharger;
 using eLime.NetDaemonApps.Domain.EnergyManager.Consumers.Simple;
+using eLime.NetDaemonApps.Domain.EnergyManager.Consumers.SmartGridReady;
 using eLime.NetDaemonApps.Domain.EnergyManager.Consumers.Triggered;
 using eLime.NetDaemonApps.Domain.EnergyManager.Grid;
 using eLime.NetDaemonApps.Domain.Helper;
@@ -74,7 +75,7 @@ public abstract class EnergyConsumer : IDisposable
     {
         Context = context;
         Name = config.Name;
-        TimeWindows = config.TimeWindows.Select(x => new TimeWindow(x.ActiveSensor, new TimeOnly(0, 0).Add(x.Start), new TimeOnly(0, 0).Add(x.End))).ToList(); //TODO clean up
+        TimeWindows = config.TimeWindows.Select(x => new TimeWindow(x.ActiveSensor, x.Days, x.Start, x.End)).ToList();
 
         MinimumRuntime = config.MinimumRuntime;
         MaximumRuntime = config.MaximumRuntime;
@@ -110,6 +111,8 @@ public abstract class EnergyConsumer : IDisposable
             consumer = new TriggeredEnergyConsumer(context, config);
         else if (config.CarCharger != null)
             consumer = new CarChargerEnergyConsumer(context, config);
+        else if (config.SmartGridReady != null)
+            consumer = new SmartGridReadyEnergyConsumer(context, config);
         else
             throw new NotSupportedException($"The energy consumer type '{config.GetType().Name}' is not supported.");
 

@@ -159,7 +159,7 @@ public class EnergyManager : IDisposable
 
     private double AdjustDynamicLoadsIfNeeded(Dictionary<LoadTimeFrames, double> consumerLoadCorrections)
     {
-        var dynamicLoadConsumers = Consumers.Where(x => x.State.State == EnergyConsumerState.Running).OfType<IDynamicLoadConsumer>().ToList();
+        var dynamicLoadConsumers = Consumers.OfType<IDynamicLoadConsumer>().ToList();
         var dynamicNetChange = 0d;
 
         foreach (var dynamicLoadConsumer in dynamicLoadConsumers)

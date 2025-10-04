@@ -9,10 +9,12 @@ public class TimeWindowConfiguration
     public TimeWindowConfiguration(IHaContext haContext, TimeWindowConfig config)
     {
         ActiveSensor = !string.IsNullOrWhiteSpace(config.ActiveSensor) ? BinarySensor.Create(haContext, config.ActiveSensor) : null;
-        Start = config.Start;
-        End = config.End;
+        Days = config.Days;
+        Start = new TimeOnly(0, 0).Add(config.Start);
+        End = new TimeOnly(0, 0).Add(config.End);
     }
-    public BinarySensor? ActiveSensor { get; set; }
-    public TimeSpan Start { get; set; }
-    public TimeSpan End { get; set; }
+    public BinarySensor? ActiveSensor { get; }
+    public List<DayOfWeek> Days { get; }
+    public TimeOnly Start { get; }
+    public TimeOnly End { get; }
 }

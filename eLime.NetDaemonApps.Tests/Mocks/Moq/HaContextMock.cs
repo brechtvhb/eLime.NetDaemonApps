@@ -1,6 +1,9 @@
-﻿using Moq;
+﻿using eLime.NetDaemonApps.Domain.Entities.Input;
+using eLime.NetDaemonApps.Domain.Entities.Select;
+using Moq;
 using NetDaemon.HassModel;
 using NetDaemon.HassModel.Entities;
+using System.Globalization;
 using System.Reactive.Subjects;
 
 namespace eLime.NetDaemonApps.Tests.Mocks.Moq;
@@ -11,7 +14,14 @@ public class HaContextMock : Mock<HaContextMockBase>
     {
         void Callback(string domain, string service, ServiceTarget target, object? data)
         {
-            if (target != null)
+            if (target == null)
+                return;
+
+            if (data is SelectEntitySelectOptionParameters selectParams)
+                TriggerStateChange(target.EntityIds.First(), new EntityState { State = selectParams.Option });
+            else if (data is InputNumberSetValueParameters inputParams)
+                TriggerStateChange(target.EntityIds.First(), new EntityState { State = inputParams.Value.ToString(CultureInfo.InvariantCulture) });
+            else
                 TriggerStateChange(target.EntityIds.First(), data == null ? new EntityState { State = "" } : new EntityState { State = data.ToString() });
         }
 

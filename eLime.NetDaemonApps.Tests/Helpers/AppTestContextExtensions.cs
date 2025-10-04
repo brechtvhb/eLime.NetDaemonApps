@@ -4,6 +4,7 @@ using eLime.NetDaemonApps.Domain.Entities.ClimateEntities;
 using eLime.NetDaemonApps.Domain.Entities.Covers;
 using eLime.NetDaemonApps.Domain.Entities.Input;
 using eLime.NetDaemonApps.Domain.Entities.Lights;
+using eLime.NetDaemonApps.Domain.Entities.Select;
 using eLime.NetDaemonApps.Domain.Scenes;
 using eLime.NetDaemonApps.Domain.SmartVentilation;
 using Moq;
@@ -79,6 +80,10 @@ public static class AppTestContextExtensions
         ctx.HaContextMock.Verify(c => c.CallService("switch", "turn_on", It.Is<ServiceTarget>(s => Match(entity, s)), null), times);
     }
 
+    public static void VerifySelectOptionPicked(this AppTestContext ctx, string entity, string option, Func<Times> times)
+    {
+        ctx.HaContextMock.Verify(c => c.CallService("select", "select_option", It.Is<ServiceTarget>(s => Match(entity, s)), It.Is<SelectEntitySelectOptionParameters>(x => x.Option == option)), times);
+    }
 
     public static void VerifySwitchTurnOn(this AppTestContext ctx, BinarySwitch entity, Times times)
     {

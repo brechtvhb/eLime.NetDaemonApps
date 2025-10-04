@@ -72,6 +72,7 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         HomeAssistant = new CarChargerEnergyConsumerHomeAssistantEntities(config);
         HomeAssistant.CurrentNumber.Changed += CurrentNumber_Changed;
         HomeAssistant.StateSensor.StateChanged += StateSensor_StateChanged;
+
         MqttSensors = new DynamicEnergyConsumerMqttSensors(config.Name, context);
         MqttSensors.BalancingMethodChanged += BalancingMethodChanged;
         MqttSensors.BalanceOnBehalfOfChanged += BalanceOnBehalfOfChanged;
@@ -139,6 +140,9 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 
     public (double current, double netPowerChange) Rebalance(IGridMonitor gridMonitor, Dictionary<LoadTimeFrames, double> consumerAverageLoadCorrections, double dynamicLoadAdjustments, double maximumDischargePower)
     {
+        if (State.State != EnergyConsumerState.Running)
+            return (0, 0);
+
         if (_lastCurrentChange?.Add(MinimumRebalancingInterval) > Context.Scheduler.Now)
             return (0, 0);
 
