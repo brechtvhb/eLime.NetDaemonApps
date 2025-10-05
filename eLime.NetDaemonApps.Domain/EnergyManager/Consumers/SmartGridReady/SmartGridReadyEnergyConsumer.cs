@@ -110,7 +110,10 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         var isInBlockedTimeWindow = BlockedTimeWindows.Any(timeWindow => timeWindow.IsActive(Context.Scheduler.Now, Context.Timezone));
 
         if (isInBlockedTimeWindow && SmartGridReadyMode != SmartGridReadyMode.Blocked)
+        {
+            Context.Logger.LogInformation("{Name}: Blocked time window - Set smart grid ready mode to blocked.", Name);
             Block();
+        }
 
         //Unblock happens in rebalance after 15 minutes or when load is below peak load
     }
@@ -193,6 +196,7 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 
         if (estimatedLoad > gridMonitor.PeakLoad && SmartGridReadyMode != SmartGridReadyMode.Blocked)
         {
+            Context.Logger.LogInformation("{Name}: Rebalance - Set smart grid ready mode to blocked due to exceeding peak load.", Name);
             Block();
             return (0, 0);
         }
@@ -202,7 +206,10 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
             return (0, 0);
 
         if (SmartGridReadyMode == SmartGridReadyMode.Blocked && (BlockedAt?.AddMinutes(15) ?? DateTimeOffset.MinValue) <= Context.Scheduler.Now)
+        {
+            Context.Logger.LogInformation("{Name}: Unblock - Reverting to normal smart grid ready mode.", Name);
             Unblock();
+        }
 
         return (0, 0);
     }
@@ -276,7 +283,7 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
     {
         if (SmartGridReadyMode == SmartGridReadyMode.Boosted)
         {
-            Context.Logger.LogInformation("{Name}: Stopped boost mode. Set smart grid ready mode to normal.", Name);
+            Context.Logger.LogInformation("{Name}: Turn off - Stopped boost mode. Set smart grid ready mode to normal.", Name);
             DeBoost();
             return;
         }
@@ -286,7 +293,7 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 
         if (SmartGridReadyMode == SmartGridReadyMode.Normal)
         {
-            Context.Logger.LogInformation("{Name}: Set smart grid ready mode to blocked.", Name);
+            Context.Logger.LogInformation("{Name}: Turn off - Set smart grid ready mode to blocked.", Name);
             Block();
         }
     }
