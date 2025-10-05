@@ -18,8 +18,10 @@ public class SmartHeatPumpConfiguration
     public BinarySensor SourcePumpRunningSensor { get; private init; }
     public NumericSensor SourceTemperatureSensor { get; private init; }
 
+    public BinarySensor IsSummerModeSensor { get; private init; }
     public BinarySensor IsCoolingSensor { get; private init; }
     public TextSensor StatusBytesSensor { get; private init; }
+    public NumericSensor RemainingStandstillSensor { get; private init; }
 
     public NumericSensor HeatConsumedTodayIntegerSensor { get; private init; }
     public NumericSensor HeatConsumedTodayDecimalsSensor { get; private init; }
@@ -40,8 +42,11 @@ public class SmartHeatPumpConfiguration
         SmartGridReadyInput2 = BinarySwitch.Create(Context.HaContext, config.SmartGridReadyInput2);
         SourcePumpRunningSensor = BinarySensor.Create(Context.HaContext, config.SourcePumpRunningSensor);
         SourceTemperatureSensor = NumericSensor.Create(Context.HaContext, config.SourceTemperatureSensor);
+        IsSummerModeSensor = BinarySensor.Create(Context.HaContext, config.IsSummerModeSensor);
         IsCoolingSensor = BinarySensor.Create(Context.HaContext, config.IsCoolingSensor);
         StatusBytesSensor = TextSensor.Create(Context.HaContext, config.StatusBytesSensor);
+        RemainingStandstillSensor = NumericSensor.Create(Context.HaContext, config.RemainingStandstillSensor);
+
         HeatConsumedTodayIntegerSensor = NumericSensor.Create(Context.HaContext, config.HeatConsumedTodayIntegerSensor);
         HeatConsumedTodayDecimalsSensor = NumericSensor.Create(Context.HaContext, config.HeatConsumedTodayDecimalsSensor);
         HeatProducedTodayIntegerSensor = NumericSensor.Create(Context.HaContext, config.HeatProducedTodayIntegerSensor);

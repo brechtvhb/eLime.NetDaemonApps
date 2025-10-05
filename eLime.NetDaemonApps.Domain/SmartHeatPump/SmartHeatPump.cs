@@ -96,15 +96,19 @@ public class SmartHeatPump : IDisposable
         if (temperature == null)
             return;
 
-        var roomTemperature = Convert.ToDecimal(temperature);
-
         var energyDemand = HeatPumpEnergyDemand.NoDemand;
-        if (roomTemperature < TemperatureSettings.MinimumRoomTemperature)
-            energyDemand = HeatPumpEnergyDemand.CriticalDemand;
-        else if (roomTemperature < TemperatureSettings.ComfortRoomTemperature)
-            energyDemand = HeatPumpEnergyDemand.Demanded;
-        else if (roomTemperature > TemperatureSettings.MaximumRoomTemperature)
-            energyDemand = HeatPumpEnergyDemand.NoDemand;
+
+        // Only demand energy for room heating when not cooling and not in summer mode and not in standstill
+        if (HomeAssistant.IsCoolingSensor.IsOff() && HomeAssistant.IsSummerModeSensor.IsOff() && HomeAssistant.RemainingStandstillSensor.State == 0)
+        {
+            var roomTemperature = Convert.ToDecimal(temperature);
+            if (roomTemperature < TemperatureSettings.MinimumRoomTemperature)
+                energyDemand = HeatPumpEnergyDemand.CriticalDemand;
+            else if (roomTemperature < TemperatureSettings.ComfortRoomTemperature)
+                energyDemand = HeatPumpEnergyDemand.Demanded;
+            else if (roomTemperature > TemperatureSettings.MaximumRoomTemperature)
+                energyDemand = HeatPumpEnergyDemand.NoDemand;
+        }
 
         if (energyDemand != State.RoomEnergyDemand)
         {
@@ -135,16 +139,21 @@ public class SmartHeatPump : IDisposable
         var hotWaterTemperature = Convert.ToDecimal(temperature);
 
         var energyDemand = HeatPumpEnergyDemand.NoDemand;
-        if (State.BathRequestedAt != null && hotWaterTemperature < TemperatureSettings.TargetBathTemperature)
-            energyDemand = HeatPumpEnergyDemand.CriticalDemand;
-        else if (State.ShowerRequestedAt != null && hotWaterTemperature < TemperatureSettings.TargetShowerTemperature)
-            energyDemand = HeatPumpEnergyDemand.CriticalDemand;
-        else if (hotWaterTemperature < TemperatureSettings.MinimumHotWaterTemperature)
-            energyDemand = HeatPumpEnergyDemand.CriticalDemand;
-        else if (hotWaterTemperature < TemperatureSettings.ComfortHotWaterTemperature)
-            energyDemand = HeatPumpEnergyDemand.Demanded;
-        else if (hotWaterTemperature > TemperatureSettings.MaximumHotWaterTemperature)
-            energyDemand = HeatPumpEnergyDemand.NoDemand;
+
+        // Only demand energy for hot water when not in standstill
+        if (HomeAssistant.RemainingStandstillSensor.State == 0)
+        {
+            if (State.BathRequestedAt != null && hotWaterTemperature < TemperatureSettings.TargetBathTemperature)
+                energyDemand = HeatPumpEnergyDemand.CriticalDemand;
+            else if (State.ShowerRequestedAt != null && hotWaterTemperature < TemperatureSettings.TargetShowerTemperature)
+                energyDemand = HeatPumpEnergyDemand.CriticalDemand;
+            else if (hotWaterTemperature < TemperatureSettings.MinimumHotWaterTemperature)
+                energyDemand = HeatPumpEnergyDemand.CriticalDemand;
+            else if (hotWaterTemperature < TemperatureSettings.ComfortHotWaterTemperature)
+                energyDemand = HeatPumpEnergyDemand.Demanded;
+            else if (hotWaterTemperature > TemperatureSettings.MaximumHotWaterTemperature)
+                energyDemand = HeatPumpEnergyDemand.NoDemand;
+        }
 
         var discardShowerRequested = State.ShowerRequestedAt != null && hotWaterTemperature >= TemperatureSettings.TargetShowerTemperature;
         var discardBathRequested = State.BathRequestedAt != null && hotWaterTemperature >= TemperatureSettings.TargetBathTemperature;
