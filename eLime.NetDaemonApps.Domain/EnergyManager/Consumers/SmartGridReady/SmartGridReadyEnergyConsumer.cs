@@ -194,6 +194,7 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         if (AllowBatteryPower == AllowBatteryPower.MaxPower)
             estimatedLoad -= maximumDischargePower;
 
+        Context.Logger.LogInformation($"Estimated load: {estimatedLoad}. Peal load: {PeakLoad}. SmartGridReadyMode: {SmartGridReadyMode}");
         if (estimatedLoad > gridMonitor.PeakLoad && SmartGridReadyMode != SmartGridReadyMode.Blocked)
         {
             Context.Logger.LogInformation("{Name}: Rebalance - Set smart grid ready mode to blocked due to exceeding peak load.", Name);
@@ -202,9 +203,11 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         }
 
         var isInBlockedTimeWindow = BlockedTimeWindows.Any(timeWindow => timeWindow.IsActive(Context.Scheduler.Now, Context.Timezone));
+        Context.Logger.LogInformation($"{isInBlockedTimeWindow}");
         if (isInBlockedTimeWindow)
             return (0, 0);
 
+        Context.Logger.LogInformation($"BlockedAt: {BlockedAt}");
         if (SmartGridReadyMode == SmartGridReadyMode.Blocked && (BlockedAt?.AddMinutes(15) ?? DateTimeOffset.MinValue) <= Context.Scheduler.Now)
         {
             Context.Logger.LogInformation("{Name}: Unblock - Reverting to normal smart grid ready mode.", Name);
