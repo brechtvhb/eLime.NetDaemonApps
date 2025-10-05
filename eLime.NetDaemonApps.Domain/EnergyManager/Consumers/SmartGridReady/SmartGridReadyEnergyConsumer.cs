@@ -149,19 +149,19 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
     {
         try
         {
-            if (e.Sensor.State == EnergyNeededState)
+            if (!IsRunning)
             {
-                State.State = EnergyConsumerState.NeedsEnergy;
-            }
-            else if (e.Sensor.State == CriticalEnergyNeededState)
-            {
-                State.State = EnergyConsumerState.CriticallyNeedsEnergy;
+                if (e.Sensor.State == EnergyNeededState)
+                    State.State = EnergyConsumerState.NeedsEnergy;
+                else if (e.Sensor.State == CriticalEnergyNeededState)
+                    State.State = EnergyConsumerState.CriticallyNeedsEnergy;
             }
             else
             {
-                Stop();
-                return;
+                if (e.Sensor.State != EnergyNeededState && e.Sensor.State != CriticalEnergyNeededState)
+                    Stop();
             }
+
             await DebounceSaveAndPublishState();
         }
         catch (Exception ex)
@@ -268,6 +268,7 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 
     public override void TurnOn()
     {
+        Context.Logger.LogInformation("{Name}: Set smart grid ready mode to boosted.", Name);
         Boost();
     }
 
@@ -275,6 +276,7 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
     {
         if (SmartGridReadyMode == SmartGridReadyMode.Boosted)
         {
+            Context.Logger.LogInformation("{Name}: Stopped boost mode. Set smart grid ready mode to normal.", Name);
             DeBoost();
             return;
         }
@@ -283,7 +285,10 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
             return;
 
         if (SmartGridReadyMode == SmartGridReadyMode.Normal)
+        {
+            Context.Logger.LogInformation("{Name}: Set smart grid ready mode to blocked.", Name);
             Block();
+        }
     }
 
     public override void Dispose()
