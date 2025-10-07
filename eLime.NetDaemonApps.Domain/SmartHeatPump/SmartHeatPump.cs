@@ -106,7 +106,9 @@ public class SmartHeatPump : IDisposable
                 energyDemand = HeatPumpEnergyDemand.CriticalDemand;
             else if (roomTemperature < TemperatureSettings.ComfortRoomTemperature)
                 energyDemand = HeatPumpEnergyDemand.Demanded;
-            else if (roomTemperature > TemperatureSettings.MaximumRoomTemperature)
+            else if (roomTemperature < TemperatureSettings.MaximumRoomTemperature)
+                energyDemand = HeatPumpEnergyDemand.CanUse;
+            else
                 energyDemand = HeatPumpEnergyDemand.NoDemand;
         }
 
@@ -140,6 +142,12 @@ public class SmartHeatPump : IDisposable
 
         var energyDemand = HeatPumpEnergyDemand.NoDemand;
 
+        var discardShowerRequested = State.ShowerRequestedAt != null && hotWaterTemperature >= TemperatureSettings.TargetShowerTemperature;
+        var discardBathRequested = State.BathRequestedAt != null && hotWaterTemperature >= TemperatureSettings.TargetBathTemperature;
+
+        if (discardShowerRequested || discardBathRequested)
+            await DiscardBathAndShowerRequested(discardShowerRequested, discardBathRequested, resolveHotWaterEnergyDemand: false);
+
         // Only demand energy for hot water when not in standstill
         if (HomeAssistant.RemainingStandstillSensor.State == 0)
         {
@@ -151,15 +159,11 @@ public class SmartHeatPump : IDisposable
                 energyDemand = HeatPumpEnergyDemand.CriticalDemand;
             else if (hotWaterTemperature < TemperatureSettings.ComfortHotWaterTemperature)
                 energyDemand = HeatPumpEnergyDemand.Demanded;
-            else if (hotWaterTemperature > TemperatureSettings.MaximumHotWaterTemperature)
+            else if (hotWaterTemperature < TemperatureSettings.MaximumHotWaterTemperature)
+                energyDemand = HeatPumpEnergyDemand.CanUse;
+            else
                 energyDemand = HeatPumpEnergyDemand.NoDemand;
         }
-
-        var discardShowerRequested = State.ShowerRequestedAt != null && hotWaterTemperature >= TemperatureSettings.TargetShowerTemperature;
-        var discardBathRequested = State.BathRequestedAt != null && hotWaterTemperature >= TemperatureSettings.TargetBathTemperature;
-
-        if (discardShowerRequested || discardBathRequested)
-            await DiscardBathAndShowerRequested(discardShowerRequested, discardBathRequested);
 
         if (energyDemand != State.HotWaterEnergyDemand)
         {
@@ -217,7 +221,7 @@ public class SmartHeatPump : IDisposable
         }
     }
 
-    private async Task DiscardBathAndShowerRequested(bool forceDiscardShowerRequested = false, bool forceDiscardBathRequested = false)
+    private async Task DiscardBathAndShowerRequested(bool forceDiscardShowerRequested = false, bool forceDiscardBathRequested = false, bool resolveHotWaterEnergyDemand = true)
     {
         var changed = false;
         if (forceDiscardShowerRequested || (State.ShowerRequestedAt != null && State.ShowerRequestedAt.Value.AddHours(3) < Context.Scheduler.Now))
@@ -231,7 +235,7 @@ public class SmartHeatPump : IDisposable
             changed = true;
         }
 
-        if (changed)
+        if (changed && resolveHotWaterEnergyDemand)
             await ResolveHotWaterEnergyDemand(HomeAssistant.HotWaterTemperatureSensor.State);
     }
 

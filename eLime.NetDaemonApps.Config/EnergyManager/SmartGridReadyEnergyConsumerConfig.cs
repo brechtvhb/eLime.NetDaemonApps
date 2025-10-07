@@ -9,6 +9,7 @@ public class SmartGridReadyEnergyConsumerConfig
     public List<TimeWindowConfig> BlockedTimeWindows { get; set; } = [];
 
     public string StateSensor { get; set; }
+    public string CanUseExcessEnergyState { get; set; }
     public string EnergyNeededState { get; set; }
     public string CriticalEnergyNeededState { get; set; }
 }

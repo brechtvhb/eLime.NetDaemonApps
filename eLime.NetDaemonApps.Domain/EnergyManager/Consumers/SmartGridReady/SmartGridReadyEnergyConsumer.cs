@@ -1,4 +1,5 @@
 ﻿using eLime.NetDaemonApps.Domain.EnergyManager.Consumers.DynamicConsumers;
+using eLime.NetDaemonApps.Domain.EnergyManager.Consumers.DynamicConsumers.CarCharger;
 using eLime.NetDaemonApps.Domain.EnergyManager.Grid;
 using eLime.NetDaemonApps.Domain.Entities.TextSensors;
 using eLime.NetDaemonApps.Domain.Helper;
@@ -10,10 +11,27 @@ namespace eLime.NetDaemonApps.Domain.EnergyManager.Consumers.SmartGridReady;
 
 public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 {
+    public BalancingMethod BalancingMethod => State.BalancingMethod ?? BalancingMethod.SolarOnly;
     public string BalanceOnBehalfOf => State.BalanceOnBehalfOf ?? IDynamicLoadConsumer.CONSUMER_GROUP_SELF;
     public AllowBatteryPower AllowBatteryPower => State.AllowBatteryPower ?? AllowBatteryPower.No;
-    public double ReleasablePowerWhenBalancingOnBehalfOf => 0;
-    private LoadTimeFrames LoadTimeFrameToCheckOnRebalance { get; }
+    public double ReleasablePowerWhenBalancingOnBehalfOf => HomeAssistant.StateSensor.State == CanUseExcessEnergyState
+        ? HomeAssistant.PowerConsumptionSensor.State ?? 0
+        : 0;
+
+    public List<DynamicEnergyConsumerBalancingMethodBasedLoads> DynamicBalancingMethodBasedLoads { get; }
+    internal override double SwitchOnLoad => State.BalancingMethod.HasValue
+        ? DynamicBalancingMethodBasedLoads.FirstOrDefault(x => x.BalancingMethods.Contains(State.BalancingMethod.Value))?.SwitchOnLoad ?? _switchOnLoad
+        : _switchOnLoad;
+
+    internal override double SwitchOffLoad => State.BalancingMethod.HasValue
+        ? DynamicBalancingMethodBasedLoads.FirstOrDefault(x => x.BalancingMethods.Contains(State.BalancingMethod.Value))?.SwitchOffLoad ?? _switchOffLoad
+        : _switchOffLoad;
+
+    private LoadTimeFrames _loadTimeFrameToCheckOnRebalance { get; init; }
+
+    internal LoadTimeFrames LoadTimeFrameToCheckOnRebalance => State.BalancingMethod.HasValue
+        ? DynamicBalancingMethodBasedLoads.FirstOrDefault(x => x.BalancingMethods.Contains(State.BalancingMethod.Value))?.LoadTimeFrameToCheckOnRebalance ?? _loadTimeFrameToCheckOnRebalance
+        : _loadTimeFrameToCheckOnRebalance;
 
     internal sealed override DynamicEnergyConsumerMqttSensors MqttSensors { get; }
     internal sealed override SmartGridReadyEnergyConsumerHomeAssistantEntities HomeAssistant { get; }
@@ -22,6 +40,7 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         ? Enum<SmartGridReadyMode>.Cast(HomeAssistant.SmartGridModeSelect.State)
         : SmartGridReadyMode.Normal;
     internal override double PeakLoad { get; }
+    internal string CanUseExcessEnergyState { get; }
     internal string EnergyNeededState { get; }
     internal string CriticalEnergyNeededState { get; }
     internal List<TimeWindow> BlockedTimeWindows { get; set; }
@@ -45,7 +64,9 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         MqttSensors.AllowBatteryPowerChanged += AllowBatteryPowerChanged;
 
         PeakLoad = config.SmartGridReady.PeakLoad;
-        LoadTimeFrameToCheckOnRebalance = config.LoadTimeFrameToCheckOnRebalance;
+        DynamicBalancingMethodBasedLoads = config.DynamicBalancingMethodBasedLoads;
+        _loadTimeFrameToCheckOnRebalance = config.LoadTimeFrameToCheckOnRebalance;
+        CanUseExcessEnergyState = config.SmartGridReady.CanUseExcessEnergyState;
         EnergyNeededState = config.SmartGridReady.EnergyNeededState;
         CriticalEnergyNeededState = config.SmartGridReady.CriticalEnergyNeededState;
         BlockedTimeWindows = config.SmartGridReady.BlockedTimeWindows.Select(x => new TimeWindow(x.ActiveSensor, x.Days, x.Start, x.End)).ToList();
@@ -154,14 +175,14 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         {
             if (!IsRunning)
             {
-                if (e.Sensor.State == EnergyNeededState)
+                if (e.Sensor.State == EnergyNeededState || e.Sensor.State == CanUseExcessEnergyState)
                     State.State = EnergyConsumerState.NeedsEnergy;
                 else if (e.Sensor.State == CriticalEnergyNeededState)
                     State.State = EnergyConsumerState.CriticallyNeedsEnergy;
             }
             else
             {
-                if (e.Sensor.State != EnergyNeededState && e.Sensor.State != CriticalEnergyNeededState)
+                if (e.Sensor.State != EnergyNeededState && e.Sensor.State != EnergyNeededState && e.Sensor.State != CriticalEnergyNeededState)
                     Stop();
             }
 
@@ -194,7 +215,26 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         if (AllowBatteryPower == AllowBatteryPower.MaxPower)
             estimatedLoad -= maximumDischargePower;
 
-        if (estimatedLoad > gridMonitor.PeakLoad && SmartGridReadyMode != SmartGridReadyMode.Blocked)
+        var canDeBoost = BalancingMethod switch
+        {
+            BalancingMethod.SolarSurplus => estimatedLoad > -700,
+            BalancingMethod.SolarOnly => estimatedLoad > 0,
+            BalancingMethod.MidPoint => estimatedLoad > 400,
+            BalancingMethod.SolarPreferred => estimatedLoad > 800,
+            BalancingMethod.MidPeak => estimatedLoad > SwitchOffLoad,
+            BalancingMethod.NearPeak => estimatedLoad > gridMonitor.PeakLoad,
+            BalancingMethod.MaximizeQuarterPeak => estimatedLoad > gridMonitor.PeakLoad,
+            _ => throw new ArgumentOutOfRangeException()
+        };
+
+        if (canDeBoost && SmartGridReadyMode == SmartGridReadyMode.Boosted && HomeAssistant.StateSensor.State == CanUseExcessEnergyState)
+        {
+            Context.Logger.LogInformation("{Name}: Rebalance - Set smart grid ready mode due to consuming too much energy in CanUseExcessEnergyState.", Name);
+            DeBoost();
+            return (0, 0);
+        }
+
+        if (estimatedLoad > gridMonitor.PeakLoad && SmartGridReadyMode == SmartGridReadyMode.Normal && (EndedBoostAt == null || EndedBoostAt?.AddMinutes(3) < Context.Scheduler.Now))
         {
             Context.Logger.LogInformation("{Name}: Rebalance - Set smart grid ready mode to blocked due to exceeding peak load.", Name);
             Block();
@@ -205,7 +245,7 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         if (isInBlockedTimeWindow)
             return (0, 0);
 
-        if (SmartGridReadyMode == SmartGridReadyMode.Blocked && (BlockedAt?.AddMinutes(15) ?? DateTimeOffset.MinValue) <= Context.Scheduler.Now)
+        if (SmartGridReadyMode == SmartGridReadyMode.Blocked && (BlockedAt == null || BlockedAt?.AddMinutes(15) <= Context.Scheduler.Now))
         {
             Context.Logger.LogInformation("{Name}: Unblock - Reverting to normal smart grid ready mode.", Name);
             Unblock();

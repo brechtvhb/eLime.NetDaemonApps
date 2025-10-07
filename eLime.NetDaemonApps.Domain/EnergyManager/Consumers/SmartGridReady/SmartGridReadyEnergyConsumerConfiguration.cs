@@ -11,6 +11,7 @@ public class SmartGridReadyEnergyConsumerConfiguration
     {
         SmartGridModeSelect = SelectEntity.Create(haContext, config.SmartGridModeEntity);
         StateSensor = TextSensor.Create(haContext, config.StateSensor);
+        CanUseExcessEnergyState = config.CanUseExcessEnergyState;
         EnergyNeededState = config.EnergyNeededState;
         CriticalEnergyNeededState = config.CriticalEnergyNeededState;
         PeakLoad = config.PeakLoad;
@@ -18,6 +19,7 @@ public class SmartGridReadyEnergyConsumerConfiguration
     }
     public SelectEntity SmartGridModeSelect { get; }
     public TextSensor StateSensor { get; }
+    public string CanUseExcessEnergyState { get; }
     public string EnergyNeededState { get; }
     public string CriticalEnergyNeededState { get; }
     public double PeakLoad { get; }

@@ -23,6 +23,7 @@ internal class SmartHeatPumpState
 public enum HeatPumpEnergyDemand
 {
     NoDemand,
+    CanUse,
     Demanded,
     CriticalDemand
 }
