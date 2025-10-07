@@ -193,7 +193,7 @@ public class EnergyManager : IDisposable
 
             consumer.TurnOn();
 
-            Context.Logger.LogDebug("{Consumer}: Started consumer, state is {EnergyConsumerState}. Loads [Current: {CurrentLoad}, CanScaleDownOnBehalfOf: {DynamicLoadThatCanBeScaledDownOnBehalfOf}, ConsumerSwitchOn: {SwitchOnLoad}, ConsumerPeakLoad: {PeakLoad}]", consumer.Name, consumer.State.State, GridMonitor.CurrentLoad, dynamicLoadThatCanBeScaledDownOnBehalfOf, consumer.SwitchOnLoad, consumer.PeakLoad);
+            Context.Logger.LogDebug("{Consumer}: Started consumer, state is {EnergyConsumerState}. Loads [Current (minus batteries): {CurrentLoad}, CanScaleDownOnBehalfOf: {DynamicLoadThatCanBeScaledDownOnBehalfOf}, ConsumerSwitchOn: {SwitchOnLoad}, ConsumerPeakLoad: {PeakLoad}]", consumer.Name, consumer.State.State, GridMonitor.CurrentLoadMinusBatteries, dynamicLoadThatCanBeScaledDownOnBehalfOf, consumer.SwitchOnLoad, consumer.PeakLoad);
             startNetChange += consumer.PeakLoad;
         }
 

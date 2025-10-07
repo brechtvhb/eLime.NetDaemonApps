@@ -74,7 +74,7 @@ public class SmartHeatPump : IDisposable
         CalculateHotWaterCopDebounceDispatcher = new DebounceDispatcher(TimeSpan.FromSeconds(180));
 
         await MqttSensors.CreateOrUpdateEntities();
-        GetAndSanitizeState();
+        await GetAndSanitizeState();
         MonitoringTask = Context.Scheduler.RunEvery(TimeSpan.FromSeconds(30), Context.Scheduler.Now, MonitorHeatPumpControls);
         await SaveAndPublishState();
     }
@@ -179,6 +179,8 @@ public class SmartHeatPump : IDisposable
             State.EnergyDemand = HeatPumpEnergyDemand.CriticalDemand;
         else if (State.RoomEnergyDemand is HeatPumpEnergyDemand.Demanded || State.HotWaterEnergyDemand is HeatPumpEnergyDemand.Demanded)
             State.EnergyDemand = HeatPumpEnergyDemand.Demanded;
+        else if (State.RoomEnergyDemand is HeatPumpEnergyDemand.CanUse || State.HotWaterEnergyDemand is HeatPumpEnergyDemand.CanUse)
+            State.EnergyDemand = HeatPumpEnergyDemand.CanUse;
         else
             State.EnergyDemand = HeatPumpEnergyDemand.NoDemand;
     }
@@ -433,7 +435,7 @@ public class SmartHeatPump : IDisposable
         await DebounceSaveAndPublishState();
     }
 
-    private void GetAndSanitizeState()
+    private async Task GetAndSanitizeState()
     {
         var persistedState = Context.FileStorage.Get<SmartHeatPumpState>("SmartHeatPump", "SmartHeatPump");
 
@@ -448,6 +450,8 @@ public class SmartHeatPump : IDisposable
         State.HeatCoefficientOfPerformance ??= CalculateCoefficientOfPerformance(HomeAssistant.HeatConsumedTodayIntegerSensor.State, HomeAssistant.HeatConsumedTodayDecimalsSensor.State, HomeAssistant.HeatProducedTodayIntegerSensor.State, HomeAssistant.HeatProducedTodayDecimalsSensor.State);
         State.HotWaterCoefficientOfPerformance ??= CalculateCoefficientOfPerformance(HomeAssistant.HotWaterConsumedTodayIntegerSensor.State, HomeAssistant.HotWaterConsumedTodayDecimalsSensor.State, HomeAssistant.HotWaterProducedTodayIntegerSensor.State, HomeAssistant.HotWaterProducedTodayDecimalsSensor.State);
 
+        await ResolveRoomEnergyDemand(HomeAssistant.RoomTemperatureSensor.State);
+        await ResolveHotWaterEnergyDemand(HomeAssistant.HotWaterTemperatureSensor.State);
         Context.Logger.LogDebug("Retrieved Smart heat pump state.");
     }
     private async Task DebounceSaveAndPublishState()

@@ -57,7 +57,7 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 
         HomeAssistant = new SmartGridReadyEnergyConsumerHomeAssistantEntities(config);
         HomeAssistant.StateSensor.StateChanged += StateSensor_StateChanged;
-
+        HomeAssistant.PowerConsumptionSensor.Changed += PowerConsumptionSensor_Changed;
         MqttSensors = new DynamicEnergyConsumerMqttSensors(config.Name, context);
         MqttSensors.BalancingMethodChanged += BalancingMethodChanged;
         MqttSensors.BalanceOnBehalfOfChanged += BalanceOnBehalfOfChanged;
@@ -168,6 +168,27 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         if (State.State != EnergyConsumerState.Running && IsRunning)
             Started();
     }
+
+    private void PowerConsumptionSensor_Changed(object? sender, Entities.NumericSensors.NumericSensorEventArgs e)
+    {
+        try
+        {
+            switch (IsRunning)
+            {
+                case false when e.Sensor.State > 100:
+                    Started();
+                    break;
+                case true when e.Sensor.State <= 100 && SmartGridReadyMode != SmartGridReadyMode.Boosted:
+                    Stopped();
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            Context.Logger.LogError(ex, "An error occurred while handling change of power consumption sensor.");
+        }
+    }
+
 
     private async void StateSensor_StateChanged(object? sender, TextSensorEventArgs e)
     {
