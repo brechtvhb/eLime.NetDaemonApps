@@ -117,7 +117,7 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 
     internal void ConfigureStateWatcher()
     {
-        StateWatcherTask = Context.Scheduler.RunEvery(TimeSpan.FromSeconds(5), Context.Scheduler.Now.AddSeconds(15), StateWatcher);
+        StateWatcherTask = Context.Scheduler.RunEvery(TimeSpan.FromSeconds(5), Context.Scheduler.Now.AddSeconds(3), StateWatcher);
     }
 
     private void StateWatcher()
