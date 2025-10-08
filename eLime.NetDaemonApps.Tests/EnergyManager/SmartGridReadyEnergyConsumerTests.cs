@@ -142,7 +142,7 @@ public class SmartGridReadyEnergyConsumerTests
     public async Task Blocks_During_BlockedWindow()
     {
         // Arrange
-        _testCtx.SetCurrentTime(DateTime.Today.AddHours(17));
+        _testCtx.SetCurrentTime(DateTime.Today.AddDays(1).AddHours(17));
         var consumer = SmartGridReadyEnergyConsumerBuilder.HeatPump.AddBlockedTimeWindow(null, [], TimeSpan.FromHours(16), TimeSpan.FromHours(18)).Build();
 
         var builder = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler).AddConsumer(consumer);
@@ -208,7 +208,7 @@ public class SmartGridReadyEnergyConsumerTests
     public async Task Unblocks_Past_BlockedWindow()
     {
         // Arrange
-        _testCtx.SetCurrentTime(DateTime.Today.AddHours(17));
+        _testCtx.SetCurrentTime(DateTime.Today.AddDays(1).AddHours(17));
         var consumer = SmartGridReadyEnergyConsumerBuilder.HeatPump.AddBlockedTimeWindow(null, [], TimeSpan.FromHours(16), TimeSpan.FromHours(18)).Build();
 
         var builder = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler).AddConsumer(consumer);
@@ -228,7 +228,7 @@ public class SmartGridReadyEnergyConsumerTests
     public async Task Blocks_OnPeakLoad()
     {
         // Arrange
-        _testCtx.SetCurrentTime(DateTime.Today.AddHours(17));
+        _testCtx.SetCurrentTime(DateTime.Today.AddDays(1).AddHours(17));
         var consumer = SmartGridReadyEnergyConsumerBuilder.HeatPump.Build();
 
         var builder = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler).AddConsumer(consumer);
@@ -248,7 +248,7 @@ public class SmartGridReadyEnergyConsumerTests
     public async Task UnBlocks_PastPeakLoad()
     {
         // Arrange
-        _testCtx.SetCurrentTime(DateTime.Today.AddHours(17));
+        _testCtx.SetCurrentTime(DateTime.Today.AddDays(1).AddHours(17));
         var consumer = SmartGridReadyEnergyConsumerBuilder.HeatPump.Build();
 
         var builder = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler).AddConsumer(consumer);
