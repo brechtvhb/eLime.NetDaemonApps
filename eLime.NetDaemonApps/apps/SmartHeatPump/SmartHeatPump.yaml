@@ -3,7 +3,10 @@
   smartGridReadyInput2: "switch.stiebel_eltron_isg_sg_ready_input_2"
   sourcePumpRunningSensor: "binary_sensor.stiebel_source_pump"
   sourceTemperatureSensor: "sensor.stiebel_eltron_isg_source_temperature"
+  isSummerModeSensor: "binary_sensor.stiebel_eltron_isg_is_in_summer_mode"
+  isCoolingSensor: "binary_sensor.stiebel_eltron_isg_is_cooling"
   statusBytesSensor: "sensor.stiebel_status"
+  remainingStandStillSensor: "sensor.stiebel_remaining_standstill"
   heatConsumedTodayIntegerSensor: "sensor.stiebel_eltron_isg_consumed_heating_today"
   heatConsumedTodayDecimalsSensor: "sensor.stiebel_heating_day_consumed_decimals"
   heatProducedTodayIntegerSensor: "sensor.stiebel_eltron_isg_produced_heating_today"
@@ -12,3 +15,17 @@
   hotWaterConsumedTodayDecimalsSensor: "sensor.stiebel_dhw_day_consumed_decimals"
   hotWaterProducedTodayIntegerSensor: "sensor.stiebel_eltron_isg_produced_water_heating_today"
   hotWaterProducedTodayDecimalsSensor: "sensor.stiebel_dhw_day_produced_decimals"
+
+  temperatures:
+    roomTemperatureSensor: "sensor.zithoek_b_temp"
+    minimumRoomTemperature: 20.9
+    comfortRoomTemperature: 22.0
+    maximumRoomTemperature: 23.2
+
+    hotWaterTemperatureSensor: "sensor.stiebel_eltron_isg_actual_temperature_water"
+    minimumHotWaterTemperature: 40.0
+    comfortHotWaterTemperature: 46.0
+    maximumHotWaterTemperature: 53.0
+
+    targetShowerTemperature: 47.0
+    targetBathTemperature: 53.0

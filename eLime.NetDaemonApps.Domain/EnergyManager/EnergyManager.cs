@@ -144,10 +144,10 @@ public class EnergyManager : IDisposable
         var correctedLoads = new Dictionary<LoadTimeFrames, double>
         {
             { LoadTimeFrames.Now, 0.0 },
-            { LoadTimeFrames.SolarForecastNowCorrected, 0.0 },
+            { LoadTimeFrames.SolarForecastNow, 0.0 },
             { LoadTimeFrames.SolarForecastNow50PercentCorrected, 0.0 },
-            { LoadTimeFrames.SolarForecast30MinutesCorrected, 0.0 },
-            { LoadTimeFrames.SolarForecast1HourCorrected, 0.0 },
+            { LoadTimeFrames.SolarForecast30Minutes, 0.0 },
+            { LoadTimeFrames.SolarForecast1Hour, 0.0 },
             { LoadTimeFrames.Last30Seconds, Consumers.Select(x => x.AverageLoadCorrection(TimeSpan.FromSeconds(30))).Sum() },
             { LoadTimeFrames.LastMinute, Consumers.Select(x => x.AverageLoadCorrection(TimeSpan.FromMinutes(1))).Sum() },
             { LoadTimeFrames.Last2Minutes, Consumers.Select(x => x.AverageLoadCorrection(TimeSpan.FromMinutes(2))).Sum() },

@@ -145,7 +145,7 @@ public class EnergyManagerTests
     {
         // Arrange
         var consumer = SimpleEnergyConsumerBuilder.PondPump()
-            .WithLoad(-40, [LoadTimeFrames.SolarForecastNowCorrected], 100, [LoadTimeFrames.Now, LoadTimeFrames.Last30Seconds], 42)
+            .WithLoad(-40, [LoadTimeFrames.SolarForecastNow], 100, [LoadTimeFrames.Now, LoadTimeFrames.Last30Seconds], 42)
             .Build();
 
         var builder = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler)

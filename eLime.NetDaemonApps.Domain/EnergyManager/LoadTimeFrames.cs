@@ -7,8 +7,8 @@ public enum LoadTimeFrames
     LastMinute,
     Last2Minutes,
     Last5Minutes,
-    SolarForecastNowCorrected,
+    SolarForecastNow,
     SolarForecastNow50PercentCorrected,
-    SolarForecast30MinutesCorrected,
-    SolarForecast1HourCorrected,
+    SolarForecast30Minutes,
+    SolarForecast1Hour,
 }

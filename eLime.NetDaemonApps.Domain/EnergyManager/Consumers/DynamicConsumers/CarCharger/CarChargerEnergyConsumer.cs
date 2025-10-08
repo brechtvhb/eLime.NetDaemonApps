@@ -152,10 +152,10 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         var uncorrectedLoad = LoadTimeFrameToCheckOnRebalance switch
         {
             LoadTimeFrames.Now => gridMonitor.CurrentLoadMinusBatteries,
-            LoadTimeFrames.SolarForecastNowCorrected => gridMonitor.CurrentLoadMinusBatteriesSolarCorrected,
+            LoadTimeFrames.SolarForecastNow => gridMonitor.CurrentLoadMinusBatteriesSolarCorrected,
             LoadTimeFrames.SolarForecastNow50PercentCorrected => gridMonitor.CurrentLoadMinusBatteriesSolarCorrected50Percent,
-            LoadTimeFrames.SolarForecast30MinutesCorrected => gridMonitor.CurrentLoadMinusBatteriesSolarForecast30MinutesCorrected,
-            LoadTimeFrames.SolarForecast1HourCorrected => gridMonitor.CurrentLoadMinusBatteriesSolarForecast1HourCorrected,
+            LoadTimeFrames.SolarForecast30Minutes => gridMonitor.CurrentLoadMinusBatteriesSolarForecast30MinutesCorrected,
+            LoadTimeFrames.SolarForecast1Hour => gridMonitor.CurrentLoadMinusBatteriesSolarForecast1HourCorrected,
             LoadTimeFrames.Last30Seconds => gridMonitor.AverageLoadMinusBatteries(TimeSpan.FromSeconds(30)),
             LoadTimeFrames.LastMinute => gridMonitor.AverageLoadMinusBatteries(TimeSpan.FromMinutes(1)),
             LoadTimeFrames.Last2Minutes => gridMonitor.AverageLoadMinusBatteries(TimeSpan.FromMinutes(2)),
