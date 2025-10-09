@@ -75,7 +75,7 @@ public abstract class EnergyConsumer : IDisposable
     {
         Context = context;
         Name = config.Name;
-        TimeWindows = config.TimeWindows.Select(x => new TimeWindow(x.ActiveSensor, x.Days, x.Start, x.End)).ToList();
+        TimeWindows = config.TimeWindows.Select(x => new TimeWindow(x.ActiveSensor, x.ActiveSensorInverted, x.Days, x.Start, x.End)).ToList();
 
         MinimumRuntime = config.MinimumRuntime;
         MaximumRuntime = config.MaximumRuntime;

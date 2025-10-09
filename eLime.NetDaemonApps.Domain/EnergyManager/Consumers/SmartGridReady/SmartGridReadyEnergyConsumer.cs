@@ -69,7 +69,7 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         CanUseExcessEnergyState = config.SmartGridReady.CanUseExcessEnergyState;
         EnergyNeededState = config.SmartGridReady.EnergyNeededState;
         CriticalEnergyNeededState = config.SmartGridReady.CriticalEnergyNeededState;
-        BlockedTimeWindows = config.SmartGridReady.BlockedTimeWindows.Select(x => new TimeWindow(x.ActiveSensor, x.Days, x.Start, x.End)).ToList();
+        BlockedTimeWindows = config.SmartGridReady.BlockedTimeWindows.Select(x => new TimeWindow(x.ActiveSensor, x.ActiveSensorInverted, x.Days, x.Start, x.End)).ToList();
         ConfigureStateWatcher();
     }
 

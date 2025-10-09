@@ -3,24 +3,20 @@ using eLime.NetDaemonApps.Domain.Helper;
 
 namespace eLime.NetDaemonApps.Domain.EnergyManager;
 
-public class TimeWindow
+public class TimeWindow(BinarySensor? active, bool inverted, List<DayOfWeek> days, TimeOnly start, TimeOnly end)
 {
-    public BinarySensor? Active { get; }
-    public List<DayOfWeek> Days { get; }
-    public TimeOnly Start { get; }
-    public TimeOnly End { get; }
-
-    public TimeWindow(BinarySensor? active, List<DayOfWeek> days, TimeOnly start, TimeOnly end)
-    {
-        Active = active;
-        Days = days;
-        Start = start;
-        End = end;
-    }
+    public BinarySensor? Active { get; } = active;
+    public bool ActiveInverted { get; } = inverted;
+    public List<DayOfWeek> Days { get; } = days;
+    public TimeOnly Start { get; } = start;
+    public TimeOnly End { get; } = end;
 
     public bool IsActive(DateTimeOffset now, string timezone)
     {
-        if (Active != null && Active.IsOff())
+        if (Active != null && Active.IsOff() && !ActiveInverted)
+            return false;
+
+        if (Active != null && Active.IsOn() && ActiveInverted)
             return false;
 
         if (Days.Count > 0 && !Days.Contains(now.DayOfWeek))
