@@ -147,12 +147,10 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
             Block();
             changed = true;
         }
-
-        return changed;
-
-
         //Unblock happens in rebalance after 15 minutes or when load is below peak load
+        return changed;
     }
+
     private void Block()
     {
         HomeAssistant.SmartGridModeSelect.Change(SmartGridReadyMode.Blocked.ToString());
@@ -196,7 +194,7 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
     {
         try
         {
-            //Context.Logger.LogInformation("Power consumption sensor state changed to {State}. IsRunning = {IsRunning}. SmartGridReadyMode = {SmartGridReadyMode}", e.Sensor.State, IsRunning, SmartGridReadyMode.ToString());
+            Context.Logger.LogInformation("Power consumption sensor state changed to {State}. Consumer state = {ConsumerState}. SmartGridReadyMode = {SmartGridReadyMode}", e.Sensor.State, State.State.ToString(), SmartGridReadyMode.ToString());
             switch (State.State)
             {
                 case not EnergyConsumerState.Running when e.Sensor.State > 100:
