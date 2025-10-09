@@ -174,7 +174,7 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 
     private bool StateMonitor()
     {
-        Context.Logger.LogInformation("State monitor IsRunning = {IsRunning}. Consumer state = {ConsumerState}. SmartGridReadyMode = {SmartGridReadyMode}", IsRunning.ToString(), State.State.ToString(), SmartGridReadyMode.ToString());
+        //Context.Logger.LogInformation("State monitor IsRunning = {IsRunning}. Consumer state = {ConsumerState}. SmartGridReadyMode = {SmartGridReadyMode}", IsRunning.ToString(), State.State.ToString(), SmartGridReadyMode.ToString());
 
         var changed = false;
         if (State.State == EnergyConsumerState.Running && !IsRunning)
@@ -279,7 +279,7 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 
     protected override void StopOnBootIfEnergyIsNoLongerNeeded()
     {
-        if (IsRunning && HomeAssistant.StateSensor.State != EnergyNeededState && HomeAssistant.StateSensor.State != CriticalEnergyNeededState)
+        if (IsRunning && HomeAssistant.StateSensor.State != CanUseExcessEnergyState && HomeAssistant.StateSensor.State != EnergyNeededState && HomeAssistant.StateSensor.State != CriticalEnergyNeededState)
             Stop();
     }
 
