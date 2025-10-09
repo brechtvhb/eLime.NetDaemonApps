@@ -196,6 +196,7 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
     {
         try
         {
+            Context.Logger.LogInformation("Power consumption sensor state changed to {State}. IsRunning = {IsRunning}. SmartGridReadyMode = {SmartGridReadyMode}", e.Sensor.State, IsRunning, SmartGridReadyMode.ToString());
             switch (IsRunning)
             {
                 case false when e.Sensor.State > 100:
@@ -226,7 +227,7 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
             }
             else
             {
-                if (e.Sensor.State != EnergyNeededState && e.Sensor.State != EnergyNeededState && e.Sensor.State != CriticalEnergyNeededState)
+                if (e.Sensor.State != CanUseExcessEnergyState && e.Sensor.State != EnergyNeededState && e.Sensor.State != CriticalEnergyNeededState)
                     Stop();
             }
 
