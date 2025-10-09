@@ -57,7 +57,6 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 
         HomeAssistant = new SmartGridReadyEnergyConsumerHomeAssistantEntities(config);
         HomeAssistant.StateSensor.StateChanged += StateSensor_StateChanged;
-        HomeAssistant.PowerConsumptionSensor.Changed += PowerConsumptionSensor_Changed;
         MqttSensors = new DynamicEnergyConsumerMqttSensors(config.Name, context);
         MqttSensors.BalancingMethodChanged += BalancingMethodChanged;
         MqttSensors.BalanceOnBehalfOfChanged += BalanceOnBehalfOfChanged;
@@ -120,24 +119,37 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         StateWatcherTask = Context.Scheduler.RunEvery(TimeSpan.FromSeconds(5), Context.Scheduler.Now.AddSeconds(3), StateWatcher);
     }
 
-    private void StateWatcher()
+    private async void StateWatcher()
     {
-        BlockedStateMonitor();
-        StateMonitor();
+        try
+        {
+            var changed = BlockedStateMonitor();
+            changed |= StateMonitor();
+
+            if (changed)
+                await DebounceSaveAndPublishState();
+        }
+        catch (Exception e)
+        {
+            Context.Logger.LogWarning(e, "Could check state of heat pump.");
+        }
     }
 
-    private void BlockedStateMonitor()
+    private bool BlockedStateMonitor()
     {
+        var changed = false;
         var isInBlockedTimeWindow = BlockedTimeWindows.Any(timeWindow => timeWindow.IsActive(Context.Scheduler.Now, Context.Timezone));
 
         if (isInBlockedTimeWindow && SmartGridReadyMode != SmartGridReadyMode.Blocked)
         {
             Context.Logger.LogInformation("{Name}: Blocked time window - Set smart grid ready mode to blocked.", Name);
             Block();
+            changed = true;
         }
-
         //Unblock happens in rebalance after 15 minutes or when load is below peak load
+        return changed;
     }
+
     private void Block()
     {
         HomeAssistant.SmartGridModeSelect.Change(SmartGridReadyMode.Blocked.ToString());
@@ -160,33 +172,23 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         EndedBoostAt = Context.Scheduler.Now;
     }
 
-    private void StateMonitor()
+    private bool StateMonitor()
     {
+        //Context.Logger.LogInformation("State monitor IsRunning = {IsRunning}. Consumer state = {ConsumerState}. SmartGridReadyMode = {SmartGridReadyMode}", IsRunning.ToString(), State.State.ToString(), SmartGridReadyMode.ToString());
+
+        var changed = false;
         if (State.State == EnergyConsumerState.Running && !IsRunning)
+        {
             Stopped();
+            changed = true;
+        }
 
         if (State.State != EnergyConsumerState.Running && IsRunning)
+        {
             Started();
-    }
-
-    private void PowerConsumptionSensor_Changed(object? sender, Entities.NumericSensors.NumericSensorEventArgs e)
-    {
-        try
-        {
-            switch (IsRunning)
-            {
-                case false when e.Sensor.State > 100:
-                    Started();
-                    break;
-                case true when e.Sensor.State <= 100 && SmartGridReadyMode != SmartGridReadyMode.Boosted:
-                    Stopped();
-                    break;
-            }
+            changed = true;
         }
-        catch (Exception ex)
-        {
-            Context.Logger.LogError(ex, "An error occurred while handling change of power consumption sensor.");
-        }
+        return changed;
     }
 
 
@@ -203,7 +205,7 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
             }
             else
             {
-                if (e.Sensor.State != EnergyNeededState && e.Sensor.State != EnergyNeededState && e.Sensor.State != CriticalEnergyNeededState)
+                if (e.Sensor.State != CanUseExcessEnergyState && e.Sensor.State != EnergyNeededState && e.Sensor.State != CriticalEnergyNeededState)
                     Stop();
             }
 
@@ -277,8 +279,12 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 
     protected override void StopOnBootIfEnergyIsNoLongerNeeded()
     {
-        if (IsRunning && HomeAssistant.StateSensor.State != EnergyNeededState && HomeAssistant.StateSensor.State != CriticalEnergyNeededState)
+        if (IsRunning && HomeAssistant.StateSensor.State != CanUseExcessEnergyState && HomeAssistant.StateSensor.State != EnergyNeededState && HomeAssistant.StateSensor.State != CriticalEnergyNeededState)
+        {
             Stop();
+        }
+
+        StateMonitor();
     }
 
     protected override EnergyConsumerState GetState()
@@ -289,6 +295,7 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
             false when MaximumTimeout != null && State.LastRun?.Add(MaximumTimeout.Value) < Context.Scheduler.Now => EnergyConsumerState.CriticallyNeedsEnergy,
             false when HomeAssistant.StateSensor.State == CriticalEnergyNeededState => EnergyConsumerState.CriticallyNeedsEnergy,
             false when HomeAssistant.StateSensor.State == EnergyNeededState => EnergyConsumerState.NeedsEnergy,
+            false when HomeAssistant.StateSensor.State == CanUseExcessEnergyState => EnergyConsumerState.NeedsEnergy,
             false => EnergyConsumerState.Off
         };
     }

@@ -137,7 +137,7 @@ public abstract class EnergyConsumer : IDisposable
         if (State.State == EnergyConsumerState.Unknown)
             State.State = GetState();
 
-        Context.Logger.LogDebug("{Name}: Retrieved state", Name);
+        Context.Logger.LogDebug("{Name}: Retrieved state ({State})", Name, State.State);
     }
 
     internal void StopIfPastRuntime()
