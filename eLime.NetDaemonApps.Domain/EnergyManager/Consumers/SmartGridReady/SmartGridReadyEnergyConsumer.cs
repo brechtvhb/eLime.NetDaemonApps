@@ -280,7 +280,11 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
     protected override void StopOnBootIfEnergyIsNoLongerNeeded()
     {
         if (IsRunning && HomeAssistant.StateSensor.State != CanUseExcessEnergyState && HomeAssistant.StateSensor.State != EnergyNeededState && HomeAssistant.StateSensor.State != CriticalEnergyNeededState)
+        {
             Stop();
+        }
+
+        StateMonitor();
     }
 
     protected override EnergyConsumerState GetState()
