@@ -57,7 +57,6 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 
         HomeAssistant = new SmartGridReadyEnergyConsumerHomeAssistantEntities(config);
         HomeAssistant.StateSensor.StateChanged += StateSensor_StateChanged;
-        HomeAssistant.PowerConsumptionSensor.Changed += PowerConsumptionSensor_Changed;
         MqttSensors = new DynamicEnergyConsumerMqttSensors(config.Name, context);
         MqttSensors.BalancingMethodChanged += BalancingMethodChanged;
         MqttSensors.BalanceOnBehalfOfChanged += BalanceOnBehalfOfChanged;
@@ -175,7 +174,9 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 
     private bool StateMonitor()
     {
-        bool changed = false;
+        Context.Logger.LogInformation("State monitor IsRunning = {IsRunning}. Consumer state = {ConsumerState}. SmartGridReadyMode = {SmartGridReadyMode}", IsRunning.ToString(), State.State.ToString(), SmartGridReadyMode.ToString());
+
+        var changed = false;
         if (State.State == EnergyConsumerState.Running && !IsRunning)
         {
             Stopped();
@@ -188,27 +189,6 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
             changed = true;
         }
         return changed;
-    }
-
-    private void PowerConsumptionSensor_Changed(object? sender, Entities.NumericSensors.NumericSensorEventArgs e)
-    {
-        try
-        {
-            Context.Logger.LogInformation("Power consumption sensor state changed to {State}. Consumer state = {ConsumerState}. SmartGridReadyMode = {SmartGridReadyMode}", e.Sensor.State, State.State.ToString(), SmartGridReadyMode.ToString());
-            switch (State.State)
-            {
-                case not EnergyConsumerState.Running when e.Sensor.State > 100:
-                    Started();
-                    break;
-                case EnergyConsumerState.Running when e.Sensor.State <= 100 && SmartGridReadyMode != SmartGridReadyMode.Boosted:
-                    Stopped();
-                    break;
-            }
-        }
-        catch (Exception ex)
-        {
-            Context.Logger.LogError(ex, "An error occurred while handling change of power consumption sensor.");
-        }
     }
 
 
