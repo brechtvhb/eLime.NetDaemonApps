@@ -393,22 +393,28 @@ public class Room : IAsyncDisposable
                 return;
             }
 
-            var flexiScene = state == "Auto"
+            var flexiSceneToTrigger = state == "Auto"
                 ? FlexiSceneThatShouldActivate
                 : FlexiScenes.GetByName(state);
 
-            if (flexiScene == null)
+            if (flexiSceneToTrigger == null)
                 return;
 
-            if (FlexiScenes.Current != null && !FlexiScenes.Current.Secondary && flexiScene.Secondary)
+            if (FlexiScenes.Current != null && !FlexiScenes.Current.Secondary && flexiSceneToTrigger.Secondary)
                 return;
 
-            var (offActionsExecuted, _) = await ExecuteFlexiScene(flexiScene, InitiatedBy.Switch);
+            if (FlexiScenes.Current != null & FlexiScenes.Current == flexiSceneToTrigger)
+            {
+                await SetTurnOffAt(flexiSceneToTrigger);
+                await DebounceUpdateInHomeAssistant();
+            }
+
+            var (offActionsExecuted, _) = await ExecuteFlexiScene(flexiSceneToTrigger, InitiatedBy.Switch);
 
             if (offActionsExecuted)
                 return;
 
-            await SetTurnOffAt(flexiScene);
+            await SetTurnOffAt(flexiSceneToTrigger);
             await DebounceUpdateInHomeAssistant();
         };
     }
