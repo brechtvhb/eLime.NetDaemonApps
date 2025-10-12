@@ -683,8 +683,8 @@ public class Room : IAsyncDisposable
         if (!Enabled)
             return;
 
-        //If motion / presence is detected and there is an active scene do nothing but cancel auto turn off
-        if (FlexiScenes.Current != null)
+        //If motion / presence is detected and there is an active scene, that is not secondary, do nothing but cancel auto turn off
+        if (FlexiScenes.Current != null && !FlexiScenes.Current.Secondary)
         {
             ClearAutoTurnOff();
             await ExecuteMixinScene(e.Sensor.EntityId);
@@ -841,8 +841,7 @@ public class Room : IAsyncDisposable
     {
         if (IlluminanceThreshold != null && IlluminanceSensors.All(x => x.State > IlluminanceThreshold))
         {
-            _logger.LogTrace(
-                "{Room}: Motion sensor saw something moving but did not turn on lights because all illuminance sensors [{IlluminanceSensorValues}] are above threshold of {IlluminanceThreshold} lux.", Name, string.Join(", ", IlluminanceSensors.Select(x => $"{x.EntityId} - {x.State} lux")), IlluminanceThreshold);
+            _logger.LogTrace("{Room}: Motion sensor saw something moving but did not turn on lights because all illuminance sensors [{IlluminanceSensorValues}] are above threshold of {IlluminanceThreshold} lux.", Name, string.Join(", ", IlluminanceSensors.Select(x => $"{x.EntityId} - {x.State} lux")), IlluminanceThreshold);
             return;
         }
 
@@ -1004,7 +1003,7 @@ public class Room : IAsyncDisposable
         if (MotionSensors.Any(x => x.Sensor.State == "unavailable"))
             return;
 
-        if (FlexiScenes.Current != null)
+        if (FlexiScenes.Current != null && !FlexiScenes.Current.Secondary)
             return;
 
         if (IgnorePresenceUntil != null)

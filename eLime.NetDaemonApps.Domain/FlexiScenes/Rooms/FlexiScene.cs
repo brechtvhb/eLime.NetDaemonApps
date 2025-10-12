@@ -11,7 +11,7 @@ namespace eLime.NetDaemonApps.Domain.FlexiScenes.Rooms;
 public class FlexiScene
 {
     public string Name { get; private init; }
-
+    public bool Secondary { get; private init; }
     private List<ICondition> _conditions = [];
     public IReadOnlyCollection<ICondition> Conditions => _conditions.AsReadOnly();
     private List<ICondition> _fullyAutomatedConditions = [];
@@ -34,6 +34,7 @@ public class FlexiScene
         var flexiScene = new FlexiScene
         {
             Name = config.Name,
+            Secondary = config.Secondary,
             _conditions = config.Conditions.ConvertToDomainModel(),
             _fullyAutomatedConditions = config.FullyAutomatedConditions.ConvertToDomainModel(),
             _actions = config.Actions.ConvertToDomainModel(haContext),

@@ -2,6 +2,7 @@
 using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 using eLime.NetDaemonApps.Domain.Entities.Lights;
 using eLime.NetDaemonApps.Domain.Entities.Scripts;
+using eLime.NetDaemonApps.Domain.Entities.Select;
 using eLime.NetDaemonApps.Domain.Entities.TextSensors;
 using eLime.NetDaemonApps.Domain.FlexiScenes.Actions;
 using eLime.NetDaemonApps.Domain.Scenes;
@@ -66,10 +67,10 @@ internal static class ActionConfigExtensions
             { Scene: not null } => config.ConvertToSceneActionDomainModel(haContext),
             { Script: not null } => config.ConvertToScriptActionDomainModel(haContext),
             { Switch: not null, SwitchAction: not SwitchAction.Unknown } => config.ConvertToSwitchActionDomainModel(haContext),
+            { FlexiScene: not null, FlexiSceneToTrigger: not null } => config.ConvertFlexiSceneActionToDomainModel(haContext),
             _ => throw new ArgumentException("invalid action configuration")
         };
     }
-
 
     internal static Action ConvertToLightActionDomainModel(this ActionConfig config, IHaContext haContext)
     {
@@ -123,6 +124,15 @@ internal static class ActionConfigExtensions
         var scene = new Scene(haContext, config.Scene);
 
         return new SceneTurnOnAction(scene);
+    }
+
+    internal static Action ConvertFlexiSceneActionToDomainModel(this ActionConfig config, IHaContext haContext)
+    {
+        if (config.FlexiScene == null || config.FlexiSceneToTrigger == null)
+            throw new ArgumentException("FlexiScene or FlexiSceneToTrigger not set");
+
+        var flexiScene = new SelectEntity(haContext, config.FlexiScene);
+        return new FlexiSceneAction(flexiScene, config.FlexiSceneToTrigger);
     }
 
     internal static Action ConvertToExecuteOffActionsActionDomainModel(this ActionConfig config, IHaContext haContext)

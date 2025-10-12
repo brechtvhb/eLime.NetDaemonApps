@@ -226,6 +226,28 @@ namespace eLime.NetDaemonApps.Tests.Builders
             return this;
         }
 
+        public RoomBuilder WithFlexiSceneActions()
+        {
+            _config.FlexiScenes = new List<FlexiSceneConfig>
+            {
+                new()
+                {
+                    Name = "default",
+                    Actions = new List<ActionConfig>
+                    {
+                        new() {FlexiScene = "select.flexiscene_office", FlexiSceneToTrigger = "Staircase"}
+                    },
+                },
+            };
+
+            _config.OffActions = new List<ActionConfig>
+            {
+                new() {LightAction = LightAction.TurnOff, Light = "light.light1"},
+            };
+
+            return this;
+        }
+
         public RoomBuilder WithScriptActions()
         {
             _config.FlexiScenes = new List<FlexiSceneConfig>
@@ -247,8 +269,6 @@ namespace eLime.NetDaemonApps.Tests.Builders
 
             return this;
         }
-
-
 
         public RoomBuilder WithMultipleFlexiScenes()
         {
@@ -283,6 +303,47 @@ namespace eLime.NetDaemonApps.Tests.Builders
             _config.OffActions = new List<ActionConfig>
             {
                 new() {LightAction = LightAction.TurnOff, Light = "light.morning"},
+                new() {LightAction = LightAction.TurnOff, Light = "light.day"},
+                new() {LightAction = LightAction.TurnOff, Light = "light.evening"}
+            };
+
+            return this;
+        }
+
+
+        public RoomBuilder WitSecondaryFlexiScene()
+        {
+            _config.FlexiScenes = new List<FlexiSceneConfig>
+            {
+                new()
+                {
+                    Name = "day",
+                    Conditions = new List<ConditionConfig> {new() {Binary = "binary_sensor.operating_mode_day"}},
+                    Actions = new List<ActionConfig> {new() {LightAction = LightAction.TurnOn, Light = "light.day" } },
+                    TurnOffAfterIfTriggeredByMotionSensor = TimeSpan.FromMinutes(5),
+                    TurnOffAfterIfTriggeredBySwitch = TimeSpan.FromHours(4)
+                },
+                new()
+                {
+                    Name = "ambient",
+                    Secondary = true,
+                    Conditions = new List<ConditionConfig> {new() {Binary = "binary_sensor.operating_mode_day"}},
+                    Actions = new List<ActionConfig> {new() {LightAction = LightAction.TurnOn, Light = "light.day" } },
+                    TurnOffAfterIfTriggeredByMotionSensor = TimeSpan.FromMinutes(5),
+                    TurnOffAfterIfTriggeredBySwitch = TimeSpan.FromHours(4)
+                },
+                new()
+                {
+                    Name = "evening",
+                    Conditions = new List<ConditionConfig> {new() {Binary = "binary_sensor.operating_mode_evening"}},
+                    Actions = new List<ActionConfig> {new() {LightAction = LightAction.TurnOn, Light = "light.evening" } },
+                    TurnOffAfterIfTriggeredByMotionSensor = TimeSpan.FromMinutes(60),
+                    TurnOffAfterIfTriggeredBySwitch = TimeSpan.FromHours(1)
+                }
+            };
+
+            _config.OffActions = new List<ActionConfig>
+            {
                 new() {LightAction = LightAction.TurnOff, Light = "light.day"},
                 new() {LightAction = LightAction.TurnOff, Light = "light.evening"}
             };

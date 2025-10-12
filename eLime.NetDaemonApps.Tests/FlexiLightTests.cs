@@ -13,6 +13,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using NetDaemon.Extensions.MqttEntityManager;
 using NetDaemon.HassModel.Entities;
+using System.Reactive.Subjects;
 
 namespace eLime.NetDaemonApps.Tests;
 
@@ -160,6 +161,30 @@ public class FlexiLightTests
         Assert.AreEqual("evening", room.FlexiScenes.Current.Name);
         _testCtx.VerifyLightTurnOn(new Light(_testCtx.HaContext, "light.evening"), Moq.Times.Once);
     }
+
+    [TestMethod]
+    public void TurnsOn_Correct_FlexiScene_Overrides_Secondary()
+    {
+        // Arrange
+        var mqttSubject = new Subject<string>();
+        A.CallTo(() => _mqttEntityManager.PrepareCommandSubscriptionAsync("select.flexilights_office_scene"))
+            .Returns(Task.FromResult<IObservable<string>>(mqttSubject));
+
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, "office").WitSecondaryFlexiScene().Build();
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.operating_mode_day"), "on");
+
+        mqttSubject.OnNext("ambient");
+
+        //Precondition Assert
+        Assert.AreEqual("ambient", room.FlexiScenes.Current.Name);
+
+        //Act
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
+
+        //Assert
+        Assert.AreEqual("day", room.FlexiScenes.Current.Name);
+    }
+
 
     [TestMethod]
     public void TurnsOn_Nothing_IfAllEvaluationsFailed()
@@ -453,6 +478,34 @@ public class FlexiLightTests
 
         //Assert
         _testCtx.VerifyScriptCalled("wake_up_pc", Moq.Times.Once);
+    }
+
+    [TestMethod]
+    public void Calls_CorrectFlexiScene()
+    {
+        // Arrange
+        _testCtx.TriggerStateChange("select.flexiscene_office", "Off");
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).WithFlexiSceneActions().Build();
+
+        //Act
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
+
+        //Assert
+        _testCtx.VerifySelectOptionPicked("select.flexiscene_office", "Staircase", Moq.Times.Once);
+    }
+
+    [TestMethod]
+    public void DoesNotActivateFlexiScene_IfAlreadyOn()
+    {
+        // Arrange
+        _testCtx.TriggerStateChange("select.flexiscene_office", "Default");
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).WithFlexiSceneActions().Build();
+
+        //Act
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
+
+        //Assert
+        _testCtx.VerifySelectOptionPicked("select.flexiscene_office", "Staircase", Moq.Times.Never);
     }
 
 

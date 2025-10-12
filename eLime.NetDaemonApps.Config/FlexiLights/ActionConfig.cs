@@ -6,8 +6,6 @@ public class ActionConfig
     public string? Light { get; set; }
     public LightAction LightAction { get; set; }
     public string? Scene { get; set; }
-    public string? Script { get; set; }
-    public Dictionary<string, string>? ScriptData { get; set; }
     public string? Profile { get; set; }
     public Color? Color { get; set; }
     public string? Brightness { get; set; }
@@ -17,6 +15,13 @@ public class ActionConfig
     public string? Switch { get; set; }
     public SwitchAction SwitchAction { get; set; }
     public TimeSpan? PulseDuration { get; set; }
+
+    public string? Script { get; set; }
+    public Dictionary<string, string>? ScriptData { get; set; }
+
+    public string? FlexiScene { get; set; }
+    public string? FlexiSceneToTrigger { get; set; }
+
 }
 
 public class Color
