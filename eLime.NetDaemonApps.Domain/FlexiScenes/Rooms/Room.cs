@@ -393,9 +393,14 @@ public class Room : IAsyncDisposable
                 return;
             }
 
-            var flexiScene = FlexiScenes.GetByName(state);
+            var flexiScene = state == "Auto"
+                ? FlexiSceneThatShouldActivate
+                : FlexiScenes.GetByName(state);
 
             if (flexiScene == null)
+                return;
+
+            if (FlexiScenes.Current != null && !FlexiScenes.Current.Secondary && flexiScene.Secondary)
                 return;
 
             var (offActionsExecuted, _) = await ExecuteFlexiScene(flexiScene, InitiatedBy.Switch);

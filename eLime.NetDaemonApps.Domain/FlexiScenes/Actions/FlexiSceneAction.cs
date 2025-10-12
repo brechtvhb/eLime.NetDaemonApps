@@ -15,7 +15,7 @@ public class FlexiSceneAction : Action
 
     public override Task<bool?> Execute(bool detectStateChange = false)
     {
-        if (FlexiScene.State == "Off")
+        if (FlexiScene.State == "Off" || FlexiScene.State == FlexiSceneToTrigger)
             FlexiScene.Change(FlexiSceneToTrigger);
 
         bool? initialState = null;
