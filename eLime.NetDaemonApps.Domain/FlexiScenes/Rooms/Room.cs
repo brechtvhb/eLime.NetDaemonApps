@@ -740,7 +740,7 @@ public class Room : IAsyncDisposable
             return;
 
         _logger.LogDebug("{Room}: Click triggered for switch {EntityId}", Name, e.Sensor.EntityId);
-        if (FlexiScenes.Current == null)
+        if (FlexiScenes.Current == null || FlexiScenes.Current.Secondary)
         {
             if (FlexiSceneThatShouldActivate != null)
             {
