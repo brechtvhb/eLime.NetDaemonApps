@@ -25,6 +25,7 @@ public class SmartHeatPumpMqttSensors : IDisposable
     private readonly string SENSOR_HEAT_PUMP_HEAT_COEFFICIENT_OF_PERFORMANCE;
     private readonly string SENSOR_HEAT_PUMP_HOT_WATER_COEFFICIENT_OF_PERFORMANCE;
 
+    private readonly string SENSOR_EXPECTED_POWER_CONSUMPTION;
     private readonly Device Device;
 
     public SmartHeatPumpMqttSensors(SmartHeatPumpContext context)
@@ -44,6 +45,7 @@ public class SmartHeatPumpMqttSensors : IDisposable
         SENSOR_HEAT_PUMP_HEAT_COEFFICIENT_OF_PERFORMANCE = "sensor.heat_pump_heat_coefficient_of_performance";
         SENSOR_HEAT_PUMP_HOT_WATER_COEFFICIENT_OF_PERFORMANCE = "sensor.heat_pump_hot_water_coefficient_of_performance";
 
+        SENSOR_EXPECTED_POWER_CONSUMPTION = "sensor.heat_pump_expected_power_consumption";
     }
 
     public event EventHandler<SmartGridReadyModeChangedEventArgs>? SmartGridReadyModeChanged;
@@ -110,6 +112,11 @@ public class SmartHeatPumpMqttSensors : IDisposable
         await Context.MqttEntityManager.CreateAsync(SENSOR_HEAT_PUMP_HEAT_COEFFICIENT_OF_PERFORMANCE, heatCopCreationOptions, coefficientOfPerformanceSensorOptions);
         var hotWaterCopCreationOptions = new EntityCreationOptions(UniqueId: SENSOR_HEAT_PUMP_HOT_WATER_COEFFICIENT_OF_PERFORMANCE, Name: "Hot water coefficient of performance", Persist: true);
         await Context.MqttEntityManager.CreateAsync(SENSOR_HEAT_PUMP_HOT_WATER_COEFFICIENT_OF_PERFORMANCE, hotWaterCopCreationOptions, coefficientOfPerformanceSensorOptions);
+
+        var expectedPowerConsumptionCreationOptions = new EntityCreationOptions(UniqueId: SENSOR_EXPECTED_POWER_CONSUMPTION, Name: "Expected power consumption", DeviceClass: "power", Persist: true);
+        var expectedPowerConsumptionSensorOptions = new NumericSensorOptions { UnitOfMeasurement = "W", Icon = "fapro-duotone:bolt-lightning", Device = Device };
+        await Context.MqttEntityManager.CreateAsync(SENSOR_EXPECTED_POWER_CONSUMPTION, expectedPowerConsumptionCreationOptions, expectedPowerConsumptionSensorOptions);
+
     }
     private Func<string, Task> SmartGridReadyModeChangedEventHandler()
     {
@@ -156,6 +163,8 @@ public class SmartHeatPumpMqttSensors : IDisposable
         await Context.MqttEntityManager.SetStateAsync(SENSOR_HEAT_PUMP_SOURCE_TEMPERATURE, state.SourceTemperature.ToString("N", new NumberFormatInfo { NumberDecimalSeparator = "." }));
         await Context.MqttEntityManager.SetStateAsync(SENSOR_HEAT_PUMP_HEAT_COEFFICIENT_OF_PERFORMANCE, state.HeatCoefficientOfPerformance?.ToString("N", new NumberFormatInfo { NumberDecimalSeparator = "." }) ?? "");
         await Context.MqttEntityManager.SetStateAsync(SENSOR_HEAT_PUMP_HOT_WATER_COEFFICIENT_OF_PERFORMANCE, state.HotWaterCoefficientOfPerformance?.ToString("N", new NumberFormatInfo { NumberDecimalSeparator = "." }) ?? "");
+
+        await Context.MqttEntityManager.SetStateAsync(SENSOR_EXPECTED_POWER_CONSUMPTION, state.ExpectedPowerConsumption.ToString("N", new NumberFormatInfo { NumberDecimalSeparator = "." }));
     }
 
     public void Dispose()

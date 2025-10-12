@@ -10,7 +10,8 @@ public class SmartGridReadyEnergyConsumerBuilder
     private readonly List<string> _consumerGroups = [];
 
     private string _powerConsumptionSensor;
-    private double _peakLoad;
+    private string _expectedPeakLoadSensor;
+    private double _fallbackPeakLoad;
     private double _switchOnLoad;
     private List<LoadTimeFrames> _loadTimeFramesToCheckOnStart = [];
     private double _switchOffLoad;
@@ -36,7 +37,7 @@ public class SmartGridReadyEnergyConsumerBuilder
     public static SmartGridReadyEnergyConsumerBuilder HeatPump =>
         new SmartGridReadyEnergyConsumerBuilder()
             .WithName("Heat pump")
-            .WithLoad(-1200, [LoadTimeFrames.Last30Seconds], 2000, [LoadTimeFrames.Last30Seconds], LoadTimeFrames.Last30Seconds, 1700)
+            .WithLoad(-1200, [LoadTimeFrames.Last30Seconds], 2000, [LoadTimeFrames.Last30Seconds], LoadTimeFrames.Last30Seconds, "sensor.heat_pump_expected_power_consumption", 1700)
             .AddConsumerGroup("Deferrable")
             .WithStateSensor("sensor.heat_pump_state", "Demanded", "CriticalDemand");
 
@@ -96,13 +97,15 @@ public class SmartGridReadyEnergyConsumerBuilder
     }
 
 
-    public SmartGridReadyEnergyConsumerBuilder WithLoad(double switchOn, List<LoadTimeFrames> loadTimeFramesToCheckOnStart, double switchOff, List<LoadTimeFrames> loadTimeFramesToCheckOnStop, LoadTimeFrames loadTimeFrameToCheckOnRebalance, double peakLoad)
+    public SmartGridReadyEnergyConsumerBuilder WithLoad(double switchOn, List<LoadTimeFrames> loadTimeFramesToCheckOnStart, double switchOff, List<LoadTimeFrames> loadTimeFramesToCheckOnStop, LoadTimeFrames loadTimeFrameToCheckOnRebalance, string expectedPeakLoadSensor, double peakLoad)
     {
         _switchOnLoad = switchOn;
         _loadTimeFramesToCheckOnStart = loadTimeFramesToCheckOnStart;
         _switchOffLoad = switchOff;
         _loadTimeFramesToCheckOnStop = loadTimeFramesToCheckOnStop;
-        _peakLoad = peakLoad;
+
+        _expectedPeakLoadSensor = expectedPeakLoadSensor;
+        _fallbackPeakLoad = peakLoad;
         _loadTimeFrameToCheckOnRebalance = loadTimeFrameToCheckOnRebalance;
 
         return this;
@@ -139,7 +142,8 @@ public class SmartGridReadyEnergyConsumerBuilder
                 StateSensor = _stateSensor,
                 EnergyNeededState = _energyNeededState,
                 CriticalEnergyNeededState = _criticalEnergyNeededState,
-                PeakLoad = _peakLoad,
+                ExpectedPeakLoadSensor = _expectedPeakLoadSensor,
+                FallbackPeakLoad = _fallbackPeakLoad,
                 BlockedTimeWindows = _blockedTimeWindows,
                 SmartGridModeEntity = _smartGridModeSelectEntity
             }

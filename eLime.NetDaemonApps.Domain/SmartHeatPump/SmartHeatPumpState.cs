@@ -17,6 +17,7 @@ internal class SmartHeatPumpState
 
     public DateTimeOffset? ShowerRequestedAt { get; set; }
     public DateTimeOffset? BathRequestedAt { get; set; }
+    public int ExpectedPowerConsumption { get; set; }
 }
 
 
