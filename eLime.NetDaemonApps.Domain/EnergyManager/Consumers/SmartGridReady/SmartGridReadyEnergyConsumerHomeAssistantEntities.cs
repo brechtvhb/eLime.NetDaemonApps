@@ -1,4 +1,5 @@
-﻿using eLime.NetDaemonApps.Domain.Entities.Select;
+﻿using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
+using eLime.NetDaemonApps.Domain.Entities.Select;
 using eLime.NetDaemonApps.Domain.Entities.TextSensors;
 
 namespace eLime.NetDaemonApps.Domain.EnergyManager.Consumers.SmartGridReady;
@@ -8,6 +9,7 @@ public class SmartGridReadyEnergyConsumerHomeAssistantEntities(EnergyConsumerCon
 {
     internal SelectEntity SmartGridModeSelect = config.SmartGridReady!.SmartGridModeSelect;
     internal TextSensor StateSensor = config.SmartGridReady!.StateSensor;
+    internal NumericSensor ExpectedPeakLoadSensor = config.SmartGridReady!.ExpectedPeakLoadSensor;
 
     public new void Dispose()
     {

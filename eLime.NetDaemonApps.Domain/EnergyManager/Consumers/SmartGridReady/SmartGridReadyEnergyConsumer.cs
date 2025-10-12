@@ -39,7 +39,12 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
     internal SmartGridReadyMode SmartGridReadyMode => HomeAssistant.SmartGridModeSelect.State != null
         ? Enum<SmartGridReadyMode>.Cast(HomeAssistant.SmartGridModeSelect.State)
         : SmartGridReadyMode.Normal;
-    internal override double PeakLoad { get; }
+
+    private readonly double _fallbackPeakLoad;
+    internal override double PeakLoad => HomeAssistant.ExpectedPeakLoadSensor.State is > 0
+        ? HomeAssistant.ExpectedPeakLoadSensor.State.Value
+        : _fallbackPeakLoad;
+
     internal string CanUseExcessEnergyState { get; }
     internal string EnergyNeededState { get; }
     internal string CriticalEnergyNeededState { get; }
@@ -62,7 +67,7 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         MqttSensors.BalanceOnBehalfOfChanged += BalanceOnBehalfOfChanged;
         MqttSensors.AllowBatteryPowerChanged += AllowBatteryPowerChanged;
 
-        PeakLoad = config.SmartGridReady.PeakLoad;
+        _fallbackPeakLoad = config.SmartGridReady.FallbackPeakLoad;
         DynamicBalancingMethodBasedLoads = config.DynamicBalancingMethodBasedLoads;
         _loadTimeFrameToCheckOnRebalance = config.LoadTimeFrameToCheckOnRebalance;
         CanUseExcessEnergyState = config.SmartGridReady.CanUseExcessEnergyState;

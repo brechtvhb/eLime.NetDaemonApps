@@ -44,21 +44,20 @@ public class SmartGridReadyEnergyConsumerTests
     }
 
     [TestMethod]
-    public async Task Running_Renders_PeakLoad()
+    public async Task Renders_ExpectedPeakLoad_If_Available()
     {
         // Arrange
         var consumer = SmartGridReadyEnergyConsumerBuilder.HeatPump.Build();
 
         var builder = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler).AddConsumer(consumer);
         var energyManager = await builder.Build();
-        _testCtx.TriggerStateChange(builder._grid.ExportEntity, "1000");
 
         //Act
-        _testCtx.TriggerStateChange(consumer.PowerUsageEntity, "1000");
+        _testCtx.TriggerStateChange(consumer.SmartGridReady!.ExpectedPeakLoadSensor, "2100");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(1));
 
         //Assert
-        Assert.AreEqual(1700, energyManager.Consumers.First().PeakLoad);
+        Assert.AreEqual(2100, energyManager.Consumers.First().PeakLoad);
     }
 
 
