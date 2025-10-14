@@ -115,9 +115,10 @@ public class TriggeredEnergyConsumer : EnergyConsumer
         var desiredState = IsRunning switch
         {
             true => EnergyConsumerState.Running,
-            false when (HomeAssistant.StateSensor.State == StartState || HomeAssistant.StateSensor.State == PausedState) && HomeAssistant.CriticallyNeededSensor != null && HomeAssistant.CriticallyNeededSensor.IsOn() => EnergyConsumerState.CriticallyNeedsEnergy,
+            false when HomeAssistant.StateSensor.State == StartState && HomeAssistant.CriticallyNeededSensor != null && HomeAssistant.CriticallyNeededSensor.IsOn() => EnergyConsumerState.CriticallyNeedsEnergy,
+            false when HomeAssistant.StateSensor.State == PausedState && !string.IsNullOrWhiteSpace(PausedState) => EnergyConsumerState.CriticallyNeedsEnergy,
             false when HomeAssistant.StateSensor.State == CriticalState && !string.IsNullOrWhiteSpace(CriticalState) => EnergyConsumerState.CriticallyNeedsEnergy,
-            false when HomeAssistant.StateSensor.State == StartState || HomeAssistant.StateSensor.State == PausedState => EnergyConsumerState.NeedsEnergy,
+            false when HomeAssistant.StateSensor.State == StartState => EnergyConsumerState.NeedsEnergy,
             false => EnergyConsumerState.Off,
         };
 
