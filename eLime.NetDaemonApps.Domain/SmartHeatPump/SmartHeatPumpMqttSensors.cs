@@ -164,7 +164,7 @@ public class SmartHeatPumpMqttSensors : IDisposable
         await Context.MqttEntityManager.SetStateAsync(SENSOR_HEAT_PUMP_HEAT_COEFFICIENT_OF_PERFORMANCE, state.HeatCoefficientOfPerformance?.ToString("N", new NumberFormatInfo { NumberDecimalSeparator = "." }) ?? "");
         await Context.MqttEntityManager.SetStateAsync(SENSOR_HEAT_PUMP_HOT_WATER_COEFFICIENT_OF_PERFORMANCE, state.HotWaterCoefficientOfPerformance?.ToString("N", new NumberFormatInfo { NumberDecimalSeparator = "." }) ?? "");
 
-        await Context.MqttEntityManager.SetStateAsync(SENSOR_EXPECTED_POWER_CONSUMPTION, state.ExpectedPowerConsumption.ToString("N", new NumberFormatInfo { NumberDecimalSeparator = "." }));
+        await Context.MqttEntityManager.SetStateAsync(SENSOR_EXPECTED_POWER_CONSUMPTION, state.ExpectedPowerConsumption.ToString("F0", CultureInfo.InvariantCulture));
     }
 
     public void Dispose()
