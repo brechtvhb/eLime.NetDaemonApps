@@ -8,6 +8,7 @@ using eLime.NetDaemonApps.Domain.FlexiScenes.Actions;
 using eLime.NetDaemonApps.Domain.Scenes;
 using NetDaemon.HassModel;
 using Action = eLime.NetDaemonApps.Domain.FlexiScenes.Actions.Action;
+using FlexiSceneAction = eLime.NetDaemonApps.Config.FlexiLights.FlexiSceneAction;
 
 namespace eLime.NetDaemonApps.Domain.Helper;
 
@@ -67,7 +68,7 @@ internal static class ActionConfigExtensions
             { Scene: not null } => config.ConvertToSceneActionDomainModel(haContext),
             { Script: not null } => config.ConvertToScriptActionDomainModel(haContext),
             { Switch: not null, SwitchAction: not SwitchAction.Unknown } => config.ConvertToSwitchActionDomainModel(haContext),
-            { FlexiScene: not null, FlexiSceneToTrigger: not null } => config.ConvertFlexiSceneActionToDomainModel(haContext),
+            { FlexiScene: not null, FlexiSceneAction: not Config.FlexiLights.FlexiSceneAction.Unknown } => config.ConvertFlexiSceneActionToDomainModel(haContext),
             _ => throw new ArgumentException("invalid action configuration")
         };
     }
@@ -128,11 +129,16 @@ internal static class ActionConfigExtensions
 
     internal static Action ConvertFlexiSceneActionToDomainModel(this ActionConfig config, IHaContext haContext)
     {
-        if (config.FlexiScene == null || config.FlexiSceneToTrigger == null)
+        if (config.FlexiScene == null || config.FlexiSceneAction == FlexiSceneAction.Unknown)
             throw new ArgumentException("FlexiScene or FlexiSceneToTrigger not set");
 
         var flexiScene = new SelectEntity(haContext, config.FlexiScene);
-        return new FlexiSceneAction(flexiScene, config.FlexiSceneToTrigger);
+
+        return config.FlexiSceneAction switch
+        {
+            Config.FlexiLights.FlexiSceneAction.TurnOn => new FlexiSceneTurnOnAction(flexiScene, config.FlexiSceneToTrigger),
+            Config.FlexiLights.FlexiSceneAction.TurnOff => new FlexiSceneTurnOffAction(flexiScene, config.RequiredFlexiScene)
+        };
     }
 
     internal static Action ConvertToExecuteOffActionsActionDomainModel(this ActionConfig config, IHaContext haContext)

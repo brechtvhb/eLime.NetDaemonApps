@@ -233,16 +233,17 @@ namespace eLime.NetDaemonApps.Tests.Builders
                 new()
                 {
                     Name = "default",
+                    TurnOffAfterIfTriggeredByMotionSensor = TimeSpan.FromSeconds(5),
                     Actions = new List<ActionConfig>
                     {
-                        new() {FlexiScene = "select.flexiscene_office", FlexiSceneToTrigger = "Staircase"}
+                        new() {FlexiScene = "select.flexiscene_office",FlexiSceneAction = FlexiSceneAction.TurnOn ,FlexiSceneToTrigger = "Staircase"}
                     },
                 },
             };
 
             _config.OffActions = new List<ActionConfig>
             {
-                new() {LightAction = LightAction.TurnOff, Light = "light.light1"},
+                new() {FlexiScene = "select.flexiscene_office",FlexiSceneAction = FlexiSceneAction.TurnOff, RequiredFlexiScene = "Staircase"}
             };
 
             return this;

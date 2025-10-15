@@ -508,6 +508,37 @@ public class FlexiLightTests
         _testCtx.VerifySelectOptionPicked("select.flexiscene_office", "Staircase", Moq.Times.Never);
     }
 
+    [TestMethod]
+    public void TurnsOff_FlexiScene()
+    {
+        // Arrange
+        _testCtx.TriggerStateChange("select.flexiscene_office", "Staircase");
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).WithFlexiSceneActions().Build();
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "off");
+
+        //Act
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(10));
+
+        //Assert
+        _testCtx.VerifySelectOptionPicked("select.flexiscene_office", "Off", Moq.Times.Once);
+    }
+
+    [TestMethod]
+    public void DoesNotTurnOff_FlexiSceneIfChanged()
+    {
+        // Arrange
+        _testCtx.TriggerStateChange("select.flexiscene_office", "Default");
+        var room = new RoomBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage).WithFlexiSceneActions().Build();
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "on");
+        _testCtx.TriggerStateChange(new MotionSensor(_testCtx.HaContext, "binary_sensor.motion"), "off");
+
+        //Act
+        _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(10));
+
+        //Assert
+        _testCtx.VerifySelectOptionPicked("select.flexiscene_office", "Off", Moq.Times.Never);
+    }
 
     [TestMethod]
     public void Complex_Conditions_NotSoComplex()

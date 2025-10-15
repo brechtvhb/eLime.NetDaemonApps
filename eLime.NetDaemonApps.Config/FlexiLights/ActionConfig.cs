@@ -20,7 +20,9 @@ public class ActionConfig
     public Dictionary<string, string>? ScriptData { get; set; }
 
     public string? FlexiScene { get; set; }
+    public FlexiSceneAction FlexiSceneAction { get; set; }
     public string? FlexiSceneToTrigger { get; set; }
+    public string? RequiredFlexiScene { get; set; }
 
 }
 
@@ -42,6 +44,12 @@ public class Color
 }
 
 public enum LightAction
+{
+    Unknown,
+    TurnOn,
+    TurnOff
+}
+public enum FlexiSceneAction
 {
     Unknown,
     TurnOn,
