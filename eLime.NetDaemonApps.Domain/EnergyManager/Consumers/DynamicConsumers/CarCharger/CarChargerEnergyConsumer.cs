@@ -138,7 +138,7 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         }
     }
 
-    public (double current, double netPowerChange) Rebalance(IGridMonitor gridMonitor, Dictionary<LoadTimeFrames, double> consumerAverageLoadCorrections, double dynamicLoadAdjustments, double maximumDischargePower)
+    public (double current, double netPowerChange) Rebalance(IGridMonitor gridMonitor, Dictionary<LoadTimeFrames, double> consumerAverageLoadCorrections, double dynamicLoadAdjustments, double dynamicLoadThatCanBeScaledDownOnBehalfOf, double maximumDischargePower)
     {
         if (State.State != EnergyConsumerState.Running)
             return (0, 0);
@@ -163,7 +163,7 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
             _ => throw new ArgumentOutOfRangeException()
         };
         var consumerAverageLoadCorrection = consumerAverageLoadCorrections[LoadTimeFrameToCheckOnRebalance];
-        var estimatedLoad = uncorrectedLoad + consumerAverageLoadCorrection + dynamicLoadAdjustments;
+        var estimatedLoad = uncorrectedLoad + consumerAverageLoadCorrection + dynamicLoadAdjustments - dynamicLoadThatCanBeScaledDownOnBehalfOf;
 
         if (AllowBatteryPower == AllowBatteryPower.MaxPower)
             estimatedLoad -= maximumDischargePower;

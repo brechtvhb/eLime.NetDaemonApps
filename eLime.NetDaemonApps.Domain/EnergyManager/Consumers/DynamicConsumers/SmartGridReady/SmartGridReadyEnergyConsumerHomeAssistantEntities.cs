@@ -2,7 +2,7 @@
 using eLime.NetDaemonApps.Domain.Entities.Select;
 using eLime.NetDaemonApps.Domain.Entities.TextSensors;
 
-namespace eLime.NetDaemonApps.Domain.EnergyManager.Consumers.SmartGridReady;
+namespace eLime.NetDaemonApps.Domain.EnergyManager.Consumers.DynamicConsumers.SmartGridReady;
 
 public class SmartGridReadyEnergyConsumerHomeAssistantEntities(EnergyConsumerConfiguration config)
     : EnergyConsumerHomeAssistantEntities(config)

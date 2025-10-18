@@ -1,8 +1,8 @@
 ﻿using eLime.NetDaemonApps.Config.EnergyManager;
 using eLime.NetDaemonApps.Domain.EnergyManager.Consumers.Cooling;
 using eLime.NetDaemonApps.Domain.EnergyManager.Consumers.DynamicConsumers.CarCharger;
+using eLime.NetDaemonApps.Domain.EnergyManager.Consumers.DynamicConsumers.SmartGridReady;
 using eLime.NetDaemonApps.Domain.EnergyManager.Consumers.Simple;
-using eLime.NetDaemonApps.Domain.EnergyManager.Consumers.SmartGridReady;
 using eLime.NetDaemonApps.Domain.EnergyManager.Consumers.Triggered;
 using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 using eLime.NetDaemonApps.Domain.Entities.NumericSensors;

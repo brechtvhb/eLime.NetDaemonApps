@@ -1,5 +1,4 @@
-﻿using eLime.NetDaemonApps.Domain.EnergyManager.Consumers.DynamicConsumers;
-using eLime.NetDaemonApps.Domain.EnergyManager.Consumers.DynamicConsumers.CarCharger;
+﻿using eLime.NetDaemonApps.Domain.EnergyManager.Consumers.DynamicConsumers.CarCharger;
 using eLime.NetDaemonApps.Domain.EnergyManager.Grid;
 using eLime.NetDaemonApps.Domain.Entities.TextSensors;
 using eLime.NetDaemonApps.Domain.Helper;
@@ -7,7 +6,7 @@ using eLime.NetDaemonApps.Domain.SmartHeatPump;
 using Microsoft.Extensions.Logging;
 using NetDaemon.Extensions.Scheduler;
 
-namespace eLime.NetDaemonApps.Domain.EnergyManager.Consumers.SmartGridReady;
+namespace eLime.NetDaemonApps.Domain.EnergyManager.Consumers.DynamicConsumers.SmartGridReady;
 
 public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 {
@@ -222,7 +221,7 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         }
     }
 
-    public (double current, double netPowerChange) Rebalance(IGridMonitor gridMonitor, Dictionary<LoadTimeFrames, double> consumerAverageLoadCorrections, double dynamicLoadAdjustments, double maximumDischargePower)
+    public (double current, double netPowerChange) Rebalance(IGridMonitor gridMonitor, Dictionary<LoadTimeFrames, double> consumerAverageLoadCorrections, double dynamicLoadAdjustments, double dynamicLoadThatCanBeScaledDownOnBehalfOf, double maximumDischargePower)
     {
         var uncorrectedLoad = LoadTimeFrameToCheckOnRebalance switch
         {
@@ -238,7 +237,7 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
             _ => throw new ArgumentOutOfRangeException()
         };
         var consumerAverageLoadCorrection = consumerAverageLoadCorrections[LoadTimeFrameToCheckOnRebalance];
-        var estimatedLoad = uncorrectedLoad + consumerAverageLoadCorrection + dynamicLoadAdjustments;
+        var estimatedLoad = uncorrectedLoad + consumerAverageLoadCorrection + dynamicLoadAdjustments - dynamicLoadThatCanBeScaledDownOnBehalfOf;
 
         if (AllowBatteryPower == AllowBatteryPower.MaxPower)
             estimatedLoad -= maximumDischargePower;

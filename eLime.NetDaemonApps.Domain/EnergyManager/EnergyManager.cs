@@ -164,7 +164,9 @@ public class EnergyManager : IDisposable
 
         foreach (var dynamicLoadConsumer in dynamicLoadConsumers)
         {
-            var (current, netChange) = dynamicLoadConsumer.Rebalance(GridMonitor, consumerLoadCorrections, dynamicNetChange, BatteryManager.MaximumDischargePower);
+            var consumer = Consumers.First(x => x.Name == dynamicLoadConsumer.Name);
+            var dynamicLoadThatCanBeScaledDownOnBehalfOf = GetDynamicLoadThatCanBeScaledDownOnBehalfOf(consumer, dynamicNetChange);
+            var (current, netChange) = dynamicLoadConsumer.Rebalance(GridMonitor, consumerLoadCorrections, dynamicNetChange, dynamicLoadThatCanBeScaledDownOnBehalfOf, BatteryManager.MaximumDischargePower);
 
             if (netChange == 0)
                 continue;
@@ -228,7 +230,7 @@ public class EnergyManager : IDisposable
                 continue;
 
             var reason = consumer.CanForceStop() ? "it is consuming too much grid power" : "peak load is exceeded";
-            Context.Logger.LogDebug("{Consumer}: Will stop because {reason}. Loads [Current: {CurrentLoad}, CanBeScaledDownOnBehalfOf: {DynamicLoadThatCanBeScaledDownOnBehalfOf}, ConsumerSwitchOff: {SwitchOffLoad}, ConsumerPeakLoad: {PeakLoad}]", consumer.Name, reason, GridMonitor.CurrentLoad, dynamicLoadThatCanBeScaledDownOnBehalfOf, consumer.SwitchOffLoad, consumer.PeakLoad);
+            Context.Logger.LogDebug("{Consumer}: Will stop because {reason}. Loads [Current (minus batteries):  {CurrentLoad}, CanBeScaledDownOnBehalfOf: {DynamicLoadThatCanBeScaledDownOnBehalfOf}, ConsumerSwitchOff: {SwitchOffLoad}, ConsumerPeakLoad: {PeakLoad}]", consumer.Name, reason, GridMonitor.CurrentLoadMinusBatteries, dynamicLoadThatCanBeScaledDownOnBehalfOf, consumer.SwitchOffLoad, consumer.PeakLoad);
             consumer.Stop();
             stopNetChange -= consumer.CurrentLoad;
         }

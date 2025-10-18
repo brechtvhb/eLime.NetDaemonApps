@@ -9,7 +9,7 @@ internal interface IDynamicLoadConsumer
     internal AllowBatteryPower AllowBatteryPower { get; }
     internal double ReleasablePowerWhenBalancingOnBehalfOf { get; }
 
-    internal (double current, double netPowerChange) Rebalance(IGridMonitor gridMonitor, Dictionary<LoadTimeFrames, double> consumerAverageLoadCorrections, double dynamicLoadAdjustments, double maximumDischargePower);
+    internal (double current, double netPowerChange) Rebalance(IGridMonitor gridMonitor, Dictionary<LoadTimeFrames, double> consumerAverageLoadCorrections, double dynamicLoadAdjustments, double dynamicLoadThatCanBeScaledDownOnBehalfOf, double maximumDischargePower);
 
     public static string CONSUMER_GROUP_SELF = "Self";
     public static string CONSUMER_GROUP_ALL = "All consumers";

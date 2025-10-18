@@ -4,7 +4,7 @@ using eLime.NetDaemonApps.Domain.Entities.Select;
 using eLime.NetDaemonApps.Domain.Entities.TextSensors;
 using NetDaemon.HassModel;
 
-namespace eLime.NetDaemonApps.Domain.EnergyManager.Consumers.SmartGridReady;
+namespace eLime.NetDaemonApps.Domain.EnergyManager.Consumers.DynamicConsumers.SmartGridReady;
 
 public class SmartGridReadyEnergyConsumerConfiguration
 {
