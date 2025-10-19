@@ -278,6 +278,7 @@ public class EnergyManager : IDisposable
             .Where(x => x.State.State == EnergyConsumerState.Running)
             .OfType<IDynamicLoadConsumer>()
             .Where(x => consumerGroups.Contains(x.BalanceOnBehalfOf))
+            .Where(x => x.Name != consumer?.Name)
             .Sum(x => x.ReleasablePowerWhenBalancingOnBehalfOf) + dynamicLoadNetChange;
 
         return Math.Round(dynamicLoadThatCanBeScaledDownOnBehalfOf);
