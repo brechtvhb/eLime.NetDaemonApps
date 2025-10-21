@@ -51,7 +51,7 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
     protected IDisposable? StateWatcherTask { get; set; }
 
     private DateTimeOffset? EndedBoostAt { get; set; }
-    private DateTimeOffset? BlockedAt { get; set; }
+    private DateTimeOffset? LastSmartGridReadyChangedAt { get; set; }
 
     internal SmartGridReadyEnergyConsumer(EnergyManagerContext context, EnergyConsumerConfiguration config)
         : base(context, config)
@@ -61,6 +61,7 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 
         HomeAssistant = new SmartGridReadyEnergyConsumerHomeAssistantEntities(config);
         HomeAssistant.StateSensor.StateChanged += StateSensor_StateChanged;
+        HomeAssistant.SmartGridModeSelect.Changed += SmartGridModeSelect_Changed;
         MqttSensors = new DynamicEnergyConsumerMqttSensors(config.Name, context);
         MqttSensors.BalancingMethodChanged += BalancingMethodChanged;
         MqttSensors.BalanceOnBehalfOfChanged += BalanceOnBehalfOfChanged;
@@ -144,7 +145,7 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         var changed = false;
         var isInBlockedTimeWindow = BlockedTimeWindows.Any(timeWindow => timeWindow.IsActive(Context.Scheduler.Now, Context.Timezone));
 
-        if (isInBlockedTimeWindow && SmartGridReadyMode != SmartGridReadyMode.Blocked)
+        if (isInBlockedTimeWindow && SmartGridReadyMode != SmartGridReadyMode.Blocked && LastSmartGridReadyChangedAt?.AddMinutes(30) < Context.Scheduler.Now)
         {
             Context.Logger.LogInformation("{Name}: Blocked time window - Set smart grid ready mode to blocked.", Name);
             Block();
@@ -157,7 +158,6 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
     private void Block()
     {
         HomeAssistant.SmartGridModeSelect.Change(SmartGridReadyMode.Blocked.ToString());
-        BlockedAt = Context.Scheduler.Now;
     }
 
     private void Unblock()
@@ -194,7 +194,10 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         }
         return changed;
     }
-
+    private void SmartGridModeSelect_Changed(object? sender, Entities.Select.SelectEntityEventArgs e)
+    {
+        LastSmartGridReadyChangedAt = Context.Scheduler.Now;
+    }
 
     private async void StateSensor_StateChanged(object? sender, TextSensorEventArgs e)
     {
@@ -254,7 +257,7 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
             _ => throw new ArgumentOutOfRangeException()
         };
 
-        if (canDeBoost && SmartGridReadyMode == SmartGridReadyMode.Boosted && HomeAssistant.StateSensor.State == CanUseExcessEnergyState)
+        if (canDeBoost && SmartGridReadyMode == SmartGridReadyMode.Boosted && HomeAssistant.StateSensor.State == CanUseExcessEnergyState && LastSmartGridReadyChangedAt?.AddMinutes(30) < Context.Scheduler.Now)
         {
             Context.Logger.LogInformation("{Name}: Rebalance - Set smart grid ready mode due to consuming too much energy in CanUseExcessEnergyState.", Name);
             DeBoost();
@@ -272,7 +275,7 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         if (isInBlockedTimeWindow)
             return (0, 0);
 
-        if (SmartGridReadyMode == SmartGridReadyMode.Blocked && (BlockedAt == null || BlockedAt?.AddMinutes(15) <= Context.Scheduler.Now))
+        if (SmartGridReadyMode == SmartGridReadyMode.Blocked && (LastSmartGridReadyChangedAt == null || LastSmartGridReadyChangedAt?.AddMinutes(15) <= Context.Scheduler.Now))
         {
             Context.Logger.LogInformation("{Name}: Unblock - Reverting to normal smart grid ready mode.", Name);
             Unblock();
