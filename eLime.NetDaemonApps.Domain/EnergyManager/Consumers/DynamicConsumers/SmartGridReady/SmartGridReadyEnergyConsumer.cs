@@ -145,7 +145,7 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         var changed = false;
         var isInBlockedTimeWindow = BlockedTimeWindows.Any(timeWindow => timeWindow.IsActive(Context.Scheduler.Now, Context.Timezone));
 
-        if (isInBlockedTimeWindow && SmartGridReadyMode != SmartGridReadyMode.Blocked && LastSmartGridReadyChangedAt?.AddMinutes(30) < Context.Scheduler.Now)
+        if (isInBlockedTimeWindow && SmartGridReadyMode != SmartGridReadyMode.Blocked && (LastSmartGridReadyChangedAt == null || LastSmartGridReadyChangedAt?.AddMinutes(30) < Context.Scheduler.Now))
         {
             Context.Logger.LogInformation("{Name}: Blocked time window - Set smart grid ready mode to blocked.", Name);
             Block();
@@ -257,7 +257,7 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
             _ => throw new ArgumentOutOfRangeException()
         };
 
-        if (canDeBoost && SmartGridReadyMode == SmartGridReadyMode.Boosted && HomeAssistant.StateSensor.State == CanUseExcessEnergyState && LastSmartGridReadyChangedAt?.AddMinutes(30) < Context.Scheduler.Now)
+        if (canDeBoost && SmartGridReadyMode == SmartGridReadyMode.Boosted && HomeAssistant.StateSensor.State == CanUseExcessEnergyState && (LastSmartGridReadyChangedAt == null || LastSmartGridReadyChangedAt?.AddMinutes(30) < Context.Scheduler.Now))
         {
             Context.Logger.LogInformation("{Name}: Rebalance - Set smart grid ready mode due to consuming too much energy in CanUseExcessEnergyState.", Name);
             DeBoost();
