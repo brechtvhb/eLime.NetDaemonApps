@@ -9,7 +9,6 @@ using eLime.NetDaemonApps.Tests.Helpers;
 using FakeItEasy;
 using Microsoft.Extensions.Logging;
 using NetDaemon.Extensions.MqttEntityManager;
-using NetDaemon.HassModel;
 
 namespace eLime.NetDaemonApps.Tests;
 
@@ -118,7 +117,7 @@ public class SmartWateringTests
         //Assert
         Assert.AreEqual(NeedsWatering.Ongoing, irrigation.Zones.First().State);
         Assert.AreEqual(_testCtx.Scheduler.Now, irrigation.Zones.First().WateringStartedAt);
-        Assert.AreEqual(true, irrigation.Zones.First().CurrentlyWatering);
+        Assert.IsTrue(irrigation.Zones.First().CurrentlyWatering);
     }
 
 

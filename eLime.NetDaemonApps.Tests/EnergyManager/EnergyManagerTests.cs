@@ -74,7 +74,7 @@ public class EnergyManagerTests
 
         //Assert
         Assert.AreEqual(startedAt, energyManager.Consumers.First().State.StartedAt);
-        Assert.AreEqual(true, energyManager.Consumers.First().IsRunning);
+        Assert.IsTrue(energyManager.Consumers.First().IsRunning);
     }
 
     [TestMethod]
@@ -93,7 +93,7 @@ public class EnergyManagerTests
         //Assert
         Assert.AreEqual(EnergyConsumerState.Running, energyManager.Consumers.First().State.State);
         Assert.AreEqual(_testCtx.Scheduler.Now, energyManager.Consumers.First().State.StartedAt);
-        Assert.AreEqual(true, energyManager.Consumers.First().IsRunning);
+        Assert.IsTrue(energyManager.Consumers.First().IsRunning);
         var mqttState = $"sensor.energy_consumer_{consumer.Name.MakeHaFriendly()}_state";
         A.CallTo(() => _mqttEntityManager.SetStateAsync(mqttState, EnergyConsumerState.Running.ToString())).MustHaveHappenedOnceExactly();
     }
@@ -117,7 +117,7 @@ public class EnergyManagerTests
 
         //Assert
         Assert.AreEqual(_testCtx.Scheduler.Now, energyManager.Consumers.First().State.LastRun);
-        Assert.AreEqual(false, energyManager.Consumers.First().IsRunning);
+        Assert.IsFalse(energyManager.Consumers.First().IsRunning);
         var mqttState = $"sensor.energy_consumer_{consumer.Name.MakeHaFriendly()}_state";
         A.CallTo(() => _mqttEntityManager.SetStateAsync(mqttState, EnergyConsumerState.NeedsEnergy.ToString())).MustHaveHappened(1, Times.Exactly);
     }
@@ -303,7 +303,7 @@ public class EnergyManagerTests
             .Build();
 
         //Assert
-        Assert.AreEqual(false, energyManager.Consumers.First().IsRunning);
+        Assert.IsFalse(energyManager.Consumers.First().IsRunning);
     }
 
 

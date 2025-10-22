@@ -365,7 +365,7 @@ public class FlexiLightTests
 
         //Assert
         Assert.IsNotNull(exception);
-        Assert.IsTrue(exception.Message.Contains("Define at least one flexi scene with fully automated conditions"));
+        Assert.Contains("Define at least one flexi scene with fully automated conditions", exception.Message);
     }
 
     [TestMethod]

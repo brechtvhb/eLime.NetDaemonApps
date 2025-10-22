@@ -8,7 +8,6 @@ using eLime.NetDaemonApps.Tests.Helpers;
 using FakeItEasy;
 using Microsoft.Extensions.Logging;
 using NetDaemon.Extensions.MqttEntityManager;
-using NetDaemon.HassModel;
 
 namespace eLime.NetDaemonApps.Tests;
 
@@ -169,7 +168,7 @@ public class ClassicIrrigationTests
 
 
         //Assert
-        Assert.AreEqual(false, zone1.CanStartWatering(_testCtx.Scheduler.Now, true));
+        Assert.IsFalse(zone1.CanStartWatering(_testCtx.Scheduler.Now, true));
         _testCtx.VerifySwitchTurnOn(new BinarySwitch(_testCtx.HaContext, "switch.front_yard_valve"), Moq.Times.Never);
     }
 
