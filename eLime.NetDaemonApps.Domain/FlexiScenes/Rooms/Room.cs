@@ -191,7 +191,7 @@ public class Room : IAsyncDisposable
 
         SimulatePresenceIgnoreDuration = config.SimulatePresenceIgnoreDuration ?? TimeSpan.FromMinutes(3);
         InitialClickAfterMotionBehaviour = config.InitialClickAfterMotionBehaviour == Config.FlexiLights.InitialClickAfterMotionBehaviour.ChangeOffDurationOnly ? InitialClickAfterMotionBehaviour.ChangeOffDurationOnly : InitialClickAfterMotionBehaviour.ChangeOFfDurationAndGoToNextFlexiScene;
-        IlluminanceThreshold = config.IlluminanceThreshold;
+        IlluminanceThreshold = config.IlluminanceLowerThreshold ?? config.IlluminanceThreshold;
         AutoSwitchOffAboveIlluminance = config.AutoSwitchOffAboveIlluminance;
         IgnorePresenceAfterOffDuration = config.IgnorePresenceAfterOffDuration ?? TimeSpan.Zero;
 
