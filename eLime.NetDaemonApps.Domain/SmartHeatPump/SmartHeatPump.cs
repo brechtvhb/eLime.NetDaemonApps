@@ -186,7 +186,7 @@ public class SmartHeatPump : IDisposable
 
         var hotWaterTemperature = Convert.ToDecimal(HomeAssistant.HotWaterTemperatureSensor.State);
 
-        if (hotWaterTemperature != 0 && TemperatureSettings.MaximumHotWaterTemperature - 5 <= hotWaterTemperature)
+        if (hotWaterTemperature != 0 && TemperatureSettings.MaximumHotWaterTemperature - 4 >= hotWaterTemperature)
         {
             if (State.BathRequestedAt != null || State.HotWaterEnergyDemand is HeatPumpEnergyDemand.CanUse)
                 State.ExpectedPowerConsumption = 2100;
