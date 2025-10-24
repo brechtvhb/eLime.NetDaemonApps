@@ -10,6 +10,7 @@ namespace eLime.NetDaemonApps.Domain.EnergyManager.Consumers.DynamicConsumers.Sm
 public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 {
     private static readonly TimeSpan StateChangeCooldown = TimeSpan.FromMinutes(30);
+    private static readonly TimeSpan PeakLoadScaleDownCooldown = TimeSpan.FromMinutes(5);
     private static readonly TimeSpan DeBoostCooldown = TimeSpan.FromMinutes(3);
     private static readonly TimeSpan BlockedStateCheckInterval = TimeSpan.FromMinutes(15);
     private static readonly double RunningPowerThreshold = 100;
@@ -49,7 +50,6 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
     internal string CriticalEnergyNeededState { get; }
     internal List<TimeWindow> BlockedTimeWindows { get; set; }
     protected IDisposable? StateWatcherTask { get; set; }
-    private DateTimeOffset? EndedBoostAt { get; set; }
     private DateTimeOffset? LastSmartGridReadyChangedAt { get; set; }
 
 
@@ -161,7 +161,6 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
     private void DeBoost()
     {
         HomeAssistant.SmartGridModeSelect.Change(SmartGridReadyMode.Normal.ToString());
-        EndedBoostAt = Context.Scheduler.Now;
     }
 
     private bool StateMonitor(SmartGridReadyMode currentMode)
@@ -225,26 +224,34 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         if (AllowBatteryPower == AllowBatteryPower.MaxPower)
             estimatedLoad -= maximumDischargePower;
 
+        var isAbovePeakLoad = estimatedLoad > gridMonitor.PeakLoad;
+
+        if (isAbovePeakLoad && HasTimePassedSince(LastSmartGridReadyChangedAt, PeakLoadScaleDownCooldown))
+        {
+            switch (smartGridMode)
+            {
+                case SmartGridReadyMode.Boosted:
+                    LogModeChange("Rebalance - Boosted => Normal - Exceeding peak load.");
+                    DeBoost();
+                    return (0, 0);
+                case SmartGridReadyMode.Normal:
+                    LogModeChange("Rebalance - Normal => Blocked - Exceeding peak load.");
+                    Block();
+                    return (0, 0);
+            }
+        }
         var shouldDeBoost = BalancingMethod switch
         {
             BalancingMethod.SolarSurplus => estimatedLoad > 0,
-            BalancingMethod.NearPeak or BalancingMethod.MaximizeQuarterPeak => estimatedLoad > gridMonitor.PeakLoad,
+            BalancingMethod.NearPeak or BalancingMethod.MaximizeQuarterPeak => isAbovePeakLoad,
             _ => estimatedLoad > SwitchOffLoad
         };
 
-        //Scale down when needed
+        //Scale down: Boosted => Normal
         if (shouldDeBoost && smartGridMode == SmartGridReadyMode.Boosted && HasTimePassedSince(LastSmartGridReadyChangedAt, StateChangeCooldown))
         {
             LogModeChange("Rebalance - Boosted => Normal - Consuming too much energy.");
             DeBoost();
-            return (0, 0);
-        }
-
-        //Scale down when needed
-        if (estimatedLoad > gridMonitor.PeakLoad && smartGridMode == SmartGridReadyMode.Normal && HasTimePassedSince(EndedBoostAt, DeBoostCooldown))
-        {
-            LogModeChange("Rebalance - Normal => Blocked - Exceeding peak load.");
-            Block();
             return (0, 0);
         }
 
@@ -257,10 +264,10 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
             ? estimatedLoad + PeakLoad < gridMonitor.PeakLoad //Will not turn on a load that would exceed current grid import peak
             : estimatedLoad < SwitchOnLoad;
 
-        //Scale up when possible
+        //Scale up: Blocked => Normal
         if (smartGridMode == SmartGridReadyMode.Blocked && canBoost)
         {
-            LogModeChange("Rebalance - Blocked => Normal - Because energy is available.");
+            LogModeChange("Rebalance - Blocked => Normal - Energy is available.");
             Unblock();
             return (0, 0);
         }
@@ -268,10 +275,10 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         if (!IsRunning)
             return (0, 0);
 
-        //Scale up when possible
+        //Scale up: Normal => Boosted
         if (smartGridMode == SmartGridReadyMode.Normal && canBoost)
         {
-            LogModeChange("Rebalance - Normal => Boosted - Because energy is available and heat pump is already active.");
+            LogModeChange("Rebalance - Normal => Boosted - Energy is available and heat pump is already active (reduce amount of compressor start / stops).");
             Boost();
         }
         return (0, 0);
@@ -330,7 +337,7 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         if (HomeAssistant.StateSensor.State == CriticalEnergyNeededState)
             return false;
 
-        return HasTimePassedSince(EndedBoostAt, DeBoostCooldown);
+        return HasTimePassedSince(LastSmartGridReadyChangedAt, DeBoostCooldown);
     }
 
     public override bool CanForceStopOnPeakLoad()
@@ -338,7 +345,7 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         if (MinimumRuntime != null && State.StartedAt?.Add(MinimumRuntime.Value) > Context.Scheduler.Now)
             return false;
 
-        return HasTimePassedSince(EndedBoostAt, DeBoostCooldown);
+        return HasTimePassedSince(LastSmartGridReadyChangedAt, DeBoostCooldown);
     }
 
     public override void TurnOn()
@@ -358,7 +365,7 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
             return;
         }
 
-        if (!HasTimePassedSince(EndedBoostAt, DeBoostCooldown))
+        if (!HasTimePassedSince(LastSmartGridReadyChangedAt, DeBoostCooldown))
             return;
 
         if (smartGridMode == SmartGridReadyMode.Normal)
@@ -380,6 +387,7 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         ConsumptionMonitorTask?.Dispose();
         StateWatcherTask?.Dispose();
     }
+
     private bool IsInEnergyNeededState(string? state)
         => state == EnergyNeededState || state == CanUseExcessEnergyState || state == CriticalEnergyNeededState;
 }
