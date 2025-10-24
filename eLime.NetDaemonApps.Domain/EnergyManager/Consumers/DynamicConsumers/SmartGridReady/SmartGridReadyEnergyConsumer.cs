@@ -12,7 +12,7 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
     private static readonly TimeSpan StateChangeCooldown = TimeSpan.FromMinutes(30);
     private static readonly TimeSpan PeakLoadScaleDownCooldown = TimeSpan.FromMinutes(5);
     private static readonly TimeSpan DeBoostCooldown = TimeSpan.FromMinutes(3);
-    private static readonly TimeSpan BlockedStateCheckInterval = TimeSpan.FromMinutes(15);
+    private static readonly TimeSpan DeBlockCooldown = TimeSpan.FromMinutes(15);
     private static readonly double RunningPowerThreshold = 100;
 
     public BalancingMethod BalancingMethod => State.BalancingMethod ?? BalancingMethod.SolarOnly;
@@ -255,7 +255,7 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
             return (0, 0);
         }
 
-        if (IsInBlockedTimeWindow() || !HasTimePassedSince(LastSmartGridReadyChangedAt, BlockedStateCheckInterval))
+        if (IsInBlockedTimeWindow() || !HasTimePassedSince(LastSmartGridReadyChangedAt, DeBlockCooldown))
             return (0, 0);
 
         //Keep expected load corrections in mind before boosting
@@ -272,7 +272,7 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
             return (0, 0);
         }
 
-        if (!IsRunning)
+        if (!IsRunning) //Implicitly waits DeBlockCooldown before boosting from Normal => Boosted as this check happens above
             return (0, 0);
 
         //Scale up: Normal => Boosted
