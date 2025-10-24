@@ -191,7 +191,7 @@ public class SmartHeatPump : IDisposable
         else if (State.HotWaterEnergyDemand is HeatPumpEnergyDemand.Demanded or HeatPumpEnergyDemand.CriticalDemand)
             State.ExpectedPowerConsumption = 1800;
         else
-            State.ExpectedPowerConsumption = 1500;
+            State.ExpectedPowerConsumption = 1200;
     }
 
     private async void OnShowerRequested(object? sender, EventArgs e)
