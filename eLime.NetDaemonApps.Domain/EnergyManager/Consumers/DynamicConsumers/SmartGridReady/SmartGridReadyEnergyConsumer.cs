@@ -22,7 +22,7 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         : 0;
     public bool ApplyExpectedLoadCorrections => true;
 
-    public List<DynamicEnergyConsumerBalancingMethodBasedLoads> DynamicBalancingMethodBasedLoads { get; }
+    internal List<DynamicEnergyConsumerBalancingMethodBasedLoads> DynamicBalancingMethodBasedLoads { get; }
 
     private DynamicEnergyConsumerBalancingMethodBasedLoads? CurrentBalancingMethodConfig => State.BalancingMethod.HasValue
         ? DynamicBalancingMethodBasedLoads.FirstOrDefault(x => x.BalancingMethods.Contains(State.BalancingMethod.Value))
