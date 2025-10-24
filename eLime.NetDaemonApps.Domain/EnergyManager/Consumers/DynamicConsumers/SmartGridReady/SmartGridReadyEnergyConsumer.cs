@@ -254,9 +254,9 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         };
 
         //Scale down when needed
-        if (shouldDeBoost && SmartGridReadyMode == SmartGridReadyMode.Boosted && HomeAssistant.StateSensor.State == CanUseExcessEnergyState && (LastSmartGridReadyChangedAt == null || LastSmartGridReadyChangedAt?.AddMinutes(30) < Context.Scheduler.Now))
+        if (shouldDeBoost && SmartGridReadyMode == SmartGridReadyMode.Boosted && (LastSmartGridReadyChangedAt == null || LastSmartGridReadyChangedAt?.AddMinutes(30) < Context.Scheduler.Now))
         {
-            Context.Logger.LogInformation("{Name}: Rebalance - Boosted => Normal - Consuming too much energy in CanUseExcessEnergyState.", Name);
+            Context.Logger.LogInformation("{Name}: Rebalance - Boosted => Normal - Consuming too much energy.", Name);
             DeBoost();
             return (0, 0);
         }
@@ -286,7 +286,7 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         //Scale up when possible
         if (SmartGridReadyMode == SmartGridReadyMode.Blocked && canBoost)
         {
-            Context.Logger.LogInformation("{Name}: Rebalance - Blocked => Normal -Because energy is available.", Name);
+            Context.Logger.LogInformation("{Name}: Rebalance - Blocked => Normal - Because energy is available.", Name);
             Unblock();
             return (0, 0);
         }
