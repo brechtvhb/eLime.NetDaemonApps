@@ -193,7 +193,6 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         try
         {
             var sensorState = e.Sensor.State;
-            var isInEnergyNeedState = sensorState == EnergyNeededState || sensorState == CanUseExcessEnergyState || sensorState == CriticalEnergyNeededState;
 
             if (!IsRunning)
             {
@@ -204,7 +203,7 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
                     _ => State.State
                 };
             }
-            else if (!isInEnergyNeedState)
+            else if (!IsInEnergyNeededState(sensorState))
                 Stop();
 
             await DebounceSaveAndPublishState();
@@ -286,10 +285,7 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 
     protected override void StopOnBootIfEnergyIsNoLongerNeeded()
     {
-        var sensorState = HomeAssistant.StateSensor.State;
-        var isInEnergyNeedState = sensorState == CanUseExcessEnergyState || sensorState == EnergyNeededState || sensorState == CriticalEnergyNeededState;
-
-        if (IsRunning && !isInEnergyNeedState)
+        if (IsRunning && !IsInEnergyNeededState(HomeAssistant.StateSensor.State))
             Stop();
 
         StateMonitor(HomeAssistant.GetSmartGridReadyMode());
@@ -384,4 +380,6 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         ConsumptionMonitorTask?.Dispose();
         StateWatcherTask?.Dispose();
     }
+    private bool IsInEnergyNeededState(string? state)
+        => state == EnergyNeededState || state == CanUseExcessEnergyState || state == CriticalEnergyNeededState;
 }
