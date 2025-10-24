@@ -247,14 +247,10 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 
         var canDeBoost = BalancingMethod switch
         {
-            BalancingMethod.SolarSurplus => estimatedLoad > -700,
-            BalancingMethod.SolarOnly => estimatedLoad > 0,
-            BalancingMethod.MidPoint => estimatedLoad > 400,
-            BalancingMethod.SolarPreferred => estimatedLoad > 800,
-            BalancingMethod.MidPeak => estimatedLoad > SwitchOffLoad,
+            BalancingMethod.SolarSurplus => estimatedLoad > 0,
             BalancingMethod.NearPeak => estimatedLoad > gridMonitor.PeakLoad,
             BalancingMethod.MaximizeQuarterPeak => estimatedLoad > gridMonitor.PeakLoad,
-            _ => throw new ArgumentOutOfRangeException()
+            _ => estimatedLoad > SwitchOffLoad
         };
 
         if (canDeBoost && SmartGridReadyMode == SmartGridReadyMode.Boosted && HomeAssistant.StateSensor.State == CanUseExcessEnergyState && (LastSmartGridReadyChangedAt == null || LastSmartGridReadyChangedAt?.AddMinutes(30) < Context.Scheduler.Now))
