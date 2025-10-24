@@ -261,6 +261,24 @@ public abstract class EnergyConsumer : IDisposable
         var remainingDuration = suggestedRunTime - currentRuntime;
         return remainingDuration < suggestedRunTime ? remainingDuration : suggestedRunTime;
     }
+
+    protected double GetLoadForTimeFrame(IGridMonitor gridMonitor, LoadTimeFrames timeFrame)
+    {
+        return timeFrame switch
+        {
+            LoadTimeFrames.Now => gridMonitor.CurrentLoadMinusBatteries,
+            LoadTimeFrames.SolarForecastNow => gridMonitor.CurrentLoadMinusBatteriesSolarCorrected,
+            LoadTimeFrames.SolarForecastNow50PercentCorrected => gridMonitor.CurrentLoadMinusBatteriesSolarCorrected50Percent,
+            LoadTimeFrames.SolarForecast30Minutes => gridMonitor.CurrentLoadMinusBatteriesSolarForecast30MinutesCorrected,
+            LoadTimeFrames.SolarForecast1Hour => gridMonitor.CurrentLoadMinusBatteriesSolarForecast1HourCorrected,
+            LoadTimeFrames.Last30Seconds => gridMonitor.AverageLoadMinusBatteries(TimeSpan.FromSeconds(30)),
+            LoadTimeFrames.LastMinute => gridMonitor.AverageLoadMinusBatteries(TimeSpan.FromMinutes(1)),
+            LoadTimeFrames.Last2Minutes => gridMonitor.AverageLoadMinusBatteries(TimeSpan.FromMinutes(2)),
+            LoadTimeFrames.Last5Minutes => gridMonitor.AverageLoadMinusBatteries(TimeSpan.FromMinutes(5)),
+            _ => throw new ArgumentOutOfRangeException(nameof(timeFrame), timeFrame, null)
+        };
+    }
+
     protected abstract EnergyConsumerState GetState();
     protected abstract bool CanStart();
 
@@ -277,19 +295,7 @@ public abstract class EnergyConsumer : IDisposable
 
         foreach (var timeFrameToValidate in LoadTimeFramesToCheckOnStart)
         {
-            var uncorrectedLoad = timeFrameToValidate switch
-            {
-                LoadTimeFrames.Now => gridMonitor.CurrentLoadMinusBatteries,
-                LoadTimeFrames.SolarForecastNow => gridMonitor.CurrentLoadMinusBatteriesSolarCorrected,
-                LoadTimeFrames.SolarForecastNow50PercentCorrected => gridMonitor.CurrentLoadMinusBatteriesSolarCorrected50Percent,
-                LoadTimeFrames.SolarForecast30Minutes => gridMonitor.CurrentLoadMinusBatteriesSolarForecast30MinutesCorrected,
-                LoadTimeFrames.SolarForecast1Hour => gridMonitor.CurrentLoadMinusBatteriesSolarForecast1HourCorrected,
-                LoadTimeFrames.Last30Seconds => gridMonitor.AverageLoadMinusBatteries(TimeSpan.FromSeconds(30)),
-                LoadTimeFrames.LastMinute => gridMonitor.AverageLoadMinusBatteries(TimeSpan.FromMinutes(1)),
-                LoadTimeFrames.Last2Minutes => gridMonitor.AverageLoadMinusBatteries(TimeSpan.FromMinutes(2)),
-                LoadTimeFrames.Last5Minutes => gridMonitor.AverageLoadMinusBatteries(TimeSpan.FromMinutes(5)),
-                _ => throw new ArgumentOutOfRangeException()
-            };
+            var uncorrectedLoad = GetLoadForTimeFrame(gridMonitor, timeFrameToValidate);
 
             var consumerAverageLoadCorrection = consumerAverageLoadCorrections[timeFrameToValidate];
 
@@ -325,19 +331,7 @@ public abstract class EnergyConsumer : IDisposable
         var canStop = true;
         foreach (var timeFrameToValidate in LoadTimeFramesToCheckOnStop)
         {
-            var uncorrectedLoad = timeFrameToValidate switch
-            {
-                LoadTimeFrames.Now => gridMonitor.CurrentLoadMinusBatteries,
-                LoadTimeFrames.SolarForecastNow => gridMonitor.CurrentLoadMinusBatteriesSolarCorrected,
-                LoadTimeFrames.SolarForecastNow50PercentCorrected => gridMonitor.CurrentLoadMinusBatteriesSolarCorrected50Percent,
-                LoadTimeFrames.SolarForecast30Minutes => gridMonitor.CurrentLoadMinusBatteriesSolarForecast30MinutesCorrected,
-                LoadTimeFrames.SolarForecast1Hour => gridMonitor.CurrentLoadMinusBatteriesSolarForecast1HourCorrected,
-                LoadTimeFrames.Last30Seconds => gridMonitor.AverageLoadMinusBatteries(TimeSpan.FromSeconds(30)),
-                LoadTimeFrames.LastMinute => gridMonitor.AverageLoadMinusBatteries(TimeSpan.FromMinutes(1)),
-                LoadTimeFrames.Last2Minutes => gridMonitor.AverageLoadMinusBatteries(TimeSpan.FromMinutes(2)),
-                LoadTimeFrames.Last5Minutes => gridMonitor.AverageLoadMinusBatteries(TimeSpan.FromMinutes(5)),
-                _ => throw new ArgumentOutOfRangeException()
-            };
+            var uncorrectedLoad = GetLoadForTimeFrame(gridMonitor, timeFrameToValidate);
             var consumerAverageLoadCorrection = consumerAverageLoadCorrections[timeFrameToValidate];
             var estimatedLoad = uncorrectedLoad + consumerAverageLoadCorrection + dynamicLoadAdjustments + startLoadAdjustments + stopLoadAdjustments - dynamicLoadThatCanBeScaledDownOnBehalfOf;
 

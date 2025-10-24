@@ -142,17 +142,16 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 
     private bool BlockedStateMonitor()
     {
-        var changed = false;
-        var isInBlockedTimeWindow = BlockedTimeWindows.Any(timeWindow => timeWindow.IsActive(Context.Scheduler.Now, Context.Timezone));
-
-        if (isInBlockedTimeWindow && SmartGridReadyMode != SmartGridReadyMode.Blocked && (LastSmartGridReadyChangedAt == null || LastSmartGridReadyChangedAt?.AddMinutes(30) < Context.Scheduler.Now))
+        var isInBlockedTimeWindow = IsInBlockedTimeWindow();
+        
+        if (isInBlockedTimeWindow && SmartGridReadyMode != SmartGridReadyMode.Blocked && HasTimePassedSince(LastSmartGridReadyChangedAt, TimeSpan.FromMinutes(30)))
         {
             Context.Logger.LogInformation("{Name}: Blocked time window - Set smart grid ready mode to blocked.", Name);
             Block();
-            changed = true;
+            return true;
         }
         //Unblock happens in rebalance after 15 minutes or when load is below peak load
-        return changed;
+        return false;
     }
 
     private void Block()
@@ -194,6 +193,7 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         }
         return changed;
     }
+    
     private void SmartGridModeSelect_Changed(object? sender, Entities.Select.SelectEntityEventArgs e)
     {
         LastSmartGridReadyChangedAt = Context.Scheduler.Now;
@@ -226,19 +226,7 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 
     public (double current, double netPowerChange) Rebalance(IGridMonitor gridMonitor, Dictionary<LoadTimeFrames, double> consumerAverageLoadCorrections, double expectedLoadCorrections, double dynamicLoadAdjustments, double dynamicLoadThatCanBeScaledDownOnBehalfOf, double maximumDischargePower)
     {
-        var uncorrectedLoad = LoadTimeFrameToCheckOnRebalance switch
-        {
-            LoadTimeFrames.Now => gridMonitor.CurrentLoadMinusBatteries,
-            LoadTimeFrames.SolarForecastNow => gridMonitor.CurrentLoadMinusBatteriesSolarCorrected,
-            LoadTimeFrames.SolarForecastNow50PercentCorrected => gridMonitor.CurrentLoadMinusBatteriesSolarCorrected50Percent,
-            LoadTimeFrames.SolarForecast30Minutes => gridMonitor.CurrentLoadMinusBatteriesSolarForecast30MinutesCorrected,
-            LoadTimeFrames.SolarForecast1Hour => gridMonitor.CurrentLoadMinusBatteriesSolarForecast1HourCorrected,
-            LoadTimeFrames.Last30Seconds => gridMonitor.AverageLoadMinusBatteries(TimeSpan.FromSeconds(30)),
-            LoadTimeFrames.LastMinute => gridMonitor.AverageLoadMinusBatteries(TimeSpan.FromMinutes(1)),
-            LoadTimeFrames.Last2Minutes => gridMonitor.AverageLoadMinusBatteries(TimeSpan.FromMinutes(2)),
-            LoadTimeFrames.Last5Minutes => gridMonitor.AverageLoadMinusBatteries(TimeSpan.FromMinutes(5)),
-            _ => throw new ArgumentOutOfRangeException()
-        };
+        var uncorrectedLoad = GetLoadForTimeFrame(gridMonitor, LoadTimeFrameToCheckOnRebalance);
         var consumerAverageLoadCorrection = consumerAverageLoadCorrections[LoadTimeFrameToCheckOnRebalance];
         var estimatedLoad = uncorrectedLoad + consumerAverageLoadCorrection + dynamicLoadAdjustments - dynamicLoadThatCanBeScaledDownOnBehalfOf;
 
@@ -254,7 +242,7 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         };
 
         //Scale down when needed
-        if (shouldDeBoost && SmartGridReadyMode == SmartGridReadyMode.Boosted && (LastSmartGridReadyChangedAt == null || LastSmartGridReadyChangedAt?.AddMinutes(30) < Context.Scheduler.Now))
+        if (shouldDeBoost && SmartGridReadyMode == SmartGridReadyMode.Boosted && HasTimePassedSince(LastSmartGridReadyChangedAt, TimeSpan.FromMinutes(30)))
         {
             Context.Logger.LogInformation("{Name}: Rebalance - Boosted => Normal - Consuming too much energy.", Name);
             DeBoost();
@@ -262,18 +250,17 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         }
 
         //Scale down when needed
-        if (estimatedLoad > gridMonitor.PeakLoad && SmartGridReadyMode == SmartGridReadyMode.Normal && (EndedBoostAt == null || EndedBoostAt?.AddMinutes(3) < Context.Scheduler.Now))
+        if (estimatedLoad > gridMonitor.PeakLoad && SmartGridReadyMode == SmartGridReadyMode.Normal && HasTimePassedSince(EndedBoostAt, TimeSpan.FromMinutes(3)))
         {
             Context.Logger.LogInformation("{Name}: Rebalance - Normal => Blocked - Exceeding peak load.", Name);
             Block();
             return (0, 0);
         }
 
-        var isInBlockedTimeWindow = BlockedTimeWindows.Any(timeWindow => timeWindow.IsActive(Context.Scheduler.Now, Context.Timezone));
-        if (isInBlockedTimeWindow)
+        if (IsInBlockedTimeWindow())
             return (0, 0);
 
-        if (LastSmartGridReadyChangedAt == null || LastSmartGridReadyChangedAt?.AddMinutes(15) >= Context.Scheduler.Now)
+        if (!HasTimePassedSince(LastSmartGridReadyChangedAt, TimeSpan.FromMinutes(15)))
             return (0, 0);
 
         //Keep expected load corrections in mind before boosting
@@ -303,6 +290,17 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         return (0, 0);
     }
 
+    // Helper methods to reduce duplication
+    private bool IsInBlockedTimeWindow()
+    {
+        return BlockedTimeWindows.Any(timeWindow => timeWindow.IsActive(Context.Scheduler.Now, Context.Timezone));
+    }
+
+    private bool HasTimePassedSince(DateTimeOffset? timestamp, TimeSpan timeSpan)
+    {
+        return timestamp == null || timestamp.Value.Add(timeSpan) < Context.Scheduler.Now;
+    }
+
     protected override void StopOnBootIfEnergyIsNoLongerNeeded()
     {
         if (IsRunning && HomeAssistant.StateSensor.State != CanUseExcessEnergyState && HomeAssistant.StateSensor.State != EnergyNeededState && HomeAssistant.StateSensor.State != CriticalEnergyNeededState)
@@ -325,6 +323,7 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
             false => EnergyConsumerState.Off
         };
     }
+    
     protected override bool CanStart()
     {
         if (SmartGridReadyMode == SmartGridReadyMode.Blocked)
@@ -350,7 +349,7 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         if (HomeAssistant.StateSensor.State == CriticalEnergyNeededState)
             return false;
 
-        if (EndedBoostAt?.AddMinutes(3) > Context.Scheduler.Now)
+        if (!HasTimePassedSince(EndedBoostAt, TimeSpan.FromMinutes(3)))
             return false;
 
         return true;
@@ -361,7 +360,7 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         if (MinimumRuntime != null && State.StartedAt?.Add(MinimumRuntime.Value) > Context.Scheduler.Now)
             return false;
 
-        if (EndedBoostAt?.AddMinutes(3) > Context.Scheduler.Now)
+        if (!HasTimePassedSince(EndedBoostAt, TimeSpan.FromMinutes(3)))
             return false;
 
         return true;
@@ -382,7 +381,7 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
             return;
         }
 
-        if (EndedBoostAt?.AddMinutes(3) > Context.Scheduler.Now)
+        if (!HasTimePassedSince(EndedBoostAt, TimeSpan.FromMinutes(3)))
             return;
 
         if (SmartGridReadyMode == SmartGridReadyMode.Normal)
@@ -395,7 +394,11 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
     public override void Dispose()
     {
         HomeAssistant.StateSensor.StateChanged -= StateSensor_StateChanged;
+        HomeAssistant.SmartGridModeSelect.Changed -= SmartGridModeSelect_Changed;
         HomeAssistant.Dispose();
+        MqttSensors.BalancingMethodChanged -= BalancingMethodChanged;
+        MqttSensors.BalanceOnBehalfOfChanged -= BalanceOnBehalfOfChanged;
+        MqttSensors.AllowBatteryPowerChanged -= AllowBatteryPowerChanged;
         MqttSensors.Dispose();
         ConsumptionMonitorTask?.Dispose();
         StateWatcherTask?.Dispose();

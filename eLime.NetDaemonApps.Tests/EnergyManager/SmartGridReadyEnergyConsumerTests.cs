@@ -266,4 +266,134 @@ public class SmartGridReadyEnergyConsumerTests
         //Assert
         _testCtx.VerifySelectOptionPicked(consumer.SmartGridReady!.SmartGridModeEntity, SmartGridReadyMode.Normal.ToString(), Moq.Times.Once);
     }
+
+    [TestMethod]
+    public async Task Rebalance_ScalesUp_From_Blocked_To_Normal_When_Energy_Available()
+    {
+        // Arrange
+        _testCtx.SetCurrentTime(DateTime.Today.AddDays(1).AddHours(17));
+        var consumer = SmartGridReadyEnergyConsumerBuilder.HeatPump.Build();
+
+        var builder = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler).AddConsumer(consumer);
+        _ = await builder.Build();
+
+        // Setup: Get into Blocked state first
+        _testCtx.TriggerStateChange(consumer.SmartGridReady!.StateSensor, "Demanded");
+        _testCtx.TriggerStateChange(consumer.SmartGridReady!.SmartGridModeEntity, "Blocked");
+        _testCtx.TriggerStateChange(builder._grid.ExportEntity, "0");
+        _testCtx.TriggerStateChange(builder._grid.ImportEntity, "100");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(1));
+
+        //Act - Make sufficient energy available
+        _testCtx.TriggerStateChange(builder._grid.ExportEntity, "1500");
+        _testCtx.TriggerStateChange(builder._grid.ImportEntity, "0");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(16));
+
+        //Assert
+        _testCtx.VerifySelectOptionPicked(consumer.SmartGridReady!.SmartGridModeEntity, SmartGridReadyMode.Normal.ToString(), Moq.Times.AtLeastOnce);
+    }
+
+    [TestMethod]
+    public async Task Rebalance_ScalesUp_From_Normal_To_Boosted_When_Energy_Available_And_Already_Running()
+    {
+        // Arrange
+        _testCtx.SetCurrentTime(DateTime.Today.AddDays(1).AddHours(17));
+        var consumer = SmartGridReadyEnergyConsumerBuilder.HeatPump.Build();
+
+        var builder = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler).AddConsumer(consumer);
+        _ = await builder.Build();
+
+        // Setup: Get into Normal state and running
+        _testCtx.TriggerStateChange(consumer.SmartGridReady!.StateSensor, "Demanded");
+        _testCtx.TriggerStateChange(consumer.SmartGridReady!.SmartGridModeEntity, "Normal");
+        _testCtx.TriggerStateChange(consumer.PowerUsageEntity, "1000");
+        _testCtx.TriggerStateChange(builder._grid.ExportEntity, "0");
+        _testCtx.TriggerStateChange(builder._grid.ImportEntity, "100");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(1));
+
+        //Act - Make abundant energy available
+        _testCtx.TriggerStateChange(builder._grid.ExportEntity, "2000");
+        _testCtx.TriggerStateChange(builder._grid.ImportEntity, "0");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(16));
+
+        //Assert
+        _testCtx.VerifySelectOptionPicked(consumer.SmartGridReady!.SmartGridModeEntity, SmartGridReadyMode.Boosted.ToString(), Moq.Times.AtLeastOnce);
+    }
+
+    [TestMethod]
+    public async Task Rebalance_Does_Not_Scale_Up_Before_Minimum_Time_Passed()
+    {
+        // Arrange
+        _testCtx.SetCurrentTime(DateTime.Today.AddDays(1).AddHours(17));
+        var consumer = SmartGridReadyEnergyConsumerBuilder.HeatPump.Build();
+
+        var builder = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler).AddConsumer(consumer);
+        _ = await builder.Build();
+
+        // Setup: Get into Blocked state
+        _testCtx.TriggerStateChange(consumer.SmartGridReady!.StateSensor, "Demanded");
+        _testCtx.TriggerStateChange(consumer.SmartGridReady!.SmartGridModeEntity, "Blocked");
+        _testCtx.TriggerStateChange(builder._grid.ExportEntity, "0");
+        _testCtx.TriggerStateChange(builder._grid.ImportEntity, "100");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(1));
+
+        //Act - Make energy available but don't wait the required 15 minutes
+        _testCtx.TriggerStateChange(builder._grid.ExportEntity, "1500");
+        _testCtx.TriggerStateChange(builder._grid.ImportEntity, "0");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(10));
+
+        //Assert - Should not scale up yet
+        _testCtx.VerifySelectOptionPicked(consumer.SmartGridReady!.SmartGridModeEntity, SmartGridReadyMode.Normal.ToString(), Moq.Times.Never);
+    }
+
+    [TestMethod]
+    public async Task Rebalance_Does_Not_Scale_Up_From_Blocked_During_Blocked_Time_Window()
+    {
+        // Arrange
+        _testCtx.SetCurrentTime(DateTime.Today.AddDays(1).AddHours(17));
+        var consumer = SmartGridReadyEnergyConsumerBuilder.HeatPump.AddBlockedTimeWindow(null, [], TimeSpan.FromHours(16), TimeSpan.FromHours(18)).Build();
+
+        var builder = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler).AddConsumer(consumer);
+        _ = await builder.Build();
+
+        // Setup: Get into Blocked state during blocked time window
+        _testCtx.TriggerStateChange(consumer.SmartGridReady!.StateSensor, "Demanded");
+        _testCtx.TriggerStateChange(consumer.SmartGridReady!.SmartGridModeEntity, "Blocked");
+        _testCtx.TriggerStateChange(builder._grid.ExportEntity, "0");
+        _testCtx.TriggerStateChange(builder._grid.ImportEntity, "100");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(1));
+
+        //Act - Make energy available but still in blocked time window
+        _testCtx.TriggerStateChange(builder._grid.ExportEntity, "1500");
+        _testCtx.TriggerStateChange(builder._grid.ImportEntity, "0");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(16));
+
+        //Assert - Should not scale up during blocked time window
+        _testCtx.VerifySelectOptionPicked(consumer.SmartGridReady!.SmartGridModeEntity, SmartGridReadyMode.Normal.ToString(), Moq.Times.Never);
+    }
+
+    [TestMethod]
+    public async Task Rebalance_ScalesUp_From_Blocked_With_CriticallyNeedsEnergy_State()
+    {
+        // Arrange
+        _testCtx.SetCurrentTime(DateTime.Today.AddDays(1).AddHours(17));
+        var consumer = SmartGridReadyEnergyConsumerBuilder.HeatPump.Build();
+
+        var builder = new EnergyManagerBuilder(_testCtx, _logger, _mqttEntityManager, _fileStorage, _testCtx.Scheduler).AddConsumer(consumer);
+        _ = await builder.Build();
+
+        // Setup: Get into Blocked state with Critical energy need
+        _testCtx.TriggerStateChange(consumer.SmartGridReady!.StateSensor, "CriticalDemand");
+        _testCtx.TriggerStateChange(consumer.SmartGridReady!.SmartGridModeEntity, "Blocked");
+        _testCtx.TriggerStateChange(builder._grid.ExportEntity, "0");
+        _testCtx.TriggerStateChange(builder._grid.ImportEntity, "100");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(1));
+
+        //Act - Critical demand with energy available under peak load
+        _testCtx.TriggerStateChange(builder._grid.ImportEntity, "500");
+        _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(16));
+
+        //Assert - Should scale up even with some import as it's critical and under peak load
+        _testCtx.VerifySelectOptionPicked(consumer.SmartGridReady!.SmartGridModeEntity, SmartGridReadyMode.Normal.ToString(), Moq.Times.AtLeastOnce);
+    }
 }

@@ -150,19 +150,7 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         if (HomeAssistant.CurrentNumber.State == null)
             return (0, 0);
 
-        var uncorrectedLoad = LoadTimeFrameToCheckOnRebalance switch
-        {
-            LoadTimeFrames.Now => gridMonitor.CurrentLoadMinusBatteries,
-            LoadTimeFrames.SolarForecastNow => gridMonitor.CurrentLoadMinusBatteriesSolarCorrected,
-            LoadTimeFrames.SolarForecastNow50PercentCorrected => gridMonitor.CurrentLoadMinusBatteriesSolarCorrected50Percent,
-            LoadTimeFrames.SolarForecast30Minutes => gridMonitor.CurrentLoadMinusBatteriesSolarForecast30MinutesCorrected,
-            LoadTimeFrames.SolarForecast1Hour => gridMonitor.CurrentLoadMinusBatteriesSolarForecast1HourCorrected,
-            LoadTimeFrames.Last30Seconds => gridMonitor.AverageLoadMinusBatteries(TimeSpan.FromSeconds(30)),
-            LoadTimeFrames.LastMinute => gridMonitor.AverageLoadMinusBatteries(TimeSpan.FromMinutes(1)),
-            LoadTimeFrames.Last2Minutes => gridMonitor.AverageLoadMinusBatteries(TimeSpan.FromMinutes(2)),
-            LoadTimeFrames.Last5Minutes => gridMonitor.AverageLoadMinusBatteries(TimeSpan.FromMinutes(5)),
-            _ => throw new ArgumentOutOfRangeException()
-        };
+        var uncorrectedLoad = GetLoadForTimeFrame(gridMonitor, LoadTimeFrameToCheckOnRebalance);
         var consumerAverageLoadCorrection = consumerAverageLoadCorrections[LoadTimeFrameToCheckOnRebalance];
         var estimatedLoad = uncorrectedLoad + consumerAverageLoadCorrection + dynamicLoadAdjustments - dynamicLoadThatCanBeScaledDownOnBehalfOf;
 
