@@ -217,6 +217,7 @@ public class SmartGridReadyEnergyConsumerTests
         //Act
         _testCtx.TriggerStateChange(consumer.SmartGridReady!.StateSensor, "Demanded");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(3));
+        _testCtx.TriggerStateChange(builder._grid.ExportEntity, "1500");
         _testCtx.AdvanceTimeBy(TimeSpan.FromHours(1));
 
         //Assert
@@ -259,6 +260,7 @@ public class SmartGridReadyEnergyConsumerTests
         _testCtx.TriggerStateChange(consumer.SmartGridReady!.StateSensor, "Demanded");
         _testCtx.AdvanceTimeBy(TimeSpan.FromSeconds(10));
         _testCtx.TriggerStateChange(builder._grid.ImportEntity, "0");
+        _testCtx.TriggerStateChange(builder._grid.ExportEntity, "1500");
         _testCtx.AdvanceTimeBy(TimeSpan.FromMinutes(16));
 
         //Assert

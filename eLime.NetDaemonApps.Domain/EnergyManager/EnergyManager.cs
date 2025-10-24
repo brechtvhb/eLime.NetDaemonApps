@@ -162,11 +162,14 @@ public class EnergyManager : IDisposable
         var dynamicLoadConsumers = Consumers.OfType<IDynamicLoadConsumer>().ToList();
         var dynamicNetChange = 0d;
 
+        //Keep remaining peak load for running consumers in mind (eg: to avoid turning on devices when washer is pre-washing but still has to heat).
+        var expectedLoad = Math.Round(Consumers.Where(x => x.State.State == EnergyConsumerState.Running && x.PeakLoad > x.CurrentLoad).Sum(x => x.PeakLoad - x.CurrentLoad), 0);
+
         foreach (var dynamicLoadConsumer in dynamicLoadConsumers)
         {
             var consumer = Consumers.First(x => x.Name == dynamicLoadConsumer.Name);
             var dynamicLoadThatCanBeScaledDownOnBehalfOf = GetDynamicLoadThatCanBeScaledDownOnBehalfOf(consumer, dynamicNetChange);
-            var (current, netChange) = dynamicLoadConsumer.Rebalance(GridMonitor, consumerLoadCorrections, dynamicNetChange, dynamicLoadThatCanBeScaledDownOnBehalfOf, BatteryManager.MaximumDischargePower);
+            var (current, netChange) = dynamicLoadConsumer.Rebalance(GridMonitor, consumerLoadCorrections, expectedLoad, dynamicNetChange, dynamicLoadThatCanBeScaledDownOnBehalfOf, BatteryManager.MaximumDischargePower);
 
             if (netChange == 0)
                 continue;

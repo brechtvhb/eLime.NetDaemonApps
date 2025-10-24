@@ -49,6 +49,7 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
     public BalancingMethod BalancingMethod => State.BalancingMethod ?? BalancingMethod.SolarOnly;
     public string BalanceOnBehalfOf => State.BalanceOnBehalfOf ?? IDynamicLoadConsumer.CONSUMER_GROUP_SELF;
     public AllowBatteryPower AllowBatteryPower => State.AllowBatteryPower ?? AllowBatteryPower.No;
+    public bool ApplyExpectedLoadCorrections => false;
 
     internal List<Car> Cars { get; set; } = [];
     private Car? ConnectedCar => Cars.FirstOrDefault(x => x.IsConnectedToHomeCharger);
@@ -138,7 +139,7 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         }
     }
 
-    public (double current, double netPowerChange) Rebalance(IGridMonitor gridMonitor, Dictionary<LoadTimeFrames, double> consumerAverageLoadCorrections, double dynamicLoadAdjustments, double dynamicLoadThatCanBeScaledDownOnBehalfOf, double maximumDischargePower)
+    public (double current, double netPowerChange) Rebalance(IGridMonitor gridMonitor, Dictionary<LoadTimeFrames, double> consumerAverageLoadCorrections, double expectedLoadCorrections, double dynamicLoadAdjustments, double dynamicLoadThatCanBeScaledDownOnBehalfOf, double maximumDischargePower)
     {
         if (State.State != EnergyConsumerState.Running)
             return (0, 0);

@@ -273,6 +273,8 @@ public abstract class EnergyConsumer : IDisposable
 
         canStart = true;
 
+        //TODO: allow consumers to consume power from battery
+
         foreach (var timeFrameToValidate in LoadTimeFramesToCheckOnStart)
         {
             var uncorrectedLoad = timeFrameToValidate switch
@@ -292,7 +294,7 @@ public abstract class EnergyConsumer : IDisposable
             var consumerAverageLoadCorrection = consumerAverageLoadCorrections[timeFrameToValidate];
 
             var estimatedLoad = uncorrectedLoad + consumerAverageLoadCorrection + dynamicLoadAdjustments + startLoadAdjustments - dynamicLoadThatCanBeScaledDownOnBehalfOf;
-            if (this is not IDynamicLoadConsumer) //Ignore expectedLoadCorrections for dynamic consumers
+            if (this is not IDynamicLoadConsumer dynamicLoadConsumer || dynamicLoadConsumer.ApplyExpectedLoadCorrections)
                 estimatedLoad += expectedLoadCorrections;
 
             var allowed = State.State == EnergyConsumerState.CriticallyNeedsEnergy
