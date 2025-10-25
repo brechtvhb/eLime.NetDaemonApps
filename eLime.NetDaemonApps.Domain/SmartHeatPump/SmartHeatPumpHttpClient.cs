@@ -41,24 +41,20 @@ public class SmartHeatPumpHttpClient : ISmartHeatPumpHttpClient
             ]);
 
             var url = $"{_baseUrl}/save.php";
-            _logger.LogDebug("Sending maximum hot water temperature {Temperature}°C to heat pump at {Url}", temperature, url);
-
             var response = await _httpClient.PostAsync(url, formContent);
 
             if (response.IsSuccessStatusCode)
             {
-                _logger.LogInformation("Successfully set maximum hot water temperature to {Temperature}°C", temperature);
+                _logger.LogInformation("Successfully set maximum hot water temperature to {Temperature:F1}C", temperature);
                 return true;
             }
-            else
-            {
-                _logger.LogWarning("Failed to set maximum hot water temperature. Status code: {StatusCode}", response.StatusCode);
-                return false;
-            }
+
+            _logger.LogWarning("Failed to set maximum hot water temperature. Status code: {StatusCode}", response.StatusCode);
+            return false;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error setting maximum hot water temperature to {Temperature}°C", temperature);
+            _logger.LogError(ex, "Error setting maximum hot water temperature to {Temperature:F1}C", temperature);
             return false;
         }
     }

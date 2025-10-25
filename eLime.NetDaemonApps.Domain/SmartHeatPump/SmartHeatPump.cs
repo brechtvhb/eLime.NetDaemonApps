@@ -308,7 +308,6 @@ public class SmartHeatPump : IDisposable
     {
         try
         {
-            Context.Logger.LogInformation($"Setting maximum hot water temperature to {e.Temperature}.");
             TemperatureSettings.MaximumHotWaterTemperature = Convert.ToDecimal(e.Temperature);
             State.MaximumHotWaterTemperature = e.Temperature;
 
