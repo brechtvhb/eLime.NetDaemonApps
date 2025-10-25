@@ -21,6 +21,7 @@ public class SmartHeatPump : IDisposable
     internal SmartHeatPumpState State { get; private set; }
     internal SmartHeatPumpHomeAssistantEntities HomeAssistant { get; private set; }
     internal SmartHeatPumpMqttSensors MqttSensors { get; private set; }
+    internal ISmartHeatPumpHttpClient HttpClient { get; private set; }
 
     protected IDisposable? MonitoringTask { get; private set; }
 
@@ -61,11 +62,15 @@ public class SmartHeatPump : IDisposable
         HomeAssistant.HotWaterConsumedTodayDecimalsSensor.Changed += HotWaterSensor_changed;
         HomeAssistant.HotWaterProducedTodayIntegerSensor.Changed += HotWaterSensor_changed;
         HomeAssistant.HotWaterProducedTodayDecimalsSensor.Changed += HotWaterSensor_changed;
+        HomeAssistant.RemainingStandstillSensor.Changed += RemainingStandstillSensor_Changed;
 
         MqttSensors = new SmartHeatPumpMqttSensors(Context);
         MqttSensors.SmartGridReadyModeChanged += SmartGridReadyModeChangedEvent;
+        MqttSensors.MaximumHotWaterTemperatureChanged += MaximumHotWaterTemperatureChangedEvent;
         MqttSensors.ShowerRequested += OnShowerRequested;
         MqttSensors.BathRequested += OnBathRequested;
+
+        HttpClient = configuration.HttpClient;
 
         if (Context.DebounceDuration != TimeSpan.Zero)
             SaveAndPublishStateDebounceDispatcher = new DebounceDispatcher(Context.DebounceDuration);
@@ -75,8 +80,24 @@ public class SmartHeatPump : IDisposable
 
         await MqttSensors.CreateOrUpdateEntities();
         await GetAndSanitizeState();
-        MonitoringTask = Context.Scheduler.RunEvery(TimeSpan.FromSeconds(30), Context.Scheduler.Now, MonitorHeatPumpControls);
+        MonitoringTask = Context.Scheduler.RunEvery(TimeSpan.FromMinutes(1), Context.Scheduler.Now, MonitorHeatPumpControls);
         await SaveAndPublishState();
+    }
+
+    private async void RemainingStandstillSensor_Changed(object? sender, NumericSensorEventArgs e)
+    {
+        try
+        {
+            if (e.Sensor.State != 0)
+                return;
+
+            await ResolveRoomEnergyDemand(HomeAssistant.RoomTemperatureSensor.State);
+            await ResolveHotWaterEnergyDemand(HomeAssistant.HotWaterTemperatureSensor.State);
+        }
+        catch (Exception ex)
+        {
+            Context.Logger.LogError(ex, "Could not handle change of remaining stand still to 0.");
+        }
     }
 
     private async void RoomTemperatureSensor_Changed(object? sender, NumericSensorEventArgs e)
@@ -116,6 +137,7 @@ public class SmartHeatPump : IDisposable
         {
             State.RoomEnergyDemand = energyDemand;
             SetGlobalEnergyDemand();
+            await SetMaximumHotWaterTemperature();
             await DebounceSaveAndPublishState();
         }
     }
@@ -169,6 +191,7 @@ public class SmartHeatPump : IDisposable
         {
             State.HotWaterEnergyDemand = energyDemand;
             SetGlobalEnergyDemand();
+            await SetMaximumHotWaterTemperature();
             await DebounceSaveAndPublishState();
         }
     }
@@ -230,11 +253,23 @@ public class SmartHeatPump : IDisposable
         try
         {
             await DiscardBathAndShowerRequested();
+            await SynchronizeMaximumHotWaterTemperature();
         }
         catch (Exception ex)
         {
             Context.Logger.LogError(ex, "Could monitor heat pump controls");
         }
+    }
+
+    private async Task SynchronizeMaximumHotWaterTemperature()
+    {
+        var maximumHotWaterTemperature = await HttpClient.GetMaximumHotWaterTemperature();
+        if (maximumHotWaterTemperature == null || State.MaximumHotWaterTemperature == maximumHotWaterTemperature)
+            return;
+
+        Context.Logger.LogInformation($"Synchronized maximum hot water temperature from heat pump: {maximumHotWaterTemperature}°C");
+        State.MaximumHotWaterTemperature = maximumHotWaterTemperature.Value;
+        await DebounceSaveAndPublishState();
     }
 
     private async Task DiscardBathAndShowerRequested(bool forceDiscardShowerRequested = false, bool forceDiscardBathRequested = false, bool resolveHotWaterEnergyDemand = true)
@@ -266,6 +301,23 @@ public class SmartHeatPump : IDisposable
         catch (Exception ex)
         {
             Context.Logger.LogError(ex, "Could not handle Smart grid ready mode state change.");
+        }
+    }
+
+    private async void MaximumHotWaterTemperatureChangedEvent(object? sender, MaximumHotWaterTemperatureChangedEventArgs e)
+    {
+        try
+        {
+            Context.Logger.LogInformation($"Setting maximum hot water temperature to {e.Temperature}.");
+            TemperatureSettings.MaximumHotWaterTemperature = Convert.ToDecimal(e.Temperature);
+            State.MaximumHotWaterTemperature = e.Temperature;
+
+            await HttpClient.SetMaximumHotWaterTemperature(State.MaximumHotWaterTemperature);
+            await DebounceSaveAndPublishState();
+        }
+        catch (Exception ex)
+        {
+            Context.Logger.LogError(ex, "Could not handle maximum hot water temperature change.");
         }
     }
 
@@ -327,7 +379,6 @@ public class SmartHeatPump : IDisposable
 
         return Math.Round(producedToday / consumedToday, 2);
     }
-
 
     private async void StatusBytes_Changed(object? sender, TextSensorEventArgs e)
     {
@@ -446,7 +497,21 @@ public class SmartHeatPump : IDisposable
                 HomeAssistant.SmartGridReadyInput1.TurnOn();
                 break;
         }
+
+
         await DebounceSaveAndPublishState();
+    }
+
+    private async Task SetMaximumHotWaterTemperature()
+    {
+        var desiredMaximumHotWaterTemperature = 54.0m;
+        if (State.RoomEnergyDemand == HeatPumpEnergyDemand.CriticalDemand && State.HotWaterEnergyDemand != HeatPumpEnergyDemand.CriticalDemand)
+            desiredMaximumHotWaterTemperature = TemperatureSettings.ComfortHotWaterTemperature;
+        if (State.RoomEnergyDemand == HeatPumpEnergyDemand.Demanded && State.HotWaterEnergyDemand != HeatPumpEnergyDemand.CriticalDemand && State.HotWaterEnergyDemand != HeatPumpEnergyDemand.Demanded)
+            desiredMaximumHotWaterTemperature = TemperatureSettings.MinimumHotWaterTemperature;
+
+        if (desiredMaximumHotWaterTemperature != State.MaximumHotWaterTemperature)
+            await HttpClient.SetMaximumHotWaterTemperature(desiredMaximumHotWaterTemperature);
     }
 
     private async Task GetAndSanitizeState()
@@ -463,6 +528,9 @@ public class SmartHeatPump : IDisposable
 
         State.HeatCoefficientOfPerformance ??= CalculateCoefficientOfPerformance(HomeAssistant.HeatConsumedTodayIntegerSensor.State, HomeAssistant.HeatConsumedTodayDecimalsSensor.State, HomeAssistant.HeatProducedTodayIntegerSensor.State, HomeAssistant.HeatProducedTodayDecimalsSensor.State);
         State.HotWaterCoefficientOfPerformance ??= CalculateCoefficientOfPerformance(HomeAssistant.HotWaterConsumedTodayIntegerSensor.State, HomeAssistant.HotWaterConsumedTodayDecimalsSensor.State, HomeAssistant.HotWaterProducedTodayIntegerSensor.State, HomeAssistant.HotWaterProducedTodayDecimalsSensor.State);
+
+        if (State.MaximumHotWaterTemperature == 0)
+            State.MaximumHotWaterTemperature = await HttpClient.GetMaximumHotWaterTemperature() ?? 54.0m;
 
         await ResolveRoomEnergyDemand(HomeAssistant.RoomTemperatureSensor.State);
         await ResolveHotWaterEnergyDemand(HomeAssistant.HotWaterTemperatureSensor.State);
@@ -488,7 +556,10 @@ public class SmartHeatPump : IDisposable
     public void Dispose()
     {
         MqttSensors.SmartGridReadyModeChanged -= SmartGridReadyModeChangedEvent;
+        MqttSensors.MaximumHotWaterTemperatureChanged -= MaximumHotWaterTemperatureChangedEvent;
         MqttSensors.Dispose();
+
+        HttpClient?.Dispose();
 
         HomeAssistant.SourcePumpRunningSensor.TurnedOn -= SourcePumpRunningSensor_TurnedOn;
         HomeAssistant.SourcePumpRunningSensor.TurnedOff -= SourcePumpRunningSensor_TurnedOff;

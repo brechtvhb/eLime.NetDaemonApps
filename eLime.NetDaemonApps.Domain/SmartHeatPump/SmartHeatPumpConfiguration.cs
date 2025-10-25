@@ -33,8 +33,10 @@ public class SmartHeatPumpConfiguration
     public NumericSensor HotWaterProducedTodayIntegerSensor { get; private init; }
     public NumericSensor HotWaterProducedTodayDecimalsSensor { get; private init; }
 
+    public ISmartHeatPumpHttpClient HttpClient { get; private init; }
+
     public SmartHeatPumpTemperatureConfiguration TemperatureConfiguration { get; private init; }
-    public SmartHeatPumpConfiguration(IHaContext haContext, ILogger logger, IScheduler scheduler, IFileStorage fileStorage, IMqttEntityManager mqttEntityManager, SmartHeatPumpConfig config, TimeSpan debounceDuration)
+    public SmartHeatPumpConfiguration(IHaContext haContext, ILogger logger, IScheduler scheduler, IFileStorage fileStorage, IMqttEntityManager mqttEntityManager, SmartHeatPumpConfig config, TimeSpan debounceDuration, ISmartHeatPumpHttpClient? httpClient = null)
     {
         Context = new SmartHeatPumpContext(haContext, logger, scheduler, fileStorage, mqttEntityManager, debounceDuration);
 
@@ -55,6 +57,8 @@ public class SmartHeatPumpConfiguration
         HotWaterConsumedTodayDecimalsSensor = NumericSensor.Create(Context.HaContext, config.HotWaterConsumedTodayDecimalsSensor);
         HotWaterProducedTodayIntegerSensor = NumericSensor.Create(Context.HaContext, config.HotWaterProducedTodayIntegerSensor);
         HotWaterProducedTodayDecimalsSensor = NumericSensor.Create(Context.HaContext, config.HotWaterProducedTodayDecimalsSensor);
+
+        HttpClient = httpClient ?? new SmartHeatPumpHttpClient(config.IsgBaseUrl, logger);
 
         TemperatureConfiguration = new SmartHeatPumpTemperatureConfiguration(Context, config.Temperatures);
     }

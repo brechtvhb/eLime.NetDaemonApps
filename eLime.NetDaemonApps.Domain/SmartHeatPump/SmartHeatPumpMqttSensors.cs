@@ -13,7 +13,7 @@ public class SmartHeatPumpMqttSensors : IDisposable
     protected readonly SmartHeatPumpContext Context;
 
     private readonly string SELECT_SMART_GRID_READY_MODE;
-
+    private readonly string NUMBER_MAXIMUM_HOT_WATER_TEMPERATURE;
     private readonly string SENSOR_ENERGY_DEMAND;
 
     private readonly string BUTTON_REQUEST_SHOWER;
@@ -33,7 +33,7 @@ public class SmartHeatPumpMqttSensors : IDisposable
         Context = context;
         Device = new Device { Identifiers = ["smart_heat_pump"], Name = "Smart heat pump", Manufacturer = "Me" };
         SELECT_SMART_GRID_READY_MODE = "select.heat_pump_smart_grid_ready_mode";
-
+        NUMBER_MAXIMUM_HOT_WATER_TEMPERATURE = "number.heat_pump_maximum_hot_water_temperature";
         SENSOR_ENERGY_DEMAND = "sensor.heat_pump_energy_demand";
 
         BUTTON_REQUEST_SHOWER = "button.heat_pump_request_shower";
@@ -49,12 +49,18 @@ public class SmartHeatPumpMqttSensors : IDisposable
     }
 
     public event EventHandler<SmartGridReadyModeChangedEventArgs>? SmartGridReadyModeChanged;
+    public event EventHandler<MaximumHotWaterTemperatureChangedEventArgs>? MaximumHotWaterTemperatureChanged;
     public event EventHandler<EventArgs> ShowerRequested;
     public event EventHandler<EventArgs> BathRequested;
 
     private void OnSmartGridReadyModeChanged(SmartGridReadyModeChangedEventArgs e)
     {
         SmartGridReadyModeChanged?.Invoke(this, e);
+    }
+
+    private void OnMaximumHotWaterTemperatureChanged(MaximumHotWaterTemperatureChangedEventArgs e)
+    {
+        MaximumHotWaterTemperatureChanged?.Invoke(this, e);
     }
 
     private void OnShowerRequested(EventArgs e)
@@ -68,6 +74,7 @@ public class SmartHeatPumpMqttSensors : IDisposable
     }
 
     private IDisposable? SmartGridReadyModeObservable { get; set; }
+    private IDisposable? MaximumHotWaterTemperatureObservable { get; set; }
     private IDisposable? RequestShowerObservable { get; set; }
     private IDisposable? RequestBathObservable { get; set; }
 
@@ -78,6 +85,12 @@ public class SmartHeatPumpMqttSensors : IDisposable
         await Context.MqttEntityManager.CreateAsync(SELECT_SMART_GRID_READY_MODE, smartGridReadyCreationOptions, smartGridReadySelectOptions);
         var smartGridReadyModeObservable = await Context.MqttEntityManager.PrepareCommandSubscriptionAsync(SELECT_SMART_GRID_READY_MODE);
         SmartGridReadyModeObservable = smartGridReadyModeObservable.SubscribeAsync(SmartGridReadyModeChangedEventHandler());
+
+        var maximumHotWaterTemperatureCreationOptions = new EntityCreationOptions(UniqueId: NUMBER_MAXIMUM_HOT_WATER_TEMPERATURE, Name: "Maximum hot water temperature", Persist: true);
+        var maximumHotWaterTemperatureNumberOptions = new NumberOptions { Icon = "fapro-duotone:temperature-hot", Device = Device, Min = 40, Max = 60, Step = 0.5, UnitOfMeasurement = "°C" };
+        await Context.MqttEntityManager.CreateAsync(NUMBER_MAXIMUM_HOT_WATER_TEMPERATURE, maximumHotWaterTemperatureCreationOptions, maximumHotWaterTemperatureNumberOptions);
+        var maximumHotWaterTemperatureObservable = await Context.MqttEntityManager.PrepareCommandSubscriptionAsync(NUMBER_MAXIMUM_HOT_WATER_TEMPERATURE);
+        MaximumHotWaterTemperatureObservable = maximumHotWaterTemperatureObservable.SubscribeAsync(MaximumHotWaterTemperatureChangedEventHandler());
 
         var energyDemandCreationOptions = new EntityCreationOptions(DeviceClass: "enum", UniqueId: SENSOR_ENERGY_DEMAND, Name: $"Energy demand", Persist: true);
         var energyDemandOptions = new EnumSensorOptions { Icon = "fapro-duotone:circle-bolt", Device = Device, Options = Enum<HeatPumpEnergyDemand>.AllValuesAsStringList() };
@@ -127,6 +140,21 @@ public class SmartHeatPumpMqttSensors : IDisposable
         };
     }
 
+    private Func<string, Task> MaximumHotWaterTemperatureChangedEventHandler()
+    {
+        return state =>
+        {
+            Context.Logger.LogDebug("Smart heat pump: Maximum hot water temperature changed to {Temperature}", state);
+
+            if (double.TryParse(state, NumberStyles.Any, CultureInfo.InvariantCulture, out var temperature))
+            {
+                OnMaximumHotWaterTemperatureChanged(MaximumHotWaterTemperatureChangedEventArgs.Create(temperature));
+            }
+
+            return Task.CompletedTask;
+        };
+    }
+
     private Func<string, Task> RequestShowerTriggeredHandler()
     {
         return state =>
@@ -155,6 +183,7 @@ public class SmartHeatPumpMqttSensors : IDisposable
     internal async Task PublishState(SmartHeatPumpState state)
     {
         await Context.MqttEntityManager.SetStateAsync(SELECT_SMART_GRID_READY_MODE, state.SmartGridReadyMode.ToString());
+        await Context.MqttEntityManager.SetStateAsync(NUMBER_MAXIMUM_HOT_WATER_TEMPERATURE, state.MaximumHotWaterTemperature.ToString("F0", CultureInfo.InvariantCulture));
         await Context.MqttEntityManager.SetStateAsync(SENSOR_ENERGY_DEMAND, state.EnergyDemand.ToString());
 
         await Context.MqttEntityManager.SetStateAsync(BINARY_SENSOR_SHOWER_REQUESTED, state.ShowerRequestedAt != null ? "ON" : "OFF");
@@ -170,6 +199,7 @@ public class SmartHeatPumpMqttSensors : IDisposable
     public void Dispose()
     {
         SmartGridReadyModeObservable?.Dispose();
+        MaximumHotWaterTemperatureObservable?.Dispose();
         RequestShowerObservable?.Dispose();
         RequestBathObservable?.Dispose();
     }
