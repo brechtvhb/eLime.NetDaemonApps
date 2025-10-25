@@ -48,7 +48,7 @@ public class SmartHeatPumpHttpClient : ISmartHeatPumpHttpClient
             if (response.IsSuccessStatusCode)
             {
                 var formattedResponse = await response.Content.ReadFromJsonAsync<IsgResponse>();
-                _logger.LogInformation("Successfully set maximum hot water temperature to {Temperature:F1}°C.\n{FormattedResponse}", temperature, formattedResponse?.Message);
+                _logger.LogInformation("Successfully set maximum hot water temperature to {Temperature:F1}°C. Response: {FormattedResponse}", temperature, formattedResponse?.Message);
                 return true;
             }
 
