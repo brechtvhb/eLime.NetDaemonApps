@@ -15,6 +15,8 @@ public class SmartHeatPumpMqttSensors : IDisposable
     private readonly string SELECT_SMART_GRID_READY_MODE;
     private readonly string NUMBER_MAXIMUM_HOT_WATER_TEMPERATURE;
     private readonly string SENSOR_ENERGY_DEMAND;
+    private readonly string SENSOR_ROOM_ENERGY_DEMAND;
+    private readonly string SENSOR_HOT_WATER_ENERGY_DEMAND;
 
     private readonly string BUTTON_REQUEST_SHOWER;
     private readonly string BUTTON_REQUEST_BATH;
@@ -35,6 +37,8 @@ public class SmartHeatPumpMqttSensors : IDisposable
         SELECT_SMART_GRID_READY_MODE = "select.heat_pump_smart_grid_ready_mode";
         NUMBER_MAXIMUM_HOT_WATER_TEMPERATURE = "number.heat_pump_maximum_hot_water_temperature";
         SENSOR_ENERGY_DEMAND = "sensor.heat_pump_energy_demand";
+        SENSOR_ROOM_ENERGY_DEMAND = "sensor.heat_pump_room_energy_demand";
+        SENSOR_HOT_WATER_ENERGY_DEMAND = "sensor.heat_pump_hot_water_energy_demand";
 
         BUTTON_REQUEST_SHOWER = "button.heat_pump_request_shower";
         BUTTON_REQUEST_BATH = "button.heat_pump_request_bath";
@@ -96,6 +100,14 @@ public class SmartHeatPumpMqttSensors : IDisposable
         var energyDemandOptions = new EnumSensorOptions { Icon = "fapro-duotone:circle-bolt", Device = Device, Options = Enum<HeatPumpEnergyDemand>.AllValuesAsStringList() };
         await Context.MqttEntityManager.CreateAsync(SENSOR_ENERGY_DEMAND, energyDemandCreationOptions, energyDemandOptions);
 
+        var roomEnergyDemandCreationOptions = new EntityCreationOptions(DeviceClass: "enum", UniqueId: SENSOR_ROOM_ENERGY_DEMAND, Name: $"Room energy demand", Persist: true);
+        var roomEnergyDemandOptions = new EnumSensorOptions { Icon = "fapro-duotone:house", Device = Device, Options = Enum<HeatPumpEnergyDemand>.AllValuesAsStringList() };
+        await Context.MqttEntityManager.CreateAsync(SENSOR_ROOM_ENERGY_DEMAND, roomEnergyDemandCreationOptions, roomEnergyDemandOptions);
+
+        var hotWaterEnergyDemandCreationOptions = new EntityCreationOptions(DeviceClass: "enum", UniqueId: SENSOR_HOT_WATER_ENERGY_DEMAND, Name: $"Hot water energy demand", Persist: true);
+        var hotWaterEnergyDemandOptions = new EnumSensorOptions { Icon = "fapro-duotone:droplet", Device = Device, Options = Enum<HeatPumpEnergyDemand>.AllValuesAsStringList() };
+        await Context.MqttEntityManager.CreateAsync(SENSOR_HOT_WATER_ENERGY_DEMAND, hotWaterEnergyDemandCreationOptions, hotWaterEnergyDemandOptions);
+
         var requestShowerCreationOptions = new EntityCreationOptions(UniqueId: BUTTON_REQUEST_SHOWER, Name: "Request shower", Persist: true);
         var requestShowerButtonOptions = new ButtonOptions { Icon = "fapro-duotone:shower", Device = Device, PayloadPress = "REQUEST" };
         await Context.MqttEntityManager.CreateAsync(BUTTON_REQUEST_SHOWER, requestShowerCreationOptions, requestShowerButtonOptions);
@@ -129,7 +141,6 @@ public class SmartHeatPumpMqttSensors : IDisposable
         var expectedPowerConsumptionCreationOptions = new EntityCreationOptions(UniqueId: SENSOR_EXPECTED_POWER_CONSUMPTION, Name: "Expected power consumption", DeviceClass: "power", Persist: true);
         var expectedPowerConsumptionSensorOptions = new NumericSensorOptions { UnitOfMeasurement = "W", Icon = "fapro-duotone:bolt-lightning", Device = Device };
         await Context.MqttEntityManager.CreateAsync(SENSOR_EXPECTED_POWER_CONSUMPTION, expectedPowerConsumptionCreationOptions, expectedPowerConsumptionSensorOptions);
-
     }
     private Func<string, Task> SmartGridReadyModeChangedEventHandler()
     {
@@ -185,6 +196,8 @@ public class SmartHeatPumpMqttSensors : IDisposable
         await Context.MqttEntityManager.SetStateAsync(SELECT_SMART_GRID_READY_MODE, state.SmartGridReadyMode.ToString());
         await Context.MqttEntityManager.SetStateAsync(NUMBER_MAXIMUM_HOT_WATER_TEMPERATURE, state.MaximumHotWaterTemperature.ToString("F0", CultureInfo.InvariantCulture));
         await Context.MqttEntityManager.SetStateAsync(SENSOR_ENERGY_DEMAND, state.EnergyDemand.ToString());
+        await Context.MqttEntityManager.SetStateAsync(SENSOR_ROOM_ENERGY_DEMAND, state.RoomEnergyDemand.ToString());
+        await Context.MqttEntityManager.SetStateAsync(SENSOR_HOT_WATER_ENERGY_DEMAND, state.HotWaterEnergyDemand.ToString());
 
         await Context.MqttEntityManager.SetStateAsync(BINARY_SENSOR_SHOWER_REQUESTED, state.ShowerRequestedAt != null ? "ON" : "OFF");
         await Context.MqttEntityManager.SetStateAsync(BINARY_SENSOR_BATH_REQUESTED, state.BathRequestedAt != null ? "ON" : "OFF");
