@@ -194,7 +194,7 @@ public class SmartHeatPumpMqttSensors : IDisposable
     internal async Task PublishState(SmartHeatPumpState state)
     {
         await Context.MqttEntityManager.SetStateAsync(SELECT_SMART_GRID_READY_MODE, state.SmartGridReadyMode.ToString());
-        await Context.MqttEntityManager.SetStateAsync(NUMBER_MAXIMUM_HOT_WATER_TEMPERATURE, state.MaximumHotWaterTemperature.ToString("F0", CultureInfo.InvariantCulture));
+        await Context.MqttEntityManager.SetStateAsync(NUMBER_MAXIMUM_HOT_WATER_TEMPERATURE, state.MaximumHotWaterTemperature.ToString("F1", CultureInfo.InvariantCulture));
         await Context.MqttEntityManager.SetStateAsync(SENSOR_ENERGY_DEMAND, state.EnergyDemand.ToString());
         await Context.MqttEntityManager.SetStateAsync(SENSOR_ROOM_ENERGY_DEMAND, state.RoomEnergyDemand.ToString());
         await Context.MqttEntityManager.SetStateAsync(SENSOR_HOT_WATER_ENERGY_DEMAND, state.HotWaterEnergyDemand.ToString());
