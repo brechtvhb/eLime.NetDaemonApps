@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using System.Globalization;
+using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
@@ -43,9 +44,11 @@ public class SmartHeatPumpHttpClient : ISmartHeatPumpHttpClient
             var url = $"{_baseUrl}/save.php";
             var response = await _httpClient.PostAsync(url, formContent);
 
+
             if (response.IsSuccessStatusCode)
             {
-                _logger.LogInformation("Successfully set maximum hot water temperature to {Temperature:F1}C", temperature);
+                var formattedResponse = await response.Content.ReadFromJsonAsync<IsgResponse>();
+                _logger.LogInformation("Successfully set maximum hot water temperature to {Temperature:F1}°C.\n{FormattedResponse}", temperature, formattedResponse?.Message);
                 return true;
             }
 
@@ -54,7 +57,7 @@ public class SmartHeatPumpHttpClient : ISmartHeatPumpHttpClient
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error setting maximum hot water temperature to {Temperature:F1}C", temperature);
+            _logger.LogError(ex, "Error setting maximum hot water temperature to {Temperature:F1}°C", temperature);
             return false;
         }
     }
@@ -88,7 +91,7 @@ public class SmartHeatPumpHttpClient : ISmartHeatPumpHttpClient
             var rawValue = match.Groups[1].Value;   // e.g., "54,0"
             var normalizedValue = rawValue.Replace(',', '.');  // "54.0"
 
-            if (decimal.TryParse(normalizedValue, NumberStyles.Float, CultureInfo.InvariantCulture, out decimal temperature))
+            if (decimal.TryParse(normalizedValue, NumberStyles.Float, CultureInfo.InvariantCulture, out var temperature))
             {
                 _logger.LogTrace("Successfully fetched maximum hot water temperature: {Temperature}°C", temperature);
                 return temperature;
@@ -108,4 +111,10 @@ public class SmartHeatPumpHttpClient : ISmartHeatPumpHttpClient
     {
         _httpClient?.Dispose();
     }
+}
+
+public class IsgResponse
+{
+    public bool Success { get; set; }
+    public string Message { get; set; }
 }
