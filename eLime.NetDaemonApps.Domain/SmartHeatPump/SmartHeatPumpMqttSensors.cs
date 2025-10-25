@@ -87,7 +87,7 @@ public class SmartHeatPumpMqttSensors : IDisposable
         SmartGridReadyModeObservable = smartGridReadyModeObservable.SubscribeAsync(SmartGridReadyModeChangedEventHandler());
 
         var maximumHotWaterTemperatureCreationOptions = new EntityCreationOptions(UniqueId: NUMBER_MAXIMUM_HOT_WATER_TEMPERATURE, Name: "Maximum hot water temperature", Persist: true);
-        var maximumHotWaterTemperatureNumberOptions = new NumberOptions { Icon = "fapro-duotone:temperature-hot", Device = Device, Min = 40, Max = 60, Step = 0.5, UnitOfMeasurement = "°C" };
+        var maximumHotWaterTemperatureNumberOptions = new NumberOptions { Icon = "fapro-duotone:temperature-high", Device = Device, Min = 40, Max = 60, Step = 0.5, UnitOfMeasurement = "°C" };
         await Context.MqttEntityManager.CreateAsync(NUMBER_MAXIMUM_HOT_WATER_TEMPERATURE, maximumHotWaterTemperatureCreationOptions, maximumHotWaterTemperatureNumberOptions);
         var maximumHotWaterTemperatureObservable = await Context.MqttEntityManager.PrepareCommandSubscriptionAsync(NUMBER_MAXIMUM_HOT_WATER_TEMPERATURE);
         MaximumHotWaterTemperatureObservable = maximumHotWaterTemperatureObservable.SubscribeAsync(MaximumHotWaterTemperatureChangedEventHandler());
