@@ -31,7 +31,7 @@ public class SmartHeatPumpHttpClient : ISmartHeatPumpHttpClient
                 new
                 {
                     name = "val60312",
-                    value = temperature.ToString("F1", CultureInfo.InvariantCulture)
+                    value = temperature.ToString("F1", new NumberFormatInfo { NumberDecimalSeparator = "," })
                 }
             };
 
