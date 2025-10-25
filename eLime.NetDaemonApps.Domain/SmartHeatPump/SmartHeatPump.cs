@@ -88,7 +88,7 @@ public class SmartHeatPump : IDisposable
     {
         try
         {
-            var recalculateEnergyDemand = e.New?.State == 0 && e.Old?.State != null && e.Old.State != 0 || e.New?.State != 0 && e.Old?.State is 0;
+            var recalculateEnergyDemand = e.New?.State is 0 && e.Old?.State != null && e.Old.State != 0 || e.New?.State != null && e.New?.State != 0 && e.Old?.State is 0;
             if (!recalculateEnergyDemand)
                 return;
 
