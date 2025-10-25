@@ -122,7 +122,8 @@ public class SmartHeatPump : IDisposable
         var energyDemand = HeatPumpEnergyDemand.NoDemand;
 
         // Only demand energy for room heating when not cooling and not in summer mode and not in standstill
-        if (HomeAssistant.IsCoolingSensor.IsOff() && HomeAssistant.IsSummerModeSensor.IsOff() && HomeAssistant.RemainingStandstillSensor.State == 0)
+        // Sure? keeping demand requirement would keep circulation pump running
+        if (HomeAssistant.IsCoolingSensor.IsOff() && HomeAssistant.IsSummerModeSensor.IsOff()/* && HomeAssistant.RemainingStandstillSensor.State == 0*/)
         {
             var roomTemperature = Convert.ToDecimal(temperature);
             if (roomTemperature < TemperatureSettings.MinimumRoomTemperature)
