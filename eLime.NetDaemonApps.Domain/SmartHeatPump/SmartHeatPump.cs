@@ -507,11 +507,11 @@ public class SmartHeatPump : IDisposable
 
     private async Task SetMaximumHotWaterTemperature()
     {
-        var desiredMaximumHotWaterTemperature = 54.0m;
-        if (State.RoomEnergyDemand == HeatPumpEnergyDemand.CriticalDemand && State.HotWaterEnergyDemand != HeatPumpEnergyDemand.CriticalDemand)
-            desiredMaximumHotWaterTemperature = TemperatureSettings.ComfortHotWaterTemperature;
-        if (State.RoomEnergyDemand == HeatPumpEnergyDemand.Demanded && State.HotWaterEnergyDemand != HeatPumpEnergyDemand.CriticalDemand && State.HotWaterEnergyDemand != HeatPumpEnergyDemand.Demanded)
-            desiredMaximumHotWaterTemperature = TemperatureSettings.MinimumHotWaterTemperature;
+        var desiredMaximumHotWaterTemperature = State.RoomEnergyDemand switch
+        {
+            HeatPumpEnergyDemand.CriticalDemand or HeatPumpEnergyDemand.Demanded when State.HotWaterEnergyDemand != HeatPumpEnergyDemand.CriticalDemand => TemperatureSettings.ComfortHotWaterTemperature,
+            _ => 54.0m
+        };
 
         if (desiredMaximumHotWaterTemperature != State.MaximumHotWaterTemperature)
             await HttpClient.SetMaximumHotWaterTemperature(desiredMaximumHotWaterTemperature);

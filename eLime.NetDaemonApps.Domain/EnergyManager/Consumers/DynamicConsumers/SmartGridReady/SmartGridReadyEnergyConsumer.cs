@@ -260,7 +260,7 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
 
         //Keep expected load corrections in mind before boosting
         estimatedLoad += expectedLoadCorrections;
-        var canBoost = State.State == EnergyConsumerState.CriticallyNeedsEnergy
+        var canBoost = State.State == EnergyConsumerState.CriticallyNeedsEnergy || smartGridMode == SmartGridReadyMode.Blocked
             ? estimatedLoad + PeakLoad < gridMonitor.PeakLoad //Will not turn on a load that would exceed current grid import peak
             : estimatedLoad < SwitchOnLoad;
 
