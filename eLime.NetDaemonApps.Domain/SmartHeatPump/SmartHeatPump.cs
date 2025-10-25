@@ -217,6 +217,8 @@ public class SmartHeatPump : IDisposable
                 State.ExpectedPowerConsumption = 1860;
             else if (State.HotWaterEnergyDemand is HeatPumpEnergyDemand.Demanded or HeatPumpEnergyDemand.CriticalDemand)
                 State.ExpectedPowerConsumption = 1800;
+            else
+                State.ExpectedPowerConsumption = 1200;
         }
         else
             State.ExpectedPowerConsumption = 1200;
