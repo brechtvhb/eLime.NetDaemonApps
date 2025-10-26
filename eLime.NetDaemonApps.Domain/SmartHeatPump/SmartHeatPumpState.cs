@@ -12,6 +12,7 @@ internal class SmartHeatPumpState
     public DateTimeOffset? SourceTemperatureUpdatedAt { get; set; }
     public DateTimeOffset? SourcePumpStartedAt { get; set; }
 
+    public decimal EcoRoomTemperature { get; set; }
     public decimal MaximumHotWaterTemperature { get; set; }
 
     public double? HeatCoefficientOfPerformance { get; set; }

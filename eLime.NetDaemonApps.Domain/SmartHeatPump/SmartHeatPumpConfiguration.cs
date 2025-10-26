@@ -20,6 +20,9 @@ public class SmartHeatPumpConfiguration
 
     public BinarySensor IsSummerModeSensor { get; private init; }
     public BinarySensor IsCoolingSensor { get; private init; }
+    public BinarySensor IsHeatingSensor { get; private init; }
+    public BinarySensor CirculationPumpRunningSensor { get; private init; }
+
     public TextSensor StatusBytesSensor { get; private init; }
     public NumericSensor RemainingStandstillSensor { get; private init; }
 
@@ -46,6 +49,9 @@ public class SmartHeatPumpConfiguration
         SourceTemperatureSensor = NumericSensor.Create(Context.HaContext, config.SourceTemperatureSensor);
         IsSummerModeSensor = BinarySensor.Create(Context.HaContext, config.IsSummerModeSensor);
         IsCoolingSensor = BinarySensor.Create(Context.HaContext, config.IsCoolingSensor);
+        IsHeatingSensor = BinarySensor.Create(Context.HaContext, config.ISHeatingSensor);
+        CirculationPumpRunningSensor = BinarySensor.Create(Context.HaContext, config.CirculationPumpRunningSensor);
+
         StatusBytesSensor = TextSensor.Create(Context.HaContext, config.StatusBytesSensor);
         RemainingStandstillSensor = NumericSensor.Create(Context.HaContext, config.RemainingStandstillSensor);
 

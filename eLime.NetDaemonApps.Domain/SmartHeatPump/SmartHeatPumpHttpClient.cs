@@ -62,6 +62,47 @@ public class SmartHeatPumpHttpClient : ISmartHeatPumpHttpClient
         }
     }
 
+    public async Task<bool> SetEcoRoomTemperature(decimal temperature)
+    {
+        try
+        {
+            var data = new[]
+            {
+                new
+                {
+                    name = "val17",
+                    value = temperature.ToString("F1", new NumberFormatInfo { NumberDecimalSeparator = "," })
+                }
+            };
+
+            var jsonData = JsonSerializer.Serialize(data);
+
+            var formContent = new FormUrlEncodedContent([
+                new KeyValuePair<string, string>("data", jsonData)
+            ]);
+
+            var url = $"{_baseUrl}/save.php";
+            var response = await _httpClient.PostAsync(url, formContent);
+
+
+            if (response.IsSuccessStatusCode)
+            {
+                var formattedResponse = await response.Content.ReadFromJsonAsync<IsgResponse>();
+                _logger.LogInformation("Successfully set eco room temperature to {Temperature:F1}°C. Response: {FormattedResponse}", temperature, formattedResponse?.Message);
+                return true;
+            }
+
+            _logger.LogWarning("Failed to set eco room temperature. Status code: {StatusCode}", response.StatusCode);
+            return false;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error setting eco room temperature to {Temperature:F1}°C", temperature);
+            return false;
+        }
+    }
+
+
     public async Task<decimal?> GetMaximumHotWaterTemperature()
     {
         try
@@ -106,6 +147,53 @@ public class SmartHeatPumpHttpClient : ISmartHeatPumpHttpClient
             return null;
         }
     }
+
+
+    public async Task<decimal?> GetEcoRoomTemperature()
+    {
+        try
+        {
+            var url = $"{_baseUrl}/?s=4,0";
+            _logger.LogTrace("Fetching eco room temperature at {Url}", url);
+
+            var response = await _httpClient.GetAsync(url);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning("Failed to fetch eco room temperature. Status code: {StatusCode}", response.StatusCode);
+                return null;
+            }
+
+            var html = await response.Content.ReadAsStringAsync();
+
+            const string pattern = @"jsvalues\['17'\]\['val'\]='([\d,]+)';";
+            var match = Regex.Match(html, pattern);
+
+            if (!match.Success)
+            {
+                _logger.LogWarning("Could not fid eco room temperature in response HTML");
+                return null;
+            }
+
+            var rawValue = match.Groups[1].Value;   // e.g., "21,8"
+            var normalizedValue = rawValue.Replace(',', '.');  // "21.8"
+
+            if (decimal.TryParse(normalizedValue, NumberStyles.Float, CultureInfo.InvariantCulture, out var temperature))
+            {
+                _logger.LogTrace("Successfully fetched eco room temperature: {Temperature}°C", temperature);
+                return temperature;
+            }
+
+            _logger.LogWarning("Failed to parse temperature value: {Value}", normalizedValue);
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching eco room temperature");
+            return null;
+        }
+    }
+
 
     public void Dispose()
     {

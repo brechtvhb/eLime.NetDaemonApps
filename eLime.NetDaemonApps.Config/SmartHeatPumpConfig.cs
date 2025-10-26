@@ -9,6 +9,8 @@ public class SmartHeatPumpConfig
     public string SourceTemperatureSensor { get; set; }
     public string IsSummerModeSensor { get; set; }
     public string IsCoolingSensor { get; set; }
+    public string ISHeatingSensor { get; set; }
+    public string CirculationPumpRunningSensor { get; set; }
     public string StatusBytesSensor { get; set; }
     public string RemainingStandstillSensor { get; set; }
     public string HeatConsumedTodayIntegerSensor { get; set; }

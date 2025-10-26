@@ -13,9 +13,12 @@ public class SmartHeatPumpHomeAssistantEntities(SmartHeatPumpConfiguration confi
     internal NumericSensor SourceTemperatureSensor = config.SourceTemperatureSensor;
     internal TextSensor StatusBytesSensor = config.StatusBytesSensor;
 
-    internal NumericSensor RemainingStandstillSensor = config.RemainingStandstillSensor;
-    internal BinarySensor IsCoolingSensor = config.IsCoolingSensor;
     internal BinarySensor IsSummerModeSensor = config.IsSummerModeSensor;
+    internal BinarySensor IsCoolingSensor = config.IsCoolingSensor;
+    internal BinarySensor IsHeatingSensor = config.IsHeatingSensor;
+    internal BinarySensor CirculationPumpRunningSensor = config.CirculationPumpRunningSensor;
+
+    internal NumericSensor RemainingStandstillSensor = config.RemainingStandstillSensor;
 
     internal NumericSensor HeatConsumedTodayIntegerSensor = config.HeatConsumedTodayIntegerSensor;
     internal NumericSensor HeatConsumedTodayDecimalsSensor = config.HeatConsumedTodayDecimalsSensor;
@@ -38,10 +41,13 @@ public class SmartHeatPumpHomeAssistantEntities(SmartHeatPumpConfiguration confi
         SourcePumpRunningSensor.Dispose();
         SourceTemperatureSensor.Dispose();
         StatusBytesSensor.Dispose();
-        RemainingStandstillSensor.Dispose();
 
         IsSummerModeSensor.Dispose();
         IsCoolingSensor.Dispose();
+        IsHeatingSensor.Dispose();
+        CirculationPumpRunningSensor.Dispose();
+
+        RemainingStandstillSensor.Dispose();
 
         HeatConsumedTodayIntegerSensor.Dispose();
         HeatConsumedTodayDecimalsSensor.Dispose();
