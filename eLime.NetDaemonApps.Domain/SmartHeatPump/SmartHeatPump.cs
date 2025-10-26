@@ -120,10 +120,12 @@ public class SmartHeatPump : IDisposable
     private bool ScaleUpEcoRoomTemperatureIfNeeded()
     {
         var canScaleUp = HomeAssistant.IsHeatingSensor.IsOn() && HomeAssistant.CirculationPumpRunningSensor.IsOn();
-        if (!canScaleUp || State.EcoRoomTemperature == TemperatureSettings.ComfortRoomTemperature)
+        var desiredTemperature = TemperatureSettings.ComfortRoomTemperature + 0.4m;
+
+        if (!canScaleUp || State.EcoRoomTemperature == desiredTemperature)
             return false;
 
-        HttpClient.SetEcoRoomTemperature(TemperatureSettings.ComfortRoomTemperature + 0.4m);
+        HttpClient.SetEcoRoomTemperature(desiredTemperature);
         return true;
 
     }
