@@ -123,7 +123,7 @@ public class SmartHeatPump : IDisposable
         if (!canScaleUp || State.EcoRoomTemperature == TemperatureSettings.ComfortRoomTemperature)
             return false;
 
-        HttpClient.SetEcoRoomTemperature(TemperatureSettings.ComfortRoomTemperature);
+        HttpClient.SetEcoRoomTemperature(TemperatureSettings.ComfortRoomTemperature + 0.4m);
         return true;
 
     }
