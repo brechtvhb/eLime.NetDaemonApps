@@ -234,10 +234,10 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
                     LogModeChange("Rebalance - Boosted => Normal - Exceeding peak load.");
                     DeBoost();
                     return (0, 0);
-                case SmartGridReadyMode.Normal:
+                case SmartGridReadyMode.Normal when IsRunning:
                     LogModeChange("Rebalance - Normal => Blocked - Exceeding peak load.");
                     Block();
-                    return (0, 0);
+                    return (0, HomeAssistant.PowerConsumptionSensor.State.Value - 25);
             }
         }
         var shouldDeBoost = BalancingMethod switch

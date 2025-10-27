@@ -163,13 +163,18 @@ public class SmartHeatPump : IDisposable
 
     private bool ScaleUpEcoRoomTemperatureIfNeeded()
     {
+        //Set equal to comfort temp when is heating turns off?
         var canScaleUp = HomeAssistant.IsHeatingSensor.IsOn() && HomeAssistant.CirculationPumpRunningSensor.IsOn();
-        var desiredTemperature = TemperatureSettings.ComfortRoomTemperature + 0.4m;
+        var desiredTemperature = Convert.ToDecimal(HomeAssistant.RoomTemperatureSensor.State) + 0.5m; //Offset as heat pump probe is 0.5 °C wrong ...
+
+        if (desiredTemperature > 22.2m)
+            desiredTemperature = 22.2m;
 
         if (!canScaleUp || State.EcoRoomTemperature == desiredTemperature)
             return false;
 
         HttpClient.SetEcoRoomTemperature(desiredTemperature);
+        State.EcoRoomTemperature = desiredTemperature;
         return true;
 
     }
@@ -197,6 +202,7 @@ public class SmartHeatPump : IDisposable
             return false;
 
         HttpClient.SetEcoRoomTemperature(20.8m);
+        State.EcoRoomTemperature = 20.8m;
         return true;
 
     }
@@ -332,7 +338,7 @@ public class SmartHeatPump : IDisposable
         if (HomeAssistant.RemainingStandstillSensor.State > 0)
             State.ExpectedPowerConsumption = 25;
 
-        else if (hotWaterTemperature != 0 && TemperatureSettings.MaximumHotWaterTemperature - 4 >= hotWaterTemperature)
+        else if (hotWaterTemperature != 0 && State.MaximumHotWaterTemperature - 5 >= hotWaterTemperature)
         {
             if (State.BathRequestedAt != null || State.HotWaterEnergyDemand is HeatPumpEnergyDemand.CanUse)
                 State.ExpectedPowerConsumption = 2100;
@@ -651,8 +657,11 @@ public class SmartHeatPump : IDisposable
             _ => 54.0m
         };
 
-        if (desiredMaximumHotWaterTemperature != State.MaximumHotWaterTemperature)
-            await HttpClient.SetMaximumHotWaterTemperature(desiredMaximumHotWaterTemperature);
+        if (desiredMaximumHotWaterTemperature == State.MaximumHotWaterTemperature)
+            return;
+
+        await HttpClient.SetMaximumHotWaterTemperature(desiredMaximumHotWaterTemperature);
+        State.MaximumHotWaterTemperature = desiredMaximumHotWaterTemperature;
     }
 
     private async Task GetAndSanitizeState()

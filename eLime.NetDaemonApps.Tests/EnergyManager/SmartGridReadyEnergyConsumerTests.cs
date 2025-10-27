@@ -237,6 +237,7 @@ public class SmartGridReadyEnergyConsumerTests
         _ = await builder.Build();
         _testCtx.TriggerStateChange(builder._grid.ExportEntity, "0");
         _testCtx.TriggerStateChange(builder._grid.ImportEntity, "2600");
+        _testCtx.TriggerStateChange(consumer.PowerUsageEntity, "1200");
 
         //Act
         _testCtx.TriggerStateChange(consumer.SmartGridReady!.StateSensor, "Demanded");
@@ -257,6 +258,7 @@ public class SmartGridReadyEnergyConsumerTests
         _ = await builder.Build();
         _testCtx.TriggerStateChange(builder._grid.ExportEntity, "0");
         _testCtx.TriggerStateChange(builder._grid.ImportEntity, "2600");
+        _testCtx.TriggerStateChange(consumer.PowerUsageEntity, "1200");
 
         //Act
         _testCtx.TriggerStateChange(consumer.SmartGridReady!.StateSensor, "Demanded");
