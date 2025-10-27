@@ -120,12 +120,13 @@ public class SmartHeatPump : IDisposable
     private bool ScaleUpEcoRoomTemperatureIfNeeded()
     {
         var canScaleUp = HomeAssistant.IsHeatingSensor.IsOn() && HomeAssistant.CirculationPumpRunningSensor.IsOn();
-        var desiredTemperature = TemperatureSettings.ComfortRoomTemperature + 0.4m;
+        var desiredTemperature = Convert.ToDecimal(HomeAssistant.RoomTemperatureSensor.State) + 0.5m; //Offset as heat pump probe is 0.5 °C wrong ...
 
         if (!canScaleUp || State.EcoRoomTemperature == desiredTemperature)
             return false;
 
         HttpClient.SetEcoRoomTemperature(desiredTemperature);
+        State.EcoRoomTemperature = desiredTemperature;
         return true;
 
     }
@@ -153,6 +154,7 @@ public class SmartHeatPump : IDisposable
             return false;
 
         HttpClient.SetEcoRoomTemperature(20.8m);
+        State.EcoRoomTemperature = 20.8m;
         return true;
 
     }
@@ -607,8 +609,11 @@ public class SmartHeatPump : IDisposable
             _ => 54.0m
         };
 
-        if (desiredMaximumHotWaterTemperature != State.MaximumHotWaterTemperature)
-            await HttpClient.SetMaximumHotWaterTemperature(desiredMaximumHotWaterTemperature);
+        if (desiredMaximumHotWaterTemperature == State.MaximumHotWaterTemperature)
+            return;
+
+        await HttpClient.SetMaximumHotWaterTemperature(desiredMaximumHotWaterTemperature);
+        State.MaximumHotWaterTemperature = desiredMaximumHotWaterTemperature;
     }
 
     private async Task GetAndSanitizeState()
