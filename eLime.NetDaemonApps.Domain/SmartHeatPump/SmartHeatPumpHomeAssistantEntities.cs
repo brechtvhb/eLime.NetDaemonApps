@@ -1,6 +1,7 @@
 ﻿using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
 using eLime.NetDaemonApps.Domain.Entities.TextSensors;
+using eLime.NetDaemonApps.Domain.Entities.Weather;
 
 namespace eLime.NetDaemonApps.Domain.SmartHeatPump;
 
@@ -32,6 +33,8 @@ public class SmartHeatPumpHomeAssistantEntities(SmartHeatPumpConfiguration confi
 
     internal NumericSensor RoomTemperatureSensor = config.TemperatureConfiguration.RoomTemperatureSensor;
     internal NumericSensor HotWaterTemperatureSensor = config.TemperatureConfiguration.HotWaterTemperatureSensor;
+
+    internal Weather WeatherForecast = config.WeatherForecast;
 
 
     public void Dispose()

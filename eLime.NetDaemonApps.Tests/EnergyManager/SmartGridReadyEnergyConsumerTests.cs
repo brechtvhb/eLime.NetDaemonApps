@@ -185,6 +185,8 @@ public class SmartGridReadyEnergyConsumerTests
         // Arrange
         var today = DateTime.Today;
         var daysUntilMonday = ((int)DayOfWeek.Monday - (int)today.DayOfWeek + 7) % 7;
+        if (daysUntilMonday == 0)
+            daysUntilMonday = 7;
         var firstMonday = today.AddDays(daysUntilMonday);
 
         _testCtx.SetCurrentTime(firstMonday.AddHours(17));

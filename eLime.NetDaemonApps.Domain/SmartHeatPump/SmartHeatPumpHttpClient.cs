@@ -88,7 +88,7 @@ public class SmartHeatPumpHttpClient : ISmartHeatPumpHttpClient
             if (response.IsSuccessStatusCode)
             {
                 var formattedResponse = await response.Content.ReadFromJsonAsync<IsgResponse>();
-                _logger.LogInformation("Successfully set eco room temperature to {Temperature:F1}°C. Response: {FormattedResponse}", temperature, formattedResponse?.Message);
+                _logger.LogInformation("Successfully set eco room temperature to {Temperature:F1} °C. Response: {FormattedResponse}", temperature, formattedResponse?.Message);
                 return true;
             }
 
@@ -134,7 +134,7 @@ public class SmartHeatPumpHttpClient : ISmartHeatPumpHttpClient
 
             if (decimal.TryParse(normalizedValue, NumberStyles.Float, CultureInfo.InvariantCulture, out var temperature))
             {
-                _logger.LogTrace("Successfully fetched maximum hot water temperature: {Temperature}°C", temperature);
+                _logger.LogTrace("Successfully fetched maximum hot water temperature: {Temperature} °C", temperature);
                 return temperature;
             }
 

@@ -85,7 +85,51 @@ public class SmartHeatPump : IDisposable
         await MqttSensors.CreateOrUpdateEntities();
         await GetAndSanitizeState();
         MonitoringTask = Context.Scheduler.RunEvery(TimeSpan.FromMinutes(1), Context.Scheduler.Now, MonitorHeatPumpControls);
+
+        var nightlyCheck1 = new TimeOnly(22, 00);
+        var nightlyCheck1DateTime = nightlyCheck1.GetUtcDateTimeFromLocalTimeOnly(Context.Scheduler.Now.DateTime, "Europe/Brussels");
+        if (nightlyCheck1DateTime <= Context.Scheduler.Now.DateTime)
+            nightlyCheck1DateTime = nightlyCheck1DateTime.AddDays(1);
+
+        var nightlyCheck2 = new TimeOnly(3, 00);
+        var nightlyCheck2DateTime = nightlyCheck2.GetUtcDateTimeFromLocalTimeOnly(Context.Scheduler.Now.DateTime, "Europe/Brussels");
+        if (nightlyCheck2DateTime <= Context.Scheduler.Now.DateTime)
+            nightlyCheck2DateTime = nightlyCheck2DateTime.AddDays(1);
+
+        Context.Scheduler.RunEvery(TimeSpan.FromDays(1), nightlyCheck1DateTime, NightlyBoostIfHeatIsNeeded);
+        Context.Scheduler.RunEvery(TimeSpan.FromDays(1), nightlyCheck2DateTime, NightlyBoostIfHeatIsNeeded);
         await SaveAndPublishState();
+    }
+
+    private async void NightlyBoostIfHeatIsNeeded()
+    {
+        try
+        {
+            if (HomeAssistant.IsSummerModeSensor.IsOn())
+                return;
+
+            var averagePredictedTemperature = HomeAssistant.WeatherForecast.Attributes?.Forecast?.Take(24).Average(x => x.Temperature);
+
+            if (averagePredictedTemperature == null)
+                return;
+
+            var desiredRoomTemperature = (TemperatureSettings.ComfortRoomTemperature + TemperatureSettings.MinimumRoomTemperature) / 2;
+            var currentRoomTemperature = Convert.ToDecimal(HomeAssistant.RoomTemperatureSensor.State);
+
+            if (currentRoomTemperature == 0)
+                return;
+
+            if (averagePredictedTemperature > 10 || currentRoomTemperature >= desiredRoomTemperature)
+                return;
+
+            Context.Logger.LogInformation("Setting smart grid ready mode to boosted during nightly check as heat is needed.");
+            State.SmartGridReadyMode = SmartGridReadyMode.Boosted;
+            await SetSmartGridReadyInputs();
+        }
+        catch (Exception ex)
+        {
+            Context.Logger.LogError(ex, "Could not set smart grid ready mode to boosted during nightly check.");
+        }
     }
 
     private async void CirculationPumpRunningSensor_Changed(object? sender, BinarySensorEventArgs e)

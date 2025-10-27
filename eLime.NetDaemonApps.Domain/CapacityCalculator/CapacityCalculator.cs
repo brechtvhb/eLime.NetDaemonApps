@@ -40,7 +40,6 @@ public class CapacityCalculator
         EnsureSensorsExist().RunSync();
         InitializeState();
 
-        //Testing time zone shit
         var startTime = new TimeOnly(00, 01);
         var startFrom = startTime.GetUtcDateTimeFromLocalTimeOnly(scheduler.Now.DateTime, "Europe/Brussels").AddDays(1);
 

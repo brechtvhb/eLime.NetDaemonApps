@@ -2,6 +2,7 @@
 using eLime.NetDaemonApps.Domain.Entities.BinarySensors;
 using eLime.NetDaemonApps.Domain.Entities.NumericSensors;
 using eLime.NetDaemonApps.Domain.Entities.TextSensors;
+using eLime.NetDaemonApps.Domain.Entities.Weather;
 using eLime.NetDaemonApps.Domain.Storage;
 using Microsoft.Extensions.Logging;
 using NetDaemon.Extensions.MqttEntityManager;
@@ -36,6 +37,7 @@ public class SmartHeatPumpConfiguration
     public NumericSensor HotWaterProducedTodayIntegerSensor { get; private init; }
     public NumericSensor HotWaterProducedTodayDecimalsSensor { get; private init; }
 
+    public Weather WeatherForecast { get; private init; }
     public ISmartHeatPumpHttpClient HttpClient { get; private init; }
 
     public SmartHeatPumpTemperatureConfiguration TemperatureConfiguration { get; private init; }
@@ -64,6 +66,7 @@ public class SmartHeatPumpConfiguration
         HotWaterProducedTodayIntegerSensor = NumericSensor.Create(Context.HaContext, config.HotWaterProducedTodayIntegerSensor);
         HotWaterProducedTodayDecimalsSensor = NumericSensor.Create(Context.HaContext, config.HotWaterProducedTodayDecimalsSensor);
 
+        WeatherForecast = new Weather(Context.HaContext, config.WeatherForecastSensor);
         HttpClient = httpClient ?? new SmartHeatPumpHttpClient(config.IsgBaseUrl, logger);
 
         TemperatureConfiguration = new SmartHeatPumpTemperatureConfiguration(Context, config.Temperatures);

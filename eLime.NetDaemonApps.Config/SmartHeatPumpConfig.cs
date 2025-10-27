@@ -22,6 +22,7 @@ public class SmartHeatPumpConfig
     public string HotWaterProducedTodayIntegerSensor { get; set; }
     public string HotWaterProducedTodayDecimalsSensor { get; set; }
 
+    public string WeatherForecastSensor { get; set; } //Hourly weather forecast sensor entity ID
     public string IsgBaseUrl { get; set; }
 
     public SmartHeatPumpTemperatureConfig Temperatures { get; set; }
