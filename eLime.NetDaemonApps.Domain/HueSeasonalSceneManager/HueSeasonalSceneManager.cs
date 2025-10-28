@@ -110,8 +110,6 @@ public class HueSeasonalSceneManager : IDisposable
         catch (Exception ex)
         {
             Context.Logger.LogError(ex, "Failed to initialize Hue client. App key may be invalid.");
-            State.AppKey = null;
-            await SaveState();
         }
     }
 
