@@ -503,8 +503,9 @@ public class CarChargerEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         {
             Context.Logger.LogInformation($"Car '{ConnectedCar?.Name}' charger switch turned off.");
 
-            if (State.State == EnergyConsumerState.Running)
-                Stopped();
+            //Not sure if removing this will case prolems, but right now it causes issues because the charger is still consuming power can turning this button off. Needs some time to propagate
+            //if (State.State == EnergyConsumerState.Running)
+            //    Stopped();
 
             await DebounceSaveAndPublishState();
         }
