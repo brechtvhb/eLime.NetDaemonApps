@@ -86,12 +86,12 @@ public class SmartHeatPump : IDisposable
         await GetAndSanitizeState();
         MonitoringTask = Context.Scheduler.RunEvery(TimeSpan.FromMinutes(1), Context.Scheduler.Now, MonitorHeatPumpControls);
 
-        var nightlyCheck1 = new TimeOnly(22, 00);
+        var nightlyCheck1 = new TimeOnly(21, 00);
         var nightlyCheck1DateTime = nightlyCheck1.GetUtcDateTimeFromLocalTimeOnly(Context.Scheduler.Now.DateTime, "Europe/Brussels");
         if (nightlyCheck1DateTime <= Context.Scheduler.Now.DateTime)
             nightlyCheck1DateTime = nightlyCheck1DateTime.AddDays(1);
 
-        var nightlyCheck2 = new TimeOnly(3, 00);
+        var nightlyCheck2 = new TimeOnly(2, 00);
         var nightlyCheck2DateTime = nightlyCheck2.GetUtcDateTimeFromLocalTimeOnly(Context.Scheduler.Now.DateTime, "Europe/Brussels");
         if (nightlyCheck2DateTime <= Context.Scheduler.Now.DateTime)
             nightlyCheck2DateTime = nightlyCheck2DateTime.AddDays(1);
@@ -108,13 +108,18 @@ public class SmartHeatPump : IDisposable
             if (HomeAssistant.IsSummerModeSensor.IsOn())
                 return;
 
+            if (HomeAssistant.RemainingStandstillSensor.State > 0)
+                return;
+
+            if (State.SmartGridReadyMode == SmartGridReadyMode.Boosted)
+                return;
+
             var averagePredictedTemperature = HomeAssistant.WeatherForecast.Attributes?.Forecast?.Take(24).Average(x => x.Temperature);
+            var desiredRoomTemperature = (TemperatureSettings.ComfortRoomTemperature + TemperatureSettings.MinimumRoomTemperature) / 2;
+            var currentRoomTemperature = Convert.ToDecimal(HomeAssistant.RoomTemperatureSensor.State);
 
             if (averagePredictedTemperature == null)
                 return;
-
-            var desiredRoomTemperature = (TemperatureSettings.ComfortRoomTemperature + TemperatureSettings.MinimumRoomTemperature) / 2;
-            var currentRoomTemperature = Convert.ToDecimal(HomeAssistant.RoomTemperatureSensor.State);
 
             if (currentRoomTemperature == 0)
                 return;
@@ -730,6 +735,13 @@ public class SmartHeatPump : IDisposable
         HomeAssistant.HotWaterConsumedTodayDecimalsSensor.Changed -= HotWaterSensor_changed;
         HomeAssistant.HotWaterProducedTodayIntegerSensor.Changed -= HotWaterSensor_changed;
         HomeAssistant.HotWaterProducedTodayDecimalsSensor.Changed -= HotWaterSensor_changed;
+        HomeAssistant.RoomTemperatureSensor.Changed -= RoomTemperatureSensor_Changed;
+        HomeAssistant.RemainingStandstillSensor.Changed -= RemainingStandstillSensor_Changed;
+        HomeAssistant.IsHeatingSensor.TurnedOn -= IsHeatingSensor_Changed;
+        HomeAssistant.IsHeatingSensor.TurnedOff -= IsHeatingSensor_Changed;
+        HomeAssistant.CirculationPumpRunningSensor.TurnedOn -= CirculationPumpRunningSensor_Changed;
+        HomeAssistant.CirculationPumpRunningSensor.TurnedOff -= CirculationPumpRunningSensor_Changed;
+
         HomeAssistant.Dispose();
     }
 }

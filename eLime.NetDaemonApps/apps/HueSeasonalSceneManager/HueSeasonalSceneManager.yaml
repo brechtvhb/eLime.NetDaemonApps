@@ -1,0 +1,19 @@
+﻿eLime.netDaemonApps.Config.HueSeasonalSceneManagerConfig:
+  bridgeIpAddress: "10.102.40.62"
+
+  zones:
+    - zone: "Dining shelf"
+      allDaySceneId: "ec561488-8bc7-4a32-8130-827924e1e700"
+      fallbackScenes:
+        timeslot1: "10c293d2-1713-4bd0-8ba1-d3f4dd4baa34"
+        timeslot2: "f2b7d3f2-8f63-43f4-8209-63b80cbd4c9f"
+        timeslot3: "e7b29559-dba9-49f0-bc10-963a7dbedc59"
+        timeslot4: "b7fb28c5-4cf6-46cb-b7f4-54f066fe68fd"
+        timeslot5: "5a42327e-0a1b-4074-be1e-ca76c3bed901"
+        timeslot6: "5a42327e-0a1b-4074-be1e-ca76c3bed901"
+      seasonalScenes:
+        - festivity: "Halloween"
+          operatingModeSensor: "binary_sensor.operating_mode_halloween"
+          scenes:
+            timeslot3: "a68889b5-13bb-4298-ac2b-a519ee35dbab" #pandemonium
+            timeslot4: "a68889b5-13bb-4298-ac2b-a519ee35dbab" #pandemonium
