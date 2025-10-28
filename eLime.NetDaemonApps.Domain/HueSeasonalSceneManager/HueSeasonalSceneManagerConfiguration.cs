@@ -12,9 +12,9 @@ public class HueSeasonalSceneManagerConfiguration
     public HueSeasonalSceneManagerContext Context { get; private init; }
     public List<HueZoneConfiguration> Zones { get; private init; }
 
-    public HueSeasonalSceneManagerConfiguration(IHaContext haContext, ILogger logger, IScheduler scheduler, IFileStorage fileStorage, HueSeasonalSceneManagerConfig config)
+    public HueSeasonalSceneManagerConfiguration(IHaContext haContext, ILogger logger, IScheduler scheduler, IFileStorage fileStorage, BridgeConfig config)
     {
-        Context = new HueSeasonalSceneManagerContext(haContext, logger, scheduler, fileStorage, config.BridgeIpAddress, config.Zones);
+        Context = new HueSeasonalSceneManagerContext(haContext, logger, scheduler, fileStorage, config.IpAddress, config.Zones);
 
         Zones = config.Zones.Select(scene => new HueZoneConfiguration(haContext, scene)).ToList();
     }

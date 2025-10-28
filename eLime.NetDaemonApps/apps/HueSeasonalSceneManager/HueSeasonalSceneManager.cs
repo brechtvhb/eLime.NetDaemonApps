@@ -1,6 +1,7 @@
 using eLime.NetDaemonApps.Config;
 using eLime.NetDaemonApps.Domain.HueSeasonalSceneManager;
 using eLime.NetDaemonApps.Domain.Storage;
+using System.Collections.Generic;
 using System.Reactive.Concurrency;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,25 +14,32 @@ namespace eLime.NetDaemonApps.apps.HueSeasonalSceneManager;
 public class HueSeasonalSceneManager(IHaContext ha, IScheduler scheduler, IAppConfig<HueSeasonalSceneManagerConfig> config, IFileStorage fileStorage, ILogger<HueSeasonalSceneManager> logger)
     : IAsyncInitializable, IAsyncDisposable
 {
-    private Domain.HueSeasonalSceneManager.HueSeasonalSceneManager _hueSeasonalSceneManager;
+    private readonly List<Domain.HueSeasonalSceneManager.HueSeasonalSceneManager> _hueSeasonalSceneManagers = [];
 
     public async Task InitializeAsync(CancellationToken cancellationToken)
     {
         try
         {
-            var configuration = new HueSeasonalSceneManagerConfiguration(ha, logger, scheduler, fileStorage, config.Value);
-            _hueSeasonalSceneManager = await Domain.HueSeasonalSceneManager.HueSeasonalSceneManager.Create(configuration);
+            foreach (var bridge in config.Value.Bridges)
+            {
+                var configuration = new HueSeasonalSceneManagerConfiguration(ha, logger, scheduler, fileStorage, bridge);
+                var hueSeasonalSceneManager = await Domain.HueSeasonalSceneManager.HueSeasonalSceneManager.Create(bridge.Name, configuration);
+                _hueSeasonalSceneManagers.Add(hueSeasonalSceneManager);
+            }
+
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Something horrible happened while initializing Hue Seasonal Scene Manager :/");
+            logger.LogError(ex, "Something horrible happened while initializing Hue shed Seasonal Scene Manager :/");
         }
     }
 
     public ValueTask DisposeAsync()
     {
-        _hueSeasonalSceneManager?.Dispose();
-        logger.LogInformation("Disposed Hue Seasonal Scene Manager");
+        foreach (var hueSeasonalSceneManager in _hueSeasonalSceneManagers)
+            hueSeasonalSceneManager.Dispose();
+
+        logger.LogInformation("Disposed Hue shed Seasonal Scene Manager");
         return ValueTask.CompletedTask;
     }
 }

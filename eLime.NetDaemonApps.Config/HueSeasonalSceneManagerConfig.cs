@@ -3,8 +3,13 @@ namespace eLime.NetDaemonApps.Config;
 
 public class HueSeasonalSceneManagerConfig
 {
-    public string BridgeIpAddress { get; set; }
+    public List<BridgeConfig> Bridges { get; set; } = [];
+}
 
+public class BridgeConfig
+{
+    public string Name { get; set; }
+    public string IpAddress { get; set; }
     public List<HueZoneConfig> Zones { get; set; } = [];
 }
 

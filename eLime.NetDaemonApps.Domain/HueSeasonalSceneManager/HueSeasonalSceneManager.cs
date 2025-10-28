@@ -1,3 +1,4 @@
+using eLime.NetDaemonApps.Domain.Helper;
 using HueApi;
 using Microsoft.Extensions.Logging;
 using System.Runtime.CompilerServices;
@@ -9,6 +10,7 @@ namespace eLime.NetDaemonApps.Domain.HueSeasonalSceneManager;
 
 public class HueSeasonalSceneManager : IDisposable
 {
+    private string Name { get; set; }
     internal HueSeasonalSceneManagerContext Context { get; private set; }
     internal HueSeasonalSceneManagerState State { get; private set; }
     internal List<HueZone> Zones { get; } = [];
@@ -19,22 +21,23 @@ public class HueSeasonalSceneManager : IDisposable
     {
     }
 
-    public static async Task<HueSeasonalSceneManager> Create(HueSeasonalSceneManagerConfiguration configuration)
+    public static async Task<HueSeasonalSceneManager> Create(string name, HueSeasonalSceneManagerConfiguration configuration)
     {
         var hueSeasonalSceneManager = new HueSeasonalSceneManager();
-        await hueSeasonalSceneManager.Initialize(configuration);
+        await hueSeasonalSceneManager.Initialize(name, configuration);
         return hueSeasonalSceneManager;
     }
 
-    private async Task Initialize(HueSeasonalSceneManagerConfiguration configuration)
+    private async Task Initialize(string name, HueSeasonalSceneManagerConfiguration configuration)
     {
         Context = configuration.Context;
+        Name = name;
 
         await GetAndSanitizeState();
 
         if (string.IsNullOrEmpty(State.AppKey))
         {
-            Context.Logger.LogInformation("No app key found. Attempting to register with Hue Bridge...");
+            Context.Logger.LogInformation("{Name}: No app key found. Attempting to register with Hue Bridge... {Ip}", Name, Context.BridgeIpAddress);
             await RegisterWithBridge();
         }
         else
@@ -50,14 +53,14 @@ public class HueSeasonalSceneManager : IDisposable
             Zones.Add(zone);
         }
 
-        Context.Logger.LogInformation("Initialized {ZoneCount} zones.", Zones.Count);
+        Context.Logger.LogInformation("{Name}: Initialized {ZoneCount} zones.", Name, Zones.Count);
     }
 
     private async Task RegisterWithBridge()
     {
         try
         {
-            Context.Logger.LogInformation("Please press the link button on your Hue Bridge within the next 30 seconds...");
+            Context.Logger.LogInformation("{Name}: Please press the link button on your Hue Bridge within the next 30 seconds...", Name);
 
             var appName = "eLime.NetDaemonApps";
             var deviceName = Environment.MachineName;
@@ -74,7 +77,7 @@ public class HueSeasonalSceneManager : IDisposable
                     if (!string.IsNullOrEmpty(registerResult?.Username))
                     {
                         State.AppKey = registerResult.Username;
-                        Context.Logger.LogInformation($"Successfully registered with Hue Bridge! App key: {State.AppKey}");
+                        Context.Logger.LogInformation($"{{Name}}: Successfully registered with Hue Bridge! App key: {State.AppKey}", Name);
                         await SaveState();
                         await InitializeHueClient();
                         return;
@@ -82,18 +85,18 @@ public class HueSeasonalSceneManager : IDisposable
                 }
                 catch (Exception ex)
                 {
-                    Context.Logger.LogDebug($"Registration attempt failed: {ex.Message}");
+                    Context.Logger.LogDebug($"{{Name}}: Registration attempt failed: {ex.Message}", Name);
                 }
 
                 // Wait 2 seconds before trying again
                 await Task.Delay(2000);
             }
 
-            Context.Logger.LogError("Failed to register with Hue Bridge. Link button was not pressed in time.");
+            Context.Logger.LogError("{Name}: Failed to register with Hue Bridge. Link button was not pressed in time.", Name);
         }
         catch (Exception ex)
         {
-            Context.Logger.LogError(ex, "Error during Hue Bridge registration");
+            Context.Logger.LogError(ex, "{Name}: Error during Hue Bridge registration", Name);
         }
     }
 
@@ -105,27 +108,27 @@ public class HueSeasonalSceneManager : IDisposable
 
             // Test the connection
             var bridge = await _hueClient.GetBridgeAsync();
-            Context.Logger.LogInformation($"Successfully connected to Hue Bridge: {bridge.Data.FirstOrDefault()?.Id.ToString("N") ?? "Unknown"}");
+            Context.Logger.LogInformation($"{{Name}}: Successfully connected to Hue Bridge: {bridge.Data.FirstOrDefault()?.Id.ToString("N") ?? "Unknown"}", Name);
         }
         catch (Exception ex)
         {
-            Context.Logger.LogError(ex, "Failed to initialize Hue client. App key may be invalid.");
+            Context.Logger.LogError(ex, "{Name}: Failed to initialize Hue client. App key may be invalid.", Name);
         }
     }
 
     private Task GetAndSanitizeState()
     {
-        var persistedState = Context.FileStorage.Get<HueSeasonalSceneManagerState>("HueSeasonalSceneManager", "HueSeasonalSceneManager");
+        var persistedState = Context.FileStorage.Get<HueSeasonalSceneManagerState>("HueSeasonalSceneManager", $"HueSeasonalSceneManager_{Name.MakeHaFriendly()}");
         State = persistedState ?? new HueSeasonalSceneManagerState();
 
-        Context.Logger.LogDebug("Retrieved Hue Seasonal Scene Manager state.");
+        Context.Logger.LogDebug("{Name}: Retrieved Hue Seasonal Scene Manager state.", Name);
         return Task.CompletedTask;
     }
 
     private Task SaveState()
     {
-        Context.FileStorage.Save("HueSeasonalSceneManager", "HueSeasonalSceneManager", State);
-        Context.Logger.LogDebug("Saved Hue Seasonal Scene Manager state.");
+        Context.FileStorage.Save("HueSeasonalSceneManager", $"HueSeasonalSceneManager_{Name.MakeHaFriendly()}", State);
+        Context.Logger.LogTrace("{Name}: Saved Hue Seasonal Scene Manager state.", Name);
         return Task.CompletedTask;
     }
 
@@ -138,6 +141,6 @@ public class HueSeasonalSceneManager : IDisposable
 
         // LocalHueApi in HueApi 3.0 doesn't implement IDisposable
         _hueClient = null;
-        Context.Logger.LogInformation("Disposed Hue Seasonal Scene Manager");
+        Context.Logger.LogInformation("{Name}: Disposed Hue Seasonal Scene Manager", Name);
     }
 }
