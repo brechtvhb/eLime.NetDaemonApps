@@ -184,8 +184,7 @@ public class SmartGridReadyEnergyConsumer : EnergyConsumer, IDynamicLoadConsumer
         return false;
     }
 
-    private void SmartGridModeSelect_Changed(object? sender, Entities.Select.SelectEntityEventArgs e)
-        => LastSmartGridReadyChangedAt = Context.Scheduler.Now;
+    private void SmartGridModeSelect_Changed(object? sender, Entities.Select.SelectEntityEventArgs e) => LastSmartGridReadyChangedAt = Context.Scheduler.Now;
 
     private async void StateSensor_StateChanged(object? sender, TextSensorEventArgs e)
     {

@@ -322,7 +322,7 @@ public abstract class EnergyConsumer : IDisposable
         var canForceStop = CanForceStop();
         var canForceStopOnPeakLoad = CanForceStopOnPeakLoad();
 
-        if (!canForceStop && canForceStopOnPeakLoad)
+        if (!canForceStop && !canForceStopOnPeakLoad)
             return false;
 
         if (canForceStopOnPeakLoad && this is IDynamicLoadConsumer && dynamicLoadAdjustments != 0)

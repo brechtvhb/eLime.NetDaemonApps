@@ -342,17 +342,20 @@ public class SmartHeatPump : IDisposable
 
         if (HomeAssistant.RemainingStandstillSensor.State > 0)
             State.ExpectedPowerConsumption = 25;
-
-        else if (hotWaterTemperature != 0 && State.MaximumHotWaterTemperature - 5 >= hotWaterTemperature)
+        else if (hotWaterTemperature == 0 || TemperatureSettings.MaximumHotWaterTemperature - 5 >= hotWaterTemperature)
+            State.ExpectedPowerConsumption = 1200;
+        else if (State.BathRequestedAt != null)
+            State.ExpectedPowerConsumption = 2100;
+        else if (State.ShowerRequestedAt != null)
+            State.ExpectedPowerConsumption = 1860;
+        else if (State.MaximumHotWaterTemperature - 5 >= hotWaterTemperature)
         {
-            if (State.BathRequestedAt != null || State.HotWaterEnergyDemand is HeatPumpEnergyDemand.CanUse)
-                State.ExpectedPowerConsumption = 2100;
-            else if (State.ShowerRequestedAt != null)
-                State.ExpectedPowerConsumption = 1860;
-            else if (State.HotWaterEnergyDemand is HeatPumpEnergyDemand.Demanded or HeatPumpEnergyDemand.CriticalDemand)
-                State.ExpectedPowerConsumption = 1800;
-            else
-                State.ExpectedPowerConsumption = 1200;
+            State.ExpectedPowerConsumption = State.HotWaterEnergyDemand switch
+            {
+                HeatPumpEnergyDemand.CanUse => 2100,
+                HeatPumpEnergyDemand.Demanded or HeatPumpEnergyDemand.CriticalDemand => 1800,
+                _ => 1200
+            };
         }
         else
             State.ExpectedPowerConsumption = 1200;
